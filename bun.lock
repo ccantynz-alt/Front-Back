@@ -41,6 +41,7 @@
     "apps/web": {
       "name": "@back-to-the-future/web",
       "dependencies": {
+        "@back-to-the-future/ai-core": "workspace:*",
         "@back-to-the-future/schemas": "workspace:*",
         "@back-to-the-future/ui": "workspace:*",
         "@simplewebauthn/browser": "13.3.0",
