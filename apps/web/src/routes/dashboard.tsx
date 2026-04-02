@@ -1,9 +1,10 @@
 import { Title } from "@solidjs/meta";
 import { A } from "@solidjs/router";
-import { For } from "solid-js";
+import { createResource, For, Show, Suspense } from "solid-js";
 import { Button, Card, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { useAuth } from "../stores";
+import { trpc } from "../lib/trpc";
 
 // ── Quick Action Card ─────────────────────────────────────────────────
 
@@ -33,6 +34,45 @@ function QuickAction(props: QuickActionProps): ReturnType<typeof Card> {
 export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
   const auth = useAuth();
 
+  // Fetch current user profile from API for fresh data
+  const [profile] = createResource(
+    () => auth.isAuthenticated(),
+    async (isAuthed) => {
+      if (!isAuthed) return null;
+      try {
+        return await trpc.auth.me.query();
+      } catch {
+        return null;
+      }
+    },
+  );
+
+  // Fetch recent users list (for admin dashboard or team view)
+  const [recentUsers] = createResource(
+    () => auth.isAuthenticated(),
+    async (isAuthed) => {
+      if (!isAuthed) return null;
+      try {
+        return await trpc.users.list.query({ limit: 5 });
+      } catch {
+        return null;
+      }
+    },
+  );
+
+  // Use profile from API if available, fall back to cached auth state
+  const displayName = (): string =>
+    profile()?.displayName ?? auth.currentUser()?.displayName ?? "User";
+  const displayEmail = (): string | undefined =>
+    profile()?.email ?? auth.currentUser()?.email;
+  const displayRole = (): string | undefined =>
+    profile()?.role ?? auth.currentUser()?.role;
+  const displayCreatedAt = (): string | undefined => {
+    const raw = profile()?.createdAt ?? auth.currentUser()?.createdAt;
+    if (!raw) return undefined;
+    return new Date(raw).toLocaleDateString();
+  };
+
   const quickActions: QuickActionProps[] = [
     {
       title: "AI Website Builder",
@@ -60,7 +100,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       <Stack direction="vertical" gap="lg" class="page-padded">
         <Stack direction="vertical" gap="xs">
           <Text variant="h1" weight="bold">
-            Welcome back, {auth.currentUser()?.displayName ?? "User"}
+            Welcome back, {displayName()}
           </Text>
           <Text variant="body" class="text-muted">
             Here is your workspace overview.
@@ -88,17 +128,46 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
           <Card padding="md">
             <Stack direction="vertical" gap="xs">
               <Text variant="body">
-                <strong>Email:</strong> {auth.currentUser()?.email}
+                <strong>Email:</strong> {displayEmail()}
               </Text>
               <Text variant="body">
-                <strong>Role:</strong> {auth.currentUser()?.role}
+                <strong>Role:</strong> {displayRole()}
               </Text>
               <Text variant="caption" class="text-muted">
-                Member since {auth.currentUser()?.createdAt ? new Date(auth.currentUser()!.createdAt).toLocaleDateString() : "N/A"}
+                Member since {displayCreatedAt() ?? "N/A"}
               </Text>
             </Stack>
           </Card>
         </Stack>
+
+        <Show when={recentUsers()}>
+          {(data) => (
+            <Stack direction="vertical" gap="sm">
+              <Text variant="h3" weight="semibold">
+                Team Members ({data().total})
+              </Text>
+              <Suspense fallback={<Text variant="body">Loading team...</Text>}>
+                <For each={data().items}>
+                  {(user) => (
+                    <Card padding="sm">
+                      <Stack direction="horizontal" gap="md">
+                        <Text variant="body" weight="semibold">
+                          {user.displayName}
+                        </Text>
+                        <Text variant="caption" class="text-muted">
+                          {user.email}
+                        </Text>
+                        <Text variant="caption" class="text-muted">
+                          {user.role}
+                        </Text>
+                      </Stack>
+                    </Card>
+                  )}
+                </For>
+              </Suspense>
+            </Stack>
+          )}
+        </Show>
       </Stack>
     </ProtectedRoute>
   );

@@ -16,6 +16,8 @@
     "@solidjs/router": "^0.15.3",
     "@solidjs/start": "^1.1.0",
     "@tailwindcss/vite": "4.2.2",
+    "@trpc/client": "11.16.0",
+    "@trpc/server": "11.16.0",
     "solid-js": "^1.9.5",
     "tailwindcss": "4.2.2",
     "vinxi": "^0.5.3"
