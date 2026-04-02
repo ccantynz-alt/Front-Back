@@ -1,8 +1,9 @@
 import type { JSX } from "solid-js";
 import { Show, createSignal } from "solid-js";
-import { A, useLocation } from "@solidjs/router";
+import { useLocation } from "@solidjs/router";
 import { Button, Text } from "@back-to-the-future/ui";
 import { useAuth, useTheme } from "../stores";
+import { TransitionLink } from "./TransitionLink";
 
 // ── Nav Link ──────────────────────────────────────────────────────────
 
@@ -16,12 +17,12 @@ function NavLink(props: NavLinkProps): JSX.Element {
   const isActive = (): boolean => location.pathname === props.href;
 
   return (
-    <A
+    <TransitionLink
       href={props.href}
       class={`nav-link ${isActive() ? "nav-link-active" : ""}`}
     >
       {props.label}
-    </A>
+    </TransitionLink>
   );
 }
 
@@ -122,11 +123,11 @@ export function Layout(props: LayoutProps): JSX.Element {
 
   return (
     <div class="layout">
-      <header class="navbar">
+      <header class="navbar" style={{ "view-transition-name": "main-navbar" }}>
         <div class="navbar-left">
-          <A href="/" class="navbar-logo">
+          <TransitionLink href="/" class="navbar-logo" viewTransitionName="navbar-logo">
             <Text variant="h4" weight="bold">BTF</Text>
-          </A>
+          </TransitionLink>
           <nav class="navbar-links">
             <NavLink href="/" label="Home" />
             <Show when={auth.isAuthenticated()}>
@@ -141,9 +142,9 @@ export function Layout(props: LayoutProps): JSX.Element {
           <Show
             when={auth.isAuthenticated()}
             fallback={
-              <A href="/login">
+              <TransitionLink href="/login">
                 <Button variant="primary" size="sm">Sign In</Button>
-              </A>
+              </TransitionLink>
             }
           >
             <UserMenu />
@@ -158,7 +159,7 @@ export function Layout(props: LayoutProps): JSX.Element {
             onToggle={() => setSidebarCollapsed(!sidebarCollapsed())}
           />
         </Show>
-        <main class="layout-content">
+        <main class="layout-content" style={{ "view-transition-name": "page-content" }}>
           {props.children}
         </main>
       </div>
