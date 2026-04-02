@@ -16,6 +16,7 @@ import {
   cachePrivate,
   noCache,
 } from "./middleware";
+import { inngestApp } from "./workflows/serve";
 
 const app = new Hono().basePath("/api");
 
@@ -62,6 +63,9 @@ app.use("/trpc/*", async (c) => {
   });
   return response;
 });
+
+// Inngest durable workflows — AI pipelines, video processing, site building
+app.route("/", inngestApp);
 
 // Real-Time: WebSocket upgrade at /api/ws — never cache
 app.use("/ws", noCache);
