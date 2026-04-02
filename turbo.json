@@ -3,14 +3,34 @@
   "tasks": {
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": [
+        "DATABASE_URL",
+        "TURSO_AUTH_TOKEN",
+        "API_PORT",
+        "WEBAUTHN_RP_ID",
+        "WEBAUTHN_RP_NAME",
+        "WEBAUTHN_ORIGIN",
+        "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "PUBLIC_API_URL"
+      ]
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".output/**", ".vinxi/**"]
+      "outputs": ["dist/**", ".output/**", ".vinxi/**"],
+      "env": [
+        "DATABASE_URL",
+        "TURSO_AUTH_TOKEN",
+        "PUBLIC_API_URL"
+      ]
     },
     "test": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "env": [
+        "DATABASE_URL",
+        "TURSO_AUTH_TOKEN"
+      ]
     },
     "lint": {},
     "format": {},
@@ -19,6 +39,34 @@
     },
     "clean": {
       "cache": false
+    },
+    "db:generate": {
+      "cache": false,
+      "env": [
+        "DATABASE_URL",
+        "TURSO_AUTH_TOKEN"
+      ]
+    },
+    "db:push": {
+      "cache": false,
+      "env": [
+        "DATABASE_URL",
+        "TURSO_AUTH_TOKEN"
+      ]
+    },
+    "db:migrate": {
+      "cache": false,
+      "env": [
+        "DATABASE_URL",
+        "TURSO_AUTH_TOKEN"
+      ]
+    },
+    "db:run-migrate": {
+      "cache": false,
+      "env": [
+        "DATABASE_URL",
+        "TURSO_AUTH_TOKEN"
+      ]
     }
   }
 }
