@@ -7,7 +7,17 @@ export default createHandler(() => (
       <html lang="en">
         <head>
           <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+          />
+          {/* Instant theme flash prevention */}
+          <meta name="color-scheme" content="light dark" />
+          {/* Enable DNS prefetching globally */}
+          <meta http-equiv="X-DNS-Prefetch-Control" content="on" />
+          {/* API server resource hints */}
+          <link rel="preconnect" href="http://localhost:3001" />
+          <link rel="dns-prefetch" href="http://localhost:3001" />
           <link rel="icon" href="/favicon.ico" />
           {assets}
         </head>

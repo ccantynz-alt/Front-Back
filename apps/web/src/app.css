@@ -1,5 +1,41 @@
 @import "tailwindcss";
 
+/* ── Performance: contain & content-visibility ────────────────────── */
+
+/* Component boundaries use layout containment to limit reflow scope */
+.layout-content,
+.builder-chat,
+.builder-preview,
+.preview-canvas,
+.sidebar {
+  contain: layout style;
+}
+
+/* Heavy sections below the fold use content-visibility: auto to skip
+   rendering until they scroll into view. The browser estimates their
+   intrinsic size via contain-intrinsic-size. */
+.page-padded,
+.grid-3,
+.builder-chat-messages,
+.preview-placeholder {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* will-change hints for animated/transitioned elements */
+.loading-spinner {
+  will-change: transform;
+}
+
+.nav-link,
+.sidebar {
+  will-change: background-color, color;
+}
+
+.user-menu-dropdown {
+  will-change: opacity, transform;
+}
+
 /* ── Reset & Base ──────────────────────────────────────────────────── */
 
 *,
