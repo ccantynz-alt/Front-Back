@@ -1,16 +1,8 @@
 import { Title } from "@solidjs/meta";
-import { For, Show, createSignal } from "solid-js";
+import { For, Show, createEffect, createSignal } from "solid-js";
 import { Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
-
-// ── Chat Message Type ─────────────────────────────────────────────────
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: number;
-}
+import { useChat, type ChatMessage } from "../stores/chat";
 
 // ── Chat Message Component ────────────────────────────────────────────
 
@@ -18,7 +10,9 @@ function ChatBubble(props: { message: ChatMessage }): ReturnType<typeof Card> {
   const isUser = (): boolean => props.message.role === "user";
 
   return (
-    <div class={`chat-bubble ${isUser() ? "chat-bubble-user" : "chat-bubble-assistant"}`}>
+    <div
+      class={`chat-bubble ${isUser() ? "chat-bubble-user" : "chat-bubble-assistant"}`}
+    >
       <Text variant="caption" weight="semibold" class="chat-role">
         {isUser() ? "You" : "AI Builder"}
       </Text>
@@ -30,24 +24,66 @@ function ChatBubble(props: { message: ChatMessage }): ReturnType<typeof Card> {
 // ── Preview Panel ─────────────────────────────────────────────────────
 
 function PreviewPanel(): ReturnType<typeof Card> {
+  const { generatedUI } = useChat();
+
   return (
     <Card class="preview-panel" padding="none">
       <Stack direction="vertical" gap="none" class="preview-inner">
         <div class="preview-toolbar">
-          <Text variant="caption" weight="semibold">Live Preview</Text>
+          <Text variant="caption" weight="semibold">
+            Live Preview
+          </Text>
           <Stack direction="horizontal" gap="xs">
-            <Button variant="ghost" size="sm">Desktop</Button>
-            <Button variant="ghost" size="sm">Tablet</Button>
-            <Button variant="ghost" size="sm">Mobile</Button>
+            <Button variant="ghost" size="sm">
+              Desktop
+            </Button>
+            <Button variant="ghost" size="sm">
+              Tablet
+            </Button>
+            <Button variant="ghost" size="sm">
+              Mobile
+            </Button>
           </Stack>
         </div>
         <div class="preview-canvas">
-          <Stack direction="vertical" align="center" justify="center" class="preview-placeholder">
-            <Text variant="h3" class="text-muted">Preview Area</Text>
-            <Text variant="body" class="text-muted">
-              Describe your website in the chat and the AI will build it here.
-            </Text>
-          </Stack>
+          <Show
+            when={generatedUI()}
+            fallback={
+              <Stack
+                direction="vertical"
+                align="center"
+                justify="center"
+                class="preview-placeholder"
+              >
+                <Text variant="h3" class="text-muted">
+                  Preview Area
+                </Text>
+                <Text variant="body" class="text-muted">
+                  Describe your website in the chat and the AI will build it
+                  here.
+                </Text>
+              </Stack>
+            }
+          >
+            {(ui) => (
+              <Stack direction="vertical" gap="md" class="preview-generated">
+                <Text variant="caption" class="text-muted">
+                  {ui().reasoning}
+                </Text>
+                <For each={ui().layout}>
+                  {(component) => (
+                    <Card padding="sm">
+                      <Text variant="body">
+                        {(component as Record<string, string>).type ??
+                          "Component"}{" "}
+                        — {JSON.stringify(component)}
+                      </Text>
+                    </Card>
+                  )}
+                </For>
+              </Stack>
+            )}
+          </Show>
         </div>
       </Stack>
     </Card>
@@ -57,44 +93,27 @@ function PreviewPanel(): ReturnType<typeof Card> {
 // ── Builder Page ──────────────────────────────────────────────────────
 
 export default function BuilderPage(): ReturnType<typeof ProtectedRoute> {
-  const [messages, setMessages] = createSignal<ChatMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "Welcome to the AI Website Builder. Describe the website you want to create, and I will build it for you in real time. You can ask for changes, add pages, or adjust styling at any point.",
-      timestamp: Date.now(),
-    },
-  ]);
+  const { messages, isStreaming, error, sendMessage, clearMessages } =
+    useChat();
   const [input, setInput] = createSignal("");
-  const [isGenerating, setIsGenerating] = createSignal(false);
+
+  let messagesEndRef: HTMLDivElement | undefined;
+
+  // Auto-scroll to bottom when messages change or during streaming
+  createEffect((): void => {
+    // Track both messages and streaming state to trigger scroll
+    messages();
+    isStreaming();
+    if (messagesEndRef) {
+      messagesEndRef.scrollIntoView({ behavior: "smooth" });
+    }
+  });
 
   const handleSend = (): void => {
     const text = input().trim();
-    if (!text || isGenerating()) return;
-
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: text,
-      timestamp: Date.now(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    if (!text || isStreaming()) return;
+    sendMessage(text);
     setInput("");
-    setIsGenerating(true);
-
-    // Simulate AI response -- will be replaced with real AI SDK streaming
-    setTimeout((): void => {
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: `I understand you want: "${text}". The AI builder pipeline is being connected. Once the Vercel AI SDK streaming integration is live, I will generate and preview components in real time.`,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsGenerating(false);
-    }, 1500);
   };
 
   const handleKeyDown = (e: KeyboardEvent): void => {
@@ -111,18 +130,39 @@ export default function BuilderPage(): ReturnType<typeof ProtectedRoute> {
         <div class="builder-chat">
           <Stack direction="vertical" gap="none" class="builder-chat-inner">
             <div class="builder-chat-header">
-              <Text variant="h3" weight="bold">AI Website Builder</Text>
+              <Stack direction="horizontal" justify="between" align="center">
+                <Text variant="h3" weight="bold">
+                  AI Website Builder
+                </Text>
+                <Button variant="ghost" size="sm" onClick={clearMessages}>
+                  Clear
+                </Button>
+              </Stack>
             </div>
             <div class="builder-chat-messages">
               <For each={messages()}>
                 {(msg) => <ChatBubble message={msg} />}
               </For>
-              <Show when={isGenerating()}>
-                <div class="chat-bubble chat-bubble-assistant">
-                  <Text variant="caption" weight="semibold" class="chat-role">AI Builder</Text>
-                  <Text variant="body" class="text-muted">Generating...</Text>
+              <Show when={isStreaming()}>
+                <div class="chat-bubble chat-bubble-assistant chat-bubble-streaming">
+                  <Text variant="caption" weight="semibold" class="chat-role">
+                    AI Builder
+                  </Text>
+                  <Text variant="body" class="text-muted">
+                    Generating...
+                  </Text>
                 </div>
               </Show>
+              <Show when={error()}>
+                {(errMsg) => (
+                  <div class="chat-error">
+                    <Text variant="caption" class="text-error">
+                      Error: {errMsg()}
+                    </Text>
+                  </div>
+                )}
+              </Show>
+              <div ref={messagesEndRef} />
             </div>
             <div class="builder-chat-input">
               <Stack direction="horizontal" gap="sm" align="end">
@@ -131,14 +171,14 @@ export default function BuilderPage(): ReturnType<typeof ProtectedRoute> {
                   value={input()}
                   onInput={(e) => setInput(e.currentTarget.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={isGenerating()}
+                  disabled={isStreaming()}
                   class="builder-input"
                 />
                 <Button
                   variant="primary"
                   onClick={handleSend}
-                  loading={isGenerating()}
-                  disabled={!input().trim()}
+                  loading={isStreaming()}
+                  disabled={!input().trim() || isStreaming()}
                 >
                   Send
                 </Button>
