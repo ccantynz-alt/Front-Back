@@ -2,6 +2,8 @@ import { MetaProvider, Title } from "@solidjs/meta";
 import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { Suspense } from "solid-js";
+import { AuthProvider, ThemeProvider } from "./stores";
+import { Layout } from "./components/Layout";
 import "./app.css";
 
 export default function App() {
@@ -10,7 +12,13 @@ export default function App() {
       root={(props) => (
         <MetaProvider>
           <Title>Back to the Future</Title>
-          <Suspense>{props.children}</Suspense>
+          <ThemeProvider>
+            <AuthProvider>
+              <Layout>
+                <Suspense>{props.children}</Suspense>
+              </Layout>
+            </AuthProvider>
+          </ThemeProvider>
         </MetaProvider>
       )}
     >
