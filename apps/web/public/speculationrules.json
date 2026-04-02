@@ -1,0 +1,14 @@
+{
+  "prerender": [
+    {
+      "urls": ["/dashboard", "/builder", "/about"],
+      "eagerness": "eager"
+    }
+  ],
+  "prefetch": [
+    {
+      "urls": ["/login", "/register"],
+      "eagerness": "moderate"
+    }
+  ]
+}
