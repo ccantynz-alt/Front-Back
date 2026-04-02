@@ -33,16 +33,19 @@ app.route("/", wsApp);
 // Real-Time: SSE + REST endpoints
 app.route("/", sseApp);
 
-const port = Number(process.env.API_PORT) || 3001;
+// Only start Bun.serve when running directly (not in Cloudflare Workers)
+if (typeof Bun !== "undefined" && Bun.serve) {
+  const port = Number(process.env.API_PORT) || 3001;
 
-Bun.serve({
-  fetch: app.fetch,
-  port,
-  websocket,
-});
+  Bun.serve({
+    fetch: app.fetch,
+    port,
+    websocket,
+  });
 
-console.log(`API server running on http://localhost:${port}`);
-console.log(`  WebSocket: ws://localhost:${port}/api/ws`);
-console.log(`  SSE: http://localhost:${port}/api/realtime/events/:roomId`);
+  console.log(`API server running on http://localhost:${port}`);
+  console.log(`  WebSocket: ws://localhost:${port}/api/ws`);
+  console.log(`  SSE: http://localhost:${port}/api/realtime/events/:roomId`);
+}
 
 export default app;

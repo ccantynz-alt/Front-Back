@@ -7,7 +7,8 @@
     "start": "vinxi start",
     "check": "tsc --noEmit",
     "lint": "biome check .",
-    "format": "biome format . --write"
+    "format": "biome format . --write",
+    "deploy": "wrangler pages deploy .output/public"
   },
   "dependencies": {
     "@back-to-the-future/schemas": "workspace:*",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "wrangler": "4.80.0"
   }
 }

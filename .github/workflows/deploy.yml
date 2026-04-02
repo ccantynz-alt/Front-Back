@@ -1,0 +1,68 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-api:
+    name: Deploy API (Cloudflare Workers)
+    runs-on: ubuntu-latest
+    if: >-
+      contains(join(github.event.commits.*.modified, ','), 'apps/api/') ||
+      contains(join(github.event.commits.*.added, ','), 'apps/api/') ||
+      contains(join(github.event.commits.*.removed, ','), 'apps/api/') ||
+      contains(join(github.event.commits.*.modified, ','), 'packages/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages
+        run: bun run build --filter=@back-to-the-future/api...
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/api
+          command: deploy
+
+  deploy-web:
+    name: Deploy Web (Cloudflare Pages)
+    runs-on: ubuntu-latest
+    if: >-
+      contains(join(github.event.commits.*.modified, ','), 'apps/web/') ||
+      contains(join(github.event.commits.*.added, ','), 'apps/web/') ||
+      contains(join(github.event.commits.*.removed, ','), 'apps/web/') ||
+      contains(join(github.event.commits.*.modified, ','), 'packages/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages and web app
+        run: bun run build --filter=@back-to-the-future/web...
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/web
+          command: pages deploy .output/public --project-name=btf-web
