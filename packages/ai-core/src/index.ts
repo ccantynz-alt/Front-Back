@@ -15,6 +15,8 @@ export {
   generateComponent,
   analyzeCode,
   allTools,
+  setSearchPipeline,
+  getSearchPipeline,
   type SearchResult,
   type GenerateComponentResult,
   type CodeIssue,
@@ -30,3 +32,27 @@ export {
   type SiteBuilderConfig,
   type PageLayout,
 } from "./agents/site-builder";
+
+// ── Embeddings ───────────────────────────────────────────────────
+export {
+  generateEmbedding,
+  generateEmbeddings,
+  chunkAndEmbed,
+  type EmbeddingConfig,
+} from "./embeddings";
+
+// ── Text Chunker ─────────────────────────────────────────────────
+export { chunkText, type ChunkOptions } from "./chunker";
+
+// ── RAG Pipeline ─────────────────────────────────────────────────
+export {
+  VectorStore,
+  cosineSimilarity,
+  RAGPipeline,
+  type VectorDocument,
+  type SearchResult as RAGSearchResult,
+  type RAGDocument,
+  type RAGQueryOptions,
+  type RAGQueryResult,
+  type RAGPipelineConfig,
+} from "./rag";

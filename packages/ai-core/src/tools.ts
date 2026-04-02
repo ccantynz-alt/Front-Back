@@ -11,8 +11,11 @@ import {
 } from "@back-to-the-future/schemas";
 
 // ── searchContent ─────────────────────────────────────────────────
-// Searches indexed content using semantic or keyword matching.
-// Placeholder implementation -- will integrate with Qdrant/Turso vectors.
+// Searches indexed content using the RAG pipeline's vector store.
+// Falls back to empty results if no pipeline is configured.
+
+import { RAGPipeline } from "./rag/pipeline";
+import type { SearchResult as RAGSearchResult } from "./rag/vector-store";
 
 const SearchInputSchema = z.object({
   query: z.string().describe("The search query -- natural language or keywords"),
@@ -38,24 +41,68 @@ export interface SearchResult {
   url: string;
 }
 
+/**
+ * Shared RAG pipeline instance used by the searchContent tool.
+ * Call `setSearchPipeline()` to wire up a real pipeline.
+ */
+let searchPipeline: RAGPipeline | null = null;
+
+/** Configure the RAG pipeline used by the searchContent tool. */
+export function setSearchPipeline(pipeline: RAGPipeline): void {
+  searchPipeline = pipeline;
+}
+
+/** Get the current search pipeline (if configured). */
+export function getSearchPipeline(): RAGPipeline | null {
+  return searchPipeline;
+}
+
+function ragResultToSearchResult(result: RAGSearchResult): SearchResult {
+  const contentType =
+    typeof result.metadata["contentType"] === "string"
+      ? result.metadata["contentType"]
+      : "document";
+  return {
+    id: result.id,
+    title:
+      typeof result.metadata["title"] === "string"
+        ? result.metadata["title"]
+        : `Result: ${result.id}`,
+    snippet:
+      result.content.length > 200
+        ? `${result.content.slice(0, 200)}...`
+        : result.content,
+    score: result.score,
+    contentType,
+    url:
+      typeof result.metadata["url"] === "string"
+        ? result.metadata["url"]
+        : `/content/${result.id}`,
+  };
+}
+
 export const searchContent = tool({
   description:
-    "Search indexed content by query. Returns relevant content snippets for RAG or user queries. " +
+    "Search indexed content by query using semantic vector search (RAG pipeline). " +
+    "Returns relevant content snippets ranked by similarity. " +
     "Use this when the user asks about existing content, documentation, or data.",
   inputSchema: SearchInputSchema,
   execute: async (input): Promise<SearchResult[]> => {
-    // TODO: Replace with Qdrant vector search + Turso full-text search
-    // This placeholder returns mock results for development
-    return [
-      {
-        id: `result-${Date.now()}`,
-        title: `Search result for: ${input.query}`,
-        snippet: `Placeholder result matching "${input.query}" (type: ${input.contentType}). Connect to Qdrant for semantic search.`,
-        score: 0.95,
-        contentType: input.contentType === "all" ? "document" : input.contentType,
-        url: `/content/${input.query.toLowerCase().replace(/\s+/g, "-")}`,
-      },
-    ].slice(0, input.limit);
+    if (!searchPipeline) {
+      // No pipeline configured -- return empty results
+      return [];
+    }
+
+    const filter: Record<string, unknown> =
+      input.contentType !== "all" ? { contentType: input.contentType } : {};
+
+    const results = await searchPipeline.retrieve(
+      input.query,
+      input.limit,
+      Object.keys(filter).length > 0 ? filter : undefined,
+    );
+
+    return results.map(ragResultToSearchResult);
   },
 });
 
