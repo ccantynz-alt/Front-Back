@@ -7,12 +7,39 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
 import { wsApp, websocket, sseApp } from "./realtime";
+import {
+  compressMiddleware,
+  securityHeaders,
+  serverTimingMiddleware,
+  etagMiddleware,
+  cacheDynamic,
+  cachePrivate,
+  noCache,
+} from "./middleware";
 
 const app = new Hono().basePath("/api");
 
-// OpenTelemetry tracing on every request
+// ── Global middleware (order matters) ────────────────────────────
+
+// 1. Server-Timing — must be first to capture total request time
+app.use("*", serverTimingMiddleware());
+
+// 2. OpenTelemetry tracing on every request
 app.use("*", telemetryMiddleware);
 
+// 3. Security headers on every response
+app.use("*", securityHeaders());
+
+// 4. Compression — gzip for JSON/text responses
+app.use("*", compressMiddleware());
+
+// 5. ETag generation for conditional responses (saves bandwidth)
+app.use("*", etagMiddleware());
+
+// ── Routes ───────────────────────────────────────────────────────
+
+// Health check — cacheable, public, 60s TTL
+app.use("/health", cacheDynamic);
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
@@ -20,9 +47,12 @@ app.get("/health", (c) => {
   });
 });
 
-// Mount AI routes (raw Hono -- streaming works better outside tRPC)
+// AI routes — streaming, never cache
+app.use("/ai/*", noCache);
 app.route("/ai", aiRoutes);
 
+// tRPC — private cache for authenticated, dynamic for public reads
+app.use("/trpc/*", cachePrivate);
 app.use("/trpc/*", async (c) => {
   const response = await fetchRequestHandler({
     endpoint: "/api/trpc",
@@ -33,10 +63,12 @@ app.use("/trpc/*", async (c) => {
   return response;
 });
 
-// Real-Time: WebSocket upgrade at /api/ws
+// Real-Time: WebSocket upgrade at /api/ws — never cache
+app.use("/ws", noCache);
 app.route("/", wsApp);
 
-// Real-Time: SSE + REST endpoints
+// Real-Time: SSE + REST endpoints — never cache
+app.use("/realtime/*", noCache);
 app.route("/", sseApp);
 
 // Only start Bun.serve when running directly (not in Cloudflare Workers)

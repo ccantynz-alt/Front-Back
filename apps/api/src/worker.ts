@@ -16,6 +16,11 @@ export interface Env {
   // Environment variables
   ENVIRONMENT: string;
 
+  // Hyperdrive — connection pooling for Neon PostgreSQL
+  // When available, use HYPERDRIVE.connectionString as the Neon URL
+  // to benefit from edge connection pooling and reduced cold-connect latency.
+  HYPERDRIVE?: Hyperdrive;
+
   // D1 Database
   // DB: D1Database;
 
@@ -29,12 +34,28 @@ export interface Env {
   // COLLABORATION: DurableObjectNamespace;
 }
 
+/**
+ * Cloudflare Hyperdrive binding type.
+ * Provides a pooled connection string for PostgreSQL at the edge.
+ */
+interface Hyperdrive {
+  connectionString: string;
+}
+
 export default {
   async fetch(
     request: Request,
-    _env: Env,
+    env: Env,
     _ctx: ExecutionContext,
   ): Promise<Response> {
+    // When Hyperdrive is provisioned, expose its pooled connection string
+    // so downstream DB clients (Drizzle + Neon) can use it instead of
+    // establishing a fresh TCP connection on every request.
+    if (env.HYPERDRIVE) {
+      (globalThis as Record<string, unknown>).__HYPERDRIVE_URL =
+        env.HYPERDRIVE.connectionString;
+    }
+
     return app.fetch(request);
   },
 };

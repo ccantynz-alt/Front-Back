@@ -20,6 +20,15 @@ ENVIRONMENT = "production"
 # binding = "CACHE"
 # id = ""
 
+# ── Hyperdrive — connection pooling for Neon PostgreSQL ──────────
+# Eliminates cold-connect latency at the edge. Create with:
+#   wrangler hyperdrive create btf-db --connection-string="postgresql://user:pass@host/db?sslmode=require"
+# Then paste the returned ID below and uncomment.
+#
+# [[hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "<your-hyperdrive-config-id>"
+
 [env.staging]
 name = "btf-api-staging"
 
