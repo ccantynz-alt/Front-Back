@@ -8,6 +8,12 @@ import {
 } from "solid-js";
 import type { User } from "@back-to-the-future/schemas";
 import { trpc } from "../lib/trpc";
+import {
+  registerPasskey,
+  loginWithPasskey,
+  verifySession,
+  logoutSession,
+} from "../lib/webauthn";
 
 // ── Auth State Types ──────────────────────────────────────────────────
 
@@ -16,7 +22,7 @@ interface AuthState {
   isAuthenticated: Accessor<boolean>;
   isLoading: Accessor<boolean>;
   error: Accessor<string | null>;
-  login: (email: string, credential?: PublicKeyCredential) => Promise<void>;
+  login: (email?: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, displayName: string) => Promise<void>;
   checkSession: () => Promise<void>;
@@ -43,7 +49,7 @@ function setStorageItem(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch {
-    // Storage full or unavailable -- silently fail
+    // Storage full or unavailable
   }
 }
 
@@ -52,7 +58,7 @@ function removeStorageItem(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch {
-    // Storage unavailable -- silently fail
+    // Storage unavailable
   }
 }
 
@@ -70,7 +76,6 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
 
   const isAuthenticated: Accessor<boolean> = (): boolean => currentUser() !== null;
 
-  // Persist user cache when user changes
   createEffect((): void => {
     const user = currentUser();
     if (user) {
@@ -80,25 +85,15 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     }
   });
 
-  const login = async (email: string, _credential?: PublicKeyCredential): Promise<void> => {
+  const login = async (email?: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
-      // Step 1: Start the login flow via tRPC to get WebAuthn options
-      const { options, userId } = await trpc.auth.login.start.mutate({ email });
+      const { token } = await loginWithPasskey(email);
+      setStorageItem(SESSION_TOKEN_KEY, token);
 
-      // Step 2: For now, store the options/userId for the WebAuthn ceremony.
-      // Full passkey flow requires browser WebAuthn API integration which
-      // is handled by the login page component. This simplified path stores
-      // the challenge data for the finish step.
-      // The login page will call trpc.auth.login.finish.mutate() after the
-      // WebAuthn ceremony completes.
-
-      // NOTE: A full implementation would invoke navigator.credentials.get()
-      // here and then call loginFinish. For now we expose the options so the
-      // calling component can drive the ceremony.
-      void options;
-      void userId;
+      const user = await verifySession(token);
+      setCurrentUser(user as User);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";
       setError(message);
@@ -114,9 +109,7 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     try {
       const token = getStorageItem(SESSION_TOKEN_KEY);
       if (token) {
-        await trpc.auth.logout.mutate().catch(() => {
-          // Best-effort logout on server -- always clear local state
-        });
+        await logoutSession(token);
       }
     } finally {
       removeStorageItem(SESSION_TOKEN_KEY);
@@ -130,18 +123,11 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     setIsLoading(true);
     setError(null);
     try {
-      // Step 1: Start registration via tRPC to get WebAuthn options
-      const { options, userId } = await trpc.auth.register.start.mutate({
-        email,
-        displayName,
-      });
+      const { token } = await registerPasskey(email, displayName);
+      setStorageItem(SESSION_TOKEN_KEY, token);
 
-      // Step 2: Similar to login, the full WebAuthn ceremony
-      // (navigator.credentials.create()) is driven by the component.
-      // After the ceremony, trpc.auth.register.finish.mutate() is called
-      // with the credential response and the session token is stored.
-      void options;
-      void userId;
+      const user = await verifySession(token);
+      setCurrentUser(user as User);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Registration failed";
       setError(message);
@@ -161,12 +147,9 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     setIsLoading(true);
     setError(null);
     try {
-      // Use the tRPC auth.me query to validate the session and fetch user data.
-      // The tRPC client automatically sends the Authorization header from localStorage.
-      const user = await trpc.auth.me.query();
+      const user = await verifySession(token);
       setCurrentUser(user as User);
     } catch {
-      // Session invalid or network error -- clear stored credentials
       removeStorageItem(SESSION_TOKEN_KEY);
       removeStorageItem(USER_CACHE_KEY);
       setCurrentUser(null);
@@ -186,7 +169,6 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     checkSession,
   };
 
-  // Use type assertion for provider pattern -- SolidJS context requires this
   const Provider = AuthContext.Provider as (props: {
     value: AuthState;
     children: JSX.Element;

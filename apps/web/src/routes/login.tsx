@@ -25,6 +25,17 @@ export default function LoginPage(): ReturnType<typeof Stack> {
     }
   };
 
+  const handleDiscoverableLogin = async (): Promise<void> => {
+    setLocalError(null);
+    try {
+      // No email needed -- the browser will show all available passkeys
+      await auth.login();
+      navigate("/dashboard", { replace: true });
+    } catch {
+      // Error is set in auth store
+    }
+  };
+
   const displayError = (): string | null => localError() ?? auth.error();
 
   return (
@@ -63,6 +74,20 @@ export default function LoginPage(): ReturnType<typeof Stack> {
               class="auth-submit"
             >
               Sign in with Passkey
+            </Button>
+
+            <Text variant="caption" align="center" class="text-muted">
+              or
+            </Text>
+
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleDiscoverableLogin}
+              loading={auth.isLoading()}
+              class="auth-submit"
+            >
+              Use a saved Passkey
             </Button>
           </Stack>
 
