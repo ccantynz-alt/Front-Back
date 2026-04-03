@@ -1,148 +1,151 @@
 // ── WebSocket Client with Auto-Reconnect ────────────────────────────
 // SolidJS-native WebSocket client that provides:
-// - Typed message sending/receiving via shared Zod schemas
+// - Typed message sending/receiving matching the server protocol
 // - Exponential backoff reconnection with jitter
 // - Offline message queue that drains on reconnect
 // - Reactive signals for connection status, room state, and cursors
 // - Heartbeat ping to keep the connection alive
 
 import { createSignal, onCleanup, type Accessor } from "solid-js";
-import { z } from "zod";
 
-// ── Shared Schemas (mirrored from server types) ─────────────────────
-// We inline the Zod schemas here so the client bundle does not
-// depend on the API package at runtime. They are kept in sync
-// via the shared @back-to-the-future/schemas package in CI.
+// ── Client -> Server Message Types ──────────────────────────────────
 
-const ClientMessageSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("join_room"),
-    roomId: z.string().min(1).max(255),
-    userId: z.string().uuid(),
-    metadata: z
-      .object({
-        displayName: z.string().max(100).optional(),
-        color: z.string().max(20).optional(),
-      })
-      .optional(),
-  }),
-  z.object({
-    type: z.literal("leave_room"),
-    roomId: z.string().min(1).max(255),
-    userId: z.string().uuid(),
-  }),
-  z.object({
-    type: z.literal("broadcast"),
-    roomId: z.string().min(1).max(255),
-    userId: z.string().uuid(),
-    payload: z.record(z.unknown()),
-  }),
-  z.object({
-    type: z.literal("cursor_move"),
-    roomId: z.string().min(1).max(255),
-    userId: z.string().uuid(),
-    x: z.number(),
-    y: z.number(),
-    target: z.string().max(255).optional(),
-  }),
-  z.object({
-    type: z.literal("presence_update"),
-    roomId: z.string().min(1).max(255),
-    userId: z.string().uuid(),
-    status: z.enum(["active", "idle", "away"]),
-    data: z.record(z.unknown()).optional(),
-  }),
-  z.object({
-    type: z.literal("ping"),
-  }),
-]);
+interface JoinRoomMsg {
+  type: "join_room";
+  roomId: string;
+  userId: string;
+  metadata?: { displayName?: string; color?: string };
+}
 
-type ClientMessage = z.infer<typeof ClientMessageSchema>;
+interface LeaveRoomMsg {
+  type: "leave_room";
+  roomId: string;
+  userId: string;
+}
 
-const ServerMessageSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("room_joined"),
-    roomId: z.string(),
-    users: z.array(
-      z.object({
-        userId: z.string(),
-        metadata: z
-          .object({
-            displayName: z.string().optional(),
-            color: z.string().optional(),
-          })
-          .optional(),
-        presence: z
-          .object({
-            status: z.enum(["active", "idle", "away"]),
-            data: z.record(z.unknown()).optional(),
-          })
-          .optional(),
-      }),
-    ),
-  }),
-  z.object({ type: z.literal("room_left"), roomId: z.string() }),
-  z.object({
-    type: z.literal("broadcast"),
-    roomId: z.string(),
-    userId: z.string(),
-    payload: z.record(z.unknown()),
-    timestamp: z.string(),
-  }),
-  z.object({
-    type: z.literal("user_joined"),
-    roomId: z.string(),
-    userId: z.string(),
-    metadata: z
-      .object({
-        displayName: z.string().optional(),
-        color: z.string().optional(),
-      })
-      .optional(),
-  }),
-  z.object({
-    type: z.literal("user_left"),
-    roomId: z.string(),
-    userId: z.string(),
-  }),
-  z.object({
-    type: z.literal("cursor_update"),
-    roomId: z.string(),
-    userId: z.string(),
-    x: z.number(),
-    y: z.number(),
-    target: z.string().optional(),
-  }),
-  z.object({
-    type: z.literal("presence_sync"),
-    roomId: z.string(),
-    userId: z.string(),
-    status: z.enum(["active", "idle", "away"]),
-    data: z.record(z.unknown()).optional(),
-  }),
-  z.object({
-    type: z.literal("error"),
-    code: z.string(),
-    message: z.string(),
-  }),
-  z.object({
-    type: z.literal("pong"),
-    timestamp: z.number().optional(),
-  }),
-]);
+interface BroadcastMsg {
+  type: "broadcast";
+  roomId: string;
+  userId: string;
+  payload: Record<string, unknown>;
+}
 
-type ServerMessage = z.infer<typeof ServerMessageSchema>;
+interface CursorMoveMsg {
+  type: "cursor_move";
+  roomId: string;
+  userId: string;
+  x: number;
+  y: number;
+  target?: string;
+}
 
-// ── Connection Status ────────────────────────────────────────────────
+interface PresenceUpdateMsg {
+  type: "presence_update";
+  roomId: string;
+  userId: string;
+  status: "active" | "idle" | "away";
+  data?: Record<string, unknown>;
+}
 
-type ConnectionStatus =
+interface PingMsg {
+  type: "ping";
+}
+
+type ClientMessage =
+  | JoinRoomMsg
+  | LeaveRoomMsg
+  | BroadcastMsg
+  | CursorMoveMsg
+  | PresenceUpdateMsg
+  | PingMsg;
+
+// ── Server -> Client Message Types ──────────────────────────────────
+
+interface RoomJoinedMsg {
+  type: "room_joined";
+  roomId: string;
+  users: Array<{
+    userId: string;
+    metadata?: { displayName?: string; color?: string };
+    presence?: { status: "active" | "idle" | "away"; data?: Record<string, unknown> };
+  }>;
+}
+
+interface RoomLeftMsg {
+  type: "room_left";
+  roomId: string;
+}
+
+interface ServerBroadcastMsg {
+  type: "broadcast";
+  roomId: string;
+  userId: string;
+  payload: Record<string, unknown>;
+  timestamp: string;
+}
+
+interface UserJoinedMsg {
+  type: "user_joined";
+  roomId: string;
+  userId: string;
+  metadata?: { displayName?: string; color?: string };
+}
+
+interface UserLeftMsg {
+  type: "user_left";
+  roomId: string;
+  userId: string;
+}
+
+interface CursorUpdateMsg {
+  type: "cursor_update";
+  roomId: string;
+  userId: string;
+  x: number;
+  y: number;
+  target?: string;
+}
+
+interface PresenceSyncMsg {
+  type: "presence_sync";
+  roomId: string;
+  userId: string;
+  status: "active" | "idle" | "away";
+  data?: Record<string, unknown>;
+}
+
+interface ServerErrorMsg {
+  type: "error";
+  code: string;
+  message: string;
+}
+
+interface PongMsg {
+  type: "pong";
+  timestamp?: number;
+}
+
+type ServerMessage =
+  | RoomJoinedMsg
+  | RoomLeftMsg
+  | ServerBroadcastMsg
+  | UserJoinedMsg
+  | UserLeftMsg
+  | CursorUpdateMsg
+  | PresenceSyncMsg
+  | ServerErrorMsg
+  | PongMsg;
+
+// ── Exported Types ──────────────────────────────────────────────────
+
+export type { ClientMessage, ServerMessage };
+
+export type ConnectionStatus =
   | "disconnected"
   | "connecting"
   | "connected"
   | "reconnecting"
   | "error";
-
-// ── Configuration ────────────────────────────────────────────────────
 
 export interface WSClientOptions {
   /** WebSocket URL (e.g. "ws://localhost:3001/api/ws"). */
@@ -154,7 +157,7 @@ export interface WSClientOptions {
   /** Maximum reconnect delay in ms (default: 30000). */
   maxReconnectDelay?: number | undefined;
 
-  /** Maximum number of reconnect attempts before giving up. 0 = unlimited (default: 0). */
+  /** Maximum reconnect attempts before giving up. 0 = unlimited (default: 0). */
   maxReconnectAttempts?: number | undefined;
 
   /** Heartbeat ping interval in ms (default: 15000). */
@@ -164,9 +167,7 @@ export interface WSClientOptions {
   maxQueueSize?: number | undefined;
 }
 
-// ── Room User / Cursor Types ─────────────────────────────────────────
-
-interface RoomUserInfo {
+export interface RoomUserInfo {
   userId: string;
   metadata?:
     | { displayName?: string | undefined; color?: string | undefined }
@@ -179,7 +180,7 @@ interface RoomUserInfo {
     | undefined;
 }
 
-interface CursorPosition {
+export interface CursorPosition {
   userId: string;
   x: number;
   y: number;
@@ -187,12 +188,8 @@ interface CursorPosition {
   timestamp: number;
 }
 
-// ── Message Handler Types ────────────────────────────────────────────
-
 type MessageHandler = (message: ServerMessage) => void;
 type ErrorHandler = (code: string, message: string) => void;
-
-// ── Return Type ──────────────────────────────────────────────────────
 
 export interface WSClient {
   /** Reactive connection status signal. */
@@ -238,14 +235,39 @@ export interface WSClient {
     data?: Record<string, unknown>,
   ) => void;
 
-  /** Register a handler for all incoming server messages. Returns an unsubscribe function. */
+  /** Register a handler for all incoming server messages. Returns unsubscribe. */
   onMessage: (handler: MessageHandler) => () => void;
 
-  /** Register a handler specifically for error messages. Returns an unsubscribe function. */
+  /** Register a handler for error messages. Returns unsubscribe. */
   onError: (handler: ErrorHandler) => () => void;
 }
 
-// ── Factory ──────────────────────────────────────────────────────────
+// ── Validation ──────────────────────────────────────────────────────
+
+const VALID_SERVER_MSG_TYPES = new Set([
+  "room_joined",
+  "room_left",
+  "broadcast",
+  "user_joined",
+  "user_left",
+  "cursor_update",
+  "presence_sync",
+  "error",
+  "pong",
+]);
+
+/**
+ * Lightweight runtime check that the parsed JSON has a recognized
+ * `type` discriminator. Full Zod validation lives on the server;
+ * the client trusts the server but guards against malformed frames.
+ */
+function isServerMessage(value: unknown): value is ServerMessage {
+  if (typeof value !== "object" || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return typeof obj["type"] === "string" && VALID_SERVER_MSG_TYPES.has(obj["type"]);
+}
+
+// ── Factory ─────────────────────────────────────────────────────────
 
 /**
  * Creates a reactive WebSocket client for real-time communication.
@@ -280,7 +302,7 @@ export function createWSClient(options: WSClientOptions): WSClient {
   const [roomUsers, setRoomUsers] = createSignal<RoomUserInfo[]>([]);
   const [cursors, setCursors] = createSignal<CursorPosition[]>([]);
   const [currentRoom, setCurrentRoom] = createSignal<string | null>(null);
-  const [reconnectAttempts, setReconnectAttempts] = createSignal(0);
+  const [reconnectAttemptsSignal, setReconnectAttempts] = createSignal(0);
   const [latency, setLatency] = createSignal<number | null>(null);
 
   // ── Internal State ──────────────────────────────────────────────
@@ -345,7 +367,7 @@ export function createWSClient(options: WSClientOptions): WSClient {
 
   // ── Low-Level Send ────────────────────────────────────────────────
 
-  function rawSend(data: Record<string, unknown>): void {
+  function rawSend(data: ClientMessage): void {
     if (ws?.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(data));
     }
@@ -353,19 +375,10 @@ export function createWSClient(options: WSClientOptions): WSClient {
 
   /**
    * Send a typed client message. If the socket is not open the message
-   * is queued (up to `maxQueueSize`). Validates with Zod before sending.
+   * is queued (up to `maxQueueSize`).
    */
   function send(message: ClientMessage): void {
-    const validation = ClientMessageSchema.safeParse(message);
-    if (!validation.success) {
-      console.error(
-        "[ws-client] Attempted to send invalid message:",
-        validation.error.issues,
-      );
-      return;
-    }
-
-    const payload = JSON.stringify(validation.data);
+    const payload = JSON.stringify(message);
 
     if (ws?.readyState === WebSocket.OPEN) {
       ws.send(payload);
@@ -388,7 +401,7 @@ export function createWSClient(options: WSClientOptions): WSClient {
         try {
           ws.send(msg);
         } catch {
-          // If send fails, stop draining -- connection may have dropped again.
+          // If send fails, stop draining -- connection may have dropped.
           messageQueue.unshift(msg);
           break;
         }
@@ -409,19 +422,18 @@ export function createWSClient(options: WSClientOptions): WSClient {
       return; // Ignore malformed frames
     }
 
-    const result = ServerMessageSchema.safeParse(parsed);
-    if (!result.success) {
-      return; // Ignore unknown/invalid server messages
+    if (!isServerMessage(parsed)) {
+      return; // Ignore unrecognized messages
     }
 
-    const message = result.data;
+    const message: ServerMessage = parsed;
 
-    // Dispatch to specific handlers
+    // Dispatch to update reactive state
     switch (message.type) {
       case "room_joined": {
         setCurrentRoom(message.roomId);
         setRoomUsers(
-          message.users.map((u) => ({
+          message.users.map((u: RoomJoinedMsg["users"][number]) => ({
             userId: u.userId,
             metadata: u.metadata,
             presence: u.presence,
@@ -497,7 +509,7 @@ export function createWSClient(options: WSClientOptions): WSClient {
         break;
       }
       case "broadcast": {
-        // No special internal handling -- forwarded to message handlers below
+        // No internal state update -- forwarded to message handlers below.
         break;
       }
     }
@@ -513,7 +525,7 @@ export function createWSClient(options: WSClientOptions): WSClient {
   function scheduleReconnect(): void {
     if (intentionalClose) return;
 
-    const attempts = reconnectAttempts();
+    const attempts = reconnectAttemptsSignal();
     if (maxReconnectAttempts > 0 && attempts >= maxReconnectAttempts) {
       setStatus("error");
       return;
@@ -579,14 +591,15 @@ export function createWSClient(options: WSClientOptions): WSClient {
 
       // Automatically rejoin room if we were in one before disconnect
       if (pendingJoin) {
-        send({
+        const joinMsg: JoinRoomMsg = {
           type: "join_room",
           roomId: pendingJoin.roomId,
           userId: pendingJoin.userId,
-          ...(pendingJoin.metadata !== undefined
-            ? { metadata: pendingJoin.metadata }
-            : {}),
-        });
+        };
+        if (pendingJoin.metadata !== undefined) {
+          joinMsg.metadata = pendingJoin.metadata;
+        }
+        send(joinMsg);
       }
     };
 
@@ -656,12 +669,11 @@ export function createWSClient(options: WSClientOptions): WSClient {
         ? { roomId, userId, metadata }
         : { roomId, userId };
 
-    send({
-      type: "join_room",
-      roomId,
-      userId,
-      ...(metadata !== undefined ? { metadata } : {}),
-    });
+    const joinMsg: JoinRoomMsg = { type: "join_room", roomId, userId };
+    if (metadata !== undefined) {
+      joinMsg.metadata = metadata;
+    }
+    send(joinMsg);
   }
 
   function leaveRoom(userId: string): void {
@@ -675,7 +687,7 @@ export function createWSClient(options: WSClientOptions): WSClient {
     setCursors([]);
   }
 
-  function broadcast(
+  function broadcastFn(
     userId: string,
     payload: Record<string, unknown>,
   ): void {
@@ -744,13 +756,13 @@ export function createWSClient(options: WSClientOptions): WSClient {
     roomUsers,
     cursors,
     currentRoom,
-    reconnectAttempts,
+    reconnectAttempts: reconnectAttemptsSignal,
     latency,
     connect,
     disconnect,
     joinRoom,
     leaveRoom,
-    broadcast,
+    broadcast: broadcastFn,
     sendCursor,
     sendPresence,
     onMessage,
