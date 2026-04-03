@@ -95,11 +95,18 @@ export function createGDPRHandler(): Hono {
   });
 
   // POST /consent — record user consent with timestamp
-  app.post("/consent", zValidator("json", consentSchema), (c) => {
-    const consent = c.req.valid("json");
+  app.post("/consent", async (c) => {
+    const body = await c.req.json();
+    const parsed = consentSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: "Invalid consent data", details: parsed.error.flatten() }, 400);
+    }
+    const consent = parsed.data;
 
     const record = {
-      ...consent,
+      userId: consent.userId,
+      consentType: consent.consentType,
+      granted: consent.granted,
       timestamp: new Date().toISOString(),
     };
     consentRecords.push(record);

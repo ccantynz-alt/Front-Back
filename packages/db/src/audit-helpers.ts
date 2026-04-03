@@ -83,7 +83,7 @@ export function verifyChain(
   entries: AuditEntry[],
 ): { valid: boolean; brokenAt?: number } {
   for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i];
+    const entry = entries[i] as AuditEntry;
 
     // Verify the entry's own hash
     const expectedHash = computeEntryHash(entry);
@@ -93,7 +93,7 @@ export function verifyChain(
 
     // Verify chain linkage (skip first entry)
     if (i > 0) {
-      const previousEntry = entries[i - 1];
+      const previousEntry = entries[i - 1] as AuditEntry;
       if (entry.previousHash !== previousEntry.entryHash) {
         return { valid: false, brokenAt: i };
       }
