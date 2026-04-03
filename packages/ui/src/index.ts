@@ -1,17 +1,88 @@
-export { Button } from "./components/Button";
-export { Input } from "./components/Input";
-export { Card } from "./components/Card";
-export { Stack } from "./components/Stack";
-export { Text } from "./components/Text";
-export { Modal } from "./components/Modal";
-export { Badge } from "./components/Badge";
-export { Alert } from "./components/Alert";
-export { Avatar } from "./components/Avatar";
-export { Tabs } from "./components/Tabs";
-export { Select } from "./components/Select";
-export { Textarea } from "./components/Textarea";
-export { Spinner } from "./components/Spinner";
-export { Tooltip } from "./components/Tooltip";
-export { Separator } from "./components/Separator";
+// ── Components ───────────────────────────────────────────────────────
+export {
+  Button,
+  ButtonPropsSchema,
+  Input,
+  InputPropsSchema,
+  Textarea,
+  TextareaPropsSchema,
+  Card,
+  CardPropsSchema,
+  Modal,
+  ModalPropsSchema,
+  Stack,
+  StackPropsSchema,
+  Text,
+  TextPropsSchema,
+  Badge,
+  BadgePropsSchema,
+  Avatar,
+  AvatarPropsSchema,
+  Spinner,
+  SpinnerPropsSchema,
+  Alert,
+  AlertPropsSchema,
+  Tabs,
+  TabsPropsSchema,
+  TabItemSchema,
+  Select,
+  SelectPropsSchema,
+  SelectOptionSchema,
+  Toggle,
+  TogglePropsSchema,
+  Tooltip,
+  TooltipPropsSchema,
+  Separator,
+  SeparatorPropsSchema,
+} from "./components";
+
+export type {
+  ButtonProps,
+  ButtonSchemaProps,
+  InputProps,
+  InputSchemaProps,
+  TextareaProps,
+  TextareaSchemaProps,
+  CardProps,
+  CardSchemaProps,
+  ModalProps,
+  ModalSchemaProps,
+  StackProps,
+  StackSchemaProps,
+  TextProps,
+  TextSchemaProps,
+  BadgeProps,
+  BadgeSchemaProps,
+  AvatarProps,
+  AvatarSchemaProps,
+  SpinnerProps,
+  SpinnerSchemaProps,
+  AlertProps,
+  AlertSchemaProps,
+  TabsProps,
+  TabItem,
+  TabsSchemaProps,
+  SelectProps,
+  SelectOption,
+  SelectSchemaProps,
+  ToggleProps,
+  ToggleSchemaProps,
+  TooltipProps,
+  TooltipSchemaProps,
+  SeparatorProps,
+  SeparatorSchemaProps,
+} from "./components";
+
+// ── Schema Registry (AI Composability) ───────────────────────────────
+export {
+  ComponentRegistry,
+  ComponentNameSchema,
+  getComponentSchema,
+  validateComponentProps,
+} from "./schemas";
+
+export type { ComponentName } from "./schemas";
+
+// ── Renderer ─────────────────────────────────────────────────────────
 export { ComponentRenderer, PageRenderer } from "./renderer";
 export type { ComponentRendererProps, PageRendererProps } from "./renderer";

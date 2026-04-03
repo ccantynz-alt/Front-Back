@@ -450,7 +450,8 @@ describe("ComponentCatalog", () => {
     expect(names).toContain("Spinner");
     expect(names).toContain("Tooltip");
     expect(names).toContain("Separator");
-    expect(names.length).toBe(15);
+    expect(names).toContain("Toggle");
+    expect(names.length).toBe(16);
   });
 
   test("each catalog entry is a Zod schema that parses correctly", () => {
@@ -470,6 +471,7 @@ describe("ComponentCatalog", () => {
       Spinner: { component: "Spinner", props: {} },
       Tooltip: { component: "Tooltip", props: { content: "x" } },
       Separator: { component: "Separator", props: {} },
+      Toggle: { component: "Toggle", props: {} },
     };
     for (const [name, schema] of Object.entries(ComponentCatalog)) {
       const result = schema.safeParse(samples[name]);

@@ -209,6 +209,18 @@ export const SeparatorSchema = z.object({
   }),
 });
 
+export const ToggleSchema = z.object({
+  component: z.literal("Toggle"),
+  props: z.object({
+    checked: z.boolean().default(false),
+    disabled: z.boolean().default(false),
+    label: z.string().optional(),
+    description: z.string().optional(),
+    size: z.enum(["sm", "md", "lg"]).default("md"),
+    name: z.string().optional(),
+  }),
+});
+
 // ── Component Registry (Union of all components) ───────────────────
 // This is the master schema. AI agents use this to validate any component tree.
 
@@ -228,6 +240,7 @@ export const ComponentSchema: z.ZodType = z.discriminatedUnion("component", [
   SpinnerSchema,
   TooltipSchema,
   SeparatorSchema,
+  ToggleSchema,
 ]);
 
 export type Button = z.infer<typeof ButtonSchema>;
@@ -245,6 +258,7 @@ export type Textarea = z.infer<typeof TextareaSchema>;
 export type Spinner = z.infer<typeof SpinnerSchema>;
 export type Tooltip = z.infer<typeof TooltipSchema>;
 export type Separator = z.infer<typeof SeparatorSchema>;
+export type Toggle = z.infer<typeof ToggleSchema>;
 export type Component = z.infer<typeof ComponentSchema>;
 
 // ── Component Catalog (for AI agent discovery) ─────────────────────
@@ -265,6 +279,7 @@ export const ComponentCatalog = {
   Spinner: SpinnerSchema,
   Tooltip: TooltipSchema,
   Separator: SeparatorSchema,
+  Toggle: ToggleSchema,
 } as const;
 
 export type ComponentName = keyof typeof ComponentCatalog;

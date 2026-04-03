@@ -15,6 +15,7 @@ import { Textarea } from "../components/Textarea";
 import { Spinner } from "../components/Spinner";
 import { Tooltip } from "../components/Tooltip";
 import { Separator } from "../components/Separator";
+import { Toggle } from "../components/Toggle";
 
 export interface ComponentRendererProps {
   config: ComponentConfig;
@@ -22,7 +23,6 @@ export interface ComponentRendererProps {
 
 /**
  * Renders an array of child component configs recursively.
- * Each child is rendered via ComponentRenderer.
  */
 function renderChildren(children: ComponentConfig[] | undefined): JSX.Element {
   return (
@@ -38,7 +38,6 @@ function renderChildren(children: ComponentConfig[] | undefined): JSX.Element {
  * Takes a JSON component config (validated against ComponentSchema)
  * and renders the corresponding SolidJS component from the UI library.
  * Handles recursive children for container components (Card, Stack, Modal, Alert, Tooltip).
- * Unknown component types render a visible warning instead of crashing.
  */
 export function ComponentRenderer(props: ComponentRendererProps): JSX.Element {
   return (
@@ -46,15 +45,7 @@ export function ComponentRenderer(props: ComponentRendererProps): JSX.Element {
       fallback={
         <div
           role="alert"
-          class="renderer-warning"
-          style={{
-            padding: "8px",
-            border: "1px solid #f59e0b",
-            "background-color": "#fffbeb",
-            color: "#92400e",
-            "border-radius": "4px",
-            "font-size": "14px",
-          }}
+          class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-800"
         >
           Unknown component type: {(props.config as Record<string, unknown>).component as string}
         </div>
@@ -69,9 +60,8 @@ export function ComponentRenderer(props: ComponentRendererProps): JSX.Element {
               size={c.props.size}
               disabled={c.props.disabled}
               loading={c.props.loading}
-            >
-              {c.props.label}
-            </Button>
+              label={c.props.label}
+            />
           );
         }}
       </Match>
@@ -158,9 +148,7 @@ export function ComponentRenderer(props: ComponentRendererProps): JSX.Element {
         {(config) => {
           const c = config();
           return (
-            <Badge variant={c.props.variant} size={c.props.size}>
-              {c.props.label}
-            </Badge>
+            <Badge variant={c.props.variant} size={c.props.size} label={c.props.label} />
           );
         }}
       </Match>
@@ -274,6 +262,22 @@ export function ComponentRenderer(props: ComponentRendererProps): JSX.Element {
             <Tooltip content={c.props.content} position={c.props.position}>
               {renderChildren(c.children)}
             </Tooltip>
+          );
+        }}
+      </Match>
+
+      <Match when={props.config.component === "Toggle" && props.config}>
+        {(config) => {
+          const c = config();
+          return (
+            <Toggle
+              checked={c.props.checked}
+              disabled={c.props.disabled}
+              label={c.props.label}
+              description={c.props.description}
+              size={c.props.size}
+              name={c.props.name}
+            />
           );
         }}
       </Match>
