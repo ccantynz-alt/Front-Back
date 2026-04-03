@@ -8,6 +8,13 @@
       "when": 1775169042947,
       "tag": "0000_careful_human_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1775255400000,
+      "tag": "0001_add_billing_tables",
+      "breakpoints": true
     }
   ]
 }
