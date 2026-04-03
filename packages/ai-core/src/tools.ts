@@ -177,6 +177,75 @@ function getComponentDefaults(
           open: false,
         },
       };
+    case "Badge":
+      return {
+        component: "Badge",
+        props: {
+          label: description || "Badge",
+          variant: "default",
+        },
+      };
+    case "Alert":
+      return {
+        component: "Alert",
+        props: {
+          message: description || "Alert message",
+          variant: "info",
+        },
+      };
+    case "Avatar":
+      return {
+        component: "Avatar",
+        props: {
+          alt: description || "Avatar",
+          size: "md",
+        },
+      };
+    case "Tabs":
+      return {
+        component: "Tabs",
+        props: {
+          defaultValue: "tab1",
+          tabs: [{ label: description || "Tab 1", value: "tab1" }],
+        },
+      };
+    case "Select":
+      return {
+        component: "Select",
+        props: {
+          placeholder: description || "Select an option",
+          options: [],
+        },
+      };
+    case "Textarea":
+      return {
+        component: "Textarea",
+        props: {
+          placeholder: description || "Enter text...",
+          rows: 4,
+        },
+      };
+    case "Spinner":
+      return {
+        component: "Spinner",
+        props: {
+          size: "md",
+        },
+      };
+    case "Tooltip":
+      return {
+        component: "Tooltip",
+        props: {
+          content: description || "Tooltip text",
+        },
+      };
+    case "Separator":
+      return {
+        component: "Separator",
+        props: {
+          orientation: "horizontal",
+        },
+      };
     default: {
       const _exhaustive: never = componentName;
       throw new Error(`Unknown component: ${String(_exhaustive)}`);

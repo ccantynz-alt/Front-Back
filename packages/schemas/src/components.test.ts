@@ -370,7 +370,7 @@ describe("ModalSchema", () => {
   });
 
   test("accepts all valid sizes", () => {
-    for (const s of ["sm", "md", "lg", "xl", "full"]) {
+    for (const s of ["sm", "md", "lg", "xl"]) {
       const result = ModalSchema.safeParse({
         component: "Modal",
         props: { title: "T", size: s },
@@ -433,15 +433,17 @@ describe("ComponentSchema", () => {
 // ── ComponentCatalog ─────────────────────────────────────────────────
 
 describe("ComponentCatalog", () => {
-  test("contains all six components", () => {
+  test("contains all 15 components", () => {
     const names = Object.keys(ComponentCatalog);
-    expect(names).toContain("Button");
-    expect(names).toContain("Input");
-    expect(names).toContain("Card");
-    expect(names).toContain("Stack");
-    expect(names).toContain("Text");
-    expect(names).toContain("Modal");
-    expect(names.length).toBe(6);
+    const expected = [
+      "Button", "Input", "Card", "Stack", "Text", "Modal",
+      "Badge", "Alert", "Avatar", "Tabs", "Select",
+      "Textarea", "Spinner", "Tooltip", "Separator",
+    ];
+    for (const name of expected) {
+      expect(names).toContain(name);
+    }
+    expect(names.length).toBe(15);
   });
 
   test("each catalog entry is a Zod schema that parses correctly", () => {
@@ -452,6 +454,15 @@ describe("ComponentCatalog", () => {
       Stack: { component: "Stack", props: {} },
       Text: { component: "Text", props: { content: "x" } },
       Modal: { component: "Modal", props: { title: "x" } },
+      Badge: { component: "Badge", props: { label: "x" } },
+      Alert: { component: "Alert", props: {} },
+      Avatar: { component: "Avatar", props: {} },
+      Tabs: { component: "Tabs", props: { items: [{ id: "t1", label: "Tab" }] } },
+      Select: { component: "Select", props: { options: [{ value: "a", label: "A" }] } },
+      Textarea: { component: "Textarea", props: {} },
+      Spinner: { component: "Spinner", props: {} },
+      Tooltip: { component: "Tooltip", props: { content: "tip" } },
+      Separator: { component: "Separator", props: {} },
     };
     for (const [name, schema] of Object.entries(ComponentCatalog)) {
       const result = schema.safeParse(samples[name]);

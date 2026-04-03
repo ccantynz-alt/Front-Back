@@ -104,7 +104,7 @@ describe("auditLogs table schema", () => {
   });
 
   test("required fields are not nullable", () => {
-    const columns = getTableColumns(auditLogs);
+    const columns = getTableColumns(auditLogs) as Record<string, { notNull: boolean }>;
     const requiredFields = [
       "id",
       "timestamp",
@@ -116,12 +116,12 @@ describe("auditLogs table schema", () => {
       "entryHash",
     ];
     for (const field of requiredFields) {
-      expect(columns[field].notNull).toBe(true);
+      expect(columns[field]?.notNull).toBe(true);
     }
   });
 
   test("optional fields are nullable", () => {
-    const columns = getTableColumns(auditLogs);
+    const columns = getTableColumns(auditLogs) as Record<string, { notNull: boolean }>;
     const optionalFields = [
       "actorIp",
       "actorDevice",
@@ -131,7 +131,7 @@ describe("auditLogs table schema", () => {
       "signature",
     ];
     for (const field of optionalFields) {
-      expect(columns[field].notNull).toBe(false);
+      expect(columns[field]?.notNull).toBe(false);
     }
   });
 
