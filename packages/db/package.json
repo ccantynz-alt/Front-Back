@@ -6,7 +6,9 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    "./schema": "./src/schema.ts",
+    "./neon-schema": "./src/neon-schema.ts",
+    "./neon-client": "./src/neon-client.ts"
   },
   "scripts": {
     "check": "tsc --noEmit",
@@ -19,6 +21,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.14",
+    "@neondatabase/serverless": "^0.10.0",
     "drizzle-orm": "^0.38"
   },
   "devDependencies": {

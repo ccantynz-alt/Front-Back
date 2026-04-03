@@ -1,12 +1,14 @@
 import type { Context } from "hono";
 import { db } from "@cronix/db";
-import type { createClient } from "@cronix/db";
+import { getNeonDb } from "@cronix/db";
+import type { NeonDatabase } from "@cronix/db";
 import { getUserIdFromHeader } from "../auth/middleware";
 
 type Database = typeof db;
 
 export interface TRPCContext {
   db: Database;
+  neonDb: NeonDatabase;
   userId: string | null;
   sessionToken: string | null;
 }
@@ -20,6 +22,7 @@ export async function createContext(c: Context): Promise<TRPCContext> {
 
   return {
     db,
+    neonDb: getNeonDb(),
     userId,
     sessionToken,
   };
