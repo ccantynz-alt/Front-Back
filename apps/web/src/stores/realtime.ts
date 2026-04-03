@@ -7,28 +7,46 @@ import {
   useContext,
 } from "solid-js";
 
-// ── Real-Time Types ───────────────────────────────────────────────────
+// ── Real-Time Types (matching server protocol) ───────────────────────
 
 type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
 
 interface RoomUser {
-  id: string;
-  displayName: string;
-  color: string;
+  userId: string;
+  metadata?: {
+    displayName?: string;
+    color?: string;
+  };
+  presence?: {
+    status: "active" | "idle" | "away";
+    data?: Record<string, unknown>;
+  };
 }
 
 interface CursorPosition {
   userId: string;
   x: number;
   y: number;
+  target?: string;
   timestamp: number;
 }
 
-interface RealtimeMessage {
+// Server → Client message types
+interface ServerMessage {
   type: string;
-  payload: unknown;
   roomId?: string;
-  senderId?: string;
+  userId?: string;
+  users?: RoomUser[];
+  metadata?: Record<string, unknown>;
+  payload?: Record<string, unknown>;
+  x?: number;
+  y?: number;
+  target?: string;
+  status?: string;
+  data?: Record<string, unknown>;
+  code?: string;
+  message?: string;
+  timestamp?: string;
 }
 
 interface RealtimeState {
@@ -38,10 +56,11 @@ interface RealtimeState {
   currentRoom: Accessor<string | null>;
   connect: (url: string) => void;
   disconnect: () => void;
-  joinRoom: (roomId: string) => void;
-  leaveRoom: () => void;
-  sendMessage: (message: RealtimeMessage) => void;
-  onMessage: (handler: (message: RealtimeMessage) => void) => () => void;
+  joinRoom: (roomId: string, userId: string, metadata?: { displayName?: string; color?: string }) => void;
+  leaveRoom: (userId: string) => void;
+  sendCursorMove: (roomId: string, userId: string, x: number, y: number, target?: string) => void;
+  updatePresence: (roomId: string, userId: string, status: "active" | "idle" | "away") => void;
+  onMessage: (handler: (message: ServerMessage) => void) => () => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────
@@ -49,6 +68,7 @@ interface RealtimeState {
 const RECONNECT_DELAY_MS = 1000;
 const MAX_RECONNECT_DELAY_MS = 30000;
 const CURSOR_STALE_MS = 5000;
+const PING_INTERVAL_MS = 15000;
 
 // ── Realtime Context ──────────────────────────────────────────────────
 
@@ -64,10 +84,10 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectDelay = RECONNECT_DELAY_MS;
   let wsUrl: string | null = null;
-  const messageHandlers = new Set<(message: RealtimeMessage) => void>();
-
-  // Clean up stale cursors periodically
   let cursorCleanupInterval: ReturnType<typeof setInterval> | null = null;
+  let pingInterval: ReturnType<typeof setInterval> | null = null;
+  let lastJoinParams: { roomId: string; userId: string; metadata?: { displayName?: string; color?: string } } | null = null;
+  const messageHandlers = new Set<(message: ServerMessage) => void>();
 
   function startCursorCleanup(): void {
     if (cursorCleanupInterval) return;
@@ -84,33 +104,81 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
     }
   }
 
+  function startPing(): void {
+    if (pingInterval) return;
+    pingInterval = setInterval(() => {
+      sendRaw({ type: "ping" });
+    }, PING_INTERVAL_MS);
+  }
+
+  function stopPing(): void {
+    if (pingInterval) {
+      clearInterval(pingInterval);
+      pingInterval = null;
+    }
+  }
+
+  function sendRaw(message: Record<string, unknown>): void {
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(message));
+    }
+  }
+
   function handleMessage(event: MessageEvent): void {
     try {
-      const message = JSON.parse(event.data as string) as RealtimeMessage;
+      const message = JSON.parse(event.data as string) as ServerMessage;
 
-      // Handle built-in message types
+      // Handle server → client message types (matching server protocol)
       switch (message.type) {
-        case "room:users": {
-          setRoomUsers(message.payload as RoomUser[]);
+        case "room_joined": {
+          setRoomUsers(message.users ?? []);
           break;
         }
-        case "room:user_joined": {
-          const user = message.payload as RoomUser;
-          setRoomUsers((prev) => [...prev.filter((u) => u.id !== user.id), user]);
+        case "user_joined": {
+          const newUser: RoomUser = {
+            userId: message.userId ?? "",
+            metadata: message.metadata as RoomUser["metadata"],
+          };
+          setRoomUsers((prev) => [...prev.filter((u) => u.userId !== newUser.userId), newUser]);
           break;
         }
-        case "room:user_left": {
-          const userId = (message.payload as { id: string }).id;
-          setRoomUsers((prev) => prev.filter((u) => u.id !== userId));
-          setCursors((prev) => prev.filter((c) => c.userId !== userId));
+        case "user_left": {
+          const leftUserId = message.userId ?? "";
+          setRoomUsers((prev) => prev.filter((u) => u.userId !== leftUserId));
+          setCursors((prev) => prev.filter((c) => c.userId !== leftUserId));
           break;
         }
-        case "cursor:move": {
-          const cursor = message.payload as CursorPosition;
+        case "cursor_update": {
+          const cursor: CursorPosition = {
+            userId: message.userId ?? "",
+            x: message.x ?? 0,
+            y: message.y ?? 0,
+            target: message.target,
+            timestamp: Date.now(),
+          };
           setCursors((prev) => [
             ...prev.filter((c) => c.userId !== cursor.userId),
-            { ...cursor, timestamp: Date.now() },
+            cursor,
           ]);
+          break;
+        }
+        case "presence_sync": {
+          const userId = message.userId ?? "";
+          setRoomUsers((prev) =>
+            prev.map((u) =>
+              u.userId === userId
+                ? { ...u, presence: { status: message.status as "active" | "idle" | "away", data: message.data } }
+                : u,
+            ),
+          );
+          break;
+        }
+        case "error": {
+          console.warn(`[Realtime] Server error: ${message.code} - ${message.message}`);
+          break;
+        }
+        case "pong": {
+          // Heartbeat acknowledged
           break;
         }
       }
@@ -147,11 +215,16 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
         setConnectionStatus("connected");
         reconnectDelay = RECONNECT_DELAY_MS;
         startCursorCleanup();
+        startPing();
 
         // Rejoin room if we were in one
-        const room = currentRoom();
-        if (room) {
-          sendMessage({ type: "room:join", payload: { roomId: room } });
+        if (lastJoinParams) {
+          sendRaw({
+            type: "join_room",
+            roomId: lastJoinParams.roomId,
+            userId: lastJoinParams.userId,
+            metadata: lastJoinParams.metadata,
+          });
         }
       };
 
@@ -160,6 +233,7 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
       ws.onclose = (): void => {
         setConnectionStatus("disconnected");
         ws = null;
+        stopPing();
         scheduleReconnect();
       };
 
@@ -180,7 +254,7 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
     wsUrl = null;
 
     if (ws) {
-      ws.onclose = null; // Prevent reconnect on intentional close
+      ws.onclose = null;
       ws.close();
       ws = null;
     }
@@ -190,43 +264,88 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
     setCursors([]);
     setCurrentRoom(null);
     stopCursorCleanup();
+    stopPing();
   }
 
-  function joinRoom(roomId: string): void {
+  function joinRoom(
+    roomId: string,
+    userId: string,
+    metadata?: { displayName?: string; color?: string },
+  ): void {
     const prevRoom = currentRoom();
-    if (prevRoom) {
-      sendMessage({ type: "room:leave", payload: { roomId: prevRoom } });
+    if (prevRoom && lastJoinParams) {
+      sendRaw({
+        type: "leave_room",
+        roomId: prevRoom,
+        userId: lastJoinParams.userId,
+      });
     }
+
+    lastJoinParams = { roomId, userId, metadata };
     setCurrentRoom(roomId);
     setRoomUsers([]);
     setCursors([]);
-    sendMessage({ type: "room:join", payload: { roomId } });
+
+    sendRaw({
+      type: "join_room",
+      roomId,
+      userId,
+      metadata,
+    });
   }
 
-  function leaveRoom(): void {
+  function leaveRoom(userId: string): void {
     const room = currentRoom();
     if (room) {
-      sendMessage({ type: "room:leave", payload: { roomId: room } });
+      sendRaw({
+        type: "leave_room",
+        roomId: room,
+        userId,
+      });
     }
+    lastJoinParams = null;
     setCurrentRoom(null);
     setRoomUsers([]);
     setCursors([]);
   }
 
-  function sendMessage(message: RealtimeMessage): void {
-    if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(message));
-    }
+  function sendCursorMove(
+    roomId: string,
+    userId: string,
+    x: number,
+    y: number,
+    target?: string,
+  ): void {
+    sendRaw({
+      type: "cursor_move",
+      roomId,
+      userId,
+      x,
+      y,
+      ...(target ? { target } : {}),
+    });
   }
 
-  function onMessage(handler: (message: RealtimeMessage) => void): () => void {
+  function updatePresence(
+    roomId: string,
+    userId: string,
+    status: "active" | "idle" | "away",
+  ): void {
+    sendRaw({
+      type: "presence_update",
+      roomId,
+      userId,
+      status,
+    });
+  }
+
+  function onMessage(handler: (message: ServerMessage) => void): () => void {
     messageHandlers.add(handler);
     return (): void => {
       messageHandlers.delete(handler);
     };
   }
 
-  // Cleanup on unmount
   onCleanup((): void => {
     disconnect();
     messageHandlers.clear();
@@ -241,7 +360,8 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
     disconnect,
     joinRoom,
     leaveRoom,
-    sendMessage,
+    sendCursorMove,
+    updatePresence,
     onMessage,
   };
 

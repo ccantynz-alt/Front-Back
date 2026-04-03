@@ -2,6 +2,9 @@
   "name": "@back-to-the-future/api",
   "type": "module",
   "version": "0.0.1",
+  "exports": {
+    "./trpc": "./src/trpc/router.ts"
+  },
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",

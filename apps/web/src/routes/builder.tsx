@@ -54,6 +54,60 @@ function PreviewPanel(): ReturnType<typeof Card> {
   );
 }
 
+// ── AI Streaming Helper ──────────────────────────────────────────────
+
+function getApiUrl(): string {
+  if (typeof window !== "undefined") {
+    const meta = import.meta as unknown as Record<string, Record<string, string> | undefined>;
+    return meta.env?.VITE_PUBLIC_API_URL ?? "http://localhost:3001";
+  }
+  return "http://localhost:3001";
+}
+
+async function streamAIResponse(
+  messages: Array<{ role: string; content: string }>,
+  onToken: (token: string) => void,
+  onDone: () => void,
+  onError: (error: string) => void,
+): Promise<void> {
+  try {
+    const response = await fetch(`${getApiUrl()}/api/ai/site-builder`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages,
+        computeTier: "cloud",
+        maxTokens: 4096,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ error: "Request failed" }));
+      onError((body as { error?: string }).error ?? `HTTP ${response.status}`);
+      return;
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      onError("No response stream available");
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      onToken(chunk);
+    }
+
+    onDone();
+  } catch (err) {
+    onError(err instanceof Error ? err.message : "Stream failed");
+  }
+}
+
 // ── Builder Page ──────────────────────────────────────────────────────
 
 export default function BuilderPage(): ReturnType<typeof ProtectedRoute> {
@@ -84,17 +138,43 @@ export default function BuilderPage(): ReturnType<typeof ProtectedRoute> {
     setInput("");
     setIsGenerating(true);
 
-    // Simulate AI response -- will be replaced with real AI SDK streaming
-    setTimeout((): void => {
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: `I understand you want: "${text}". The AI builder pipeline is being connected. Once the Vercel AI SDK streaming integration is live, I will generate and preview components in real time.`,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsGenerating(false);
-    }, 1500);
+    // Create a placeholder assistant message for streaming
+    const assistantId = `assistant-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: assistantId, role: "assistant", content: "", timestamp: Date.now() },
+    ]);
+
+    // Build conversation history for AI context
+    const conversationHistory = messages()
+      .filter((m) => m.id !== "welcome")
+      .map((m) => ({ role: m.role, content: m.content }));
+    conversationHistory.push({ role: "user", content: text });
+
+    // Stream AI response from /api/ai/site-builder
+    streamAIResponse(
+      conversationHistory,
+      (token) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: m.content + token } : m,
+          ),
+        );
+      },
+      () => {
+        setIsGenerating(false);
+      },
+      (error) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: `Error: ${error}. Make sure the API server is running and OPENAI_API_KEY is set.` }
+              : m,
+          ),
+        );
+        setIsGenerating(false);
+      },
+    );
   };
 
   const handleKeyDown = (e: KeyboardEvent): void => {
@@ -117,7 +197,7 @@ export default function BuilderPage(): ReturnType<typeof ProtectedRoute> {
               <For each={messages()}>
                 {(msg) => <ChatBubble message={msg} />}
               </For>
-              <Show when={isGenerating()}>
+              <Show when={isGenerating() && messages()[messages().length - 1]?.content === ""}>
                 <div class="chat-bubble chat-bubble-assistant">
                   <Text variant="caption" weight="semibold" class="chat-role">AI Builder</Text>
                   <Text variant="body" class="text-muted">Generating...</Text>
