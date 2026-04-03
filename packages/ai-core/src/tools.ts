@@ -9,6 +9,7 @@ import {
   type ComponentName,
   ComponentCatalog,
 } from "@back-to-the-future/schemas";
+import { searchVectors, type VectorSearchResult } from "./vector-store";
 
 // ── searchContent ─────────────────────────────────────────────────
 // Searches indexed content using semantic or keyword matching.
@@ -44,20 +45,67 @@ export const searchContent = tool({
     "Use this when the user asks about existing content, documentation, or data.",
   inputSchema: SearchInputSchema,
   execute: async (input): Promise<SearchResult[]> => {
-    // TODO: Replace with Qdrant vector search + Turso full-text search
-    // This placeholder returns mock results for development
-    return [
-      {
-        id: `result-${Date.now()}`,
-        title: `Search result for: ${input.query}`,
-        snippet: `Placeholder result matching "${input.query}" (type: ${input.contentType}). Connect to Qdrant for semantic search.`,
-        score: 0.95,
-        contentType: input.contentType === "all" ? "document" : input.contentType,
-        url: `/content/${input.query.toLowerCase().replace(/\s+/g, "-")}`,
-      },
-    ].slice(0, input.limit);
+    const COLLECTION = "content";
+
+    // If QDRANT_URL is not configured, fall back to mock results for local dev
+    if (!process.env["QDRANT_URL"]) {
+      return [
+        {
+          id: `result-${Date.now()}`,
+          title: `Search result for: ${input.query}`,
+          snippet: `Placeholder result matching "${input.query}" (type: ${input.contentType}). Set QDRANT_URL to enable semantic search.`,
+          score: 0.95,
+          contentType: input.contentType === "all" ? "document" : input.contentType,
+          url: `/content/${input.query.toLowerCase().replace(/\s+/g, "-")}`,
+        },
+      ].slice(0, input.limit);
+    }
+
+    // TODO: Replace with real embedding model (e.g. Transformers.js or OpenAI embeddings)
+    // For now, generate a deterministic pseudo-vector from the query string
+    const queryVector = generatePseudoVector(input.query, 384);
+
+    const filter =
+      input.contentType !== "all"
+        ? { must: [{ key: "contentType", match: { value: input.contentType } }] }
+        : undefined;
+
+    let results: VectorSearchResult[];
+    try {
+      results = await searchVectors(COLLECTION, queryVector, input.limit, filter);
+    } catch {
+      // Collection may not exist yet — return empty results gracefully
+      return [];
+    }
+
+    return results.map((r) => ({
+      id: String(r.id),
+      title: (r.payload["title"] as string) ?? "Untitled",
+      snippet: (r.payload["snippet"] as string) ?? "",
+      score: r.score,
+      contentType: (r.payload["contentType"] as string) ?? "document",
+      url: (r.payload["url"] as string) ?? `/content/${String(r.id)}`,
+    }));
   },
 });
+
+/**
+ * Generate a deterministic pseudo-vector from a string.
+ * This is a placeholder until a real embedding model is integrated.
+ */
+function generatePseudoVector(text: string, dimensions: number): number[] {
+  const vector: number[] = [];
+  for (let i = 0; i < dimensions; i++) {
+    let hash = 0;
+    const seed = `${text}-${i}`;
+    for (let j = 0; j < seed.length; j++) {
+      hash = ((hash << 5) - hash + seed.charCodeAt(j)) | 0;
+    }
+    // Normalize to [-1, 1]
+    vector.push(Math.sin(hash));
+  }
+  return vector;
+}
 
 // ── generateComponent ─────────────────────────────────────────────
 // Generates a validated UI component configuration from the catalog.

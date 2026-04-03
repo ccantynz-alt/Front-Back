@@ -23,6 +23,15 @@ export {
 } from "./tools";
 
 export {
+  initCollection,
+  upsertVectors,
+  searchVectors,
+  type VectorPoint,
+  type VectorSearchResult,
+  type VectorFilter,
+} from "./vector-store";
+
+export {
   streamSiteBuilder,
   generatePageLayout,
   SITE_BUILDER_SYSTEM_PROMPT,

@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
     "@back-to-the-future/ai-core": "workspace:*",
+    "@back-to-the-future/config": "workspace:*",
     "@back-to-the-future/db": "workspace:*",
     "@back-to-the-future/schemas": "workspace:*",
     "@simplewebauthn/server": "13.3.0",

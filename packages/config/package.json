@@ -2,8 +2,21 @@
   "name": "@back-to-the-future/config",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "exports": {
     "./typescript": "./tsconfig.base.json",
-    "./biome": "./biome.json"
+    "./biome": "./biome.json",
+    "./otel": "./src/otel.ts"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.56.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.57.0",
+    "@opentelemetry/sdk-metrics": "^1.30.0",
+    "@opentelemetry/resources": "^1.30.0",
+    "@opentelemetry/semantic-conventions": "^1.30.0",
+    "typescript": "^5.7.0"
   }
 }

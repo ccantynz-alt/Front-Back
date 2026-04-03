@@ -1,0 +1,23 @@
+name = "back-to-the-future-web"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".output/public"
+
+# SolidStart builds to .output/ via vinxi build
+# Static assets are served from .output/public
+# Server functions run as Cloudflare Pages Functions from .output/server
+
+[vars]
+ENVIRONMENT = "production"
+
+# Staging environment
+[env.staging]
+name = "back-to-the-future-web-staging"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+# Preview environment
+[env.preview]
+name = "back-to-the-future-web-preview"
+[env.preview.vars]
+ENVIRONMENT = "preview"

@@ -1,11 +1,26 @@
+// OpenTelemetry must be initialized before all other imports
+import { initTelemetry } from "@back-to-the-future/config/otel";
+initTelemetry("back-to-the-future-api");
+
 import { Hono } from "hono";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
 import { wsApp, websocket, sseApp } from "./realtime";
+import { rateLimiter } from "./middleware/rate-limit";
+import { telemetryMiddleware } from "./middleware/telemetry";
 
 const app = new Hono().basePath("/api");
+
+// Trace every request with OpenTelemetry
+app.use("*", telemetryMiddleware);
+
+// Global rate limit: 100 requests per minute per IP
+app.use("*", rateLimiter({ limit: 100, windowMs: 60_000 }));
+
+// Stricter rate limit on auth endpoints: 10 requests per minute per IP
+app.use("/auth/*", rateLimiter({ limit: 10, windowMs: 60_000 }));
 
 app.get("/health", (c) => {
   return c.json({

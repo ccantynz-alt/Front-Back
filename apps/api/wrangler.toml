@@ -1,0 +1,49 @@
+name = "back-to-the-future-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[build]
+command = "bun build src/index.ts --outdir dist --target browser --format esm"
+
+[vars]
+ENVIRONMENT = "production"
+
+# D1 Database binding (placeholder — create via `wrangler d1 create`)
+[[d1_databases]]
+binding = "DB"
+database_name = "back-to-the-future-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# KV Namespace binding (placeholder — create via `wrangler kv namespace create`)
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# R2 Bucket binding (placeholder — create via `wrangler r2 bucket create`)
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "back-to-the-future-storage"
+
+# Durable Objects for WebSocket/real-time state
+# [durable_objects]
+# bindings = [
+#   { name = "COLLAB_ROOM", class_name = "CollabRoom" }
+# ]
+
+# Secrets (set via `wrangler secret put <NAME>`)
+# - DATABASE_URL
+# - DATABASE_AUTH_TOKEN
+# - OPENAI_API_KEY
+
+# Staging environment
+[env.staging]
+name = "back-to-the-future-api-staging"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+# Preview environment
+[env.preview]
+name = "back-to-the-future-api-preview"
+[env.preview.vars]
+ENVIRONMENT = "preview"
