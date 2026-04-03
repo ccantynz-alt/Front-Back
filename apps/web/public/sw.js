@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 /**
- * Back to the Future - Service Worker
+ * Cronix - Service Worker
  * Offline-first PWA with aggressive caching and background sync.
  *
  * Cache strategies:
@@ -249,7 +249,7 @@ function offlineFallback() {
       "<head>",
       '  <meta charset="utf-8"/>',
       '  <meta name="viewport" content="width=device-width,initial-scale=1"/>',
-      "  <title>Offline - Back to the Future</title>",
+      "  <title>Offline - Cronix</title>",
       "  <style>",
       "    body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#e5e5e5}",
       "    .c{text-align:center;max-width:420px;padding:2rem}",

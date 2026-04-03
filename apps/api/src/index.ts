@@ -24,6 +24,8 @@ import {
   aiRateLimit,
 } from "./middleware";
 import { inngestApp } from "./workflows/serve";
+import { handleStripeWebhook } from "./billing/webhooks";
+import { flushPendingUsage } from "./billing/usage-tracker";
 
 const app = new Hono().basePath("/api");
 
@@ -88,6 +90,9 @@ app.use("/trpc/*", async (c) => {
   return response;
 });
 
+// Stripe webhooks — raw body required, no compression/caching
+app.post("/webhooks/stripe", handleStripeWebhook);
+
 // Inngest durable workflows
 app.route("/", inngestApp);
 
@@ -116,8 +121,8 @@ if (typeof Bun !== "undefined" && Bun.serve) {
 
 // ── Graceful shutdown ────────────────────────────────────────────
 const handleShutdown = async (): Promise<void> => {
-  console.log("Shutting down — flushing telemetry…");
-  await shutdownTelemetry();
+  console.log("Shutting down — flushing telemetry and pending usage…");
+  await Promise.all([shutdownTelemetry(), flushPendingUsage()]);
   process.exit(0);
 };
 

@@ -46,6 +46,71 @@ export const sessions = sqliteTable("sessions", {
     .$defaultFn(() => new Date()),
 });
 
+// ---------------------------------------------------------------------------
+// Billing & Subscriptions
+// ---------------------------------------------------------------------------
+
+export const subscriptions = sqliteTable("subscriptions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  stripeCustomerId: text("stripe_customer_id").notNull(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  stripePriceId: text("stripe_price_id"),
+  status: text("status", {
+    enum: ["active", "canceled", "past_due", "trialing", "incomplete", "incomplete_expired", "unpaid", "paused"],
+  })
+    .notNull()
+    .default("active"),
+  plan: text("plan", {
+    enum: ["free", "pro", "team", "enterprise"],
+  })
+    .notNull()
+    .default("free"),
+  currentPeriodStart: integer("current_period_start", { mode: "timestamp" }),
+  currentPeriodEnd: integer("current_period_end", { mode: "timestamp" }),
+  cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const usageRecords = sqliteTable("usage_records", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  type: text("type", {
+    enum: ["ai_tokens", "video_minutes", "storage_bytes"],
+  }).notNull(),
+  quantity: integer("quantity").notNull(),
+  stripeUsageRecordId: text("stripe_usage_record_id"),
+  recordedAt: integer("recorded_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const paymentEvents = sqliteTable("payment_events", {
+  id: text("id").primaryKey(),
+  stripeEventId: text("stripe_event_id").notNull().unique(),
+  type: text("type").notNull(),
+  data: text("data").notNull(),
+  processedAt: integer("processed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
+// Audit Logs
+// ---------------------------------------------------------------------------
+
 export const auditLogs = sqliteTable("audit_logs", {
   id: text("id").primaryKey(),
   timestamp: text("timestamp").notNull(),

@@ -1,4 +1,4 @@
-# CLAUDE.md - Back to the Future
+# CLAUDE.md - Cronix
 
 ---
 
@@ -29,7 +29,7 @@
 
 ## 1. PROJECT IDENTITY & MISSION
 
-**Project Name:** Back to the Future
+**Project Name:** Cronix
 
 **Mission:** Build the most technologically advanced full-stack platform purpose-built for AI website builders and AI video builders. Every architectural decision, every dependency, every line of code exists to make AI builders faster, more capable, and more dangerous than anything on the market.
 
@@ -39,7 +39,7 @@
 
 **What This Is Not:** This is not a framework. This is not a boilerplate. This is not a starter kit. This is a **self-evolving, self-defending technology war machine.** It learns. It adapts. It gets faster while you sleep. Every layer has AI woven into its DNA -- not bolted on, not plugged in, not optional. AI is the bloodstream of this platform.
 
-**Critical Dependency: ZOOBICON.** Zoobicon is the flagship product built on this platform — an **AI website builder** and **AI video maker** competing in a fierce market. Zoobicon CANNOT launch until Back to the Future ships. The competition is real, the timeline is now, and we must be the fastest platform in existence. Every millisecond we shave off, every capability we add, every optimization we make directly translates into Zoobicon beating every competitor on the market. This is not a side project — it is the foundation that Zoobicon and other products are built on. Ship fast. Ship now. Ship right. We are the best and we will kick ass.
+**Critical Dependency: ZOOBICON.** Zoobicon is the flagship product built on this platform — an **AI website builder** and **AI video maker** competing in a fierce market. Zoobicon CANNOT launch until Cronix ships. The competition is real, the timeline is now, and we must be the fastest platform in existence. Every millisecond we shave off, every capability we add, every optimization we make directly translates into Zoobicon beating every competitor on the market. This is not a side project — it is the foundation that Zoobicon and other products are built on. Ship fast. Ship now. Ship right. We are the best and we will kick ass.
 
 **First of Its Kind:** No one has ever combined the most advanced backend service with the most advanced frontend service into a single, unified, AI-native platform. This is the first. It must work on every device, integrate with everything, and set the standard that everyone else chases.
 
@@ -81,7 +81,7 @@ Every existing platform treats these as separate concerns. WebGPU is a "graphics
 
 ### Gap 2: No Framework Has AI Woven Into EVERY Layer
 
-Everyone else bolts AI on. Add an AI endpoint. Plug in a chatbot. Throw an LLM at your search bar. That is weak. In Back to the Future, AI is the nervous system:
+Everyone else bolts AI on. Add an AI endpoint. Plug in a chatbot. Throw an LLM at your search bar. That is weak. In Cronix, AI is the nervous system:
 
 - **AI-driven routing** -- Routes optimize themselves based on usage patterns and user intent
 - **AI-optimized data fetching** -- Queries are rewritten, prefetched, and cached by AI agents that understand your data model
@@ -540,7 +540,7 @@ Start at Lean. Graduate to Power Mode when you have revenue. Go Full War Room wh
 
 > **This architecture does not wait for the future. It builds it.**
 > Three-tier compute. AI in every layer. Intelligence that never sleeps.
-> Back to the Future is not a framework -- it is a force multiplier.
+> Cronix is not a framework -- it is a force multiplier.
 
 ---
 
@@ -1099,7 +1099,7 @@ Launching is not winning. Staying ahead is winning. This never ends.
 
 ---
 
-> **This is Back to the Future.**
+> **This is Cronix.**
 > The most aggressive full-stack platform ever conceived.
 > AI-native. Edge-first. Zero-HTML. Self-evolving.
 > Nobody has built this before. Nobody will catch us once we launch.

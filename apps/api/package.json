@@ -32,6 +32,7 @@
     "drizzle-orm": "^0.38",
     "hono": "^4.7.0",
     "inngest": "4.1.1",
+    "stripe": "^17.7.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
