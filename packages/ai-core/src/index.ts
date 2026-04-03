@@ -63,3 +63,26 @@ export {
   type GenerativeUIRequest,
   type GenerativeUIResult,
 } from "./generative-ui/renderer";
+
+export {
+  AgentOrchestrator,
+  createOrchestrator,
+  SITE_BUILDER_AGENT,
+  CODE_REVIEWER_AGENT,
+  CONTENT_WRITER_AGENT,
+  type AgentDefinition,
+  type AgentState,
+  type AgentStep,
+} from "./agents/orchestrator";
+
+export {
+  createApprovalRequest,
+  approveRequest,
+  rejectRequest,
+  getPendingApprovals,
+  getApprovalRequest,
+  classifyRisk,
+  requiresApproval,
+  ApprovalRequestSchema,
+  type ApprovalRequest,
+} from "./agents/approval";

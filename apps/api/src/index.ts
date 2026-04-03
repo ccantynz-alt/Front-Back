@@ -7,7 +7,13 @@ import { wsApp, websocket, sseApp } from "./realtime";
 import { initTelemetry, httpRequestCount, httpRequestDuration } from "./telemetry";
 import { getAllFlags, isFeatureEnabled } from "./feature-flags";
 import { checkNeonHealth } from "@back-to-the-future/db/neon";
-import { checkQdrantHealth } from "@back-to-the-future/ai-core";
+import {
+  checkQdrantHealth,
+  getPendingApprovals,
+  getApprovalRequest,
+  approveRequest,
+  rejectRequest,
+} from "@back-to-the-future/ai-core";
 
 // Initialize OpenTelemetry (no-op if OTEL_EXPORTER_OTLP_ENDPOINT not set)
 const telemetry = initTelemetry();
@@ -63,6 +69,32 @@ app.get("/flags/:key", (c) => {
     key,
     enabled: isFeatureEnabled(key, userId),
   });
+});
+
+// ── AI Agent Approval Endpoints ──────────────────────────────────────
+app.get("/approvals", (c) => {
+  const sessionId = c.req.query("sessionId");
+  return c.json({ approvals: getPendingApprovals(sessionId) });
+});
+
+app.get("/approvals/:id", (c) => {
+  const request = getApprovalRequest(c.req.param("id"));
+  if (!request) return c.json({ error: "Not found" }, 404);
+  return c.json(request);
+});
+
+app.post("/approvals/:id/approve", async (c) => {
+  const body = await c.req.json() as { approvedBy?: string };
+  const result = approveRequest(c.req.param("id"), body.approvedBy ?? "unknown");
+  if (!result) return c.json({ error: "Request not found or expired" }, 404);
+  return c.json(result);
+});
+
+app.post("/approvals/:id/reject", async (c) => {
+  const body = await c.req.json() as { rejectedBy?: string };
+  const result = rejectRequest(c.req.param("id"), body.rejectedBy ?? "unknown");
+  if (!result) return c.json({ error: "Request not found or expired" }, 404);
+  return c.json(result);
 });
 
 // Mount AI routes (raw Hono -- streaming works better outside tRPC)
