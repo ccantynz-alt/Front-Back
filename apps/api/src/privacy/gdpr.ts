@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
 
 /** GDPR Data Subject Request types */
 export interface DataSubjectRequest {
@@ -42,11 +41,19 @@ export function createGDPRHandler(): Hono {
   const app = new Hono();
 
   // POST /request — accept a data subject request
-  app.post("/request", zValidator("json", dataSubjectRequestSchema), (c) => {
-    const request = c.req.valid("json");
+  app.post("/request", async (c) => {
+    const body = await c.req.json();
+    const parsed = dataSubjectRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: "Invalid request data", details: parsed.error.flatten() }, 400);
+    }
+    const request = parsed.data;
 
-    const entry = {
-      ...request,
+    const entry: DataSubjectRequest & { receivedAt: string } = {
+      type: request.type,
+      userId: request.userId,
+      email: request.email,
+      requestedAt: request.requestedAt,
       receivedAt: new Date().toISOString(),
     };
     auditLog.push(entry);

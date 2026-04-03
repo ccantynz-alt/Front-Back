@@ -31,5 +31,5 @@ export interface SentinelConfig {
   /** Interval in milliseconds between npm version checks. */
   npmIntervalMs: number;
   /** Slack webhook URL (optional — alerts are skipped when absent). */
-  slackWebhookUrl?: string;
+  slackWebhookUrl?: string | undefined;
 }
