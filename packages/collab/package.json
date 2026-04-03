@@ -1,0 +1,15 @@
+{
+  "name": "@cronix/collab",
+  "type": "module",
+  "version": "0.0.1",
+  "main": "src/index.ts",
+  "dependencies": {
+    "yjs": "^13.6.0",
+    "y-protocols": "^1.0.0",
+    "lib0": "^0.2.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

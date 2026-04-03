@@ -16,6 +16,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
     "@cronix/ai-core": "workspace:*",
+    "@cronix/collab": "workspace:*",
     "@cronix/db": "workspace:*",
     "@cronix/schemas": "workspace:*",
     "@opentelemetry/api": "1.9.1",
@@ -32,7 +33,10 @@
     "drizzle-orm": "^0.38",
     "hono": "^4.7.0",
     "inngest": "4.1.1",
+    "lib0": "^0.2.0",
     "stripe": "^17.7.0",
+    "y-protocols": "^1.0.0",
+    "yjs": "^13.6.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

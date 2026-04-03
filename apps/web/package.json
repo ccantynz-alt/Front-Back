@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@cronix/ai-core": "workspace:*",
+    "@cronix/collab": "workspace:*",
     "@cronix/schemas": "workspace:*",
     "@cronix/ui": "workspace:*",
     "@simplewebauthn/browser": "13.3.0",

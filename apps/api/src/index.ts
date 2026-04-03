@@ -26,6 +26,7 @@ import {
 import { inngestApp } from "./workflows/serve";
 import { handleStripeWebhook } from "./billing/webhooks";
 import { flushPendingUsage } from "./billing/usage-tracker";
+import { collabWsApp } from "./collab";
 
 const app = new Hono().basePath("/api");
 
@@ -95,6 +96,10 @@ app.post("/webhooks/stripe", handleStripeWebhook);
 
 // Inngest durable workflows
 app.route("/", inngestApp);
+
+// Collaboration: Yjs CRDT WebSocket — never cache
+app.use("/collab/*", noCache);
+app.route("/collab", collabWsApp);
 
 // Real-Time: WebSocket — never cache
 app.use("/ws", noCache);
