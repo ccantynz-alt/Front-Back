@@ -44,18 +44,46 @@ export const searchContent = tool({
     "Use this when the user asks about existing content, documentation, or data.",
   inputSchema: SearchInputSchema,
   execute: async (input): Promise<SearchResult[]> => {
-    // TODO: Replace with Qdrant vector search + Turso full-text search
-    // This placeholder returns mock results for development
-    return [
-      {
-        id: `result-${Date.now()}`,
-        title: `Search result for: ${input.query}`,
-        snippet: `Placeholder result matching "${input.query}" (type: ${input.contentType}). Connect to Qdrant for semantic search.`,
-        score: 0.95,
-        contentType: input.contentType === "all" ? "document" : input.contentType,
-        url: `/content/${input.query.toLowerCase().replace(/\s+/g, "-")}`,
-      },
-    ].slice(0, input.limit);
+    try {
+      // Try Qdrant vector search if available
+      const { createQdrantClient, searchSimilar } = await import("./vector/qdrant");
+      const client = createQdrantClient();
+
+      // Build filter from contentType
+      const filter = input.contentType !== "all"
+        ? { type: input.contentType }
+        : undefined;
+
+      // For now, use a zero vector as placeholder until embeddings are wired
+      // In production, this would call the embedding API first
+      const hits = await searchSimilar(client, new Array(1536).fill(0), {
+        collection: "content_embeddings",
+        limit: input.limit,
+        scoreThreshold: 0.5,
+        filter,
+      });
+
+      return hits.map((hit) => ({
+        id: String(hit.id),
+        title: (hit.payload["title"] as string) ?? "Untitled",
+        snippet: ((hit.payload["content"] as string) ?? "").slice(0, 300),
+        score: hit.score,
+        contentType: (hit.payload["type"] as string) ?? "document",
+        url: (hit.payload["url"] as string) ?? `/content/${hit.id}`,
+      }));
+    } catch {
+      // Qdrant not available — return informative empty result
+      return [
+        {
+          id: `search-${Date.now()}`,
+          title: `Search: ${input.query}`,
+          snippet: `Semantic search for "${input.query}" requires Qdrant to be running. Start Qdrant or set QDRANT_URL.`,
+          score: 0,
+          contentType: input.contentType === "all" ? "document" : input.contentType,
+          url: "#",
+        },
+      ].slice(0, input.limit);
+    }
   },
 });
 
