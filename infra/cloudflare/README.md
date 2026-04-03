@@ -1,62 +1,62 @@
 # Cloudflare Infrastructure Setup
 
-## Prerequisites
+## Quick Setup
 
-- [Cloudflare account](https://dash.cloudflare.com/sign-up)
-- `wrangler` CLI (installed as a dev dependency in `apps/api` and `apps/web`)
-- Authenticate: `bunx wrangler login`
+```bash
+./infra/cloudflare/setup.sh              # production
+./infra/cloudflare/setup.sh staging      # staging
+```
 
 ## API (Cloudflare Workers)
 
-Deploy from `apps/api/`:
-
 ```bash
+cd apps/api
 bun run deploy           # production
 bun run deploy:staging   # staging
-bun run dev:cf           # local Workers dev server
+bun run dev:cf           # local dev
 ```
+
+Entry point: `apps/api/src/worker-entry.ts`
+- Exports Hono app as `fetch` handler
+- Exports `CollabRoom` Durable Object class
+- Maps Cloudflare bindings to `globalThis`
 
 ## Web (Cloudflare Pages)
 
-Deploy from `apps/web/`:
-
 ```bash
-bun run build            # build the SolidStart app
-bun run deploy           # deploy to Cloudflare Pages
+cd apps/web
+bun run build && bun run deploy
 ```
 
-## Provisioning Resources
+Uses `preset: "cloudflare-pages"` in `app.config.ts`.
 
-### D1 Database
-
-```bash
-bunx wrangler d1 create btf-db
-```
-
-Copy the `database_id` into `apps/api/wrangler.toml` and uncomment the `[[d1_databases]]` block.
-
-### R2 Bucket
+## Manual Resource Provisioning
 
 ```bash
-bunx wrangler r2 bucket create btf-storage
-```
-
-Uncomment the `[[r2_buckets]]` block in `apps/api/wrangler.toml`.
-
-### KV Namespace
-
-```bash
+bunx wrangler d1 create cronix-db
+bunx wrangler d1 execute cronix-db --file=infra/cloudflare/d1-schema.sql --yes
+bunx wrangler r2 bucket create cronix-assets
 bunx wrangler kv namespace create CACHE
 ```
 
-Copy the `id` into `apps/api/wrangler.toml` and uncomment the `[[kv_namespaces]]` block.
+Paste returned IDs into `apps/api/wrangler.toml`.
+
+## Secrets
+
+```bash
+bunx wrangler secret put DATABASE_URL
+bunx wrangler secret put TURSO_URL
+bunx wrangler secret put TURSO_AUTH_TOKEN
+bunx wrangler secret put OPENAI_API_KEY
+bunx wrangler secret put STRIPE_SECRET_KEY
+bunx wrangler secret put STRIPE_WEBHOOK_SECRET
+bunx wrangler secret put SESSION_SECRET
+```
 
 ## CI/CD
 
-The GitHub Actions workflow at `.github/workflows/deploy.yml` handles automated deployments on push to `main`. Required repository secrets:
+GitHub Actions workflow: `.github/workflows/deploy.yml`
 
-- `CLOUDFLARE_API_TOKEN` -- API token with Workers and Pages permissions
-- `CLOUDFLARE_ACCOUNT_ID` -- your Cloudflare account ID
-
-Create the API token at: https://dash.cloudflare.com/profile/api-tokens
-Use the "Edit Cloudflare Workers" template and add Pages permissions.
+Required secrets:
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`

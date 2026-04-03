@@ -1,36 +1,67 @@
-name = "btf-api"
-main = "src/worker.ts"
+name = "cronix-api"
+main = "src/worker-entry.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"
 
-# Uncomment and configure when ready:
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "btf-db"
-# database_id = ""
+# ── D1 Database ──────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "cronix-db"
+database_id = "" # Set per environment
 
-# [[r2_buckets]]
-# binding = "STORAGE"
-# bucket_name = "btf-storage"
+# ── R2 Object Storage ───────────────────────────────────────────
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "cronix-assets"
 
-# [[kv_namespaces]]
-# binding = "CACHE"
-# id = ""
+# ── KV Namespace ────────────────────────────────────────────────
+[[kv_namespaces]]
+binding = "CACHE"
+id = "" # Set per environment
+
+# ── Durable Objects — real-time collaboration rooms ─────────────
+[durable_objects]
+bindings = [
+  { name = "COLLAB_ROOM", class_name = "CollabRoom" },
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["CollabRoom"]
 
 # ── Hyperdrive — connection pooling for Neon PostgreSQL ──────────
-# Eliminates cold-connect latency at the edge. Create with:
-#   wrangler hyperdrive create btf-db --connection-string="postgresql://user:pass@host/db?sslmode=require"
-# Then paste the returned ID below and uncomment.
-#
 # [[hyperdrive]]
 # binding = "HYPERDRIVE"
 # id = "<your-hyperdrive-config-id>"
 
+# ── Staging environment ─────────────────────────────────────────
 [env.staging]
-name = "btf-api-staging"
+name = "cronix-api-staging"
 
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "cronix-db-staging"
+database_id = ""
+
+[[env.staging.r2_buckets]]
+binding = "STORAGE"
+bucket_name = "cronix-assets-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "CACHE"
+id = ""
+
+[env.staging.durable_objects]
+bindings = [
+  { name = "COLLAB_ROOM", class_name = "CollabRoom" },
+]
+
+# ── Production environment ──────────────────────────────────────
 [env.production]
-name = "btf-api"
+name = "cronix-api"
