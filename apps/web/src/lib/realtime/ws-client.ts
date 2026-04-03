@@ -88,7 +88,7 @@ interface UserJoinedMsg {
   type: "user_joined";
   roomId: string;
   userId: string;
-  metadata?: { displayName?: string; color?: string };
+  metadata?: { displayName?: string | undefined; color?: string | undefined } | undefined;
 }
 
 interface UserLeftMsg {
@@ -103,7 +103,7 @@ interface CursorUpdateMsg {
   userId: string;
   x: number;
   y: number;
-  target?: string;
+  target?: string | undefined;
 }
 
 interface PresenceSyncMsg {
@@ -111,7 +111,7 @@ interface PresenceSyncMsg {
   roomId: string;
   userId: string;
   status: "active" | "idle" | "away";
-  data?: Record<string, unknown>;
+  data?: Record<string, unknown> | undefined;
 }
 
 interface ServerErrorMsg {
@@ -122,7 +122,7 @@ interface ServerErrorMsg {
 
 interface PongMsg {
   type: "pong";
-  timestamp?: number;
+  timestamp?: number | undefined;
 }
 
 type ServerMessage =
