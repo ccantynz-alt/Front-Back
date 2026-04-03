@@ -33,3 +33,6 @@ credentials.json
 *.pem
 *.key
 .claude/worktrees/
+
+# SQLite databases (generated at runtime)
+*.db
