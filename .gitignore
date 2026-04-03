@@ -28,6 +28,9 @@ bun.lockb
 # Turbo
 .turbo/
 
+# Local databases
+*.db
+
 # Credentials (NEVER commit)
 credentials.json
 *.pem
