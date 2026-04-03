@@ -14,6 +14,7 @@ import { telemetryMiddleware } from "./middleware/telemetry";
 import { privacyHeaders } from "./middleware/privacy";
 import { createGDPRHandler } from "./privacy/gdpr";
 import { openApiDocument } from "./docs/openapi";
+import { getSSOConfig, createSSOHandler } from "./auth/sso";
 
 const app = new Hono().basePath("/api");
 
@@ -55,8 +56,6 @@ app.route("/ai", aiRoutes);
 app.route("/privacy", createGDPRHandler());
 
 // ── Enterprise SSO ──────────────────────────────────────────────
-import { getSSOConfig, createSSOHandler } from "./auth/sso";
-
 const ssoConfig = getSSOConfig();
 if (ssoConfig) {
   app.route("/sso", createSSOHandler(ssoConfig));
