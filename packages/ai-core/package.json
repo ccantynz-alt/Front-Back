@@ -5,7 +5,11 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./rag": "./src/rag/index.ts",
+    "./rag/*": "./src/rag/*.ts",
+    "./feature-flags": "./src/feature-flags/index.ts",
+    "./feature-flags/*": "./src/feature-flags/*.ts"
   },
   "scripts": {
     "check": "tsc --noEmit",
@@ -14,10 +18,20 @@
   "dependencies": {
     "@cronix/schemas": "workspace:*",
     "@ai-sdk/openai": "^3.0.0",
+    "@qdrant/js-client-rest": "^1.13.0",
     "ai": "^6.0.0",
     "zod": "^3.24.0"
   },
+  "peerDependencies": {
+    "hono": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "hono": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "hono": "^4.0.0",
     "typescript": "^5"
   }
 }

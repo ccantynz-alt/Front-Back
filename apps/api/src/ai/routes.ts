@@ -16,6 +16,7 @@ import { ComponentSchema } from "@cronix/schemas";
 import { traceAICall } from "../telemetry";
 import { ragRoutes } from "./rag-routes";
 import { agentRoutes } from "./agent-routes";
+import { vectorRoutes } from "./vector-routes";
 
 // ── Input Schemas ─────────────────────────────────────────────────
 
@@ -59,6 +60,9 @@ export const aiRoutes = new Hono();
 // Mount RAG sub-routes at /ai/rag/*
 aiRoutes.route("/rag", ragRoutes);
 aiRoutes.route("/agents", agentRoutes);
+
+// Mount Qdrant vector routes at /ai/vectors/*
+aiRoutes.route("/vectors", vectorRoutes);
 
 /**
  * POST /ai/chat

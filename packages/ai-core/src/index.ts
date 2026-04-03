@@ -80,3 +80,48 @@ export type { AgentState, PlanStep, StepResult, AgentEvent, AgentConfig } from "
 export { runTechScout, streamTechScout, TechScoutInputSchema } from "./agents/specialists/tech-scout";
 export { runSiteArchitect, streamSiteArchitect, SiteArchitectInputSchema } from "./agents/specialists/site-architect";
 export { runVideoDirector, streamVideoDirector, VideoDirectorInputSchema } from "./agents/specialists/video-director";
+
+// ── Qdrant Vector Store ─────────────────────────────────────────
+export {
+  getQdrantClient,
+  ensureCollection,
+  resetQdrantClient,
+  QdrantStore,
+  QdrantPipeline,
+  ContentMetadataSchema,
+  IndexContentInputSchema,
+  SemanticSearchInputSchema,
+  HybridSearchInputSchema,
+  type QdrantConfig,
+  type QdrantPoint,
+  type QdrantSearchOptions,
+  type QdrantScrollOptions,
+  type QdrantStoreConfig,
+  type QdrantFilterCondition,
+  type QdrantPipelineConfig,
+  type ContentMetadata,
+  type IndexContentInput,
+  type SemanticSearchInput,
+  type HybridSearchInput,
+} from "./rag";
+
+// ── Feature Flags ───────────────────────────────────────────────
+export {
+  evaluateFlag,
+  evaluateAllFlags,
+  FlagRegistry,
+  FlagContextSchema,
+  FlagValueSchema,
+  FlagDefinitionSchema,
+  FLAG_KEYS,
+  FLAG_DEFINITIONS,
+  flagRegistry,
+  featureFlagMiddleware,
+  requireFlag,
+  isFlagEnabled,
+  type FlagContext,
+  type FlagValue,
+  type FlagDefinition,
+  type FlagKey,
+  type EvaluatedFlags,
+} from "./feature-flags";

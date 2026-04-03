@@ -10,3 +10,32 @@ export type {
   RAGQueryResult,
   RAGPipelineConfig,
 } from "./pipeline";
+
+// ── Qdrant Exports ──────────────────────────────────────────────
+
+export { getQdrantClient, ensureCollection, resetQdrantClient } from "./qdrant-client";
+export type { QdrantConfig } from "./qdrant-client";
+
+export { QdrantStore } from "./qdrant-store";
+export type {
+  QdrantPoint,
+  QdrantSearchOptions,
+  QdrantScrollOptions,
+  QdrantStoreConfig,
+  QdrantFilterCondition,
+} from "./qdrant-store";
+
+export { QdrantPipeline } from "./qdrant-pipeline";
+export type {
+  QdrantPipelineConfig,
+  ContentMetadata,
+  IndexContentInput,
+  SemanticSearchInput,
+  HybridSearchInput,
+} from "./qdrant-pipeline";
+export {
+  ContentMetadataSchema,
+  IndexContentInputSchema,
+  SemanticSearchInputSchema,
+  HybridSearchInputSchema,
+} from "./qdrant-pipeline";
