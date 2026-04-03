@@ -1,4 +1,5 @@
-import { type JSX, For, splitProps, createSignal } from "solid-js";
+import { type JSX, For, splitProps } from "solid-js";
+import { Tabs as KobalteTabs } from "@kobalte/core/tabs";
 
 export interface TabItem {
   id: string;
@@ -22,67 +23,33 @@ export function Tabs(props: TabsProps): JSX.Element {
     "onChange",
   ]);
 
-  const [activeTab, setActiveTab] = createSignal(
-    local.defaultTab ?? local.items[0]?.id ?? "",
-  );
-
-  const handleTabClick = (tabId: string): void => {
-    setActiveTab(tabId);
-    local.onChange?.(tabId);
-  };
-
-  const handleKeyDown = (e: KeyboardEvent, index: number): void => {
-    const tabs = local.items.filter((t) => !t.disabled);
-    let newIndex = -1;
-
-    if (e.key === "ArrowRight") {
-      newIndex = (index + 1) % tabs.length;
-    } else if (e.key === "ArrowLeft") {
-      newIndex = (index - 1 + tabs.length) % tabs.length;
-    }
-
-    if (newIndex >= 0) {
-      const tab = tabs[newIndex];
-      if (tab) {
-        handleTabClick(tab.id);
-      }
-    }
-  };
-
   return (
-    <div class={`tabs ${local.class ?? ""}`} {...rest}>
-      <div class="tabs-list" role="tablist">
+    <KobalteTabs
+      defaultValue={local.defaultTab ?? local.items[0]?.id ?? ""}
+      onChange={(value) => local.onChange?.(value)}
+      class={`tabs ${local.class ?? ""}`}
+      {...rest}
+    >
+      <KobalteTabs.List class="tabs-list">
         <For each={local.items}>
-          {(tab, index) => (
-            <button
-              class={`tab-trigger ${activeTab() === tab.id ? "tab-active" : ""}`}
-              role="tab"
-              aria-selected={activeTab() === tab.id}
-              aria-controls={`tabpanel-${tab.id}`}
-              id={`tab-${tab.id}`}
-              tabIndex={activeTab() === tab.id ? 0 : -1}
+          {(tab) => (
+            <KobalteTabs.Trigger
+              value={tab.id}
               disabled={tab.disabled}
-              onClick={() => handleTabClick(tab.id)}
-              onKeyDown={(e) => handleKeyDown(e, index())}
+              class="tab-trigger"
             >
               {tab.label}
-            </button>
+            </KobalteTabs.Trigger>
           )}
         </For>
-      </div>
+      </KobalteTabs.List>
       <For each={local.items}>
         {(tab) => (
-          <div
-            class="tab-panel"
-            role="tabpanel"
-            id={`tabpanel-${tab.id}`}
-            aria-labelledby={`tab-${tab.id}`}
-            hidden={activeTab() !== tab.id}
-          >
+          <KobalteTabs.Content value={tab.id} class="tab-panel">
             {tab.content}
-          </div>
+          </KobalteTabs.Content>
         )}
       </For>
-    </div>
+    </KobalteTabs>
   );
 }

@@ -1,4 +1,5 @@
-import { type JSX, Show, splitProps, createEffect, onCleanup } from "solid-js";
+import { type JSX, Show, splitProps } from "solid-js";
+import { Dialog } from "@kobalte/core/dialog";
 
 export interface ModalProps {
   open?: boolean;
@@ -21,57 +22,37 @@ export function Modal(props: ModalProps): JSX.Element {
     "children",
   ]);
 
-  const handleKeyDown = (e: KeyboardEvent): void => {
-    if (e.key === "Escape" && local.onClose) {
-      local.onClose();
-    }
-  };
-
-  createEffect(() => {
-    if (local.open) {
-      document.addEventListener("keydown", handleKeyDown);
-    } else {
-      document.removeEventListener("keydown", handleKeyDown);
-    }
-  });
-
-  onCleanup(() => {
-    document.removeEventListener("keydown", handleKeyDown);
-  });
-
   return (
-    <Show when={local.open}>
-      <div
-        class="modal-overlay"
-        role="presentation"
-        onClick={() => local.onClose?.()}
-      >
-        <div
+    <Dialog
+      open={local.open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) local.onClose?.();
+      }}
+      {...rest}
+    >
+      <Dialog.Portal>
+        <Dialog.Overlay
+          class="modal-overlay"
+        />
+        <Dialog.Content
           class={`modal modal-${local.size ?? "md"} ${local.class ?? ""}`}
-          role="dialog"
-          aria-modal="true"
-          aria-label={local.title}
-          onClick={(e) => e.stopPropagation()}
-          {...rest}
         >
           <Show when={local.title}>
             <div class="modal-header">
-              <h2 class="modal-title">{local.title}</h2>
-              <button
-                class="modal-close"
-                aria-label="Close"
-                onClick={() => local.onClose?.()}
-              >
+              <Dialog.Title class="modal-title">{local.title}</Dialog.Title>
+              <Dialog.CloseButton class="modal-close" aria-label="Close">
                 &times;
-              </button>
+              </Dialog.CloseButton>
             </div>
           </Show>
           <Show when={local.description}>
-            <p class="modal-description">{local.description}</p>
+            <Dialog.Description class="modal-description">
+              {local.description}
+            </Dialog.Description>
           </Show>
           <div class="modal-body">{local.children}</div>
-        </div>
-      </div>
-    </Show>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog>
   );
 }

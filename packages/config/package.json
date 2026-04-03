@@ -6,7 +6,8 @@
   "exports": {
     "./typescript": "./tsconfig.base.json",
     "./biome": "./biome.json",
-    "./otel": "./src/otel.ts"
+    "./otel": "./src/otel.ts",
+    "./feature-flags": "./src/feature-flags.ts"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.9.0",
