@@ -9,6 +9,10 @@ import {
   type ComponentName,
   ComponentCatalog,
 } from "@back-to-the-future/schemas";
+import {
+  listComponents,
+  getComponentSchema,
+} from "./mcp/component-server";
 
 // ── searchContent ─────────────────────────────────────────────────
 // Searches indexed content using semantic or keyword matching.
@@ -248,6 +252,87 @@ export const analyzeCode = tool({
   },
 });
 
+// ── listAvailableComponents ──────────────────────────────────────
+// Dynamically discovers all available components from the MCP catalog.
+// AI agents use this to learn what components exist at runtime.
+
+const ListAvailableComponentsInputSchema = z.object({});
+
+export interface AvailableComponent {
+  name: string;
+  hasChildren: boolean;
+  propCount: number;
+  props: string[];
+}
+
+export interface ListAvailableComponentsResult {
+  components: AvailableComponent[];
+  count: number;
+}
+
+export const listAvailableComponents = tool({
+  description:
+    "List all available UI components from the MCP component catalog. " +
+    "Returns every component name, whether it accepts children, and its prop names. " +
+    "Use this to discover what components exist before composing a layout.",
+  inputSchema: ListAvailableComponentsInputSchema,
+  execute: async (): Promise<ListAvailableComponentsResult> => {
+    const result = listComponents();
+    return {
+      components: result.components,
+      count: result.components.length,
+    };
+  },
+});
+
+// ── getComponentDetails ──────────────────────────────────────────
+// Retrieves the full Zod schema definition for a specific component.
+// AI agents use this to understand exact props, types, defaults, and variants.
+
+const GetComponentDetailsInputSchema = z.object({
+  componentName: z
+    .string()
+    .describe("The name of the component to get details for (e.g. 'Button', 'Card', 'Stack')"),
+});
+
+export interface ComponentDetails {
+  found: boolean;
+  name: string;
+  props: Record<string, { type: string; required: boolean; default?: unknown; description?: string }>;
+  hasChildren: boolean;
+  example: Record<string, unknown>;
+  error: string | null;
+}
+
+export const getComponentDetails = tool({
+  description:
+    "Get the full schema definition for a specific UI component including all props, " +
+    "their types, whether they are required, default values, and an example configuration. " +
+    "Use this after listAvailableComponents to learn the details of a specific component before generating it.",
+  inputSchema: GetComponentDetailsInputSchema,
+  execute: async (input): Promise<ComponentDetails> => {
+    const result = getComponentSchema(input.componentName);
+    if (!result) {
+      return {
+        found: false,
+        name: input.componentName,
+        props: {},
+        hasChildren: false,
+        example: {},
+        error: `Component "${input.componentName}" not found in the catalog. Use listAvailableComponents to see available components.`,
+      };
+    }
+    return {
+      found: true,
+      name: result.name,
+      props: result.props,
+      hasChildren: result.hasChildren,
+      example: result.example,
+      error: null,
+    };
+  },
+});
+
 // ── Tool Registry ─────────────────────────────────────────────────
 // All available tools in one object for easy agent composition.
 
@@ -255,6 +340,8 @@ export const allTools = {
   searchContent,
   generateComponent,
   analyzeCode,
+  listAvailableComponents,
+  getComponentDetails,
 } as const;
 
 export type ToolName = keyof typeof allTools;
