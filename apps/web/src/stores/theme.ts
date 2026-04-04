@@ -25,7 +25,8 @@ const THEME_KEY = "btf_theme";
 // ── Helper: Resolve Initial Theme ─────────────────────────────────────
 
 function getInitialTheme(): Theme {
-  if (typeof window === "undefined") return "light";
+  // Dark is the default — CSS base styles are dark, light requires html.light
+  if (typeof window === "undefined") return "dark";
 
   try {
     const stored = localStorage.getItem(THEME_KEY);
@@ -34,11 +35,12 @@ function getInitialTheme(): Theme {
     // Storage unavailable
   }
 
-  if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
-    return "dark";
+  // Respect OS preference for light mode; otherwise stay dark (default)
+  if (window.matchMedia?.("(prefers-color-scheme: light)").matches) {
+    return "light";
   }
 
-  return "light";
+  return "dark";
 }
 
 // ── Theme Context ─────────────────────────────────────────────────────
@@ -50,11 +52,12 @@ export function ThemeProvider(props: { children: JSX.Element }): JSX.Element {
   const isDark: Accessor<boolean> = (): boolean => theme() === "dark";
 
   // Apply theme class to document and persist
+  // Dark is the CSS default (no class needed). Light mode adds html.light.
   createEffect((): void => {
     const current = theme();
     if (typeof document === "undefined") return;
 
-    document.documentElement.classList.toggle("dark", current === "dark");
+    document.documentElement.classList.toggle("light", current === "light");
     document.documentElement.setAttribute("data-theme", current);
 
     try {

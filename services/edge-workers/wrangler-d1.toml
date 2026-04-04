@@ -1,0 +1,54 @@
+# ── D1 Edge Database Worker ──────────────────────────────────────────
+# Edge-deployed worker for SQL query execution against Cloudflare D1.
+# Supports read-only queries, write executions, batch transactions,
+# and schema introspection with security validation.
+#
+# Deploy: wrangler deploy -c wrangler-d1.toml
+# Dev:    wrangler dev -c wrangler-d1.toml
+#
+# Before first deploy, create the D1 database:
+#   wrangler d1 create btf-edge-db
+# Then paste the database_id below.
+
+name = "btf-d1-worker"
+main = "d1-worker.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[placement]
+mode = "smart"
+
+# ── Environment Variables ────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "production"
+
+# ── D1 Database (Edge SQLite) ────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "btf-edge-db"
+database_id = "" # Run: wrangler d1 create btf-edge-db
+
+# ── Development ──────────────────────────────────────────────────────
+[dev]
+port = 3012
+local_protocol = "http"
+
+# ── Staging Environment ──────────────────────────────────────────────
+[env.staging]
+name = "btf-d1-worker-staging"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "btf-edge-db-staging"
+database_id = "" # Run: wrangler d1 create btf-edge-db-staging
+
+# ── Production Environment ───────────────────────────────────────────
+[env.production]
+name = "btf-d1-worker-production"
+[env.production.vars]
+ENVIRONMENT = "production"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "btf-edge-db"
+database_id = "" # Run: wrangler d1 create btf-edge-db

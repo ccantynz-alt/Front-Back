@@ -1,0 +1,46 @@
+# ── R2 Object Storage Worker ──────────────────────────────────────────
+# Edge-deployed worker for serving and managing R2 object storage.
+# Supports full CRUD operations with Content-Type detection.
+#
+# Deploy: wrangler deploy -c wrangler-r2.toml
+# Dev:    wrangler dev -c wrangler-r2.toml
+
+name = "btf-r2-worker"
+main = "r2-worker.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[placement]
+mode = "smart"
+
+# ── Environment Variables ────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "production"
+
+# ── R2 Object Storage (S3-compatible, zero egress fees) ──────────────
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "btf-assets"
+
+# ── Development ──────────────────────────────────────────────────────
+[dev]
+port = 3010
+local_protocol = "http"
+
+# ── Staging Environment ──────────────────────────────────────────────
+[env.staging]
+name = "btf-r2-worker-staging"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+[[env.staging.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "btf-assets-staging"
+
+# ── Production Environment ───────────────────────────────────────────
+[env.production]
+name = "btf-r2-worker-production"
+[env.production.vars]
+ENVIRONMENT = "production"
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "btf-assets"

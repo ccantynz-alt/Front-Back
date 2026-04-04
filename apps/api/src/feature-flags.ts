@@ -28,7 +28,7 @@ export function defineFlag(
   const flag: FeatureFlag = {
     key,
     enabled: config.enabled ?? false,
-    description: config.description,
+    ...(config.description !== undefined ? { description: config.description } : {}),
     rolloutPercentage: config.rolloutPercentage ?? 100,
     allowList: config.allowList ?? [],
     denyList: config.denyList ?? [],

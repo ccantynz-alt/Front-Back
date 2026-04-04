@@ -26,7 +26,7 @@ import {
 } from "@back-to-the-future/ai-core";
 
 // Initialize OpenTelemetry (no-op if OTEL_EXPORTER_OTLP_ENDPOINT not set)
-const telemetry = initTelemetry();
+initTelemetry();
 
 const app = new Hono().basePath("/api");
 

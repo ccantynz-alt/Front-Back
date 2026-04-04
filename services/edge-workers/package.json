@@ -4,7 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bun test"
+    "test": "bun test",
+    "deploy:r2": "wrangler deploy -c wrangler-r2.toml",
+    "deploy:kv": "wrangler deploy -c wrangler-kv.toml",
+    "deploy:d1": "wrangler deploy -c wrangler-d1.toml",
+    "deploy:all": "wrangler deploy -c wrangler-r2.toml && wrangler deploy -c wrangler-kv.toml && wrangler deploy -c wrangler-d1.toml",
+    "dev:r2": "wrangler dev -c wrangler-r2.toml",
+    "dev:kv": "wrangler dev -c wrangler-kv.toml",
+    "dev:d1": "wrangler dev -c wrangler-d1.toml"
   },
   "dependencies": {
     "hono": "^4.7.0"

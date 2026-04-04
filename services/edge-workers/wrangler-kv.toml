@@ -1,0 +1,53 @@
+# ── KV Caching & Feature Flags Worker ────────────────────────────────
+# Edge-deployed worker for KV-based caching, feature flags, and
+# configuration. Sub-5ms reads from 330+ Cloudflare edge locations.
+#
+# Deploy: wrangler deploy -c wrangler-kv.toml
+# Dev:    wrangler dev -c wrangler-kv.toml
+#
+# Before first deploy, create KV namespaces:
+#   wrangler kv namespace create CACHE
+#   wrangler kv namespace create FLAGS
+# Then paste the IDs below.
+
+name = "btf-kv-worker"
+main = "kv-worker.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[placement]
+mode = "smart"
+
+# ── Environment Variables ────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "production"
+
+# ── KV Namespaces ────────────────────────────────────────────────────
+# The kv-worker.ts uses a single KV_NAMESPACE binding.
+# Feature flags are stored under the "flags:" key prefix.
+[[kv_namespaces]]
+binding = "KV_NAMESPACE"
+id = "" # Run: wrangler kv namespace create KV_NAMESPACE
+
+# ── Development ──────────────────────────────────────────────────────
+[dev]
+port = 3011
+local_protocol = "http"
+
+# ── Staging Environment ──────────────────────────────────────────────
+[env.staging]
+name = "btf-kv-worker-staging"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+[[env.staging.kv_namespaces]]
+binding = "KV_NAMESPACE"
+id = "" # Run: wrangler kv namespace create KV_NAMESPACE --env staging
+
+# ── Production Environment ───────────────────────────────────────────
+[env.production]
+name = "btf-kv-worker-production"
+[env.production.vars]
+ENVIRONMENT = "production"
+[[env.production.kv_namespaces]]
+binding = "KV_NAMESPACE"
+id = "" # Run: wrangler kv namespace create KV_NAMESPACE --env production

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, desc, gt, sql } from "drizzle-orm";
+import { eq, desc, gt, sql } from "drizzle-orm";
 import { router, publicProcedure } from "../init";
 import { auditLogs } from "@back-to-the-future/db";
 import { PaginationInput } from "@back-to-the-future/schemas";
@@ -14,7 +14,7 @@ export const auditRouter = router({
       .select()
       .from(auditLogs)
       .where(conditions)
-      .orderBy(desc(auditLogs.timestamp))
+      .orderBy(desc(auditLogs.createdAt))
       .limit(limit + 1);
 
     const hasMore = items.length > limit;
@@ -36,8 +36,7 @@ export const auditRouter = router({
   getByResource: publicProcedure
     .input(
       z.object({
-        resourceType: z.string().min(1),
-        resourceId: z.string().min(1),
+        resource: z.string().min(1),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -45,12 +44,9 @@ export const auditRouter = router({
         .select()
         .from(auditLogs)
         .where(
-          and(
-            eq(auditLogs.resourceType, input.resourceType),
-            eq(auditLogs.resourceId, input.resourceId),
-          ),
+          eq(auditLogs.resource, input.resource),
         )
-        .orderBy(desc(auditLogs.timestamp));
+        .orderBy(desc(auditLogs.createdAt));
 
       return items;
     }),
