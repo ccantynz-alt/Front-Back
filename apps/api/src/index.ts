@@ -4,14 +4,119 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
 import { wsApp, websocket, sseApp } from "./realtime";
+import { initTelemetry, httpRequestCount, httpRequestDuration } from "./telemetry";
+import { getAllFlags, isFeatureEnabled } from "./feature-flags";
+import { checkNeonHealth } from "@back-to-the-future/db/neon";
+import {
+  checkQdrantHealth,
+  getPendingApprovals,
+  getApprovalRequest,
+  approveRequest,
+  rejectRequest,
+  getMCPTools,
+  getMCPResources,
+  handleMCPToolCall,
+  handleMCPResourceRead,
+  listComponents,
+} from "@back-to-the-future/ai-core";
+
+// Initialize OpenTelemetry (no-op if OTEL_EXPORTER_OTLP_ENDPOINT not set)
+const telemetry = initTelemetry();
 
 const app = new Hono().basePath("/api");
+
+// ── Request Telemetry Middleware ──────────────────────────────────────
+app.use("*", async (c, next) => {
+  const start = performance.now();
+  httpRequestCount.add(1, { method: c.req.method, path: c.req.path });
+  await next();
+  const duration = performance.now() - start;
+  httpRequestDuration.record(duration, {
+    method: c.req.method,
+    path: c.req.path,
+    status: c.res.status,
+  });
+});
 
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
     timestamp: new Date().toISOString(),
   });
+});
+
+// ── Extended Health Check (all services) ─────────────────────────────
+app.get("/health/full", async (c) => {
+  const [neon, qdrant] = await Promise.allSettled([
+    checkNeonHealth(),
+    checkQdrantHealth(),
+  ]);
+
+  return c.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    services: {
+      neon: neon.status === "fulfilled" ? neon.value : { status: "error", error: "check failed" },
+      qdrant: qdrant.status === "fulfilled" ? qdrant.value : { status: "error", error: "check failed" },
+    },
+  });
+});
+
+// ── Feature Flags Endpoints ──────────────────────────────────────────
+app.get("/flags", (c) => {
+  return c.json({ flags: getAllFlags() });
+});
+
+app.get("/flags/:key", (c) => {
+  const key = c.req.param("key");
+  const userId = c.req.query("userId");
+  return c.json({
+    key,
+    enabled: isFeatureEnabled(key, userId),
+  });
+});
+
+// ── AI Agent Approval Endpoints ──────────────────────────────────────
+app.get("/approvals", (c) => {
+  const sessionId = c.req.query("sessionId");
+  return c.json({ approvals: getPendingApprovals(sessionId) });
+});
+
+app.get("/approvals/:id", (c) => {
+  const request = getApprovalRequest(c.req.param("id"));
+  if (!request) return c.json({ error: "Not found" }, 404);
+  return c.json(request);
+});
+
+app.post("/approvals/:id/approve", async (c) => {
+  const body = await c.req.json() as { approvedBy?: string };
+  const result = approveRequest(c.req.param("id"), body.approvedBy ?? "unknown");
+  if (!result) return c.json({ error: "Request not found or expired" }, 404);
+  return c.json(result);
+});
+
+app.post("/approvals/:id/reject", async (c) => {
+  const body = await c.req.json() as { rejectedBy?: string };
+  const result = rejectRequest(c.req.param("id"), body.rejectedBy ?? "unknown");
+  if (!result) return c.json({ error: "Request not found or expired" }, 404);
+  return c.json(result);
+});
+
+// ── MCP Component Catalog Endpoints ─────────────────────────────────
+app.get("/mcp/tools", (c) => c.json({ tools: getMCPTools() }));
+app.get("/mcp/resources", (c) => c.json({ resources: getMCPResources() }));
+app.get("/mcp/components", (c) => c.json(listComponents()));
+
+app.post("/mcp/tools/call", async (c) => {
+  const body = await c.req.json() as { name: string; arguments: Record<string, unknown> };
+  const result = handleMCPToolCall(body.name, body.arguments ?? {});
+  return c.json({ result });
+});
+
+app.get("/mcp/resources/:uri{.+}", (c) => {
+  const uri = `btf://${c.req.param("uri")}`;
+  const result = handleMCPResourceRead(uri);
+  return c.json({ result });
 });
 
 // Mount AI routes (raw Hono -- streaming works better outside tRPC)

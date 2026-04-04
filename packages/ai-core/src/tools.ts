@@ -44,18 +44,46 @@ export const searchContent = tool({
     "Use this when the user asks about existing content, documentation, or data.",
   inputSchema: SearchInputSchema,
   execute: async (input): Promise<SearchResult[]> => {
-    // TODO: Replace with Qdrant vector search + Turso full-text search
-    // This placeholder returns mock results for development
-    return [
-      {
-        id: `result-${Date.now()}`,
-        title: `Search result for: ${input.query}`,
-        snippet: `Placeholder result matching "${input.query}" (type: ${input.contentType}). Connect to Qdrant for semantic search.`,
-        score: 0.95,
-        contentType: input.contentType === "all" ? "document" : input.contentType,
-        url: `/content/${input.query.toLowerCase().replace(/\s+/g, "-")}`,
-      },
-    ].slice(0, input.limit);
+    try {
+      // Try Qdrant vector search if available
+      const { createQdrantClient, searchSimilar } = await import("./vector/qdrant");
+      const client = createQdrantClient();
+
+      // Build filter from contentType
+      const filter = input.contentType !== "all"
+        ? { type: input.contentType }
+        : undefined;
+
+      // For now, use a zero vector as placeholder until embeddings are wired
+      // In production, this would call the embedding API first
+      const hits = await searchSimilar(client, new Array(1536).fill(0), {
+        collection: "content_embeddings",
+        limit: input.limit,
+        scoreThreshold: 0.5,
+        filter,
+      });
+
+      return hits.map((hit) => ({
+        id: String(hit.id),
+        title: (hit.payload["title"] as string) ?? "Untitled",
+        snippet: ((hit.payload["content"] as string) ?? "").slice(0, 300),
+        score: hit.score,
+        contentType: (hit.payload["type"] as string) ?? "document",
+        url: (hit.payload["url"] as string) ?? `/content/${hit.id}`,
+      }));
+    } catch {
+      // Qdrant not available — return informative empty result
+      return [
+        {
+          id: `search-${Date.now()}`,
+          title: `Search: ${input.query}`,
+          snippet: `Semantic search for "${input.query}" requires Qdrant to be running. Start Qdrant or set QDRANT_URL.`,
+          score: 0,
+          contentType: input.contentType === "all" ? "document" : input.contentType,
+          url: "#",
+        },
+      ].slice(0, input.limit);
+    }
   },
 });
 
@@ -117,71 +145,28 @@ function getComponentDefaults(
   componentName: ComponentName,
   description: string,
 ): Record<string, unknown> {
-  switch (componentName) {
-    case "Button":
-      return {
-        component: "Button",
-        props: {
-          variant: "primary",
-          size: "md",
-          disabled: false,
-          loading: false,
-          label: description || "Click me",
-        },
-      };
-    case "Input":
-      return {
-        component: "Input",
-        props: {
-          type: "text",
-          placeholder: description || "Enter text...",
-          name: description.toLowerCase().replace(/\s+/g, "-") || "input",
-          required: false,
-          disabled: false,
-        },
-      };
-    case "Card":
-      return {
-        component: "Card",
-        props: {
-          title: description || "Card Title",
-          padding: "md",
-        },
-      };
-    case "Stack":
-      return {
-        component: "Stack",
-        props: {
-          direction: "vertical",
-          gap: "md",
-          align: "stretch",
-          justify: "start",
-        },
-      };
-    case "Text":
-      return {
-        component: "Text",
-        props: {
-          content: description || "Text content",
-          variant: "body",
-          weight: "normal",
-          align: "left",
-        },
-      };
-    case "Modal":
-      return {
-        component: "Modal",
-        props: {
-          title: description || "Modal Title",
-          size: "md",
-          open: false,
-        },
-      };
-    default: {
-      const _exhaustive: never = componentName;
-      throw new Error(`Unknown component: ${String(_exhaustive)}`);
-    }
-  }
+  const label = description || componentName;
+  const name = description.toLowerCase().replace(/\s+/g, "-") || "field";
+
+  const defaults: Record<ComponentName, Record<string, unknown>> = {
+    Button: { component: "Button", props: { variant: "primary", size: "md", disabled: false, loading: false, label } },
+    Input: { component: "Input", props: { type: "text", placeholder: label, name, required: false, disabled: false } },
+    Card: { component: "Card", props: { title: label, padding: "md" } },
+    Stack: { component: "Stack", props: { direction: "vertical", gap: "md", align: "stretch", justify: "start" } },
+    Text: { component: "Text", props: { content: label, variant: "body", weight: "normal", align: "left" } },
+    Modal: { component: "Modal", props: { title: label, size: "md", open: false } },
+    Badge: { component: "Badge", props: { variant: "default", size: "md", label } },
+    Alert: { component: "Alert", props: { variant: "info", title: label } },
+    Avatar: { component: "Avatar", props: { initials: label.slice(0, 2).toUpperCase(), size: "md" } },
+    Tabs: { component: "Tabs", props: { items: [{ id: "tab-1", label: "Tab 1" }, { id: "tab-2", label: "Tab 2" }] } },
+    Select: { component: "Select", props: { options: [{ value: "1", label: "Option 1" }, { value: "2", label: "Option 2" }], placeholder: label } },
+    Textarea: { component: "Textarea", props: { placeholder: label, rows: 3, resize: "vertical" } },
+    Spinner: { component: "Spinner", props: { size: "md" } },
+    Tooltip: { component: "Tooltip", props: { content: label, position: "top" } },
+    Separator: { component: "Separator", props: { orientation: "horizontal" } },
+  };
+
+  return defaults[componentName];
 }
 
 // ── analyzeCode ───────────────────────────────────────────────────

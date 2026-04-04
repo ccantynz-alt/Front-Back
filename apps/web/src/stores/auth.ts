@@ -6,7 +6,12 @@ import {
   createSignal,
   useContext,
 } from "solid-js";
+import {
+  startRegistration,
+  startAuthentication,
+} from "@simplewebauthn/browser";
 import type { User } from "@back-to-the-future/schemas";
+import { trpc } from "../lib/trpc";
 
 // ── Auth State Types ──────────────────────────────────────────────────
 
@@ -15,7 +20,7 @@ interface AuthState {
   isAuthenticated: Accessor<boolean>;
   isLoading: Accessor<boolean>;
   error: Accessor<string | null>;
-  login: (email: string, credential?: PublicKeyCredential) => Promise<void>;
+  login: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, displayName: string) => Promise<void>;
   checkSession: () => Promise<void>;
@@ -42,7 +47,7 @@ function setStorageItem(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch {
-    // Storage full or unavailable -- silently fail
+    // Storage full or unavailable
   }
 }
 
@@ -51,7 +56,7 @@ function removeStorageItem(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch {
-    // Storage unavailable -- silently fail
+    // Storage unavailable
   }
 }
 
@@ -79,32 +84,74 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     }
   });
 
-  const getApiUrl = (): string => {
-    if (typeof window !== "undefined") {
-      const meta = import.meta as unknown as Record<string, Record<string, string> | undefined>;
-      return meta.env?.VITE_PUBLIC_API_URL ?? "http://localhost:3001";
-    }
-    return "http://localhost:3001";
-  };
-
-  const login = async (email: string, _credential?: PublicKeyCredential): Promise<void> => {
+  /**
+   * Register with passkey: two-step WebAuthn ceremony via tRPC.
+   * 1. Call auth.register.start → get PublicKeyCredentialCreationOptions
+   * 2. Browser creates credential via navigator.credentials.create()
+   * 3. Call auth.register.finish → verify + create session
+   */
+  const register = async (email: string, displayName: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${getApiUrl()}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      // Step 1: Get registration options from server
+      const { options, userId } = await trpc.auth.register.start.mutate({
+        email,
+        displayName,
       });
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({ message: "Login failed" }));
-        throw new Error(body.message ?? "Login failed");
-      }
+      // Step 2: Browser creates the passkey credential
+      const credential = await startRegistration({ optionsJSON: options });
 
-      const data: { token: string; user: User } = await response.json();
-      setStorageItem(SESSION_TOKEN_KEY, data.token);
-      setCurrentUser(data.user);
+      // Step 3: Send credential to server for verification
+      const result = await trpc.auth.register.finish.mutate({
+        userId,
+        response: credential as Parameters<typeof trpc.auth.register.finish.mutate>[0]["response"],
+      });
+
+      if (result.verified && result.token) {
+        setStorageItem(SESSION_TOKEN_KEY, result.token);
+        // Fetch the user profile
+        await checkSession();
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registration failed";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Login with passkey: two-step WebAuthn ceremony via tRPC.
+   * 1. Call auth.login.start → get PublicKeyCredentialRequestOptions
+   * 2. Browser asserts credential via navigator.credentials.get()
+   * 3. Call auth.login.finish → verify + create session
+   */
+  const login = async (email: string): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Step 1: Get authentication options from server
+      const { options, userId } = await trpc.auth.login.start.mutate({
+        email,
+      });
+
+      // Step 2: Browser asserts the passkey credential
+      const credential = await startAuthentication({ optionsJSON: options });
+
+      // Step 3: Send assertion to server for verification
+      const result = await trpc.auth.login.finish.mutate({
+        userId,
+        response: credential as Parameters<typeof trpc.auth.login.finish.mutate>[0]["response"],
+      });
+
+      if (result.verified && result.token) {
+        setStorageItem(SESSION_TOKEN_KEY, result.token);
+        // Fetch the user profile
+        await checkSession();
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";
       setError(message);
@@ -118,49 +165,13 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     setIsLoading(true);
     setError(null);
     try {
-      const token = getStorageItem(SESSION_TOKEN_KEY);
-      if (token) {
-        await fetch(`${getApiUrl()}/auth/logout`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }).catch(() => {
-          // Best-effort logout on server -- always clear local state
-        });
-      }
+      await trpc.auth.logout.mutate().catch(() => {
+        // Best-effort logout on server
+      });
     } finally {
       removeStorageItem(SESSION_TOKEN_KEY);
       removeStorageItem(USER_CACHE_KEY);
       setCurrentUser(null);
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (email: string, displayName: string): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`${getApiUrl()}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, displayName }),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({ message: "Registration failed" }));
-        throw new Error(body.message ?? "Registration failed");
-      }
-
-      const data: { token: string; user: User } = await response.json();
-      setStorageItem(SESSION_TOKEN_KEY, data.token);
-      setCurrentUser(data.user);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Registration failed";
-      setError(message);
-      throw err;
-    } finally {
       setIsLoading(false);
     }
   };
@@ -175,21 +186,13 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${getApiUrl()}/auth/session`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        removeStorageItem(SESSION_TOKEN_KEY);
-        removeStorageItem(USER_CACHE_KEY);
-        setCurrentUser(null);
-        return;
-      }
-
-      const data: { user: User } = await response.json();
-      setCurrentUser(data.user);
+      const user = await trpc.auth.me.query();
+      setCurrentUser(user as User);
     } catch {
-      // Network error -- keep cached user if available
+      // Session invalid -- clear local state
+      removeStorageItem(SESSION_TOKEN_KEY);
+      removeStorageItem(USER_CACHE_KEY);
+      setCurrentUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -206,7 +209,6 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     checkSession,
   };
 
-  // Use type assertion for provider pattern -- SolidJS context requires this
   const Provider = AuthContext.Provider as (props: {
     value: AuthState;
     children: JSX.Element;

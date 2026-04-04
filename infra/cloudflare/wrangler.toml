@@ -1,0 +1,70 @@
+# ── Cloudflare Workers Configuration ──────────────────────────────────
+# API server deployed to Cloudflare Workers for sub-5ms cold starts
+# across 330+ cities worldwide.
+
+name = "btf-api"
+main = "../../services/edge-workers/api-worker.ts"
+compatibility_date = "2025-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[placement]
+mode = "smart"
+
+# ── Environment Variables ─────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "production"
+API_VERSION = "0.0.1"
+
+# ── D1 Database (Edge SQLite) ─────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "btf-production"
+database_id = "" # Set via wrangler CLI or dashboard
+
+# ── R2 Object Storage (S3-compatible, zero egress) ────────────────────
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "btf-assets"
+
+# ── KV Namespace (Global key-value) ──────────────────────────────────
+[[kv_namespaces]]
+binding = "CACHE"
+id = "" # Set via wrangler CLI or dashboard
+
+# ── Durable Objects (Stateful edge compute) ───────────────────────────
+[durable_objects]
+bindings = [
+  { name = "COLLAB_ROOM", class_name = "CollabRoom" },
+  { name = "RATE_LIMITER", class_name = "RateLimiter" },
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["CollabRoom", "RateLimiter"]
+
+# ── AI (Workers AI for edge inference) ────────────────────────────────
+[ai]
+binding = "AI"
+
+# ── Secrets (set via `wrangler secret put`) ───────────────────────────
+# OPENAI_API_KEY
+# DATABASE_AUTH_TOKEN
+# QDRANT_API_KEY
+# NEON_DATABASE_URL
+
+# ── Development ───────────────────────────────────────────────────────
+[dev]
+port = 3002
+local_protocol = "http"
+
+# ── Staging Environment ──────────────────────────────────────────────
+[env.staging]
+name = "btf-api-staging"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+# ── Production Environment ────────────────────────────────────────────
+[env.production]
+name = "btf-api-production"
+[env.production.vars]
+ENVIRONMENT = "production"

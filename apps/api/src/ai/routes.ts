@@ -51,7 +51,12 @@ const SiteBuilderInputSchema = z.object({
 
 // ── Route Definitions ─────────────────────────────────────────────
 
+import { embedRoutes } from "./embed";
+
 export const aiRoutes = new Hono();
+
+// Mount embedding routes
+aiRoutes.route("/", embedRoutes);
 
 /**
  * POST /ai/chat
