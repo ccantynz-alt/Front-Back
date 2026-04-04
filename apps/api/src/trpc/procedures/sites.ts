@@ -11,6 +11,10 @@ import {
   getDeploymentStatus,
   createProject,
 } from "@back-to-the-future/ai-core";
+import {
+  checkSiteLimit,
+  checkDeploymentLimit,
+} from "../../billing/plan-limits";
 
 // ── Input Schemas ──────────────────────────────────────────────────
 
@@ -133,6 +137,15 @@ export const sitesRouter = router({
   create: protectedProcedure
     .input(CreateSiteInput)
     .mutation(async ({ ctx, input }) => {
+      // Enforce plan site limit
+      const siteLimit = await checkSiteLimit(ctx.db, ctx.userId);
+      if (!siteLimit.allowed) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Site limit reached (${siteLimit.current}/${siteLimit.limit}). Upgrade your plan to create more sites.`,
+        });
+      }
+
       // Check slug uniqueness
       const existing = await ctx.db
         .select({ id: sites.id })
@@ -256,6 +269,15 @@ export const sitesRouter = router({
         throw new TRPCError({
           code: "NOT_FOUND",
           message: `Site not found: ${input.siteId}`,
+        });
+      }
+
+      // Enforce plan deployment limit
+      const deployLimit = await checkDeploymentLimit(ctx.db, ctx.userId);
+      if (!deployLimit.allowed) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Monthly deployment limit reached (${deployLimit.current}/${deployLimit.limit}). Upgrade your plan for more deployments.`,
         });
       }
 
