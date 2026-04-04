@@ -9,6 +9,7 @@ import { assetsRouter } from "./procedures/assets";
 import { flagsRouter } from "./procedures/flags";
 import { rbacRouter } from "./procedures/rbac";
 import { auditEnhancedRouter } from "./procedures/audit-enhanced";
+import { supportRouter } from "./procedures/support";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -30,6 +31,7 @@ export const appRouter = router({
   flags: flagsRouter,
   rbac: rbacRouter,
   auditEnhanced: auditEnhancedRouter,
+  support: supportRouter,
 });
 
 export type AppRouter = typeof appRouter;

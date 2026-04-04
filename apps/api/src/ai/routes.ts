@@ -17,6 +17,7 @@ import { traceAICall } from "../telemetry";
 import { ragRoutes } from "./rag-routes";
 import { agentRoutes } from "./agent-routes";
 import { vectorRoutes } from "./vector-routes";
+import { supportRoutes } from "./support-routes";
 
 // ── Input Schemas ─────────────────────────────────────────────────
 
@@ -63,6 +64,9 @@ aiRoutes.route("/agents", agentRoutes);
 
 // Mount Qdrant vector routes at /ai/vectors/*
 aiRoutes.route("/vectors", vectorRoutes);
+
+// Mount support agent routes at /ai/support/*
+aiRoutes.route("/support", supportRoutes);
 
 /**
  * POST /ai/chat
