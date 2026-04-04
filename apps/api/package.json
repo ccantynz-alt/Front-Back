@@ -33,7 +33,7 @@
     "hono": "^4.7.0",
     "y-websocket": "3.0.0",
     "yjs": "13.6.30",
-    "zod": "^3.24.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
