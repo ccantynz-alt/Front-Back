@@ -180,8 +180,8 @@ describe("neon-schema matches turso schema - table names", () => {
     expect(neonTableNames).toEqual(tursoTableNames);
   });
 
-  test("both schemas have all 6 expected tables", () => {
-    const expectedExports = ["users", "credentials", "sessions", "auditLogs", "sites", "deployments"].sort();
+  test("both schemas have all 9 expected tables", () => {
+    const expectedExports = ["users", "credentials", "sessions", "auditLogs", "sites", "deployments", "plans", "subscriptions", "invoices"].sort();
     const neonExports = Object.keys(neonSchema).sort();
     const tursoExports = Object.keys(tursoSchema).sort();
     expect(neonExports).toEqual(expectedExports);

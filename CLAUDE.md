@@ -25,7 +25,7 @@
 > | **Security Layer** | DONE | CORS, rate limiting, security headers, input sanitizer | Hardened |
 > | **CI/CD** | IN PROGRESS | .github/workflows/ | Setting up |
 > | **Wrangler Configs** | IN PROGRESS | infra/cloudflare/ | Setting up |
-> | **Stripe/Payments** | NOT STARTED | User requested next priority | -- |
+> | **Stripe/Payments** | IN PROGRESS | apps/api/src/billing/, pricing page | Building |
 >
 > **Test Suite:** 620+ tests passing across 33 files. Zero failures.
 > **Branch:** `claude/continue-previous-work-zx9c1`

@@ -18,5 +18,8 @@
   "devDependencies": {
     "turbo": "^2"
   },
-  "packageManager": "bun@1.3.9"
+  "packageManager": "bun@1.3.9",
+  "dependencies": {
+    "stripe": "22.0.0"
+  }
 }

@@ -5,6 +5,7 @@ import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
 import { deployRoutes } from "./deploy/routes";
 import { wsApp, websocket, sseApp } from "./realtime";
+import { webhookRoutes } from "./billing/webhook";
 import { securityHeaders, corsMiddleware, rateLimitMiddleware } from "./middleware/security";
 import { initTelemetry, httpRequestCount, httpRequestDuration } from "./telemetry";
 import { getAllFlags, isFeatureEnabled } from "./feature-flags";
@@ -146,6 +147,9 @@ app.get("/templates/:id", (c) => {
   if (!template) return c.json({ error: "Template not found" }, 404);
   return c.json({ template });
 });
+
+// Mount billing webhook routes (before tRPC — needs raw body, no JSON parsing)
+app.route("/billing", webhookRoutes);
 
 // Mount AI routes (raw Hono -- streaming works better outside tRPC)
 app.route("/ai", aiRoutes);

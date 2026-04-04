@@ -123,3 +123,75 @@ export const deployments = pgTable("deployments", {
     .notNull()
     .defaultNow(),
 });
+
+// ── Plans ──────────────────────────────────────────────────────────
+
+export const plans = pgTable("plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  stripePriceId: text("stripe_price_id").unique(),
+  stripeProductId: text("stripe_product_id"),
+  price: integer("price").notNull().default(0),
+  interval: text("interval", { enum: ["month", "year"] })
+    .notNull()
+    .default("month"),
+  features: text("features"), // JSON string array
+  sitesLimit: integer("sites_limit").notNull().default(1),
+  deploymentsPerMonth: integer("deployments_per_month").notNull().default(10),
+  customDomains: boolean("custom_domains").notNull().default(false),
+  aiRequestsPerMonth: integer("ai_requests_per_month").notNull().default(100),
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ── Subscriptions ──────────────────────────────────────────────────
+
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  planId: uuid("plan_id")
+    .notNull()
+    .references(() => plans.id),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  status: text("status", {
+    enum: ["active", "past_due", "canceled", "trialing", "unpaid", "incomplete"],
+  })
+    .notNull()
+    .default("active"),
+  currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ── Invoices ───────────────────────────────────────────────────────
+
+export const invoices = pgTable("invoices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  subscriptionId: uuid("subscription_id").references(() => subscriptions.id),
+  stripeInvoiceId: text("stripe_invoice_id").unique(),
+  amount: integer("amount").notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: text("status", {
+    enum: ["draft", "open", "paid", "void", "uncollectible"],
+  }).notNull(),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

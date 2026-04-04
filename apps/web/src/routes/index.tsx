@@ -35,6 +35,9 @@ export default function Home(): ReturnType<typeof Stack> {
         <A href="/about">
           <Button variant="outline" size="lg">Learn More</Button>
         </A>
+        <A href="/pricing">
+          <Button variant="secondary" size="lg">View Pricing</Button>
+        </A>
       </Stack>
     </Stack>
   );
