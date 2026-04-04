@@ -19,6 +19,9 @@ const EXPECTED_TABLES = [
   "audit_logs",
   "sites",
   "deployments",
+  "plans",
+  "subscriptions",
+  "invoices",
 ] as const;
 
 // ── SQL Migration Validation ────────────────────────────────────────
@@ -28,12 +31,12 @@ describe("0001_initial.sql - SQL validity", () => {
     expect(MIGRATION_SQL.length).toBeGreaterThan(0);
   });
 
-  test("contains CREATE TABLE statements for all 6 tables", () => {
+  test("contains CREATE TABLE statements for all 9 tables", () => {
     const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)/gi;
     const matches = [...MIGRATION_SQL.matchAll(createTableRegex)];
     const tableNames = matches.map((m) => m[1]);
 
-    expect(tableNames.length).toBe(6);
+    expect(tableNames.length).toBe(9);
     for (const table of EXPECTED_TABLES) {
       expect(tableNames).toContain(table);
     }
@@ -171,6 +174,67 @@ describe("0001_initial.sql - deployments table", () => {
   });
 });
 
+describe("0001_initial.sql - plans table", () => {
+  test("has required columns", () => {
+    const columns = ["id", "name", "slug", "stripe_price_id", "stripe_product_id", "price", "interval", "features", "sites_limit", "deployments_per_month", "custom_domains", "ai_requests_per_month", "is_active", "sort_order", "created_at"];
+    for (const col of columns) {
+      expect(MIGRATION_SQL).toContain(col);
+    }
+  });
+
+  test("slug is UNIQUE", () => {
+    expect(MIGRATION_SQL).toMatch(
+      /plans[\s\S]*slug\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i,
+    );
+  });
+
+  test("interval has CHECK constraint", () => {
+    expect(MIGRATION_SQL).toMatch(
+      /plans[\s\S]*interval.*CHECK\s*\(\s*interval\s+IN\s*\(\s*'month'\s*,\s*'year'\s*\)\s*\)/is,
+    );
+  });
+});
+
+describe("0001_initial.sql - subscriptions table", () => {
+  test("has foreign key to users", () => {
+    expect(MIGRATION_SQL).toMatch(
+      /subscriptions[\s\S]*user_id\s+UUID\s+NOT\s+NULL\s+REFERENCES\s+users\(id\)\s+ON\s+DELETE\s+CASCADE/i,
+    );
+  });
+
+  test("has foreign key to plans", () => {
+    expect(MIGRATION_SQL).toMatch(
+      /subscriptions[\s\S]*plan_id\s+UUID\s+NOT\s+NULL\s+REFERENCES\s+plans\(id\)/i,
+    );
+  });
+
+  test("status has CHECK constraint", () => {
+    expect(MIGRATION_SQL).toMatch(
+      /subscriptions[\s\S]*status.*CHECK\s*\(\s*status\s+IN\s*\(\s*'active'\s*,\s*'past_due'\s*,\s*'canceled'\s*,\s*'trialing'\s*,\s*'unpaid'\s*,\s*'incomplete'\s*\)\s*\)/is,
+    );
+  });
+});
+
+describe("0001_initial.sql - invoices table", () => {
+  test("has foreign key to users", () => {
+    expect(MIGRATION_SQL).toMatch(
+      /invoices[\s\S]*user_id\s+UUID\s+NOT\s+NULL\s+REFERENCES\s+users\(id\)\s+ON\s+DELETE\s+CASCADE/i,
+    );
+  });
+
+  test("has foreign key to subscriptions", () => {
+    expect(MIGRATION_SQL).toMatch(
+      /invoices[\s\S]*subscription_id\s+UUID\s+REFERENCES\s+subscriptions\(id\)/i,
+    );
+  });
+
+  test("status has CHECK constraint", () => {
+    expect(MIGRATION_SQL).toMatch(
+      /invoices[\s\S]*status.*CHECK\s*\(\s*status\s+IN\s*\(\s*'draft'\s*,\s*'open'\s*,\s*'paid'\s*,\s*'void'\s*,\s*'uncollectible'\s*\)\s*\)/is,
+    );
+  });
+});
+
 // ── Neon Schema matches Turso Schema ────────────────────────────────
 
 describe("neon-schema matches turso schema - table names", () => {
@@ -237,6 +301,24 @@ describe("neon-schema matches turso schema - column parity", () => {
   test("deployments table has matching columns", () => {
     const neonCols = getColumnNames(neonSchema.deployments as unknown as Record<string, unknown>);
     const tursoCols = getColumnNames(tursoSchema.deployments as unknown as Record<string, unknown>);
+    expect(neonCols).toEqual(tursoCols);
+  });
+
+  test("plans table has matching columns", () => {
+    const neonCols = getColumnNames(neonSchema.plans as unknown as Record<string, unknown>);
+    const tursoCols = getColumnNames(tursoSchema.plans as unknown as Record<string, unknown>);
+    expect(neonCols).toEqual(tursoCols);
+  });
+
+  test("subscriptions table has matching columns", () => {
+    const neonCols = getColumnNames(neonSchema.subscriptions as unknown as Record<string, unknown>);
+    const tursoCols = getColumnNames(tursoSchema.subscriptions as unknown as Record<string, unknown>);
+    expect(neonCols).toEqual(tursoCols);
+  });
+
+  test("invoices table has matching columns", () => {
+    const neonCols = getColumnNames(neonSchema.invoices as unknown as Record<string, unknown>);
+    const tursoCols = getColumnNames(tursoSchema.invoices as unknown as Record<string, unknown>);
     expect(neonCols).toEqual(tursoCols);
   });
 });

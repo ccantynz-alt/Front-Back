@@ -104,6 +104,7 @@ function Sidebar(props: SidebarProps): JSX.Element {
           <NavLink href="/dashboard" label="Dashboard" />
           <NavLink href="/builder" label="AI Builder" />
           <NavLink href="/about" label="About" />
+          <NavLink href="/settings" label="Settings" />
         </nav>
       </Show>
     </aside>
@@ -134,6 +135,9 @@ export function Layout(props: LayoutProps): JSX.Element {
               <NavLink href="/builder" label="Builder" />
             </Show>
             <NavLink href="/about" label="About" />
+            <Show when={auth.isAuthenticated()}>
+              <NavLink href="/settings" label="Settings" />
+            </Show>
           </nav>
         </div>
         <div class="navbar-right">

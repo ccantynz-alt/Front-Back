@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { eq, desc, gt, sql } from "drizzle-orm";
-import { router, publicProcedure } from "../init";
+import { router, publicProcedure, protectedProcedure } from "../init";
 import { users } from "@back-to-the-future/db";
 import {
   CreateUserInput,
@@ -124,5 +124,34 @@ export const usersRouter = router({
       }
 
       return { success: true as const, id: input.id };
+    }),
+
+  /**
+   * Update the authenticated user's profile.
+   */
+  updateProfile: protectedProcedure
+    .input(
+      z.object({
+        displayName: z.string().min(1).max(100).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updateData: Record<string, unknown> = { updatedAt: new Date() };
+      if (input.displayName !== undefined) {
+        updateData.displayName = input.displayName;
+      }
+
+      const result = await ctx.db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, ctx.userId))
+        .returning();
+
+      const updated = result[0];
+      if (!updated) {
+        throw new Error(`User not found: ${ctx.userId}`);
+      }
+
+      return updated;
     }),
 });

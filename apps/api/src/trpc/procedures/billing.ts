@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gte, count, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { router, publicProcedure, protectedProcedure } from "../init";
-import { plans, subscriptions, invoices } from "@back-to-the-future/db";
+import { plans, subscriptions, invoices, sites, deployments } from "@back-to-the-future/db";
 import { getStripe } from "../../billing/stripe";
 
 // ── Router ─────────────────────────────────────────────────────────
@@ -292,4 +292,84 @@ export const billingRouter = router({
 
       return result;
     }),
+
+  /**
+   * Get usage stats for the current user against their plan limits.
+   */
+  usage: protectedProcedure.query(async ({ ctx }) => {
+    // Free plan defaults
+    const FREE_PLAN_DEFAULTS = {
+      sitesLimit: 1,
+      deploymentsPerMonth: 10,
+      aiRequestsPerMonth: 100,
+      customDomains: false,
+      name: "Free",
+    };
+
+    // 1. Get user's subscription + plan
+    const subResult = await ctx.db
+      .select({
+        plan: plans,
+      })
+      .from(subscriptions)
+      .innerJoin(plans, eq(subscriptions.planId, plans.id))
+      .where(
+        and(
+          eq(subscriptions.userId, ctx.userId),
+          eq(subscriptions.status, "active"),
+        ),
+      )
+      .limit(1);
+
+    const plan = subResult[0]?.plan;
+
+    const sitesLimit = plan?.sitesLimit ?? FREE_PLAN_DEFAULTS.sitesLimit;
+    const deploymentsLimit = plan?.deploymentsPerMonth ?? FREE_PLAN_DEFAULTS.deploymentsPerMonth;
+    const aiRequestsLimit = plan?.aiRequestsPerMonth ?? FREE_PLAN_DEFAULTS.aiRequestsPerMonth;
+    const customDomains = plan?.customDomains ?? FREE_PLAN_DEFAULTS.customDomains;
+    const planName = plan?.name ?? FREE_PLAN_DEFAULTS.name;
+
+    // 2. Count user's sites
+    const sitesResult = await ctx.db
+      .select({ value: count() })
+      .from(sites)
+      .where(eq(sites.userId, ctx.userId));
+
+    const sitesUsed = sitesResult[0]?.value ?? 0;
+
+    // 3. Count deployments this calendar month
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get user's site IDs first
+    const userSites = await ctx.db
+      .select({ id: sites.id })
+      .from(sites)
+      .where(eq(sites.userId, ctx.userId));
+
+    const siteIds = userSites.map((s) => s.id);
+
+    let deploymentsUsed = 0;
+    if (siteIds.length > 0) {
+      const deploymentsResult = await ctx.db
+        .select({ value: count() })
+        .from(deployments)
+        .where(
+          and(
+            inArray(deployments.siteId, siteIds),
+            gte(deployments.createdAt, firstOfMonth),
+          ),
+        );
+
+      deploymentsUsed = deploymentsResult[0]?.value ?? 0;
+    }
+
+    return {
+      sites: { used: sitesUsed, limit: sitesLimit },
+      deploymentsThisMonth: { used: deploymentsUsed, limit: deploymentsLimit },
+      aiRequestsThisMonth: { used: 0, limit: aiRequestsLimit },
+      customDomains,
+      planName,
+    };
+  }),
 });
