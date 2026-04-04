@@ -36,6 +36,23 @@ type DeviceMode = "desktop" | "tablet" | "mobile";
 
 // ── API Helpers ──────────────────────────────────────────────────────
 
+const SESSION_TOKEN_KEY = "btf_session_token";
+
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (typeof window !== "undefined") {
+    try {
+      const token = localStorage.getItem(SESSION_TOKEN_KEY);
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+    } catch {
+      // Storage unavailable
+    }
+  }
+  return headers;
+}
+
 function getApiUrl(): string {
   if (typeof window !== "undefined") {
     const meta = import.meta as unknown as Record<
@@ -56,7 +73,7 @@ async function streamAIResponse(
   try {
     const response = await fetch(`${getApiUrl()}/api/ai/site-builder`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         messages,
         computeTier: "cloud",
@@ -98,7 +115,7 @@ async function fetchGenerateLayout(
 ): Promise<PageLayout> {
   const response = await fetch(`${getApiUrl()}/api/ai/generate-layout`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify({
       description,
       computeTier: "cloud",

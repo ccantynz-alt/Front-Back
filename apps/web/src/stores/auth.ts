@@ -84,6 +84,14 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     }
   });
 
+  // Validate session on mount -- if there is a token, verify it is still valid.
+  // This prevents stale cached users from appearing authenticated when the
+  // session has expired server-side.
+  if (typeof window !== "undefined" && getStorageItem(SESSION_TOKEN_KEY)) {
+    // Fire-and-forget: runs after component mount, updates signals reactively
+    checkSession();
+  }
+
   /**
    * Register with passkey: two-step WebAuthn ceremony via tRPC.
    * 1. Call auth.register.start → get PublicKeyCredentialCreationOptions

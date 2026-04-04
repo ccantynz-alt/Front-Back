@@ -38,6 +38,27 @@
         "typescript": "^5.7.0",
       },
     },
+    "apps/emailed": {
+      "name": "@back-to-the-future/emailed",
+      "dependencies": {
+        "@back-to-the-future/ai-core": "workspace:*",
+        "@back-to-the-future/db": "workspace:*",
+        "@back-to-the-future/schemas": "workspace:*",
+        "@back-to-the-future/ui": "workspace:*",
+        "@solidjs/meta": "^0.29.4",
+        "@solidjs/router": "^0.15.3",
+        "@solidjs/start": "^1.1.0",
+        "@tailwindcss/vite": "4.2.2",
+        "solid-js": "^1.9.5",
+        "tailwindcss": "4.2.2",
+        "vinxi": "^0.5.3",
+        "zod": "^3.24.0",
+      },
+      "devDependencies": {
+        "@types/node": "^22.13.0",
+        "typescript": "^5.7.3",
+      },
+    },
     "apps/web": {
       "name": "@back-to-the-future/web",
       "dependencies": {
@@ -117,6 +138,27 @@
         "typescript": "^5",
       },
     },
+    "services/edge-workers": {
+      "name": "@back-to-the-future/edge-workers",
+      "version": "0.1.0",
+      "dependencies": {
+        "hono": "^4.7.0",
+      },
+      "devDependencies": {
+        "@cloudflare/workers-types": "^4.0.0",
+        "typescript": "^5.0.0",
+      },
+    },
+    "services/sentinel": {
+      "name": "@btf/sentinel",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "^3.23.0",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+      },
+    },
   },
   "packages": {
     "@a2a-js/sdk": ["@a2a-js/sdk@0.2.5", "", { "dependencies": { "@types/cors": "^2.8.17", "@types/express": "^4.17.23", "body-parser": "^2.2.0", "cors": "^2.8.5", "express": "^4.21.2", "uuid": "^11.1.0" } }, "sha512-VTDuRS5V0ATbJ/LkaQlisMnTAeYKXAK6scMguVBstf+KIBQ7HIuKhiXLv+G/hvejkV+THoXzoNifInAkU81P1g=="],
@@ -185,13 +227,21 @@
 
     "@back-to-the-future/db": ["@back-to-the-future/db@workspace:packages/db"],
 
+    "@back-to-the-future/edge-workers": ["@back-to-the-future/edge-workers@workspace:services/edge-workers"],
+
+    "@back-to-the-future/emailed": ["@back-to-the-future/emailed@workspace:apps/emailed"],
+
     "@back-to-the-future/schemas": ["@back-to-the-future/schemas@workspace:packages/schemas"],
 
     "@back-to-the-future/ui": ["@back-to-the-future/ui@workspace:packages/ui"],
 
     "@back-to-the-future/web": ["@back-to-the-future/web@workspace:apps/web"],
 
+    "@btf/sentinel": ["@btf/sentinel@workspace:services/sentinel"],
+
     "@cloudflare/kv-asset-handler": ["@cloudflare/kv-asset-handler@0.4.2", "", {}, "sha512-SIOD2DxrRRwQ+jgzlXCqoEFiKOFqaPjhnNTGKXSRLvp1HiOvapLaFG2kEr9dYQTYe8rKrd9uvDUzmAITeNyaHQ=="],
+
+    "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20260404.1", "", {}, "sha512-jfZfktdn3D0ceA59i4lkMgPUR9p5Wd6trtNLQR1RTgF59iVt9/yegkiEZv0TQvJPXlmQOU1D0pAYz7cMztqErg=="],
 
     "@deno/shim-deno": ["@deno/shim-deno@0.19.2", "", { "dependencies": { "@deno/shim-deno-test": "^0.5.0", "which": "^4.0.0" } }, "sha512-q3VTHl44ad8T2Tw2SpeAvghdGOjlnLPDNO2cpOxwMrBE/PVas6geWpbpIgrM+czOCH0yejp0yi8OaTuB+NU40Q=="],
 

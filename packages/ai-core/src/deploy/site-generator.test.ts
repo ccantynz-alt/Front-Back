@@ -111,6 +111,32 @@ describe("site-generator", () => {
       expect(components).not.toContain("export function Badge");
     });
 
+    test("generates base CSS styles", () => {
+      const files = generateSiteFiles(sampleLayout);
+      const css = files["src/styles.css"];
+
+      expect(css).toBeDefined();
+      expect(css).toContain(":root");
+      expect(css).toContain("--color-primary");
+      expect(css).toContain(".btn");
+      expect(css).toContain(".card");
+      expect(css).toContain(".stack");
+      expect(css).toContain(".text-h1");
+      expect(css).toContain(".badge");
+      expect(css).toContain(".alert");
+      expect(css).toContain(".spinner");
+      expect(css).toContain(".separator");
+      expect(css).toContain(".tabs");
+      expect(css).toContain(".tooltip");
+      expect(css).toContain(".avatar");
+    });
+
+    test("index.tsx imports styles.css", () => {
+      const files = generateSiteFiles(sampleLayout);
+      const entry = files["src/index.tsx"];
+      expect(entry).toContain('./styles.css');
+    });
+
     test("index.tsx has proper SolidJS entry point", () => {
       const files = generateSiteFiles(sampleLayout);
       const entry = files["src/index.tsx"];
