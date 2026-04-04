@@ -31,6 +31,53 @@ function log(
   }
 }
 
+// ── Helpers ─────────────────────────────────────────────────────────
+
+type SubscriptionStatus = "active" | "past_due" | "canceled" | "trialing" | "unpaid" | "incomplete";
+
+function mapSubscriptionStatus(stripeStatus: string): SubscriptionStatus {
+  const statusMap: Record<string, SubscriptionStatus> = {
+    active: "active",
+    past_due: "past_due",
+    canceled: "canceled",
+    trialing: "trialing",
+    unpaid: "unpaid",
+    incomplete: "incomplete",
+    incomplete_expired: "incomplete",
+    paused: "active",
+  };
+  return statusMap[stripeStatus] ?? "incomplete";
+}
+
+/**
+ * Extract current_period_start/end from the first subscription item.
+ * In Stripe v22 (2025 API), these fields moved from Subscription to SubscriptionItem.
+ */
+function extractPeriodDates(subscription: Stripe.Subscription): {
+  periodStart: Date | undefined;
+  periodEnd: Date | undefined;
+} {
+  const firstItem = subscription.items?.data?.[0];
+  if (firstItem) {
+    return {
+      periodStart: new Date(firstItem.current_period_start * 1000),
+      periodEnd: new Date(firstItem.current_period_end * 1000),
+    };
+  }
+  return { periodStart: undefined, periodEnd: undefined };
+}
+
+/**
+ * Extract subscription ID from a Stripe Invoice (v22 uses parent.subscription_details).
+ */
+function extractSubscriptionIdFromInvoice(invoice: Stripe.Invoice): string | undefined {
+  const subDetails = invoice.parent?.subscription_details;
+  if (!subDetails) return undefined;
+  return typeof subDetails.subscription === "string"
+    ? subDetails.subscription
+    : subDetails.subscription?.id;
+}
+
 // ── POST /webhook ───────────────────────────────────────────────────
 
 webhookRoutes.post("/webhook", async (c) => {
@@ -170,6 +217,7 @@ async function handleSubscriptionCreated(
   const customerId = typeof subscription.customer === "string"
     ? subscription.customer
     : subscription.customer.id;
+  const { periodStart, periodEnd } = extractPeriodDates(subscription);
 
   const existing = await db
     .select()
@@ -183,8 +231,8 @@ async function handleSubscriptionCreated(
       .update(subscriptions)
       .set({
         status: mapSubscriptionStatus(subscription.status),
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
         updatedAt: new Date(),
       })
@@ -205,8 +253,8 @@ async function handleSubscriptionCreated(
       stripeCustomerId: customerId,
       stripeSubscriptionId: subscription.id,
       status: mapSubscriptionStatus(subscription.status),
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -222,12 +270,14 @@ async function handleSubscriptionCreated(
 async function handleSubscriptionUpdated(
   subscription: Stripe.Subscription,
 ): Promise<void> {
+  const { periodStart, periodEnd } = extractPeriodDates(subscription);
+
   await db
     .update(subscriptions)
     .set({
       status: mapSubscriptionStatus(subscription.status),
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       updatedAt: new Date(),
     })
@@ -262,20 +312,18 @@ async function handleInvoicePaymentSucceeded(
   const customerId = typeof invoice.customer === "string"
     ? invoice.customer
     : invoice.customer?.id ?? "";
-  const subscriptionId = typeof invoice.subscription === "string"
-    ? invoice.subscription
-    : invoice.subscription?.id;
+  const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
 
   // Find the user from the subscription
   let userId: string | null = null;
   if (subscriptionId) {
-    const sub = await db
+    const [sub] = await db
       .select()
       .from(subscriptions)
       .where(eq(subscriptions.stripeSubscriptionId, subscriptionId))
       .limit(1);
-    if (sub.length > 0) {
-      userId = sub[0].userId;
+    if (sub) {
+      userId = sub.userId;
     }
   }
 
@@ -327,9 +375,7 @@ async function handleInvoicePaymentSucceeded(
 async function handleInvoicePaymentFailed(
   invoice: Stripe.Invoice,
 ): Promise<void> {
-  const subscriptionId = typeof invoice.subscription === "string"
-    ? invoice.subscription
-    : invoice.subscription?.id;
+  const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
 
   if (subscriptionId) {
     await db
@@ -353,13 +399,13 @@ async function handleInvoicePaymentFailed(
   } else {
     let userId: string | null = null;
     if (subscriptionId) {
-      const sub = await db
+      const [sub] = await db
         .select()
         .from(subscriptions)
         .where(eq(subscriptions.stripeSubscriptionId, subscriptionId))
         .limit(1);
-      if (sub.length > 0) {
-        userId = sub[0].userId;
+      if (sub) {
+        userId = sub.userId;
       }
     }
 
@@ -379,22 +425,4 @@ async function handleInvoicePaymentFailed(
     invoiceId: invoice.id,
     subscriptionId,
   });
-}
-
-// ── Helpers ─────────────────────────────────────────────────────────
-
-function mapSubscriptionStatus(
-  stripeStatus: string,
-): "active" | "past_due" | "canceled" | "trialing" | "unpaid" | "incomplete" {
-  const statusMap: Record<string, "active" | "past_due" | "canceled" | "trialing" | "unpaid" | "incomplete"> = {
-    active: "active",
-    past_due: "past_due",
-    canceled: "canceled",
-    trialing: "trialing",
-    unpaid: "unpaid",
-    incomplete: "incomplete",
-    incomplete_expired: "incomplete",
-    paused: "active",
-  };
-  return statusMap[stripeStatus] ?? "incomplete";
 }
