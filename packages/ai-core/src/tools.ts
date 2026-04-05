@@ -47,6 +47,7 @@ export const searchContent = tool({
     try {
       // Try Qdrant vector search if available
       const { createQdrantClient, searchSimilar } = await import("./vector/qdrant");
+      const { createEmbedFunction } = await import("./rag/embeddings");
       const client = createQdrantClient();
 
       // Build filter from contentType
@@ -54,9 +55,11 @@ export const searchContent = tool({
         ? { type: input.contentType }
         : undefined;
 
-      // For now, use a zero vector as placeholder until embeddings are wired
-      // In production, this would call the embedding API first
-      const hits = await searchSimilar(client, new Array(1536).fill(0), {
+      // Generate real embeddings for the query (uses AI SDK or hash fallback)
+      const embedFn = createEmbedFunction();
+      const queryVector = await embedFn(input.query);
+
+      const hits = await searchSimilar(client, queryVector, {
         collection: "content_embeddings",
         limit: input.limit,
         scoreThreshold: 0.5,

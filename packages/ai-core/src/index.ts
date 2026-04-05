@@ -56,6 +56,11 @@ export {
 } from "./rag/pipeline";
 
 export {
+  hashEmbedding,
+  createEmbedFunction,
+} from "./rag/embeddings";
+
+export {
   describeComponentCatalog,
   buildGenerativeUIPrompt,
   validateComponentTree,
