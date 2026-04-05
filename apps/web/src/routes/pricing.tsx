@@ -1,9 +1,9 @@
-import { Title } from "@solidjs/meta";
 import { For, Show, createSignal } from "solid-js";
 import type { JSX } from "solid-js";
 import { A } from "@solidjs/router";
 import { Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
+import { SEOHead } from "../components/SEOHead";
 
 interface PlanInfo {
   id: string;
@@ -116,7 +116,11 @@ function PlanCard(props: { plan: PlanInfo }): JSX.Element {
 export default function PricingPage(): JSX.Element {
   return (
     <>
-      <Title>Pricing - Back to the Future</Title>
+      <SEOHead
+        title="Pricing"
+        description="Simple, transparent pricing for Back to the Future. Start free, upgrade when you need more AI power, collaboration, and enterprise features."
+        path="/pricing"
+      />
       <Stack direction="vertical" gap="xl" align="center" class="page-padded">
         <Stack direction="vertical" gap="sm" align="center">
           <Text variant="h1" weight="bold" align="center">

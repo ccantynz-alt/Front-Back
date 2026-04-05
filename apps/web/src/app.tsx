@@ -4,6 +4,7 @@ import { FileRoutes } from "@solidjs/start/router";
 import { Suspense } from "solid-js";
 import { AuthProvider, ThemeProvider, FeatureFlagProvider } from "./stores";
 import { Layout } from "./components/Layout";
+import { CookieConsent } from "./components/CookieConsent";
 import "./app.css";
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
                 <Layout>
                   <Suspense>{props.children}</Suspense>
                 </Layout>
+                <CookieConsent />
               </FeatureFlagProvider>
             </AuthProvider>
           </ThemeProvider>

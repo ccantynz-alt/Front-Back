@@ -1,7 +1,7 @@
-import { Title } from "@solidjs/meta";
 import { For } from "solid-js";
 import type { JSX } from "solid-js";
 import { Stack, Text, Card } from "@back-to-the-future/ui";
+import { SEOHead } from "../../components/SEOHead";
 
 interface Section { title: string; content: string }
 
@@ -26,7 +26,11 @@ const sections: Section[] = [
 export default function TermsPage(): JSX.Element {
   return (
     <>
-      <Title>Terms of Service - Back to the Future</Title>
+      <SEOHead
+        title="Terms of Service"
+        description="Terms of Service for the Back to the Future platform. Read about usage rights, AI-generated content, payments, and more."
+        path="/legal/terms"
+      />
       <Stack direction="vertical" gap="lg" class="page-padded legal-page">
         <Stack direction="vertical" gap="sm">
           <Text variant="h1" weight="bold">Terms of Service</Text>

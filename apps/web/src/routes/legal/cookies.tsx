@@ -1,7 +1,7 @@
-import { Title } from "@solidjs/meta";
 import { For } from "solid-js";
 import type { JSX } from "solid-js";
 import { Stack, Text, Card } from "@back-to-the-future/ui";
+import { SEOHead } from "../../components/SEOHead";
 
 interface Section { title: string; content: string }
 
@@ -18,7 +18,11 @@ const sections: Section[] = [
 export default function CookiesPage(): JSX.Element {
   return (
     <>
-      <Title>Cookie Policy - Back to the Future</Title>
+      <SEOHead
+        title="Cookie Policy"
+        description="Learn how Back to the Future uses cookies to provide, protect, and improve our service."
+        path="/legal/cookies"
+      />
       <Stack direction="vertical" gap="lg" class="page-padded legal-page">
         <Stack direction="vertical" gap="sm">
           <Text variant="h1" weight="bold">Cookie Policy</Text>

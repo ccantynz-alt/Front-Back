@@ -1,6 +1,6 @@
-import { Title } from "@solidjs/meta";
 import { For, Show, createSignal, onMount } from "solid-js";
 import type { JSX } from "solid-js";
+import { SEOHead } from "../components/SEOHead";
 import { Button, Card, Input, Stack, Text, Badge, Separator } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
@@ -31,7 +31,11 @@ export default function CollabPage(): JSX.Element {
 
   return (
     <ProtectedRoute>
-      <Title>Collaboration - Back to the Future</Title>
+      <SEOHead
+        title="Collaboration"
+        description="Real-time collaboration powered by CRDTs. Create rooms, invite team members and AI agents, and co-create with zero conflicts."
+        path="/collab"
+      />
       <Stack direction="vertical" gap="lg" class="page-padded">
         <Stack direction="vertical" gap="xs">
           <Text variant="h1" weight="bold">Real-Time Collaboration</Text>

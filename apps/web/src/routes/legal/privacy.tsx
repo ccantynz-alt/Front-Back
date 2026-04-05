@@ -1,7 +1,7 @@
-import { Title } from "@solidjs/meta";
 import { For } from "solid-js";
 import type { JSX } from "solid-js";
 import { Stack, Text, Card } from "@back-to-the-future/ui";
+import { SEOHead } from "../../components/SEOHead";
 
 interface Section { title: string; content: string }
 
@@ -24,7 +24,11 @@ const sections: Section[] = [
 export default function PrivacyPage(): JSX.Element {
   return (
     <>
-      <Title>Privacy Policy - Back to the Future</Title>
+      <SEOHead
+        title="Privacy Policy"
+        description="How Back to the Future collects, uses, and protects your personal data. GDPR, CCPA, and international compliance."
+        path="/legal/privacy"
+      />
       <Stack direction="vertical" gap="lg" class="page-padded legal-page">
         <Stack direction="vertical" gap="sm">
           <Text variant="h1" weight="bold">Privacy Policy</Text>

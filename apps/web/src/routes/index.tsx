@@ -1,9 +1,9 @@
-import { Title } from "@solidjs/meta";
 import { A } from "@solidjs/router";
 import { For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
+import { SEOHead } from "../components/SEOHead";
 
 interface FeatureCard {
   title: string;
@@ -49,7 +49,11 @@ export default function Home(): JSX.Element {
 
   return (
     <>
-      <Title>Back to the Future</Title>
+      <SEOHead
+        title="Back to the Future"
+        description="The most advanced AI-native full-stack platform. Build websites and edit video with AI assistance, real-time collaboration, and edge-first performance."
+        path="/"
+      />
       <Stack direction="vertical" gap="xl" class="page-padded">
         {/* Hero */}
         <Stack direction="vertical" align="center" justify="center" class="hero">

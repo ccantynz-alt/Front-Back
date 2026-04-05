@@ -1,7 +1,7 @@
-import { Title } from "@solidjs/meta";
 import { For } from "solid-js";
 import type { JSX } from "solid-js";
 import { Stack, Text, Card } from "@back-to-the-future/ui";
+import { SEOHead } from "../../components/SEOHead";
 
 interface Section { title: string; content: string }
 
@@ -16,7 +16,11 @@ const sections: Section[] = [
 export default function DMCAPage(): JSX.Element {
   return (
     <>
-      <Title>DMCA Policy - Back to the Future</Title>
+      <SEOHead
+        title="DMCA Policy"
+        description="DMCA takedown policy for Back to the Future. How to report copyright infringement and counter-notification procedures."
+        path="/legal/dmca"
+      />
       <Stack direction="vertical" gap="lg" class="page-padded legal-page">
         <Stack direction="vertical" gap="sm">
           <Text variant="h1" weight="bold">DMCA Policy</Text>
