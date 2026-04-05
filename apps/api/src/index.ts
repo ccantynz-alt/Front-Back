@@ -23,17 +23,29 @@ import {
 // Initialize OpenTelemetry (no-op if OTEL_EXPORTER_OTLP_ENDPOINT not set)
 const telemetry = initTelemetry();
 
+import { cors } from "hono/cors";
 import { securityHeaders } from "./middleware/security-headers";
 import { rateLimiter } from "./middleware/rate-limiter";
 import { csrf } from "./middleware/csrf";
 
+const WEB_ORIGIN = process.env["WEB_ORIGIN"] ?? "http://localhost:3000";
+const ALLOWED_ORIGINS = [WEB_ORIGIN, "http://localhost:3001"];
+
 const app = new Hono().basePath("/api");
 
 // ── Security Middleware ──────────────────────────────────────────────
+app.use("*", cors({
+  origin: ALLOWED_ORIGINS,
+  allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowHeaders: ["Content-Type", "Authorization", "x-trpc-source", "stripe-signature"],
+  exposeHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After"],
+  credentials: true,
+  maxAge: 86400,
+}));
 app.use("*", securityHeaders());
-app.use("*", csrf({ allowedOrigins: ["http://localhost:3000", "http://localhost:3001"] }));
-app.use("/api/trpc/*", rateLimiter({ windowMs: 60_000, max: 200 }));
-app.use("/api/ai/*", rateLimiter({ windowMs: 60_000, max: 30 }));
+app.use("*", csrf({ allowedOrigins: ALLOWED_ORIGINS }));
+app.use("/trpc/*", rateLimiter({ windowMs: 60_000, max: 200 }));
+app.use("/ai/*", rateLimiter({ windowMs: 60_000, max: 30 }));
 
 // ── Request Telemetry Middleware ──────────────────────────────────────
 app.use("*", async (c, next) => {

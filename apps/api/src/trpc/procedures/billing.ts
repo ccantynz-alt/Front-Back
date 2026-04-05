@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { db } from "@back-to-the-future/db";
+import { plans, subscriptions } from "@back-to-the-future/db/schema";
 import { router, publicProcedure, protectedProcedure } from "../init";
 import { createCheckoutSession, createPortalSession } from "../../stripe/checkout";
 
@@ -36,16 +39,57 @@ const hardcodedPlans = [
 ];
 
 export const billingRouter = router({
-  getPlans: publicProcedure.query(() => {
+  getPlans: publicProcedure.query(async () => {
+    try {
+      const dbPlans = await db.query.plans.findMany({
+        where: eq(plans.isActive, true),
+      });
+      if (dbPlans.length > 0) {
+        return dbPlans;
+      }
+    } catch (err: unknown) {
+      console.warn("[billing] Failed to query plans from DB, using fallback:", err instanceof Error ? err.message : String(err));
+    }
+    // Fallback to hardcoded plans if DB is empty or unavailable
     return hardcodedPlans.filter((p) => p.isActive);
   }),
 
-  getSubscription: protectedProcedure.query(({ ctx }) => {
-    // Placeholder - would query DB in production
+  getSubscription: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const sub = await db.query.subscriptions.findFirst({
+        where: eq(subscriptions.userId, ctx.userId),
+        orderBy: (subs, { desc }) => [desc(subs.createdAt)],
+      });
+
+      if (sub) {
+        // Look up the plan name from the price ID
+        const plan = await db.query.plans.findFirst({
+          where: eq(plans.stripePriceId, sub.stripePriceId),
+        });
+
+        return {
+          status: sub.status,
+          plan: plan?.name ?? "Unknown",
+          userId: ctx.userId,
+          stripeSubscriptionId: sub.stripeSubscriptionId,
+          stripeCustomerId: sub.stripeCustomerId,
+          currentPeriodEnd: sub.currentPeriodEnd,
+          cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+        };
+      }
+    } catch (err: unknown) {
+      console.warn("[billing] Failed to query subscription from DB:", err instanceof Error ? err.message : String(err));
+    }
+
+    // No subscription found -- user is on the free plan
     return {
       status: "free" as const,
       plan: "Free",
       userId: ctx.userId,
+      stripeSubscriptionId: null,
+      stripeCustomerId: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
     };
   }),
 

@@ -7,11 +7,13 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
-    "./neon": "./src/neon.ts"
+    "./neon": "./src/neon.ts",
+    "./migrate": "./src/migrate.ts"
   },
   "scripts": {
     "check": "tsc --noEmit",
     "test": "bun test",
+    "migrate": "bun run src/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
