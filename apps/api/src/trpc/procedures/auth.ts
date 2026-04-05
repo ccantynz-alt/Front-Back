@@ -14,6 +14,7 @@ import type {
   AuthenticationResponseJSON,
 } from "../../auth/webauthn";
 import { createSession, deleteSession } from "../../auth/session";
+import { generateCsrfToken, validateCsrfToken } from "../../auth/csrf";
 
 // In-memory challenge store with TTL cleanup.
 // In production, replace with Redis or a DB-backed store.
@@ -42,15 +43,31 @@ function consumeChallenge(key: string): string | null {
   return entry.challenge;
 }
 
-// Periodic cleanup of expired challenges
-setInterval(() => {
+/** Clean up expired challenges. Exported for testing. */
+export function cleanupExpiredChallenges(): number {
   const now = Date.now();
+  let cleaned = 0;
   for (const [key, entry] of challengeStore) {
     if (now > entry.expiresAt) {
       challengeStore.delete(key);
+      cleaned++;
     }
   }
-}, 60_000);
+  return cleaned;
+}
+
+// Periodic cleanup of expired challenges every 60 seconds
+setInterval(cleanupExpiredChallenges, 60_000);
+
+/** Helper to validate CSRF token on auth mutations. */
+function requireCsrfToken(csrfToken: string | null): void {
+  if (!validateCsrfToken(csrfToken)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Invalid or missing CSRF token.",
+    });
+  }
+}
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -91,6 +108,11 @@ const authenticationResponseSchema = z.object({
 });
 
 export const authRouter = router({
+  // CSRF token endpoint: clients must fetch a token before auth mutations
+  csrfToken: publicProcedure.query(() => {
+    return { token: generateCsrfToken() };
+  }),
+
   register: router({
     start: publicProcedure
       .input(
@@ -100,6 +122,8 @@ export const authRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
+        // Validate CSRF token on state-changing operation
+        requireCsrfToken(ctx.csrfToken);
         const { email, displayName } = input;
 
         // Check if user already exists
@@ -157,6 +181,9 @@ export const authRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
+        // CSRF validation on finish step
+        requireCsrfToken(ctx.csrfToken);
+
         const { userId, response } = input;
 
         const expectedChallenge = consumeChallenge(`reg:${userId}`);
@@ -219,6 +246,9 @@ export const authRouter = router({
           .optional(),
       )
       .mutation(async ({ input, ctx }) => {
+        // Validate CSRF token on state-changing operation
+        requireCsrfToken(ctx.csrfToken);
+
         const email = input?.email;
         let allowCredentials:
           | { id: string; credentialId: string; transports: string | null }[]
@@ -281,6 +311,9 @@ export const authRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
+        // CSRF validation on finish step
+        requireCsrfToken(ctx.csrfToken);
+
         const { response } = input;
         let { userId } = input;
 

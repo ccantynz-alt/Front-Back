@@ -11,7 +11,7 @@ import {
   startAuthentication,
 } from "@simplewebauthn/browser";
 import type { User } from "@back-to-the-future/schemas";
-import { trpc } from "../lib/trpc";
+import { trpc, fetchCsrfToken, clearCsrfToken, checkApiHealth } from "../lib/trpc";
 
 // ── Auth State Types ──────────────────────────────────────────────────
 
@@ -86,19 +86,27 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
 
   /**
    * Register with passkey: two-step WebAuthn ceremony via tRPC.
-   * 1. Call auth.register.start → get PublicKeyCredentialCreationOptions
-   * 2. Browser creates credential via navigator.credentials.create()
-   * 3. Call auth.register.finish → verify + create session
+   * 1. Fetch CSRF token
+   * 2. Call auth.register.start → get PublicKeyCredentialCreationOptions
+   * 3. Browser creates credential via navigator.credentials.create()
+   * 4. Fetch fresh CSRF token for finish step
+   * 5. Call auth.register.finish → verify + create session
    */
   const register = async (email: string, displayName: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
+      // Fetch CSRF token before mutation
+      await fetchCsrfToken();
+
       // Step 1: Get registration options from server
       const { options, userId } = await trpc.auth.register.start.mutate({
         email,
         displayName,
       });
+
+      // Fetch fresh CSRF token for finish step (tokens are single-use)
+      await fetchCsrfToken();
 
       // Step 2: Browser creates the passkey credential
       const credential = await startRegistration({ optionsJSON: options });
@@ -111,6 +119,7 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
 
       if (result.verified && result.token) {
         setStorageItem(SESSION_TOKEN_KEY, result.token);
+        clearCsrfToken();
         // Fetch the user profile
         await checkSession();
       }
@@ -125,18 +134,26 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
 
   /**
    * Login with passkey: two-step WebAuthn ceremony via tRPC.
-   * 1. Call auth.login.start → get PublicKeyCredentialRequestOptions
-   * 2. Browser asserts credential via navigator.credentials.get()
-   * 3. Call auth.login.finish → verify + create session
+   * 1. Fetch CSRF token
+   * 2. Call auth.login.start → get PublicKeyCredentialRequestOptions
+   * 3. Browser asserts credential via navigator.credentials.get()
+   * 4. Fetch fresh CSRF token for finish step
+   * 5. Call auth.login.finish → verify + create session
    */
   const login = async (email: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
+      // Fetch CSRF token before mutation
+      await fetchCsrfToken();
+
       // Step 1: Get authentication options from server
       const { options, userId } = await trpc.auth.login.start.mutate({
         email,
       });
+
+      // Fetch fresh CSRF token for finish step (tokens are single-use)
+      await fetchCsrfToken();
 
       // Step 2: Browser asserts the passkey credential
       const credential = await startAuthentication({ optionsJSON: options });
@@ -149,6 +166,7 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
 
       if (result.verified && result.token) {
         setStorageItem(SESSION_TOKEN_KEY, result.token);
+        clearCsrfToken();
         // Fetch the user profile
         await checkSession();
       }

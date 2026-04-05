@@ -1,7 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { TRPCContext } from "./context";
-import { tracer } from "../telemetry";
-import { SpanStatusCode } from "@opentelemetry/api";
+import { validateSession } from "../auth/session";
 
 import type * as _schema from "@back-to-the-future/db";
 
@@ -10,39 +9,29 @@ export type { TRPCContext };
 const t = initTRPC.context<TRPCContext>().create();
 
 export const router = t.router;
+export const publicProcedure = t.procedure;
 export const middleware = t.middleware;
 
-// ── Tracing Middleware ──────────────────────────────────────────────
-// Wraps every tRPC procedure call with an OpenTelemetry span.
-
-const tracing = middleware(async ({ path, type, next }) => {
-  return tracer.startActiveSpan(`trpc.${path}`, async (span) => {
-    span.setAttribute("rpc.system", "trpc");
-    span.setAttribute("rpc.method", path);
-    span.setAttribute("rpc.type", type);
-    try {
-      const result = await next();
-      span.setStatus({ code: SpanStatusCode.OK });
-      return result;
-    } catch (error) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
-    } finally {
-      span.end();
-    }
-  });
-});
-
-export const publicProcedure = t.procedure.use(tracing);
-
+/**
+ * Middleware that enforces authentication on every call.
+ * Re-validates the session token against the DB to ensure:
+ * - The session has not been revoked (logout)
+ * - The session has not expired (expiresAt check)
+ */
 const enforceAuth = middleware(async ({ ctx, next }) => {
-  if (!ctx.userId) {
+  if (!ctx.userId || !ctx.sessionToken) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "You must be logged in to perform this action.",
+    });
+  }
+
+  // Re-validate session on every protected call (defense in depth)
+  const validUserId = await validateSession(ctx.sessionToken, ctx.db);
+  if (!validUserId || validUserId !== ctx.userId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Session expired or invalid. Please log in again.",
     });
   }
 
@@ -54,4 +43,4 @@ const enforceAuth = middleware(async ({ ctx, next }) => {
   });
 });
 
-export const protectedProcedure = t.procedure.use(tracing).use(enforceAuth);
+export const protectedProcedure = t.procedure.use(enforceAuth);

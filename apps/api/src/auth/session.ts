@@ -1,8 +1,8 @@
 import { eq, and, gt } from "drizzle-orm";
-import { sessions } from "@back-to-the-future/db";
-import type { createClient } from "@back-to-the-future/db";
+import { sessions, db as _dbTypeRef } from "@back-to-the-future/db";
 
-type Database = ReturnType<typeof createClient>;
+// Use the actual db instance type for compatibility with both createClient and db export
+type Database = typeof _dbTypeRef;
 
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
