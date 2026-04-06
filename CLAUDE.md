@@ -7,6 +7,86 @@
 
 ---
 
+## 0. SESSION PROTOCOL — READ THIS FIRST, EVERY SESSION
+
+**Before doing ANYTHING in a Crontech session, the following protocol is MANDATORY. No exceptions. No shortcuts. No "I'll skip it just this once."**
+
+### 0.1 The SessionStart Hook Runs Automatically
+
+A SessionStart hook at `.claude/hooks/session-start.sh` runs **before every new Claude session begins**. It:
+1. Installs all dependencies (`bun install`)
+2. Fetches latest from origin and reports ahead/behind status
+3. Runs `bun run check-links` and `bun run check-buttons` (zero-broken-anything enforcement)
+4. Surfaces the latest Sentinel competitive intelligence
+5. Reports current platform state (routes, tRPC procs, DB tables, test files)
+6. Re-states the doctrine reminders before the agent acts
+
+**The hook is the line in the sand. Every session begins from a known-good, fully-contextualised state. No more guessing what changed.**
+
+If the hook reports any failure (`‼️`), **the very first task of the session is to fix it.** Not "after this feature." Not "I'll get to it." First. Always first.
+
+### 0.2 The Anti-Scatter-Gun Rule
+
+Crontech is a precision weapon. Sessions must be precision sessions. **No more scatter-gun work.** Every Claude session in this repo MUST follow this loop:
+
+1. **Read the hook output.** Know the state. Know what changed.
+2. **Read CLAUDE.md.** Re-read the doctrine. The doctrine is binding.
+3. **State the objective in one sentence.** What is THIS session shipping? If you can't say it in one sentence, you haven't thought hard enough.
+4. **Plan before you touch a file.** TodoWrite the plan. Every task. In order. With dependencies.
+5. **Execute cleanly.** Touch only the files needed. No drive-by edits. No "while I'm here."
+6. **Verify with checkers.** `bun run build`, `bun run check-links`, `bun run check-buttons`. All green or you don't ship.
+7. **Commit and push.** Immediately. Every session ends with a clean push to origin. No uncommitted work left behind.
+
+**Violation of this loop is a doctrine breach.** Future Claude sessions will see the breach in the git history and lose trust in the prior work. Don't be the session that breaks the chain.
+
+### 0.3 The Ahead-Of-Competition Rule
+
+Crontech must be **80% to 100% ahead of every competitor at all times.** This is not aspirational. It is a hard constraint enforced by:
+
+- **The Sentinel system** at `services/sentinel/` runs 24/7 collectors against GitHub, npm, Hacker News, ArXiv. Every release, every paper, every announcement is logged.
+- **Before any new feature**, check the Sentinel intelligence store at `services/sentinel/data/intelligence.json` for relevant competitive moves.
+- **If a competitor has shipped something we don't have**, that gap is a P0 issue. Close it before adding net-new features.
+- **If a new technology emerges** (a faster runtime, a better protocol, a new model architecture), the platform must adopt or surpass it within ONE sprint. Loyalty is to the mission, not to the current stack.
+
+**Before any new Claude session begins major work**, the agent should scan: GitHub releases for tracked competitors, latest npm versions for our dependencies, Hacker News top posts, ArXiv cs.AI/cs.LG/cs.CL submissions. The Sentinel collectors do this automatically — the agent's job is to **read what Sentinel found and act on it.**
+
+### 0.4 The Build-Quality Gate
+
+**No work merges without passing all of these:**
+
+| Gate | Command | Pass Criteria |
+|------|---------|---------------|
+| Build | `bun run build` | 3/3 packages successful |
+| Link checker | `bun run check-links` | 0 dead links |
+| Button checker | `bun run check-buttons` | 0 dead buttons |
+| Tests | `bun test` (where applicable) | 100% pass |
+| Type check | `bunx tsc --noEmit` | 0 errors |
+
+CI enforces these. The session-start hook reports them. **The agent enforces them voluntarily.** A session that pushes broken work to origin is a session that violated doctrine.
+
+### 0.5 The Aggressor Mindset
+
+**We are not the disruptor. We are not the challenger. We are the aggressor.**
+
+- We do not ask "is this what users want?" We tell them what they want and prove it.
+- We do not optimise for the lowest-common-denominator browser. We optimise for the bleeding edge and gracefully degrade.
+- We do not worry about what Vercel, Cloudflare, Supabase, or Convex think. We force them to chase us.
+- We do not wait for "best practices" to crystallise. We define them.
+- We do not ship features. We ship advantages.
+
+**Every PR must extend the lead.** If a PR doesn't make Crontech further ahead of the field, it shouldn't exist. Pure refactors that don't extend the lead are a luxury we cannot afford until we are unkillable.
+
+### 0.6 What Counts As A "New Claude Session"
+
+For the purposes of this doctrine, a "session" is any time:
+- A Claude Code on the web session is started
+- A Claude Code local session is started
+- A subagent is spawned to do non-trivial work (more than 3 tool calls)
+
+**Each session must independently re-read this doctrine.** The hook makes this automatic for the top-level session. Subagents must be given prompts that include the doctrine summary.
+
+---
+
 ## 1. PROJECT IDENTITY & MISSION
 
 **Project Name:** Crontech
