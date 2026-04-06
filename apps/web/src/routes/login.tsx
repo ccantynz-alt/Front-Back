@@ -29,7 +29,7 @@ export default function LoginPage(): ReturnType<typeof Stack> {
 
   return (
     <Stack direction="vertical" align="center" justify="center" class="page-center">
-      <Title>Sign In - Back to the Future</Title>
+      <Title>Sign In - Marco Reid</Title>
       <Card class="auth-card" padding="lg">
         <Stack direction="vertical" gap="lg" align="center">
           <Text variant="h2" weight="bold" align="center">

@@ -161,7 +161,7 @@ export function getMCPTools(): MCPTool[] {
     {
       name: "btf_list_components",
       description:
-        "List all available UI components in the Back to the Future component catalog. " +
+        "List all available UI components in the Marco Reid component catalog. " +
         "Returns component names, prop counts, and whether they accept children.",
       inputSchema: {
         type: "object",

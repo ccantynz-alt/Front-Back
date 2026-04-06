@@ -20,7 +20,7 @@ export default function CookiesPage(): JSX.Element {
     <>
       <SEOHead
         title="Cookie Policy"
-        description="Learn how Back to the Future uses cookies to provide, protect, and improve our service."
+        description="Learn how Marco Reid uses cookies to provide, protect, and improve our service."
         path="/legal/cookies"
       />
       <Stack direction="vertical" gap="lg" class="page-padded legal-page">

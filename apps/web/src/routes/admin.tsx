@@ -124,7 +124,7 @@ export default function AdminPage(): JSX.Element {
 
   return (
     <AdminGuard>
-      <Title>Admin Dashboard - Back to the Future</Title>
+      <Title>Admin Dashboard - Marco Reid</Title>
       <Stack direction="vertical" gap="lg" class="page-padded">
         <Stack direction="vertical" gap="xs">
           <Text variant="h1" weight="bold">Admin Dashboard</Text>

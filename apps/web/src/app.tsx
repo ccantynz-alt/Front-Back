@@ -34,7 +34,7 @@ export default function App() {
     <Router
       root={(props) => (
         <MetaProvider>
-          <Title>Back to the Future</Title>
+          <Title>Marco Reid</Title>
           <ThemeProvider>
             <AuthProvider>
               <FeatureFlagProvider>

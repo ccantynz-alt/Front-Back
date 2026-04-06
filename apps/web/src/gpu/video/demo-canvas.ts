@@ -171,7 +171,7 @@ export class DemoCanvasGenerator {
     ctx.font = `bold ${Math.max(16, w * 0.04)}px system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.fillText("Back to the Future", w * 0.5, h * 0.2);
+    ctx.fillText("Marco Reid", w * 0.5, h * 0.2);
 
     ctx.font = `${Math.max(12, w * 0.025)}px system-ui, sans-serif`;
     ctx.fillStyle = "rgba(255, 255, 255, 0.5)";

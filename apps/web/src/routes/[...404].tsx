@@ -15,7 +15,7 @@ const suggestions = [
 export default function NotFound(): JSX.Element {
   return (
     <>
-      <Title>404 — Lost in the timeline | Back to the Future</Title>
+      <Title>404 — Lost in the timeline | Marco Reid</Title>
       <Stack direction="vertical" align="center" justify="center" class="page-center">
         <Card padding="lg" class="not-found-card">
           <Stack direction="vertical" gap="lg" align="center">

@@ -45,9 +45,9 @@ export const emailRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       // Admin-only: in a real app, check ctx.userId against an admin list
-      const html = `<h1>Test Email</h1><p>This is a test email from Back to the Future. Sent by user ${ctx.userId}.</p>`;
+      const html = `<h1>Test Email</h1><p>This is a test email from Marco Reid. Sent by user ${ctx.userId}.</p>`;
 
-      const result = await sendEmail(input.to, "Test Email - Back to the Future", html);
+      const result = await sendEmail(input.to, "Test Email - Marco Reid", html);
 
       if (!result.success) {
         throw new TRPCError({

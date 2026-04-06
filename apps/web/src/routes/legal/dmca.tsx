@@ -18,7 +18,7 @@ export default function DMCAPage(): JSX.Element {
     <>
       <SEOHead
         title="DMCA Policy"
-        description="DMCA takedown policy for Back to the Future. How to report copyright infringement and counter-notification procedures."
+        description="DMCA takedown policy for Marco Reid. How to report copyright infringement and counter-notification procedures."
         path="/legal/dmca"
       />
       <Stack direction="vertical" gap="lg" class="page-padded legal-page">

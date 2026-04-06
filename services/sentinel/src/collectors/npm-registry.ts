@@ -11,7 +11,7 @@ const lastSeenVersions = new Map<string, string>();
 async function checkPackage(name: string): Promise<IntelligenceItem | null> {
   const url = `https://registry.npmjs.org/${encodeURIComponent(name)}/latest`;
   const response = await fetchWithRetry(url, {
-    headers: { "User-Agent": "BackToTheFuture-Sentinel/1.0" },
+    headers: { "User-Agent": "MarcoReid-Sentinel/1.0" },
   });
 
   if (!response.ok) return null;

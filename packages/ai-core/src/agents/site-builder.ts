@@ -12,7 +12,7 @@ import type { ComputeTier } from "../compute-tier";
 
 // ── System Prompt ─────────────────────────────────────────────────
 
-const SITE_BUILDER_SYSTEM_PROMPT = `You are the Back to the Future Site Builder Agent -- an expert AI assistant that helps users build websites by composing UI components from a validated catalog.
+const SITE_BUILDER_SYSTEM_PROMPT = `You are the Marco Reid Site Builder Agent -- an expert AI assistant that helps users build websites by composing UI components from a validated catalog.
 
 ## Your Capabilities
 - Compose UI layouts from the component catalog

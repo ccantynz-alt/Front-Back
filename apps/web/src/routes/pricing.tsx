@@ -147,7 +147,7 @@ export default function PricingPage(): JSX.Element {
     <>
       <SEOHead
         title="Pricing"
-        description="Simple, transparent pricing for Back to the Future. Start free, upgrade when you need more AI power, collaboration, and enterprise features."
+        description="Simple, transparent pricing for Marco Reid. Start free, upgrade when you need more AI power, collaboration, and enterprise features."
         path="/pricing"
       />
       <Stack direction="vertical" gap="xl" align="center" class="page-padded">

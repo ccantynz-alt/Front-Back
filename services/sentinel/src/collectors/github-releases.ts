@@ -35,7 +35,7 @@ async function fetchRepoReleases(repo: TrackedRepo): Promise<IntelligenceItem[]>
   const url = `https://api.github.com/repos/${repo.owner}/${repo.repo}/releases?per_page=5`;
   const headers: Record<string, string> = {
     Accept: "application/vnd.github.v3+json",
-    "User-Agent": "BackToTheFuture-Sentinel/1.0",
+    "User-Agent": "MarcoReid-Sentinel/1.0",
   };
   const githubToken = process.env["GITHUB_TOKEN"];
   if (githubToken) headers["Authorization"] = `Bearer ${githubToken}`;

@@ -26,7 +26,7 @@ export default function PrivacyPage(): JSX.Element {
     <>
       <SEOHead
         title="Privacy Policy"
-        description="How Back to the Future collects, uses, and protects your personal data. GDPR, CCPA, and international compliance."
+        description="How Marco Reid collects, uses, and protects your personal data. GDPR, CCPA, and international compliance."
         path="/legal/privacy"
       />
       <Stack direction="vertical" gap="lg" class="page-padded legal-page">

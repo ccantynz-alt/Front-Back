@@ -163,7 +163,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
   return (
     <ProtectedRoute>
       <OnboardingWizard />
-      <Title>Dashboard — Back to the Future</Title>
+      <Title>Dashboard — Marco Reid</Title>
       <Stack direction="vertical" gap="lg" class="page-padded">
         {/* Header */}
         <Stack direction="vertical" gap="xs">

@@ -59,11 +59,11 @@ export default function AboutPage(): ReturnType<typeof Stack> {
 
   return (
     <Stack direction="vertical" gap="xl" class="page-padded">
-      <Title>About - Back to the Future</Title>
+      <Title>About - Marco Reid</Title>
 
       <Stack direction="vertical" gap="md" align="center" class="about-hero">
         <Text variant="h1" weight="bold" align="center">
-          Back to the Future
+          Marco Reid
         </Text>
         <Text variant="body" align="center" class="about-subtitle text-muted">
           The most advanced full-stack platform purpose-built for AI website builders and AI video builders.

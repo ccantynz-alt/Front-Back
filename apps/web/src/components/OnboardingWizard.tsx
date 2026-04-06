@@ -216,7 +216,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
             {/* Header */}
             <Stack direction="horizontal" align="center" class="onboarding-header">
               <Stack direction="vertical" gap="xs" style={{ flex: "1" }}>
-                <Text variant="h3" weight="bold">Welcome to Back to the Future</Text>
+                <Text variant="h3" weight="bold">Welcome to Marco Reid</Text>
                 <Text variant="caption" class="text-muted">
                   Let us personalize your experience.
                 </Text>

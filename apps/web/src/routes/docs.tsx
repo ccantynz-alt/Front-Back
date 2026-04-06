@@ -254,7 +254,7 @@ const API_CATEGORIES: EndpointCategory[] = [
         curl: `curl -X POST http://localhost:3001/api/ai/embeddings \\
   -H "Authorization: Bearer btf_sk_<your_key>" \\
   -H "Content-Type: application/json" \\
-  -d '{"input":"Back to the Future platform"}'`,
+  -d '{"input":"Marco Reid platform"}'`,
       },
     ],
   },
@@ -614,14 +614,14 @@ export default function DocsPage(): JSX.Element {
 
   return (
     <div class="max-w-6xl mx-auto p-6">
-      <Title>API Documentation - Back to the Future</Title>
+      <Title>API Documentation - Marco Reid</Title>
 
       <Stack direction="vertical" gap="lg">
         {/* Header */}
         <Stack direction="vertical" gap="sm">
           <Text variant="h1" weight="bold">API Documentation</Text>
           <Text variant="body" class="text-gray-400">
-            Complete reference for the Back to the Future public API. {totalEndpoints()} endpoints across {API_CATEGORIES.length} categories.
+            Complete reference for the Marco Reid public API. {totalEndpoints()} endpoints across {API_CATEGORIES.length} categories.
           </Text>
         </Stack>
 

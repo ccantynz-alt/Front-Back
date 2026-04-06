@@ -419,7 +419,7 @@ export default function SettingsPage(): JSX.Element {
 
   return (
     <ProtectedRoute>
-      <Title>Settings - Back to the Future</Title>
+      <Title>Settings - Marco Reid</Title>
       <Stack direction="vertical" gap="lg" class="page-padded">
         <Stack direction="vertical" gap="xs">
           <Text variant="h1" weight="bold">Settings</Text>

@@ -156,7 +156,7 @@ export const webhooksRouter = router({
         event: "test",
         timestamp: new Date().toISOString(),
         data: {
-          message: "This is a test webhook event from Back to the Future.",
+          message: "This is a test webhook event from Marco Reid.",
         },
       });
 

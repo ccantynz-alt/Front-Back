@@ -75,7 +75,7 @@ export default function Home(): JSX.Element {
   return (
     <>
       <SEOHead
-        title="Back to the Future — The AI-native full-stack platform"
+        title="Marco Reid — The AI-native full-stack platform"
         description="Build websites and edit video with AI agents, WebGPU, and real-time collaboration. Edge-first. Type-safe end-to-end. Zero HTML."
         path="/"
       />

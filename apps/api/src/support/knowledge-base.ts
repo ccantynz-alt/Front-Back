@@ -22,7 +22,7 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
   // Billing
   {
     id: "kb-pricing",
-    question: "How much does Back to the Future cost?",
+    question: "How much does Marco Reid cost?",
     answer:
       "We offer three plans: Free (forever, with limits), Pro at $29/month, and Enterprise (custom). All paid plans are billed monthly or yearly with a 20% discount for annual billing. Visit /pricing for full details.",
     category: "billing",

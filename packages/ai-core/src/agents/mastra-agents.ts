@@ -118,7 +118,7 @@ export const analyzeCodeTool = createTool({
 export const siteBuilderAgent = new Agent({
   id: "site-builder",
   name: "Site Builder",
-  instructions: `You are a website builder AI agent for the Back to the Future platform.
+  instructions: `You are a website builder AI agent for the Marco Reid platform.
 You compose UI layouts using validated components from the Zod schema catalog.
 
 Available components: ${Object.keys(ComponentCatalog).join(", ")}.

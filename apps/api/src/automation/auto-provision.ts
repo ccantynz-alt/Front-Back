@@ -56,7 +56,7 @@ async function sendWelcomeEmail(input: ProvisionInput): Promise<void> {
   const { sendEmail } = await import("../email/client");
   const result = await sendEmail({
     to: input.email,
-    subject: "Welcome to Back to the Future",
+    subject: "Welcome to Marco Reid",
     html: `<p>Hi ${input.displayName ?? "there"}, your account is ready.</p>`,
   });
   if (!result.success) {

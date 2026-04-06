@@ -183,7 +183,7 @@ export default function AdminSupportPage(): JSX.Element {
 
   return (
     <AdminGuard>
-      <Title>Support Inbox - Back to the Future</Title>
+      <Title>Support Inbox - Marco Reid</Title>
       <Stack direction="vertical" gap="lg" class="page-padded">
         <Stack direction="vertical" gap="xs">
           <Text variant="h1" weight="bold">Support Inbox</Text>

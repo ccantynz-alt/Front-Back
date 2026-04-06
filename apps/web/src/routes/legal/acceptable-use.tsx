@@ -18,7 +18,7 @@ export default function AcceptableUsePage(): JSX.Element {
     <>
       <SEOHead
         title="Acceptable Use Policy"
-        description="Acceptable Use Policy for the Back to the Future platform. Guidelines for AI usage, content restrictions, and resource usage."
+        description="Acceptable Use Policy for the Marco Reid platform. Guidelines for AI usage, content restrictions, and resource usage."
         path="/legal/acceptable-use"
       />
       <Stack direction="vertical" gap="lg" class="page-padded legal-page">

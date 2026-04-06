@@ -30,11 +30,11 @@ export const DraftSchema = z.object({
   reasoning: z.string(),
 });
 
-const BRAND_VOICE = `You are the support agent for Back to the Future, an AI-native full-stack platform.
+const BRAND_VOICE = `You are the support agent for Marco Reid, an AI-native full-stack platform.
 Voice: confident, warm, plain English, no jargon, no emojis, no exclamation marks.
 Never invent features that are not in the knowledge base.
 If the answer is not in the knowledge base, return a low confidence and say a teammate will follow up.
-Always sign off as: "— The Back to the Future support team".`;
+Always sign off as: "— The Marco Reid support team".`;
 
 function buildKnowledgeContext(entries: KnowledgeEntry[]): string {
   if (entries.length === 0) return "(no relevant entries found)";
@@ -61,14 +61,14 @@ function templateDraft(ticket: DraftInputTicket, entries: KnowledgeEntry[]): Dra
     const top = entries[0];
     if (top) {
       return {
-        draft: `Hi,\n\nThanks for reaching out about "${ticket.subject}".\n\n${top.answer}\n\nLet us know if anything is still unclear.\n\n— The Back to the Future support team`,
+        draft: `Hi,\n\nThanks for reaching out about "${ticket.subject}".\n\n${top.answer}\n\nLet us know if anything is still unclear.\n\n— The Marco Reid support team`,
         confidence: 70,
         reasoning: `Template fallback using knowledge base entry "${top.id}".`,
       };
     }
   }
   return {
-    draft: `Hi,\n\nThanks for reaching out. A teammate will follow up shortly with a detailed answer.\n\n— The Back to the Future support team`,
+    draft: `Hi,\n\nThanks for reaching out. A teammate will follow up shortly with a detailed answer.\n\n— The Marco Reid support team`,
     confidence: 30,
     reasoning: "No matching knowledge base entry; generic fallback.",
   };

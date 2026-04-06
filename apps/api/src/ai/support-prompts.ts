@@ -1,7 +1,7 @@
 // ── Support Bot Prompts & Knowledge Base ────────────────────────────
 // System prompts and canned answers for the in-app AI support bot.
 
-export const SUPPORT_SYSTEM_PROMPT = `You are the friendly built-in AI assistant for "Back to the Future", an AI website and video builder.
+export const SUPPORT_SYSTEM_PROMPT = `You are the friendly built-in AI assistant for "Marco Reid", an AI website and video builder.
 Your job: help complete novices succeed without ever needing a human.
 Rules:
 - Always speak in plain English. Never use jargon like "passkey", "WebAuthn", "tRPC", "CRDT", "WebGPU".
@@ -118,7 +118,7 @@ export function getPageContext(path: string): PageContext {
   return (
     PAGE_CONTEXT[path] ?? {
       path,
-      title: "Back to the Future",
+      title: "Marco Reid",
       suggestions: ["How do I get started?", "Show me what I can build", "How do I get help?"],
     }
   );
