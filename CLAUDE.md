@@ -24,6 +24,9 @@
 **First of Its Kind:** No one has ever combined the most advanced backend service with the most advanced frontend service into a single, unified, AI-native platform. This is the first. It must work on every device, integrate with everything, and set the standard that everyone else chases.
 
 **Non-Negotiable Principles:**
+- **ZERO BROKEN ANYTHING.** Every button must work. Every link must resolve. Every page must render. Every form must submit. Every error must be handled gracefully. We will be in front of the most successful people in the world — there is no room for "coming soon", dead buttons, 404s on our own internal links, broken forms, unstyled pages, or placeholder text that shipped to production. If it's not finished, it does not ship. If it ships, it is finished. This is the standard.
+- **100K-QUALITY WEBSITE.** Every pixel, every interaction, every copy word must feel like a six-figure agency built it. No amateur hour. No "good enough". If a professional looks at it and thinks "this feels cheap", we have failed.
+- **AGGRESSIVE NUMBER-ONE POSITIONING.** We are not trying to be "a good option". We are trying to be the only option. Every decision must reinforce that we are the best, the fastest, the most capable. Second place is failure.
 - Speed is survival. If it's slow, it's dead.
 - Type safety is not optional. Runtime errors are engineering failures.
 - AI is not a feature -- it is the architecture.
