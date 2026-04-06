@@ -68,3 +68,25 @@ ENVIRONMENT = "staging"
 name = "btf-api-production"
 [env.production.vars]
 ENVIRONMENT = "production"
+
+# ── Routes (marcoreid.com + subdomains) ──────────────────────────────
+# Uncomment once domain is registered and added to Cloudflare
+# [[env.production.routes]]
+# pattern = "api.marcoreid.com/*"
+# zone_name = "marcoreid.com"
+#
+# [[env.production.routes]]
+# pattern = "marcoreid.com/*"
+# zone_name = "marcoreid.com"
+#
+# [[env.production.routes]]
+# pattern = "accounting.marcoreid.com/*"
+# zone_name = "marcoreid.com"
+#
+# [[env.production.routes]]
+# pattern = "legal.marcoreid.com/*"
+# zone_name = "marcoreid.com"
+#
+# [[env.production.routes]]
+# pattern = "immigration.marcoreid.com/*"
+# zone_name = "marcoreid.com"

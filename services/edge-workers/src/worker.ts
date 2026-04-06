@@ -28,11 +28,33 @@ interface Env {
 // ── CORS Origins ────────────────────────────────────────────────────
 
 const ALLOWED_ORIGINS = [
-  "https://backtothefuture.dev",
-  "https://*.backtothefuture.dev",
+  "https://marcoreid.com",
+  "https://www.marcoreid.com",
+  "https://accounting.marcoreid.com",
+  "https://legal.marcoreid.com",
+  "https://immigration.marcoreid.com",
+  "https://api.marcoreid.com",
   "http://localhost:3000",
   "http://localhost:3001",
 ];
+
+// ── Subdomain → Vertical Router ─────────────────────────────────────
+// Maps subdomains to vertical products. The worker reads the Host
+// header and routes traffic to the right vertical.
+
+type Vertical = "main" | "accounting" | "legal" | "immigration" | "api";
+
+function resolveVertical(hostname: string): Vertical {
+  // Strip port if present
+  const host = hostname.split(":")[0] ?? hostname;
+
+  if (host === "api.marcoreid.com") return "api";
+  if (host === "accounting.marcoreid.com") return "accounting";
+  if (host === "legal.marcoreid.com") return "legal";
+  if (host === "immigration.marcoreid.com") return "immigration";
+  // Main domain (marcoreid.com, www.marcoreid.com, localhost)
+  return "main";
+}
 
 // ── Worker App ───────────────────────────────────────────────────────
 
@@ -70,6 +92,36 @@ app.use("*", async (c, next) => {
     c.req.header("X-Request-ID") ?? crypto.randomUUID();
   c.header("X-Request-ID", requestId);
   await next();
+});
+
+// ── Vertical Routing Middleware ──────────────────────────────────────
+// Reads the Host header and sets a "vertical" header that downstream
+// handlers use to render the right content / apply the right branding.
+
+app.use("*", async (c, next) => {
+  const hostname = c.req.header("host") ?? "localhost";
+  const vertical = resolveVertical(hostname);
+  c.header("X-Vertical", vertical);
+  c.set("vertical" as never, vertical as never);
+  await next();
+});
+
+// ── Vertical-Specific Routes ─────────────────────────────────────────
+
+// accounting.marcoreid.com root → serves accounting landing page
+app.get("/", async (c) => {
+  const vertical = c.req.header("host")?.split(":")[0] ?? "";
+  if (vertical === "accounting.marcoreid.com") {
+    return c.redirect("/accounting", 302);
+  }
+  if (vertical === "legal.marcoreid.com") {
+    return c.redirect("/legal-services", 302);
+  }
+  if (vertical === "immigration.marcoreid.com") {
+    return c.redirect("/immigration", 302);
+  }
+  // Main domain falls through to normal handler
+  return c.text("Marco Reid — route to main app");
 });
 
 // ── Rate Limiting Middleware (via Durable Objects) ───────────────────
