@@ -4,7 +4,8 @@
  */
 
 const BRAND_COLOR = "#6366f1";
-const BRAND_NAME = "Back to the Future";
+const BRAND_NAME = process.env["SITE_NAME"] ?? "Back to the Future";
+const PUBLIC_URL = process.env["PUBLIC_URL"] ?? "http://localhost:3000";
 const FOOTER_TEXT = `&copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.`;
 
 function layout(title: string, body: string): string {
@@ -71,7 +72,7 @@ export function welcomeEmail(userName: string): string {
   <li>Edit video with WebGPU-accelerated tools</li>
   <li>Collaborate in real-time with your team and AI agents</li>
 </ul>
-${button("Get Started", "https://example.com/dashboard")}
+${button("Get Started", `${PUBLIC_URL}/dashboard`)}
 <p style="margin:0;font-size:13px;color:#9ca3af;">If you did not create this account, you can ignore this email.</p>`,
   );
 }
@@ -114,7 +115,7 @@ export function billingReceiptEmail(
     <td style="padding:12px 16px;font-size:14px;color:#111827;font-weight:600;text-align:right;">${date}</td>
   </tr>
 </table>
-${button("View Billing", "https://example.com/billing")}
+${button("View Billing", `${PUBLIC_URL}/billing`)}
 <p style="margin:0;font-size:13px;color:#9ca3af;">If you have questions about this charge, contact support.</p>`,
   );
 }
@@ -175,7 +176,7 @@ export function weeklyDigestEmail(stats: WeeklyDigestStats): string {
     </td>
   </tr>
 </table>
-${button("View Dashboard", "https://example.com/dashboard")}
+${button("View Dashboard", `${PUBLIC_URL}/dashboard`)}
 <p style="margin:0;font-size:13px;color:#9ca3af;">You are receiving this because you opted in to weekly digests. Unsubscribe in Settings.</p>`,
   );
 }

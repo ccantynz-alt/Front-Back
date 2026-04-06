@@ -172,7 +172,10 @@ export default function PricingPage(): JSX.Element {
             <Text variant="body" class="text-muted">
               Contact us for volume pricing, custom AI agents, and enterprise deployments.
             </Text>
-            <Button variant="outline" onClick={() => { window.location.href = "mailto:sales@backtothefuture.dev"; }}>Contact Sales</Button>
+            <Button variant="outline" onClick={() => {
+              const salesEmail = import.meta.env.VITE_SALES_EMAIL ?? "sales@example.com";
+              window.location.href = `mailto:${salesEmail}`;
+            }}>Contact Sales</Button>
           </Stack>
         </Card>
       </Stack>

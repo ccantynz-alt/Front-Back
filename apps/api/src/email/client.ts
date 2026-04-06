@@ -24,7 +24,12 @@ interface ResendErrorResponse {
 }
 
 const RESEND_API_URL = "https://api.resend.com/emails";
-const FROM_ADDRESS = "Back to the Future <noreply@example.com>";
+
+function getFromAddress(): string {
+  const siteName = process.env["SITE_NAME"] ?? "Back to the Future";
+  const fromEmail = process.env["EMAIL_FROM"] ?? "noreply@example.com";
+  return `${siteName} <${fromEmail}>`;
+}
 
 function getApiKey(): string | undefined {
   return process.env.RESEND_API_KEY;
@@ -53,7 +58,7 @@ export async function sendEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: FROM_ADDRESS,
+        from: getFromAddress(),
         to: [to],
         subject,
         html,
