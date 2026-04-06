@@ -33,9 +33,6 @@ interface Env {
 const ALLOWED_ORIGINS = [
   "https://crontech.ai",
   "https://www.crontech.ai",
-  "https://accounting.crontech.ai",
-  "https://legal.crontech.ai",
-  "https://immigration.crontech.ai",
   "https://api.crontech.ai",
   "http://localhost:3000",
   "http://localhost:3001",
@@ -48,21 +45,17 @@ const SERVICE_UNAVAILABLE = (service: string) => ({
   timestamp: new Date().toISOString(),
 });
 
-// ── Subdomain → Vertical Router ─────────────────────────────────────
-// Maps subdomains to vertical products. The worker reads the Host
-// header and routes traffic to the right vertical.
+// ── Subdomain Router ────────────────────────────────────────────────
+// Maps known subdomains to a Vertical tag. Crontech as a platform has
+// only two surfaces today: the main app (crontech.ai) and the API
+// (api.crontech.ai). Customer products that run ON Crontech live in
+// their own repos and own subdomains — they are not part of this code.
 
-type Vertical = "main" | "accounting" | "legal" | "immigration" | "api";
+type Vertical = "main" | "api";
 
 function resolveVertical(hostname: string): Vertical {
-  // Strip port if present
   const host = hostname.split(":")[0] ?? hostname;
-
   if (host === "api.crontech.ai") return "api";
-  if (host === "accounting.crontech.ai") return "accounting";
-  if (host === "legal.crontech.ai") return "legal";
-  if (host === "immigration.crontech.ai") return "immigration";
-  // Main domain (crontech.ai, www.crontech.ai, localhost)
   return "main";
 }
 
@@ -116,23 +109,10 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// ── Vertical-Specific Routes ─────────────────────────────────────────
-
-// accounting.crontech.ai root → serves accounting landing page
-app.get("/", async (c) => {
-  const vertical = c.req.header("host")?.split(":")[0] ?? "";
-  if (vertical === "accounting.crontech.ai") {
-    return c.redirect("/accounting", 302);
-  }
-  if (vertical === "legal.crontech.ai") {
-    return c.redirect("/legal-services", 302);
-  }
-  if (vertical === "immigration.crontech.ai") {
-    return c.redirect("/immigration", 302);
-  }
-  // Main domain falls through to normal handler
-  return c.text("Crontech — route to main app");
-});
+// ── Root Route ───────────────────────────────────────────────────────
+// Main domain falls through to the SolidStart Pages app. The worker
+// only owns /api/* routes — everything else is served by Pages.
+app.get("/", (c) => c.text("Crontech API — see /api/* routes"));
 
 // ── Rate Limiting Middleware (via Durable Objects) ───────────────────
 

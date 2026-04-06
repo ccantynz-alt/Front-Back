@@ -94,45 +94,23 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-function isAccountingContext(): boolean {
-  if (typeof window === "undefined") return false;
-  const host = window.location.hostname;
-  const path = window.location.pathname;
-  return host.startsWith("accounting.") || path === "/accounting" || path.startsWith("/accounting/");
-}
-
 function Sidebar(props: SidebarProps): JSX.Element {
-  const accounting = isAccountingContext();
   return (
     <aside class={`sidebar ${props.collapsed ? "sidebar-collapsed" : ""}`}>
       <button class="sidebar-toggle" onClick={props.onToggle} type="button">
         {props.collapsed ? "\u25B6" : "\u25C0"}
       </button>
       <Show when={!props.collapsed}>
-        <Show
-          when={accounting}
-          fallback={
-            <nav class="sidebar-nav">
-              <NavLink href="/dashboard" label="Dashboard" />
-              <NavLink href="/builder" label="AI Builder" />
-              <NavLink href="/collab" label="Collaboration" />
-              <NavLink href="/video" label="Video Editor" />
-              <NavLink href="/pricing" label="Pricing" />
-              <NavLink href="/settings" label="Settings" />
-              <NavLink href="/admin" label="Admin" />
-              <NavLink href="/about" label="About" />
-            </nav>
-          }
-        >
-          <nav class="sidebar-nav">
-            <NavLink href="/accounting/dashboard" label="Dashboard" />
-            <NavLink href="/accounting/clients" label="Clients" />
-            <NavLink href="/accounting/invoices" label="Invoices" />
-            <NavLink href="/accounting/expenses" label="Expenses" />
-            <NavLink href="/accounting/reports" label="Reports" />
-            <NavLink href="/settings" label="Settings" />
-          </nav>
-        </Show>
+        <nav class="sidebar-nav">
+          <NavLink href="/dashboard" label="Dashboard" />
+          <NavLink href="/builder" label="AI Builder" />
+          <NavLink href="/collab" label="Collaboration" />
+          <NavLink href="/video" label="Video Editor" />
+          <NavLink href="/pricing" label="Pricing" />
+          <NavLink href="/settings" label="Settings" />
+          <NavLink href="/admin" label="Admin" />
+          <NavLink href="/about" label="About" />
+        </nav>
       </Show>
     </aside>
   );

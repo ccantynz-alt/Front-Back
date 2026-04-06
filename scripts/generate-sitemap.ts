@@ -87,17 +87,6 @@ async function discoverRoutes(): Promise<RouteInfo[]> {
     // legal/ may not exist
   }
 
-  // Accounting vertical routes (accounting.crontech.ai)
-  const accountingRoutes = [
-    "/accounting/clients",
-    "/accounting/invoices",
-    "/accounting/expenses",
-    "/accounting/reports",
-  ];
-  for (const path of accountingRoutes) {
-    routes.push({ path, priority: "0.7", changefreq: "weekly" });
-  }
-
   return routes.sort((a, b) => a.path.localeCompare(b.path));
 }
 

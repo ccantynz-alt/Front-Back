@@ -77,7 +77,7 @@ name = "crontech-api-production"
 [env.production.vars]
 ENVIRONMENT = "production"
 
-# ── Routes (crontech.ai + subdomains) ──────────────────────────────
+# ── Routes (crontech.ai) ─────────────────────────────────────────────
 # Uncomment once crontech.ai is added as a Cloudflare zone (DNS)
 # [[env.production.routes]]
 # pattern = "api.crontech.ai/*"
@@ -85,16 +85,4 @@ ENVIRONMENT = "production"
 #
 # [[env.production.routes]]
 # pattern = "crontech.ai/*"
-# zone_name = "crontech.ai"
-#
-# [[env.production.routes]]
-# pattern = "accounting.crontech.ai/*"
-# zone_name = "crontech.ai"
-#
-# [[env.production.routes]]
-# pattern = "legal.crontech.ai/*"
-# zone_name = "crontech.ai"
-#
-# [[env.production.routes]]
-# pattern = "immigration.crontech.ai/*"
 # zone_name = "crontech.ai"
