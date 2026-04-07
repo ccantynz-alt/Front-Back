@@ -1,0 +1,21 @@
+name = "back-to-the-future-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# Uncomment and configure when ready to deploy:
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "back-to-the-future-db"
+# database_id = "<your-database-id>"
+
+# [[r2_buckets]]
+# binding = "STORAGE"
+# bucket_name = "back-to-the-future-assets"
+
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "<your-kv-namespace-id>"
