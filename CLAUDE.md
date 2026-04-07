@@ -7,6 +7,23 @@
 
 ---
 
+## ⚠️ BEFORE YOU DO ANYTHING — CHECK FOR HANDOFF
+
+If the file `HANDOFF.md` exists at the repo root, **read it first** before reading the rest of this document. It contains session-specific context from the previous session that may override normal workflow (e.g. stuck commits that need pushing, positioning decisions just made, urgent next actions).
+
+After the handoff's "first action" is complete, delete `HANDOFF.md` and continue with normal session protocol.
+
+## 📜 POSITIONING IS LOCKED — DO NOT DEVIATE
+
+The Crontech brand positioning is locked in `docs/POSITIONING.md`. That file is binding doctrine — the same status as this CLAUDE.md. Any agent writing landing page copy, SEO meta, marketing content, or brand-facing text **MUST** read `docs/POSITIONING.md` first. Do not unilaterally change the positioning. Any deviation requires Craig's explicit authorization.
+
+Key positioning rules (see `docs/POSITIONING.md` for the full version):
+- **Audience is universal** — no primary segment cutoff
+- **Tone is polite** — do NOT name competitors in public copy
+- **Headline direction** — "The developer platform for the next decade"
+
+---
+
 ## 0. SESSION PROTOCOL — READ THIS FIRST, EVERY SESSION
 
 **Before doing ANYTHING in a Crontech session, the following protocol is MANDATORY. No exceptions. No shortcuts. No "I'll skip it just this once."**
