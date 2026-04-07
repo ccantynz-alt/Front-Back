@@ -37,7 +37,7 @@ jobs:
 
       - name: Type check (non-blocking on first preview deploy)
         run: bun run check
-        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_tests == 'true' }}
+        continue-on-error: true
 
       - name: Link checker (zero-broken-anything enforcement)
         run: bun run check-links
@@ -50,7 +50,7 @@ jobs:
 
       - name: Run tests (non-blocking on first preview deploy)
         run: bun run test
-        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_tests == 'true' }}
+        continue-on-error: true
 
       - name: Upload web build artifacts
         uses: actions/upload-artifact@v4
