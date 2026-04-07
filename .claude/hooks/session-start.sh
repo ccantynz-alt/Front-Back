@@ -65,6 +65,21 @@ fi
 echo ""
 echo "[hook] Running zero-broken-anything checks..."
 
+# ── Handoff Detection ───────────────────────────────────────────────
+# If HANDOFF.md exists, surface it LOUDLY so the new session reads it first.
+if [ -f "HANDOFF.md" ]; then
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo "   ⚠️  HANDOFF.md DETECTED — READ IT BEFORE DOING ANYTHING ELSE"
+  echo "   Previous session left instructions. Your first action is in"
+  echo "   HANDOFF.md. Open it now:"
+  echo ""
+  echo "      cat HANDOFF.md"
+  echo ""
+  echo "════════════════════════════════════════════════════════════════"
+  echo ""
+fi
+
 LINK_RESULT="✅"
 BUTTON_RESULT="✅"
 
