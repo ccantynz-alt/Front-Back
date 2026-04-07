@@ -79,7 +79,7 @@ async function provisionTenantDB(input: ProvisionInput): Promise<void> {
   try {
     const mod = await import("@back-to-the-future/db");
     if (typeof mod.provisionTenantDB === "function") {
-      await mod.provisionTenantDB(input.userId, "pro");
+      await mod.provisionTenantDB(input.userId, "free");
     }
   } catch (err) {
     // If module unavailable in this build, that's fine - mark provisioning skipped.
