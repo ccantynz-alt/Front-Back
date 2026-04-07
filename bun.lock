@@ -37,7 +37,7 @@
       },
       "devDependencies": {
         "@types/bun": "^1.2.0",
-        "typescript": "^5.7.0",
+        "typescript": "^6.0.2",
       },
     },
     "apps/web": {
@@ -63,7 +63,7 @@
       },
       "devDependencies": {
         "@types/node": "^25.5.2",
-        "typescript": "^5.7.3",
+        "typescript": "^6.0.2",
       },
     },
     "packages/ai-core": {
@@ -79,7 +79,7 @@
       },
       "devDependencies": {
         "@types/bun": "^1.2.0",
-        "typescript": "^5",
+        "typescript": "^6",
       },
     },
     "packages/config": {
@@ -100,7 +100,7 @@
       "devDependencies": {
         "@types/bun": "^1.2.0",
         "drizzle-kit": "^0.31",
-        "typescript": "^5",
+        "typescript": "^6",
       },
     },
     "packages/schemas": {
@@ -111,7 +111,7 @@
       },
       "devDependencies": {
         "@types/bun": "^1.2.0",
-        "typescript": "^5",
+        "typescript": "^6",
       },
     },
     "packages/ui": {
@@ -123,7 +123,7 @@
       },
       "devDependencies": {
         "@types/bun": "^1.2.0",
-        "typescript": "^5",
+        "typescript": "^6",
       },
     },
     "services/edge-workers": {
@@ -134,7 +134,7 @@
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250327.0",
         "@types/bun": "^1.2.0",
-        "typescript": "^5.7.3",
+        "typescript": "^6.0.2",
         "wrangler": "^4.14.1",
       },
     },
@@ -146,7 +146,7 @@
       },
       "devDependencies": {
         "@types/bun": "^1.2.0",
-        "typescript": "^5.7.0",
+        "typescript": "^6.0.2",
       },
     },
   },
@@ -1839,7 +1839,7 @@
 
     "type-is": ["type-is@2.0.1", "", { "dependencies": { "content-type": "^1.0.5", "media-typer": "^1.1.0", "mime-types": "^3.0.0" } }, "sha512-OZs6gsjF4vMp32qrCbiVSkrFmXtG/AZhY3t0iAMrMBiAZyV9oALtXO8hsrHbMXF9x6L3grlFuwW2oAz7cav+Gw=="],
 
-    "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+    "typescript": ["typescript@6.0.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ=="],
 
     "ufo": ["ufo@1.6.3", "", {}, "sha512-yDJTmhydvl5lJzBmy/hyOAA0d+aqCBuwl818haVdYCRrWV84o7YyeVm4QlVHStqNrrJSTb6jKuFAVqAFsr+K3Q=="],
 
