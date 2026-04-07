@@ -13,6 +13,23 @@ If the file `HANDOFF.md` exists at the repo root, **read it first** before readi
 
 After the handoff's "first action" is complete, delete `HANDOFF.md` and continue with normal session protocol.
 
+## 🔱 THE BIBLE RULE — CLAUDE.md IS BINDING DOCTRINE
+
+**This file is the Bible of Crontech.** It is not advisory. It is not "guidelines." It is not "best practices." It is the law of the land. Every Claude session, every subagent, every parallel worker, every PR, every line of code MUST conform to this document.
+
+### The Iron Rules
+
+1. **READ THIS FILE BEFORE EVERY BUILD.** Not skim. Not "I read it last session." READ IT. Every new feature, every refactor, every bug fix, every commit. If you cannot quote at least three rules from this file from memory, you have not read it recently enough.
+2. **NO MAJOR CHANGE WITHOUT CRAIG'S EXPLICIT AUTHORIZATION.** See §0.7 below for the full authorization gate list. When in doubt, ASK. The cost of asking is 30 seconds. The cost of acting without authorization is hours of rework and lost trust.
+3. **MAXIMUM PARALLEL AGENT USAGE — ALWAYS.** See §0.8. We do not build with one agent when five could work in parallel. This is non-negotiable.
+4. **AGGRESSIVE EVERYTHING.** Aggressive software. Aggressive architecture. Aggressive components. Aggressive procedures. Aggressive timelines. Aggressive competitive posture. We are not "a good option." We are the only option. Second place is failure.
+5. **ZERO TOLERANCE FOR SCATTER-GUN.** One session, one objective. Touch only the files needed. Drive-by edits are a doctrine breach.
+6. **ANNIHILATE THE COMPETITION.** Every PR must extend the lead. If a PR does not make Crontech further ahead of Vercel, Cloudflare, Supabase, Convex, Render, AWS Amplify, Netlify, or any other competitor, it should not exist.
+
+**Violation of any iron rule is a breach of contract with Craig.** Future sessions will see the breach in git history and lose trust in the prior work. Don't be the session that breaks the Bible.
+
+---
+
 ## 📜 POSITIONING IS LOCKED — DO NOT DEVIATE
 
 The Crontech brand positioning is locked in `docs/POSITIONING.md`. That file is binding doctrine — the same status as this CLAUDE.md. Any agent writing landing page copy, SEO meta, marketing content, or brand-facing text **MUST** read `docs/POSITIONING.md` first. Do not unilaterally change the positioning. Any deviation requires Craig's explicit authorization.
@@ -101,6 +118,109 @@ For the purposes of this doctrine, a "session" is any time:
 - A subagent is spawned to do non-trivial work (more than 3 tool calls)
 
 **Each session must independently re-read this doctrine.** The hook makes this automatic for the top-level session. Subagents must be given prompts that include the doctrine summary.
+
+### 0.7 The Craig Authorization Gate (ASK BEFORE ACTING)
+
+**Craig is the boss. Craig is the only person who authorizes major changes.** Claude is the executor, not the decision-maker. The following actions ALWAYS require Craig's explicit prior authorization — no exceptions, no "I'll just try it and revert if it doesn't work":
+
+#### 🔴 HARD GATES — STOP AND ASK CRAIG
+
+| Action | Why it needs authorization |
+|---|---|
+| Adding or removing a top-level dependency from the stack (e.g. swapping SolidJS for Svelte, dropping Hono for Express) | These shape the platform's identity. One swap cascades into hundreds of files. |
+| Removing or renaming a vertical/product (e.g. "remove the legal vertical", "rebrand to X") | Strategic positioning decision. Craig owns the brand. |
+| Modifying `docs/POSITIONING.md` | Locked doctrine. See §16. |
+| Modifying `CLAUDE.md` itself in any non-trivial way (adding/removing rules, changing the iron rules, restructuring the doctrine) | This is the Bible. Bible changes need Craig. |
+| Force-pushing any branch | Destructive. Can wipe out work the previous session left. |
+| Deleting any branch other than a confirmed-merged feature branch | Destructive. |
+| Renaming the GitHub repo or changing its visibility | Breaks integrations, deploy proxies, MCP scopes. |
+| Changing the default branch on GitHub | Cascades into CI, deploy triggers, PR base branches. |
+| Adding/removing GitHub Actions workflows (deploy.yml, ci.yml, etc.) | Affects every future deploy. |
+| Adding/removing Cloudflare bindings (D1, KV, R2, AI, Durable Objects) in `wrangler.toml` | Affects production data layer. |
+| Schema migrations that drop tables or columns | Data loss risk. |
+| Pricing changes, plan tier changes, billing logic changes | Revenue-affecting. |
+| Public copy on the landing page, pricing page, legal pages, or any SEO meta | Brand-affecting. Polite tone rules apply. |
+| Naming or adversarial framing of competitors in public copy | Legal exposure. Attorney approval required. |
+| Adding new top-level routes (e.g. `/foo`) that didn't exist before | Affects sitemap, link checker, navigation. |
+| Removing or renaming existing top-level routes | Breaks bookmarks, SEO, internal links. |
+| Adding a new third-party service (Sentry, Datadog, Algolia, etc.) | Vendor lock-in, cost, security review. |
+| Adding a new authentication provider or changing the auth model | Security-critical. |
+| Any change to security/compliance posture (encryption, audit logs, RLS, RBAC) | Compliance risk. |
+| Any change Craig has explicitly said "ask me first" about in this session | Respect explicit instructions. |
+
+#### 🟡 SOFT GATES — TELL CRAIG WHAT YOU'RE DOING
+
+| Action | What to do |
+|---|---|
+| Refactoring more than 5 files at once | Post a one-line plan first. Wait 30s for objection. Then act. |
+| Adding a new route, page, or component that wasn't on the agreed plan | Same. |
+| Updating a dependency to a major new version | Same. |
+| Touching files outside the agreed scope of the current task | Same. |
+
+#### 🟢 FREE ACTIONS — JUST DO IT
+
+- Reading any file
+- Running any read-only command (`bun run check`, `git status`, `git log`, `bun test`)
+- Creating tests for code that already exists
+- Fixing typos, formatting, and Biome lint errors
+- Bumping patch versions of dependencies via Renovate auto-merges
+- Creating new feature branches (never deleting them)
+
+**Default disposition: when uncertain, ASK.** Asking takes 30 seconds. Acting wrong takes hours to undo.
+
+### 0.8 The Maximum Parallel Agent Mandate
+
+**Crontech does not build with one agent when multiple agents could work in parallel.** This is the hardest rule in this entire document. Violation of it makes Crontech slower than the competition. Slower = dead.
+
+#### The Iron Rule of Parallelism
+
+> **For every task that can be decomposed, it MUST be decomposed and run in parallel.** If five subtasks can run independently, spawn five parallel agents. If eight can, spawn eight. If twelve can, spawn twelve. The only ceiling is true sequential dependency.
+
+#### When to Spawn Parallel Agents (MANDATORY)
+
+| Scenario | Action |
+|---|---|
+| **Wave deployment** (Wave 1, Wave 2, Wave 3 from §7) | Spawn ALL agents in the wave simultaneously, each in its own isolated git worktree (`isolation: "worktree"`) |
+| **Multi-file refactor** with independent files | One agent per file or per logical group, parallel |
+| **Multi-route page builds** | One agent per route, parallel |
+| **Component library expansion** | One agent per component, parallel |
+| **Test coverage sweep** | One agent per package, parallel |
+| **Documentation sweep** | One agent per top-level doc area, parallel |
+| **Competitive intelligence research** | One agent per competitor, parallel |
+| **Bug triage across the codebase** | One agent per bug, parallel |
+| **Cross-package dependency upgrade** | One agent per package, parallel |
+| **Translation/i18n sweep** | One agent per locale, parallel |
+
+#### When NOT to Parallelize
+
+Only sequential dependencies justify serial work:
+
+- One step's output is literally the input to the next (e.g. "build, then deploy")
+- A migration that must complete before the next step can read the new schema
+- Anything that touches the same file simultaneously (merge conflict risk)
+
+**If you find yourself doing the same kind of work twice in a row, you should have spawned two agents.**
+
+#### Parallel Agent Briefing Standard
+
+Every parallel agent MUST be briefed with:
+
+1. **The doctrine summary** (link to CLAUDE.md and a 3-bullet recap of the iron rules)
+2. **The exact scope** — which files, which functions, which tests
+3. **The non-scope** — what NOT to touch
+4. **The exit criteria** — how to know when the task is done
+5. **The Craig authorization gates relevant to the task** — what to ask before vs just do
+6. **The isolation mode** — `isolation: "worktree"` for any agent that writes code
+
+#### Parallel Agent Failure Handling
+
+- If one parallel agent fails, the others continue. Do not roll back successful agents because one failed.
+- Diagnose the failure, brief a replacement agent, run it. The other agents' work is preserved.
+- If multiple parallel agents fail with the same error, that's a doctrine signal: there's an environment problem (broken dependency, broken proxy, broken hook). STOP and diagnose the environment before re-spawning.
+
+#### Why This Rule Exists
+
+Crontech is racing against companies with hundreds of engineers. We have agents. Our agents must move at agent speed, not human speed. **Every minute spent building serially when parallel was possible is a minute Vercel/Cloudflare/Supabase gained on us.** That is unacceptable.
 
 ---
 
