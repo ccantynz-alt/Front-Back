@@ -1,589 +1,207 @@
 import { createSignal, For, Show, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
-import { Title } from "@solidjs/meta";
+import { A } from "@solidjs/router";
 import { Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
+import { SEOHead } from "../components/SEOHead";
 
 // ── Types ───────────────────────────────────────────────────────────
 
-interface EndpointDoc {
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  path: string;
+interface DocCategory {
+  id: string;
+  icon: string;
+  title: string;
   description: string;
-  requestBody?: string;
-  responseFormat: string;
-  curl: string;
+  articles: number;
+  tags: string[];
+  gradient: string;
 }
 
-interface EndpointCategory {
-  name: string;
+interface QuickLink {
+  label: string;
+  href: string;
   description: string;
-  endpoints: EndpointDoc[];
 }
 
-// ── API Documentation Data ──────────────────────────────────────────
+// ── Documentation Categories ────────────────────────────────────────
 
-const API_CATEGORIES: EndpointCategory[] = [
+const DOC_CATEGORIES: DocCategory[] = [
   {
-    name: "Auth",
-    description: "Authentication via passkeys (WebAuthn/FIDO2). Phishing-immune, passwordless authentication.",
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/trpc/auth.register.start",
-        description: "Start passkey registration. Returns WebAuthn creation options.",
-        requestBody: `z.object({
-  email: z.string().email(),
-  displayName: z.string().min(1).max(255),
-})`,
-        responseFormat: `{ options: PublicKeyCredentialCreationOptions, userId: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/auth.register.start \\
-  -H "Content-Type: application/json" \\
-  -H "X-CSRF-Token: <token>" \\
-  -d '{"json":{"email":"user@example.com","displayName":"John Doe"}}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/auth.register.finish",
-        description: "Complete passkey registration with the authenticator response.",
-        requestBody: `z.object({
-  userId: z.string().uuid(),
-  response: RegistrationResponseJSON,
-})`,
-        responseFormat: `{ verified: boolean, token: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/auth.register.finish \\
-  -H "Content-Type: application/json" \\
-  -H "X-CSRF-Token: <token>" \\
-  -d '{"json":{"userId":"<uuid>","response":{...}}}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/auth.login.start",
-        description: "Start passkey login. Returns WebAuthn request options.",
-        requestBody: `z.object({
-  email: z.string().email().optional(),
-}).optional()`,
-        responseFormat: `{ options: PublicKeyCredentialRequestOptions, userId: string | null }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/auth.login.start \\
-  -H "Content-Type: application/json" \\
-  -H "X-CSRF-Token: <token>" \\
-  -d '{"json":{"email":"user@example.com"}}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/auth.login.finish",
-        description: "Complete passkey login and receive a session token.",
-        requestBody: `z.object({
-  userId: z.string().uuid().nullable(),
-  response: AuthenticationResponseJSON,
-})`,
-        responseFormat: `{ verified: boolean, token: string, userId: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/auth.login.finish \\
-  -H "Content-Type: application/json" \\
-  -H "X-CSRF-Token: <token>" \\
-  -d '{"json":{"userId":"<uuid>","response":{...}}}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/auth.logout",
-        description: "Log out the current session. Requires authentication.",
-        responseFormat: `{ success: boolean }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/auth.logout \\
-  -H "Authorization: Bearer <session_token>"`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/auth.me",
-        description: "Get the current authenticated user profile.",
-        responseFormat: `{ id: string, email: string, displayName: string, role: string, createdAt: Date }`,
-        curl: `curl http://localhost:3001/api/trpc/auth.me \\
-  -H "Authorization: Bearer <session_token>"`,
-      },
-    ],
+    id: "getting-started",
+    icon: "\u26A1",
+    title: "Getting Started",
+    description:
+      "Set up your first project in under five minutes. Install the CLI, scaffold an app, deploy to the edge, and see it live.",
+    articles: 12,
+    tags: ["setup", "quickstart", "install"],
+    gradient: "from-violet-600 to-indigo-600",
   },
   {
-    name: "Users",
-    description: "User management CRUD operations.",
-    endpoints: [
-      {
-        method: "GET",
-        path: "/api/trpc/users.list",
-        description: "List users with cursor-based pagination.",
-        requestBody: `z.object({
-  cursor: z.string().optional(),
-  limit: z.number().min(1).max(100).default(20),
-})`,
-        responseFormat: `{ items: User[], nextCursor: string | null, total: number }`,
-        curl: `curl "http://localhost:3001/api/trpc/users.list?input=%7B%22json%22%3A%7B%22limit%22%3A20%7D%7D"`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/users.getById",
-        description: "Get a user by ID.",
-        requestBody: `z.object({ id: z.string().uuid() })`,
-        responseFormat: `User`,
-        curl: `curl "http://localhost:3001/api/trpc/users.getById?input=%7B%22json%22%3A%7B%22id%22%3A%22<uuid>%22%7D%7D"`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/users.create",
-        description: "Create a new user.",
-        requestBody: `z.object({
-  email: z.string().email(),
-  displayName: z.string().min(1).max(100),
-  role: z.enum(["admin", "editor", "viewer"]).default("viewer"),
-})`,
-        responseFormat: `User`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/users.create \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"email":"user@example.com","displayName":"Jane","role":"editor"}}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/users.update",
-        description: "Update an existing user.",
-        requestBody: `z.object({
-  id: z.string().uuid(),
-  email: z.string().email().optional(),
-  displayName: z.string().min(1).max(100).optional(),
-  role: z.enum(["admin", "editor", "viewer"]).optional(),
-})`,
-        responseFormat: `User`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/users.update \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"id":"<uuid>","displayName":"Updated Name"}}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/users.delete",
-        description: "Delete a user by ID.",
-        requestBody: `z.object({ id: z.string().uuid() })`,
-        responseFormat: `{ success: true, id: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/users.delete \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"id":"<uuid>"}}'`,
-      },
-    ],
+    id: "api-reference",
+    icon: "\u2699\uFE0F",
+    title: "API Reference",
+    description:
+      "Full reference for every tRPC procedure, REST endpoint, and WebSocket channel. Type-safe schemas, request/response shapes, and curl examples.",
+    articles: 34,
+    tags: ["tRPC", "REST", "WebSocket", "endpoints"],
+    gradient: "from-blue-600 to-cyan-600",
   },
   {
-    name: "Billing",
-    description: "Subscription plans, Stripe checkout, and customer portal.",
-    endpoints: [
-      {
-        method: "GET",
-        path: "/api/trpc/billing.getPlans",
-        description: "List all active subscription plans.",
-        responseFormat: `Plan[]  // { id, name, description, price, interval, features }`,
-        curl: `curl http://localhost:3001/api/trpc/billing.getPlans`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/billing.getSubscription",
-        description: "Get the current user's subscription details. Requires auth.",
-        responseFormat: `{ status: string, plan: string, stripeSubscriptionId: string | null, currentPeriodEnd: Date | null }`,
-        curl: `curl http://localhost:3001/api/trpc/billing.getSubscription \\
-  -H "Authorization: Bearer <token>"`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/billing.createCheckoutSession",
-        description: "Create a Stripe checkout session for a price ID.",
-        requestBody: `z.object({ priceId: z.string() })`,
-        responseFormat: `{ url: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/billing.createCheckoutSession \\
-  -H "Authorization: Bearer <token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"priceId":"price_pro_monthly"}}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/billing.createPortalSession",
-        description: "Create a Stripe customer portal session for managing billing.",
-        requestBody: `z.object({ customerId: z.string() })`,
-        responseFormat: `{ url: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/billing.createPortalSession \\
-  -H "Authorization: Bearer <token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"customerId":"cus_xxxxx"}}'`,
-      },
-    ],
+    id: "ai-sdk",
+    icon: "\uD83E\uDDE0",
+    title: "AI SDK",
+    description:
+      "Three-tier compute routing, client-side WebGPU inference, streaming completions, generative UI, and multi-agent orchestration with LangGraph.",
+    articles: 18,
+    tags: ["AI", "WebGPU", "inference", "agents"],
+    gradient: "from-purple-600 to-pink-600",
   },
   {
-    name: "AI",
-    description: "AI inference, chat, generative UI, and embeddings. Supports three-tier compute: client GPU, edge, and cloud.",
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/ai/chat",
-        description: "Stream a chat completion response. Supports SSE streaming.",
-        requestBody: `z.object({
-  messages: z.array(z.object({
-    role: z.enum(["user", "assistant", "system"]),
-    content: z.string(),
-  })),
-  model: z.string().optional(),
-})`,
-        responseFormat: `text/event-stream  // SSE stream of token chunks`,
-        curl: `curl -X POST http://localhost:3001/api/ai/chat \\
-  -H "Authorization: Bearer btf_sk_<your_key>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"messages":[{"role":"user","content":"Hello"}]}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/ai/generate-ui",
-        description: "Generate a UI component tree from a natural language description using the Zod component catalog.",
-        requestBody: `z.object({
-  prompt: z.string(),
-  components: z.array(z.string()).optional(),
-})`,
-        responseFormat: `{ componentTree: JsonRenderNode }`,
-        curl: `curl -X POST http://localhost:3001/api/ai/generate-ui \\
-  -H "Authorization: Bearer btf_sk_<your_key>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"prompt":"Create a pricing card with a Pro plan"}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/ai/embeddings",
-        description: "Generate vector embeddings for text input.",
-        requestBody: `z.object({
-  input: z.string().or(z.array(z.string())),
-  model: z.string().optional(),
-})`,
-        responseFormat: `{ embeddings: number[][], dimensions: number, model: string }`,
-        curl: `curl -X POST http://localhost:3001/api/ai/embeddings \\
-  -H "Authorization: Bearer btf_sk_<your_key>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"input":"Crontech platform"}'`,
-      },
-    ],
+    id: "components",
+    icon: "\uD83E\uDDE9",
+    title: "Components",
+    description:
+      "Zod-schema-driven, AI-composable component catalog. Every primitive from Button to DataTable, with live examples and prop documentation.",
+    articles: 42,
+    tags: ["UI", "Zod", "SolidJS", "catalog"],
+    gradient: "from-emerald-600 to-teal-600",
   },
   {
-    name: "Collaboration",
-    description: "Real-time collaboration rooms with Yjs CRDTs. Supports multi-user and AI agent participants.",
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/trpc/collab.createRoom",
-        description: "Create a new collaboration room. Requires auth.",
-        requestBody: `z.object({ name: z.string().min(1) })`,
-        responseFormat: `{ id: string, name: string, users: string[], createdAt: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/collab.createRoom \\
-  -H "Authorization: Bearer <token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"name":"My Room"}}'`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/collab.getRooms",
-        description: "List all active collaboration rooms.",
-        responseFormat: `Room[]`,
-        curl: `curl http://localhost:3001/api/trpc/collab.getRooms`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/collab.getRoomUsers",
-        description: "Get users currently in a collaboration room.",
-        requestBody: `z.object({ roomId: z.string() })`,
-        responseFormat: `string[]  // user IDs`,
-        curl: `curl "http://localhost:3001/api/trpc/collab.getRoomUsers?input=%7B%22json%22%3A%7B%22roomId%22%3A%22room-123%22%7D%7D"`,
-      },
-      {
-        method: "GET",
-        path: "/api/realtime/events/:roomId",
-        description: "SSE stream for real-time room events (presence, updates).",
-        responseFormat: `text/event-stream`,
-        curl: `curl -N http://localhost:3001/api/realtime/events/room-123`,
-      },
-      {
-        method: "GET",
-        path: "ws://localhost:3001/api/yjs/:roomId",
-        description: "WebSocket endpoint for Yjs CRDT sync. Connect with a Yjs WebSocket provider.",
-        responseFormat: `WebSocket (binary Yjs sync protocol)`,
-        curl: `# Use a WebSocket client:
-wscat -c ws://localhost:3001/api/yjs/room-123`,
-      },
-    ],
+    id: "deployment",
+    icon: "\uD83D\uDE80",
+    title: "Deployment",
+    description:
+      "Deploy to Cloudflare Workers, Pages, Fly.io, and Modal.com GPU clusters. CI/CD pipelines, environment variables, and canary rollouts.",
+    articles: 9,
+    tags: ["deploy", "edge", "CI/CD", "Cloudflare"],
+    gradient: "from-orange-600 to-red-600",
   },
   {
-    name: "Video",
-    description: "Video project management and WebGPU-accelerated processing pipeline.",
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/ai/video/process",
-        description: "Submit a video processing job (encoding, effects, transitions).",
-        requestBody: `z.object({
-  projectId: z.string(),
-  operations: z.array(z.object({
-    type: z.enum(["trim", "encode", "effect", "transition"]),
-    params: z.record(z.unknown()),
-  })),
-})`,
-        responseFormat: `{ jobId: string, status: "queued" }`,
-        curl: `curl -X POST http://localhost:3001/api/ai/video/process \\
-  -H "Authorization: Bearer btf_sk_<your_key>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"projectId":"proj_123","operations":[{"type":"trim","params":{"start":0,"end":10}}]}'`,
-      },
-    ],
+    id: "guides",
+    icon: "\uD83D\uDCD6",
+    title: "Guides",
+    description:
+      "Step-by-step walkthroughs for real-world workflows: building a SaaS app, integrating Stripe billing, real-time collaboration, and video processing.",
+    articles: 15,
+    tags: ["tutorial", "walkthrough", "patterns"],
+    gradient: "from-amber-500 to-yellow-500",
   },
   {
-    name: "Feature Flags",
-    description: "Progressive feature delivery with user targeting and percentage rollouts.",
-    endpoints: [
-      {
-        method: "GET",
-        path: "/api/trpc/featureFlags.getAll",
-        description: "List all feature flags with their evaluated state for the current user.",
-        responseFormat: `Array<FeatureFlag & { evaluatedEnabled: boolean }>`,
-        curl: `curl http://localhost:3001/api/trpc/featureFlags.getAll`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/featureFlags.isEnabled",
-        description: "Check if a specific feature flag is enabled.",
-        requestBody: `z.object({ key: z.string() })`,
-        responseFormat: `{ key: string, enabled: boolean }`,
-        curl: `curl "http://localhost:3001/api/trpc/featureFlags.isEnabled?input=%7B%22json%22%3A%7B%22key%22%3A%22ai-playground%22%7D%7D"`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/featureFlags.evaluate",
-        description: "Evaluate a flag for a specific user ID.",
-        requestBody: `z.object({
-  flagKey: z.string(),
-  userId: z.string().optional(),
-})`,
-        responseFormat: `{ key: string, enabled: boolean, flag: FeatureFlag | null }`,
-        curl: `curl "http://localhost:3001/api/trpc/featureFlags.evaluate?input=%7B%22json%22%3A%7B%22flagKey%22%3A%22video-editor%22%2C%22userId%22%3A%22user_123%22%7D%7D"`,
-      },
-    ],
+    id: "collaboration",
+    icon: "\uD83D\uDC65",
+    title: "Collaboration",
+    description:
+      "Real-time multi-user editing with Yjs CRDTs. Presence, cursors, conflict resolution, and AI agents as first-class collaborators.",
+    articles: 8,
+    tags: ["CRDT", "Yjs", "real-time", "multiplayer"],
+    gradient: "from-sky-600 to-blue-600",
   },
   {
-    name: "API Keys",
-    description: "Manage API keys for programmatic access. Keys use the btf_sk_ prefix.",
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/trpc/apiKeys.create",
-        description: "Generate a new API key. The raw key is returned only once.",
-        requestBody: `z.object({
-  name: z.string().min(1).max(100),
-  expiresAt: z.date().optional(),
-})`,
-        responseFormat: `{ id: string, name: string, prefix: string, rawKey: string, createdAt: string, expiresAt: string | null }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/apiKeys.create \\
-  -H "Authorization: Bearer <session_token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"name":"Production Key"}}'`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/apiKeys.list",
-        description: "List all API keys for the authenticated user (values are masked).",
-        responseFormat: `Array<{ id, name, prefix, maskedKey, lastUsedAt, expiresAt, createdAt }>`,
-        curl: `curl http://localhost:3001/api/trpc/apiKeys.list \\
-  -H "Authorization: Bearer <session_token>"`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/apiKeys.revoke",
-        description: "Revoke an API key permanently.",
-        requestBody: `z.object({ id: z.string().uuid() })`,
-        responseFormat: `{ success: true, id: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/apiKeys.revoke \\
-  -H "Authorization: Bearer <session_token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"id":"<key_uuid>"}}'`,
-      },
-    ],
-  },
-  {
-    name: "Webhooks",
-    description: "Outgoing webhook management. Receive HTTP callbacks when events occur.",
-    endpoints: [
-      {
-        method: "POST",
-        path: "/api/trpc/webhooks.create",
-        description: "Register a webhook URL for specific events. Returns signing secret once.",
-        requestBody: `z.object({
-  url: z.string().url(),
-  events: z.array(z.enum([
-    "project.created", "project.updated", "project.deleted",
-    "build.started", "build.completed", "build.failed",
-    "deployment.created", "deployment.ready",
-    "collaboration.joined", "collaboration.left",
-    "ai.job.completed", "video.render.completed",
-  ])).min(1),
-})`,
-        responseFormat: `{ id: string, url: string, events: string[], secret: string, isActive: boolean }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/webhooks.create \\
-  -H "Authorization: Bearer <session_token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"url":"https://example.com/webhook","events":["build.completed"]}}'`,
-      },
-      {
-        method: "GET",
-        path: "/api/trpc/webhooks.list",
-        description: "List all registered webhooks for the current user.",
-        responseFormat: `Array<{ id, url, events, isActive, createdAt }>`,
-        curl: `curl http://localhost:3001/api/trpc/webhooks.list \\
-  -H "Authorization: Bearer <session_token>"`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/webhooks.delete",
-        description: "Remove a webhook registration.",
-        requestBody: `z.object({ id: z.string().uuid() })`,
-        responseFormat: `{ success: true, id: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/webhooks.delete \\
-  -H "Authorization: Bearer <session_token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"id":"<webhook_uuid>"}}'`,
-      },
-      {
-        method: "POST",
-        path: "/api/trpc/webhooks.test",
-        description: "Send a test event to a webhook URL to verify connectivity.",
-        requestBody: `z.object({ id: z.string().uuid() })`,
-        responseFormat: `{ success: boolean, statusCode: number, statusText: string }`,
-        curl: `curl -X POST http://localhost:3001/api/trpc/webhooks.test \\
-  -H "Authorization: Bearer <session_token>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"json":{"id":"<webhook_uuid>"}}'`,
-      },
-    ],
+    id: "security",
+    icon: "\uD83D\uDD12",
+    title: "Security & Auth",
+    description:
+      "Passkey/WebAuthn authentication, zero-trust architecture, RBAC, audit trails, encryption at rest and in transit, and compliance certifications.",
+    articles: 11,
+    tags: ["auth", "passkeys", "encryption", "compliance"],
+    gradient: "from-rose-600 to-red-600",
   },
 ];
 
-// ── Helper Components ───────────────────────────────────────────────
+const QUICK_LINKS: QuickLink[] = [
+  {
+    label: "Install the CLI",
+    href: "/docs/getting-started/install",
+    description: "bun add -g @crontech/cli",
+  },
+  {
+    label: "Create your first project",
+    href: "/docs/getting-started/new-project",
+    description: "crontech init my-app",
+  },
+  {
+    label: "Deploy to edge",
+    href: "/docs/deployment/cloudflare",
+    description: "Ship globally in one command",
+  },
+  {
+    label: "AI chat endpoint",
+    href: "/docs/api-reference/ai-chat",
+    description: "Stream completions via SSE",
+  },
+];
 
-function MethodBadge(props: { method: string }): JSX.Element {
-  const colorClass = (): string => {
-    switch (props.method) {
-      case "GET":
-        return "bg-green-700 text-green-100";
-      case "POST":
-        return "bg-blue-700 text-blue-100";
-      case "PUT":
-        return "bg-yellow-700 text-yellow-100";
-      case "DELETE":
-        return "bg-red-700 text-red-100";
-      case "PATCH":
-        return "bg-purple-700 text-purple-100";
-      default:
-        return "bg-gray-700 text-gray-100";
-    }
-  };
+// ── Sub-Components ──────────────────────────────────────────────────
 
+function DocCategoryCard(props: { category: DocCategory }): JSX.Element {
   return (
-    <span
-      class={`inline-block px-2 py-0.5 rounded text-xs font-mono font-bold ${colorClass()}`}
+    <A
+      href={`/docs/${props.category.id}`}
+      class="group block"
+      style={{ "text-decoration": "none" }}
     >
-      {props.method}
-    </span>
-  );
-}
-
-function CodeBlock(props: { code: string; onCopy?: () => void }): JSX.Element {
-  const [copied, setCopied] = createSignal(false);
-
-  const handleCopy = (): void => {
-    void navigator.clipboard.writeText(props.code);
-    setCopied(true);
-    props.onCopy?.();
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div class="relative group">
-      <pre class="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-x-auto text-sm font-mono text-gray-300 leading-relaxed">
-        <code>{props.code}</code>
-      </pre>
-      <button
-        type="button"
-        class="absolute top-2 right-2 px-2 py-1 text-xs rounded bg-gray-700 text-gray-300 hover:bg-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={handleCopy}
+      <div
+        class="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6 transition-all duration-300 hover:scale-[1.02] hover:border-white/[0.12]"
+        style={{
+          background:
+            "linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)",
+          "backdrop-filter": "blur(12px)",
+        }}
       >
-        {copied() ? "Copied!" : "Copy"}
-      </button>
-    </div>
-  );
-}
+        {/* Gradient accent bar */}
+        <div
+          class={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${props.category.gradient} opacity-60 transition-opacity duration-300 group-hover:opacity-100`}
+        />
 
-function EndpointCard(props: { endpoint: EndpointDoc }): JSX.Element {
-  const [expanded, setExpanded] = createSignal(false);
-
-  return (
-    <div class="border border-gray-700 rounded-lg overflow-hidden">
-      <button
-        type="button"
-        class="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-800/50 transition-colors"
-        onClick={() => setExpanded(!expanded())}
-      >
-        <MethodBadge method={props.endpoint.method} />
-        <code class="text-sm font-mono text-gray-200 flex-1">
-          {props.endpoint.path}
-        </code>
-        <span class="text-gray-500 text-sm">
-          {expanded() ? "▲" : "▼"}
-        </span>
-      </button>
-
-      <Show when={expanded()}>
-        <div class="p-4 pt-0 space-y-4 border-t border-gray-700">
-          <Text variant="body" class="text-gray-300">
-            {props.endpoint.description}
-          </Text>
-
-          <Show when={props.endpoint.requestBody}>
-            <div>
-              <Text variant="caption" weight="semibold" class="text-gray-400 mb-1 block">
-                Request Body (Zod Schema)
-              </Text>
-              <CodeBlock code={props.endpoint.requestBody!} />
-            </div>
-          </Show>
-
-          <div>
-            <Text variant="caption" weight="semibold" class="text-gray-400 mb-1 block">
-              Response Format
-            </Text>
-            <CodeBlock code={props.endpoint.responseFormat} />
+        <div class="flex items-start gap-4">
+          <div
+            class={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${props.category.gradient} text-xl shadow-lg`}
+          >
+            {props.category.icon}
           </div>
-
-          <div>
-            <Text variant="caption" weight="semibold" class="text-gray-400 mb-1 block">
-              Example
-            </Text>
-            <CodeBlock code={props.endpoint.curl} />
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-lg font-semibold text-white group-hover:text-white/90 transition-colors">
+                {props.category.title}
+              </span>
+              <span class="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-white/50 font-mono">
+                {props.category.articles}
+              </span>
+            </div>
+            <p class="text-sm text-white/50 leading-relaxed mb-3">
+              {props.category.description}
+            </p>
+            <div class="flex flex-wrap gap-1.5">
+              <For each={props.category.tags}>
+                {(tag) => (
+                  <span class="rounded-md bg-white/[0.04] px-2 py-0.5 text-xs text-white/40 font-mono">
+                    {tag}
+                  </span>
+                )}
+              </For>
+            </div>
           </div>
         </div>
-      </Show>
-    </div>
-  );
-}
 
-function CategorySection(props: { category: EndpointCategory }): JSX.Element {
-  return (
-    <div id={props.category.name.toLowerCase().replace(/\s+/g, "-")} class="scroll-mt-20">
-      <Stack direction="vertical" gap="sm" class="mb-4">
-        <Text variant="h3" weight="bold">{props.category.name}</Text>
-        <Text variant="body" class="text-gray-400">
-          {props.category.description}
-        </Text>
-        <Badge variant="default" size="sm">
-          {props.category.endpoints.length} endpoint{props.category.endpoints.length !== 1 ? "s" : ""}
-        </Badge>
-      </Stack>
-
-      <Stack direction="vertical" gap="sm">
-        <For each={props.category.endpoints}>
-          {(endpoint) => <EndpointCard endpoint={endpoint} />}
-        </For>
-      </Stack>
-    </div>
+        {/* Arrow indicator */}
+        <div class="absolute right-5 top-1/2 -translate-y-1/2 text-white/20 transition-all duration-300 group-hover:translate-x-1 group-hover:text-white/50">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M7.5 15L12.5 10L7.5 5"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+      </div>
+    </A>
   );
 }
 
@@ -592,104 +210,303 @@ function CategorySection(props: { category: EndpointCategory }): JSX.Element {
 export default function DocsPage(): JSX.Element {
   const [searchQuery, setSearchQuery] = createSignal("");
 
-  const filteredCategories = createMemo((): EndpointCategory[] => {
+  const filteredCategories = createMemo((): DocCategory[] => {
     const query = searchQuery().toLowerCase().trim();
-    if (!query) return API_CATEGORIES;
-
-    return API_CATEGORIES.map((cat) => ({
-      ...cat,
-      endpoints: cat.endpoints.filter(
-        (ep) =>
-          ep.path.toLowerCase().includes(query) ||
-          ep.description.toLowerCase().includes(query) ||
-          ep.method.toLowerCase().includes(query) ||
-          cat.name.toLowerCase().includes(query),
-      ),
-    })).filter((cat) => cat.endpoints.length > 0);
+    if (!query) return DOC_CATEGORIES;
+    return DOC_CATEGORIES.filter(
+      (cat) =>
+        cat.title.toLowerCase().includes(query) ||
+        cat.description.toLowerCase().includes(query) ||
+        cat.tags.some((t) => t.toLowerCase().includes(query)),
+    );
   });
 
-  const totalEndpoints = createMemo((): number =>
-    API_CATEGORIES.reduce((sum, cat) => sum + cat.endpoints.length, 0),
-  );
-
   return (
-    <div class="max-w-6xl mx-auto p-6">
-      <Title>API Documentation - Crontech</Title>
+    <>
+      <SEOHead
+        title="Documentation"
+        description="Everything you need to build with Crontech. Guides, API references, component catalogs, and deployment workflows."
+        path="/docs"
+      />
 
-      <Stack direction="vertical" gap="lg">
-        {/* Header */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h1" weight="bold">API Documentation</Text>
-          <Text variant="body" class="text-gray-400">
-            Complete reference for the Crontech public API. {totalEndpoints()} endpoints across {API_CATEGORIES.length} categories.
-          </Text>
-        </Stack>
+      <div class="min-h-screen" style={{ background: "#0a0a0a" }}>
+        {/* ── Hero Section ───────────────────────────────────────────── */}
+        <div class="relative overflow-hidden">
+          {/* Background gradient mesh */}
+          <div
+            class="absolute inset-0 opacity-30"
+            style={{
+              background:
+                "radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(59,130,246,0.08) 0%, transparent 50%)",
+            }}
+          />
 
-        {/* Auth info banner */}
-        <Card padding="md" class="border-blue-800 bg-blue-950/30">
-          <Stack direction="vertical" gap="sm">
-            <Text variant="body" weight="semibold" class="text-blue-300">
-              Authentication
-            </Text>
-            <Text variant="caption" class="text-blue-200/80">
-              Authenticate using a session token or API key in the Authorization header.
-              Session tokens are obtained via passkey login. API keys use the <code class="bg-blue-900/50 px-1 rounded">btf_sk_</code> prefix
-              and can be created in Settings &gt; Developer.
-            </Text>
-            <CodeBlock code={`Authorization: Bearer <session_token>\n# or\nAuthorization: Bearer btf_sk_<your_api_key>`} />
-          </Stack>
-        </Card>
+          <div class="relative mx-auto max-w-6xl px-6 pt-20 pb-16">
+            <div class="flex flex-col items-center text-center">
+              <Badge variant="info" size="sm">
+                149 articles across 8 categories
+              </Badge>
+              <h1
+                class="mt-6 text-5xl font-bold tracking-tight sm:text-6xl"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #fff 0%, #a78bfa 50%, #6366f1 100%)",
+                  "-webkit-background-clip": "text",
+                  "-webkit-text-fill-color": "transparent",
+                  "line-height": "1.1",
+                }}
+              >
+                Documentation
+              </h1>
+              <p class="mt-4 max-w-2xl text-lg text-white/50">
+                Everything you need to build, deploy, and scale with Crontech.
+                From first install to production-grade AI agents.
+              </p>
 
-        {/* Search + Nav */}
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar navigation */}
-          <div class="lg:col-span-1">
-            <div class="sticky top-4 space-y-4">
-              <input
-                type="text"
-                placeholder="Search endpoints..."
-                value={searchQuery()}
-                onInput={(e) => setSearchQuery(e.currentTarget.value)}
-                class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500"
-              />
-
-              <nav class="space-y-1">
-                <For each={API_CATEGORIES}>
-                  {(cat) => (
-                    <a
-                      href={`#${cat.name.toLowerCase().replace(/\s+/g, "-")}`}
-                      class="block px-3 py-2 text-sm text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded transition-colors"
+              {/* ── Search Bar ──────────────────────────────────────── */}
+              <div class="mt-8 w-full max-w-xl">
+                <div
+                  class="relative rounded-2xl border border-white/[0.08] overflow-hidden"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    "backdrop-filter": "blur(12px)",
+                  }}
+                >
+                  <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <svg
+                      class="h-5 w-5 text-white/30"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      {cat.name}
-                      <span class="text-gray-600 ml-1">
-                        ({cat.endpoints.length})
-                      </span>
-                    </a>
-                  )}
-                </For>
-              </nav>
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search documentation... (e.g. tRPC, passkeys, WebGPU)"
+                    value={searchQuery()}
+                    onInput={(e) =>
+                      setSearchQuery(e.currentTarget.value)
+                    }
+                    class="w-full bg-transparent py-4 pl-12 pr-4 text-white placeholder-white/30 outline-none text-sm"
+                  />
+                  <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                    <kbd class="rounded border border-white/[0.1] bg-white/[0.04] px-2 py-0.5 text-xs text-white/30 font-mono">
+                      /
+                    </kbd>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Endpoint list */}
-          <div class="lg:col-span-3 space-y-10">
-            <Show
-              when={filteredCategories().length > 0}
-              fallback={
-                <Card padding="lg">
-                  <Text variant="body" class="text-gray-400 text-center">
-                    No endpoints matching "{searchQuery()}".
-                  </Text>
-                </Card>
-              }
-            >
-              <For each={filteredCategories()}>
-                {(category) => <CategorySection category={category} />}
-              </For>
-            </Show>
+        {/* ── Quick Links ─────────────────────────────────────────── */}
+        <div class="mx-auto max-w-6xl px-6 pb-8">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <For each={QUICK_LINKS}>
+              {(link) => (
+                <A
+                  href={link.href}
+                  class="group flex items-center gap-3 rounded-xl border border-white/[0.06] px-4 py-3 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.02]"
+                  style={{ "text-decoration": "none" }}
+                >
+                  <div class="flex-1 min-w-0">
+                    <span class="block text-sm font-medium text-white/80 group-hover:text-white transition-colors">
+                      {link.label}
+                    </span>
+                    <span class="block text-xs text-white/30 font-mono mt-0.5 truncate">
+                      {link.description}
+                    </span>
+                  </div>
+                  <svg
+                    class="h-4 w-4 shrink-0 text-white/20 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white/40"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </A>
+              )}
+            </For>
           </div>
         </div>
-      </Stack>
-    </div>
+
+        {/* ── Main Grid ───────────────────────────────────────────── */}
+        <div class="mx-auto max-w-6xl px-6 pb-20">
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* ── Sidebar ──────────────────────────────────────────── */}
+            <aside class="lg:col-span-1">
+              <div class="sticky top-20 space-y-6">
+                <div>
+                  <h3 class="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">
+                    Categories
+                  </h3>
+                  <nav class="space-y-0.5">
+                    <For each={DOC_CATEGORIES}>
+                      {(cat) => (
+                        <a
+                          href={`#${cat.id}`}
+                          class="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-white/50 transition-colors hover:bg-white/[0.04] hover:text-white/80"
+                          style={{ "text-decoration": "none" }}
+                        >
+                          <span class="flex items-center gap-2">
+                            <span>{cat.icon}</span>
+                            <span>{cat.title}</span>
+                          </span>
+                          <span class="text-xs text-white/25 font-mono">
+                            {cat.articles}
+                          </span>
+                        </a>
+                      )}
+                    </For>
+                  </nav>
+                </div>
+
+                {/* SDK versions */}
+                <div
+                  class="rounded-xl border border-white/[0.06] p-4"
+                  style={{ background: "rgba(255,255,255,0.02)" }}
+                >
+                  <h3 class="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">
+                    SDK Versions
+                  </h3>
+                  <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-white/40">@crontech/cli</span>
+                      <span class="text-emerald-400/80 font-mono text-xs">
+                        v0.8.2
+                      </span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-white/40">@crontech/sdk</span>
+                      <span class="text-emerald-400/80 font-mono text-xs">
+                        v0.6.1
+                      </span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-white/40">@crontech/ai</span>
+                      <span class="text-emerald-400/80 font-mono text-xs">
+                        v0.4.0
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* ── Category Cards ────────────────────────────────────── */}
+            <div class="lg:col-span-3">
+              <Show
+                when={filteredCategories().length > 0}
+                fallback={
+                  <div class="flex flex-col items-center justify-center py-20 text-center">
+                    <div class="text-4xl mb-4 opacity-30">
+                      {"\uD83D\uDD0D"}
+                    </div>
+                    <p class="text-white/40 text-lg">
+                      No results for "{searchQuery()}"
+                    </p>
+                    <p class="text-white/25 text-sm mt-1">
+                      Try a different search term or browse the categories
+                    </p>
+                    <button
+                      type="button"
+                      class="mt-4 rounded-lg bg-white/[0.06] px-4 py-2 text-sm text-white/60 hover:bg-white/[0.1] transition-colors"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      Clear search
+                    </button>
+                  </div>
+                }
+              >
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <For each={filteredCategories()}>
+                    {(category) => (
+                      <DocCategoryCard category={category} />
+                    )}
+                  </For>
+                </div>
+              </Show>
+
+              {/* ── Popular Articles ─────────────────────────────────── */}
+              <Show when={searchQuery() === ""}>
+                <div class="mt-16">
+                  <h2 class="text-lg font-semibold text-white/80 mb-6">
+                    Popular articles
+                  </h2>
+                  <div class="space-y-2">
+                    {[
+                      {
+                        title: "Quickstart: Your first Crontech project",
+                        category: "Getting Started",
+                        readTime: "3 min",
+                      },
+                      {
+                        title: "Three-tier compute explained",
+                        category: "AI SDK",
+                        readTime: "8 min",
+                      },
+                      {
+                        title: "tRPC procedure reference",
+                        category: "API Reference",
+                        readTime: "12 min",
+                      },
+                      {
+                        title:
+                          "Building AI-composable components with Zod schemas",
+                        category: "Components",
+                        readTime: "6 min",
+                      },
+                      {
+                        title: "Deploy to Cloudflare Workers in 60 seconds",
+                        category: "Deployment",
+                        readTime: "2 min",
+                      },
+                      {
+                        title:
+                          "Real-time collaboration with Yjs and AI agents",
+                        category: "Collaboration",
+                        readTime: "10 min",
+                      },
+                    ].map((article) => (
+                      <a
+                        href={`/docs/${article.category.toLowerCase().replace(/\s+/g, "-")}/${article.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                        class="group flex items-center justify-between rounded-xl border border-white/[0.04] px-5 py-4 transition-all duration-200 hover:border-white/[0.1] hover:bg-white/[0.02]"
+                        style={{ "text-decoration": "none" }}
+                      >
+                        <div>
+                          <span class="text-sm text-white/70 group-hover:text-white/90 transition-colors">
+                            {article.title}
+                          </span>
+                          <span class="ml-3 text-xs text-white/25 font-mono">
+                            {article.category}
+                          </span>
+                        </div>
+                        <span class="text-xs text-white/20 shrink-0 ml-4">
+                          {article.readTime}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </Show>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
