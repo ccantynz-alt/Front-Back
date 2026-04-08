@@ -10,6 +10,19 @@ import {
   StackDirection,
   TextSchema,
   ModalSchema,
+  BadgeSchema,
+  BadgeVariant,
+  AlertSchema,
+  AlertVariant,
+  AvatarSchema,
+  TabsSchema,
+  TabItemSchema,
+  SelectSchema,
+  SelectOptionSchema,
+  TextareaSchema,
+  SpinnerSchema,
+  TooltipSchema,
+  SeparatorSchema,
   ComponentSchema,
   ComponentCatalog,
 } from "./components";
@@ -389,6 +402,447 @@ describe("ModalSchema", () => {
   });
 });
 
+// ── BadgeSchema ─────────────────────────────────────────────────────
+
+describe("BadgeSchema", () => {
+  test("accepts valid badge", () => {
+    const result = BadgeSchema.safeParse({
+      component: "Badge",
+      props: { label: "New", variant: "success", size: "sm" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("applies default variant and size", () => {
+    const result = BadgeSchema.safeParse({
+      component: "Badge",
+      props: { label: "Tag" },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.variant).toBe("default");
+      expect(result.data.props.size).toBe("md");
+    }
+  });
+
+  test("rejects missing label", () => {
+    const result = BadgeSchema.safeParse({
+      component: "Badge",
+      props: {},
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects invalid variant", () => {
+    const result = BadgeSchema.safeParse({
+      component: "Badge",
+      props: { label: "x", variant: "danger" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("BadgeVariant", () => {
+  test("accepts all valid variants", () => {
+    for (const v of ["default", "success", "warning", "error", "info"]) {
+      expect(BadgeVariant.safeParse(v).success).toBe(true);
+    }
+  });
+
+  test("rejects invalid variant", () => {
+    expect(BadgeVariant.safeParse("primary").success).toBe(false);
+  });
+});
+
+// ── AlertSchema ─────────────────────────────────────────────────────
+
+describe("AlertSchema", () => {
+  test("accepts valid alert with all props", () => {
+    const result = AlertSchema.safeParse({
+      component: "Alert",
+      props: { variant: "error", title: "Error", description: "Something broke", dismissible: true },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("applies defaults", () => {
+    const result = AlertSchema.safeParse({
+      component: "Alert",
+      props: {},
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.variant).toBe("info");
+      expect(result.data.props.dismissible).toBe(false);
+    }
+  });
+
+  test("accepts alert with children", () => {
+    const result = AlertSchema.safeParse({
+      component: "Alert",
+      props: { variant: "warning" },
+      children: [{ component: "Text", props: { content: "Details" } }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects invalid variant", () => {
+    const result = AlertSchema.safeParse({
+      component: "Alert",
+      props: { variant: "critical" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("AlertVariant", () => {
+  test("accepts all valid variants", () => {
+    for (const v of ["info", "success", "warning", "error"]) {
+      expect(AlertVariant.safeParse(v).success).toBe(true);
+    }
+  });
+});
+
+// ── AvatarSchema ────────────────────────────────────────────────────
+
+describe("AvatarSchema", () => {
+  test("accepts avatar with src", () => {
+    const result = AvatarSchema.safeParse({
+      component: "Avatar",
+      props: { src: "https://example.com/photo.jpg", alt: "User" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("accepts avatar with initials", () => {
+    const result = AvatarSchema.safeParse({
+      component: "Avatar",
+      props: { initials: "JD" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("accepts empty props (all optional)", () => {
+    const result = AvatarSchema.safeParse({
+      component: "Avatar",
+      props: {},
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.size).toBe("md");
+    }
+  });
+
+  test("rejects invalid size", () => {
+    const result = AvatarSchema.safeParse({
+      component: "Avatar",
+      props: { size: "xl" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ── TabsSchema ──────────────────────────────────────────────────────
+
+describe("TabsSchema", () => {
+  test("accepts valid tabs", () => {
+    const result = TabsSchema.safeParse({
+      component: "Tabs",
+      props: {
+        items: [
+          { id: "1", label: "Tab One" },
+          { id: "2", label: "Tab Two" },
+        ],
+        defaultTab: "1",
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("requires at least one item", () => {
+    const result = TabsSchema.safeParse({
+      component: "Tabs",
+      props: { items: [] },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("accepts tab items with disabled", () => {
+    const result = TabsSchema.safeParse({
+      component: "Tabs",
+      props: {
+        items: [{ id: "a", label: "A", disabled: true }],
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("defaultTab is optional", () => {
+    const result = TabsSchema.safeParse({
+      component: "Tabs",
+      props: { items: [{ id: "x", label: "X" }] },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.defaultTab).toBeUndefined();
+    }
+  });
+
+  test("rejects item without id", () => {
+    const result = TabsSchema.safeParse({
+      component: "Tabs",
+      props: { items: [{ label: "No ID" }] },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("TabItemSchema", () => {
+  test("accepts valid tab item", () => {
+    expect(TabItemSchema.safeParse({ id: "tab-1", label: "First" }).success).toBe(true);
+  });
+
+  test("rejects missing label", () => {
+    expect(TabItemSchema.safeParse({ id: "tab-1" }).success).toBe(false);
+  });
+});
+
+// ── SelectSchema ────────────────────────────────────────────────────
+
+describe("SelectSchema", () => {
+  test("accepts valid select", () => {
+    const result = SelectSchema.safeParse({
+      component: "Select",
+      props: {
+        options: [
+          { value: "a", label: "Option A" },
+          { value: "b", label: "Option B" },
+        ],
+        value: "a",
+        label: "Pick one",
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("requires at least one option", () => {
+    const result = SelectSchema.safeParse({
+      component: "Select",
+      props: { options: [] },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("applies default for disabled", () => {
+    const result = SelectSchema.safeParse({
+      component: "Select",
+      props: { options: [{ value: "x", label: "X" }] },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.disabled).toBe(false);
+    }
+  });
+
+  test("rejects option without value", () => {
+    const result = SelectSchema.safeParse({
+      component: "Select",
+      props: { options: [{ label: "Missing Value" }] },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("SelectOptionSchema", () => {
+  test("accepts valid option", () => {
+    expect(SelectOptionSchema.safeParse({ value: "1", label: "One" }).success).toBe(true);
+  });
+
+  test("accepts disabled option", () => {
+    expect(SelectOptionSchema.safeParse({ value: "1", label: "One", disabled: true }).success).toBe(true);
+  });
+});
+
+// ── TextareaSchema ──────────────────────────────────────────────────
+
+describe("TextareaSchema", () => {
+  test("accepts valid textarea", () => {
+    const result = TextareaSchema.safeParse({
+      component: "Textarea",
+      props: { label: "Comments", rows: 5, resize: "both" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("applies all defaults", () => {
+    const result = TextareaSchema.safeParse({
+      component: "Textarea",
+      props: {},
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.rows).toBe(3);
+      expect(result.data.props.resize).toBe("vertical");
+      expect(result.data.props.required).toBe(false);
+      expect(result.data.props.disabled).toBe(false);
+    }
+  });
+
+  test("rejects negative rows", () => {
+    const result = TextareaSchema.safeParse({
+      component: "Textarea",
+      props: { rows: -1 },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects non-integer rows", () => {
+    const result = TextareaSchema.safeParse({
+      component: "Textarea",
+      props: { rows: 2.5 },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects invalid resize value", () => {
+    const result = TextareaSchema.safeParse({
+      component: "Textarea",
+      props: { resize: "auto" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ── SpinnerSchema ───────────────────────────────────────────────────
+
+describe("SpinnerSchema", () => {
+  test("accepts valid spinner", () => {
+    const result = SpinnerSchema.safeParse({
+      component: "Spinner",
+      props: { size: "lg" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("applies default size", () => {
+    const result = SpinnerSchema.safeParse({
+      component: "Spinner",
+      props: {},
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.size).toBe("md");
+    }
+  });
+
+  test("accepts all valid sizes", () => {
+    for (const s of ["sm", "md", "lg"]) {
+      const result = SpinnerSchema.safeParse({
+        component: "Spinner",
+        props: { size: s },
+      });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  test("rejects invalid size", () => {
+    const result = SpinnerSchema.safeParse({
+      component: "Spinner",
+      props: { size: "xl" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// ── TooltipSchema ───────────────────────────────────────────────────
+
+describe("TooltipSchema", () => {
+  test("accepts valid tooltip", () => {
+    const result = TooltipSchema.safeParse({
+      component: "Tooltip",
+      props: { content: "Help text", position: "bottom" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("applies default position", () => {
+    const result = TooltipSchema.safeParse({
+      component: "Tooltip",
+      props: { content: "Info" },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.position).toBe("top");
+    }
+  });
+
+  test("rejects missing content", () => {
+    const result = TooltipSchema.safeParse({
+      component: "Tooltip",
+      props: {},
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects invalid position", () => {
+    const result = TooltipSchema.safeParse({
+      component: "Tooltip",
+      props: { content: "x", position: "center" },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("accepts all valid positions", () => {
+    for (const pos of ["top", "bottom", "left", "right"]) {
+      const result = TooltipSchema.safeParse({
+        component: "Tooltip",
+        props: { content: "x", position: pos },
+      });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  test("accepts tooltip with children", () => {
+    const result = TooltipSchema.safeParse({
+      component: "Tooltip",
+      props: { content: "Hover me" },
+      children: [{ component: "Button", props: { label: "Click" } }],
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+// ── SeparatorSchema ─────────────────────────────────────────────────
+
+describe("SeparatorSchema", () => {
+  test("accepts valid separator", () => {
+    const result = SeparatorSchema.safeParse({
+      component: "Separator",
+      props: { orientation: "vertical" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("applies default orientation", () => {
+    const result = SeparatorSchema.safeParse({
+      component: "Separator",
+      props: {},
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.props.orientation).toBe("horizontal");
+    }
+  });
+
+  test("rejects invalid orientation", () => {
+    const result = SeparatorSchema.safeParse({
+      component: "Separator",
+      props: { orientation: "diagonal" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
 // ── ComponentSchema (discriminated union) ────────────────────────────
 
 describe("ComponentSchema", () => {
@@ -412,6 +866,78 @@ describe("ComponentSchema", () => {
     const result = ComponentSchema.safeParse({
       component: "Text",
       props: { content: "hi" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Badge", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Badge",
+      props: { label: "test" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Alert", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Alert",
+      props: {},
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Avatar", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Avatar",
+      props: { initials: "AB" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Tabs", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Tabs",
+      props: { items: [{ id: "t", label: "T" }] },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Select", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Select",
+      props: { options: [{ value: "v", label: "V" }] },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Textarea", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Textarea",
+      props: {},
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Spinner", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Spinner",
+      props: {},
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Tooltip", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Tooltip",
+      props: { content: "tip" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("correctly discriminates Separator", () => {
+    const result = ComponentSchema.safeParse({
+      component: "Separator",
+      props: {},
     });
     expect(result.success).toBe(true);
   });
