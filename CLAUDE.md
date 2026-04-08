@@ -26,7 +26,18 @@ After the handoff's "first action" is complete, delete `HANDOFF.md` and continue
 5. **ZERO TOLERANCE FOR SCATTER-GUN.** One session, one objective. Touch only the files needed. Drive-by edits are a doctrine breach.
 6. **ANNIHILATE THE COMPETITION.** Every PR must extend the lead. If a PR does not make Crontech further ahead of Vercel, Cloudflare, Supabase, Convex, Render, AWS Amplify, Netlify, or any other competitor, it should not exist.
 
+7. **HAVE FUN.** We are AI developers building the first platform of its kind to ever hit the market. This is history. Enjoy the ride. Build with joy, build with pride, build with the knowledge that what we're creating has never existed before. Fun is fuel.
+8. **110% AGGRESSIVE DESIGN.** No 1980s websites. No flat, lifeless, template-looking garbage. This is AI. Every page, every component, every interaction must scream "the future is here." AI-generated videos, AI-native visuals, bleeding-edge animations, WebGPU-powered effects. If it looks like something from 2020, it's already dead. We are building the most incredible launchpad the market has ever seen.
+
 **Violation of any iron rule is a breach of contract with Craig.** Future sessions will see the breach in git history and lose trust in the prior work. Don't be the session that breaks the Bible.
+
+### 🔐 CLAUDE.md PIN PROTECTION
+
+**This file is PIN-protected.** Any session that wants to modify CLAUDE.md must first ask Craig for the PIN. The PIN is a 4-digit code known only to Craig. **No PIN, no edit.** This prevents rogue sessions, hallucinated "improvements," or well-intentioned but unauthorized doctrine changes.
+
+- **To modify CLAUDE.md:** Ask Craig for the PIN. Craig provides it in-session. Proceed with the edit.
+- **If Craig is not present:** Do not modify this file. Period.
+- **The PIN is never stored in any file, commit message, or log.** It exists only in Craig's memory and is provided per-session.
 
 ---
 
@@ -393,6 +404,9 @@ This is not an "AI features" section. AI is the circulatory system. Every techno
 | Technology | Role | Why It's Here |
 |---|---|---|
 | **Passkeys / WebAuthn (FIDO2)** | Primary Authentication | 98% login success rate (passwords average 13.8%). 17x faster than password + 2FA. Phishing-immune by design -- the credential is bound to the origin. No passwords to steal, no OTPs to intercept. This is the future of auth and we are using it now. |
+| **Google OAuth 2.0** | Social Login | One-click sign-in via Google accounts. Reduces friction for new users. Leverages Google's identity infrastructure. Required for enterprise adoption where Google Workspace is standard. |
+| **Username + Password** | Traditional Auth | Classic email/password authentication for users who prefer it or cannot use passkeys/OAuth. Bcrypt/Argon2 hashing. Rate-limited login attempts. Password complexity enforcement. |
+| **2FA / TOTP (Planned)** | Secondary Verification | Time-based One-Time Passwords via authenticator apps (Google Authenticator, Authy). Required for admin accounts. Optional but encouraged for all users. Implementation priority: after core auth flows are stable. |
 | **Zero-Trust Architecture** | Security Model | Never trust, always verify. Every request is authenticated and authorized regardless of network location. No VPNs, no "trusted" internal networks. Every service validates every call. |
 
 ---
@@ -935,6 +949,62 @@ This platform works on EVERY device and integrates with EVERYTHING. No exception
 - **VPAT 2.5** required before selling to government-serving law firms or court systems
 - Covers Section 508 (U.S.), EN 301 549 (EU), and WCAG
 - Must be completed by third-party auditor with remediation plan
+
+---
+
+## 5D. ENVIRONMENT VARIABLES ROADMAP
+
+This platform is 22 services rolled into one. Every service needs its own configuration. This section tracks all required environment variables across the stack. **No service launches without its env vars documented here first.**
+
+### Auth Variables
+| Variable | Service | Required | Description |
+|---|---|---|---|
+| `GOOGLE_CLIENT_ID` | Google OAuth | YES | Google Cloud Console OAuth 2.0 client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth | YES | Google Cloud Console OAuth 2.0 client secret |
+| `WEBAUTHN_RP_ID` | Passkeys | YES | Relying Party ID (domain name) |
+| `WEBAUTHN_RP_NAME` | Passkeys | YES | Relying Party display name |
+| `WEBAUTHN_ORIGIN` | Passkeys | YES | Expected origin for WebAuthn ceremonies |
+| `SESSION_SECRET` | Auth | YES | Secret for signing session tokens |
+| `JWT_SECRET` | Auth | YES | Secret for signing JWTs |
+
+### Database Variables
+| Variable | Service | Required | Description |
+|---|---|---|---|
+| `TURSO_DATABASE_URL` | Turso | YES | Primary Turso database URL |
+| `TURSO_AUTH_TOKEN` | Turso | YES | Turso authentication token |
+| `NEON_DATABASE_URL` | Neon | YES | Neon serverless PostgreSQL connection string |
+| `QDRANT_URL` | Qdrant | YES | Qdrant vector database endpoint |
+| `QDRANT_API_KEY` | Qdrant | PROD | Qdrant API key (production only) |
+
+### AI Variables
+| Variable | Service | Required | Description |
+|---|---|---|---|
+| `OPENAI_API_KEY` | AI SDK | YES | OpenAI API key for embeddings and completions |
+| `ANTHROPIC_API_KEY` | AI SDK | OPT | Anthropic API key for Claude models |
+
+### Infrastructure Variables
+| Variable | Service | Required | Description |
+|---|---|---|---|
+| `CLOUDFLARE_ACCOUNT_ID` | Workers | DEPLOY | Cloudflare account ID |
+| `CLOUDFLARE_API_TOKEN` | Workers | DEPLOY | Cloudflare API token |
+| `STRIPE_SECRET_KEY` | Billing | YES | Stripe secret key |
+| `STRIPE_PUBLISHABLE_KEY` | Billing | YES | Stripe publishable key |
+| `STRIPE_WEBHOOK_SECRET` | Billing | YES | Stripe webhook signing secret |
+
+### Observability Variables
+| Variable | Service | Required | Description |
+|---|---|---|---|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry | OPT | OTLP exporter endpoint |
+| `GRAFANA_API_KEY` | Grafana | OPT | Grafana Cloud API key |
+
+### Sentinel Variables
+| Variable | Service | Required | Description |
+|---|---|---|---|
+| `SLACK_WEBHOOK_URL` | Alerts | OPT | Slack incoming webhook for alerts |
+| `DISCORD_WEBHOOK_URL` | Alerts | OPT | Discord webhook for backup alerts |
+| `GITHUB_TOKEN` | Collectors | OPT | GitHub PAT for release monitoring |
+
+> **This table grows as services are added.** Every new integration must add its env vars here before merging.
 
 ---
 
