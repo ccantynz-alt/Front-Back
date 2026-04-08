@@ -1,9 +1,18 @@
 // ── Sentinel Unit Tests ─────────────────────────────────────────────
-// Tests collector types, analyzer logic, storage, and digest generation.
+// Tests collector types, analyzer logic, storage, digest generation,
+// and GitWatchman collector infrastructure.
 // No network calls -- all logic is tested in isolation.
 
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { IntelligenceItemSchema, type IntelligenceItem, type Severity } from "./collectors/types";
+import {
+  IntelligenceItemSchema,
+  TrackedRepoSchema,
+  TrackedReposFileSchema,
+  type IntelligenceItem,
+  type Severity,
+  type TrackedRepo,
+  DEFAULT_TRACKED_REPOS,
+} from "./collectors/types";
 import { analyzeThreat, analyzeThreats, type ThreatAnalysis } from "./analyzers/threat-analyzer";
 import { findOpportunities, type Opportunity } from "./analyzers/opportunity-finder";
 import { scoutTech, type TechScoutResult } from "./analyzers/tech-scout";
@@ -16,6 +25,13 @@ import {
   pruneOlderThan,
   setStorePath,
 } from "./storage/intelligence-store";
+import {
+  loadTrackedRepos,
+  saveTrackedRepos,
+  updateTrackedRepo,
+  setTrackedReposPath,
+  clearTrackedReposCache,
+} from "./storage/tracked-repos-store";
 import { generateDigest, type DailyDigest } from "./digest/daily-digest";
 import { checkDeadMansSwitch, reportSuccess } from "./dead-mans-switch";
 import { join } from "path";

@@ -19,6 +19,13 @@
     },
     "clean": {
       "cache": false
+    },
+    "check-bundle": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "check-a11y": {
+      "cache": false
     }
   }
 }

@@ -15,6 +15,14 @@ import type {
 } from "../../auth/webauthn";
 import { createSession, deleteSession } from "../../auth/session";
 import { generateCsrfToken, validateCsrfToken } from "../../auth/csrf";
+import {
+  registerWithPassword,
+  loginWithPassword,
+  registerWithPasswordSchema,
+  loginWithPasswordSchema,
+  calculatePasswordStrength,
+} from "../../auth/password";
+import { buildGoogleAuthUrl } from "../../auth/google-oauth";
 
 // In-memory challenge store with TTL cleanup.
 // In production, replace with Redis or a DB-backed store.
@@ -408,6 +416,52 @@ export const authRouter = router({
     }
     return { success: true };
   }),
+
+  // ── Password Authentication ──────────────────────────────────────
+  registerWithPassword: publicProcedure
+    .input(registerWithPasswordSchema)
+    .mutation(async ({ input, ctx }) => {
+      requireCsrfToken(ctx.csrfToken);
+
+      const result = await registerWithPassword(input, ctx.db);
+      return {
+        userId: result.userId,
+        token: result.token,
+      };
+    }),
+
+  loginWithPassword: publicProcedure
+    .input(loginWithPasswordSchema)
+    .mutation(async ({ input, ctx }) => {
+      requireCsrfToken(ctx.csrfToken);
+
+      const result = await loginWithPassword(input, ctx.db);
+      return {
+        userId: result.userId,
+        token: result.token,
+      };
+    }),
+
+  // ── Google OAuth ──────────────────────────────────────────────────
+  getGoogleAuthUrl: publicProcedure
+    .input(
+      z
+        .object({
+          redirectTo: z.string().optional(),
+        })
+        .optional(),
+    )
+    .query(({ input }) => {
+      const url = buildGoogleAuthUrl(input?.redirectTo);
+      return { url };
+    }),
+
+  // ── Password Strength (utility) ──────────────────────────────────
+  checkPasswordStrength: publicProcedure
+    .input(z.object({ password: z.string() }))
+    .query(({ input }) => {
+      return calculatePasswordStrength(input.password);
+    }),
 
   me: protectedProcedure.query(async ({ ctx }) => {
     const userResult = await ctx.db

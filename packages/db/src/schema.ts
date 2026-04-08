@@ -8,6 +8,12 @@ export const users = sqliteTable("users", {
     .notNull()
     .default("viewer"),
   passkeyCredentialId: text("passkey_credential_id"),
+  passwordHash: text("password_hash"),
+  authProvider: text("auth_provider", {
+    enum: ["passkey", "password", "google"],
+  }),
+  googleId: text("google_id"),
+  avatarUrl: text("avatar_url"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
