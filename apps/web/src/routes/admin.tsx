@@ -1,372 +1,399 @@
 import { Title } from "@solidjs/meta";
-import { createSignal, createResource, Show, For } from "solid-js";
+import { createSignal, For, Show, Switch, Match } from "solid-js";
 import type { JSX } from "solid-js";
-import { useNavigate } from "@solidjs/router";
-import { Button, Card, Stack, Text, Badge, Spinner } from "@back-to-the-future/ui";
-import { ProtectedRoute } from "../components/ProtectedRoute";
-import { useAuth } from "../stores";
-import { trpc } from "../lib/trpc";
 
-// ── Admin Guard ──────────────────────────────────────────────────────
+// ── Mock Data ────────────────────────────────────────────────────────
 
-function AdminGuard(props: { children: JSX.Element }): JSX.Element {
-  const auth = useAuth();
-  const navigate = useNavigate();
+const MOCK_STATS = {
+  totalUsers: 12_847,
+  activeProjects: 3_291,
+  apiCallsToday: 1_482_003,
+  revenue: 284_750,
+};
 
-  const isAdmin = (): boolean => auth.currentUser()?.role === "admin";
+const MOCK_USERS = [
+  { id: "1", name: "Elena Vasquez", email: "elena@acme.dev", plan: "Enterprise", status: "active" as const, avatar: "EV" },
+  { id: "2", name: "Marcus Chen", email: "marcus@streamline.io", plan: "Pro", status: "active" as const, avatar: "MC" },
+  { id: "3", name: "Sarah Kim", email: "sarah.kim@buildfast.co", plan: "Pro", status: "active" as const, avatar: "SK" },
+  { id: "4", name: "Raj Patel", email: "raj@devstack.com", plan: "Free", status: "inactive" as const, avatar: "RP" },
+  { id: "5", name: "Anya Novak", email: "anya.novak@cloudship.dev", plan: "Enterprise", status: "active" as const, avatar: "AN" },
+  { id: "6", name: "James Wright", email: "james@pixelcraft.io", plan: "Pro", status: "suspended" as const, avatar: "JW" },
+  { id: "7", name: "Li Wei", email: "liwei@tensorlab.ai", plan: "Enterprise", status: "active" as const, avatar: "LW" },
+];
 
-  return (
-    <ProtectedRoute>
-      <Show
-        when={isAdmin()}
-        fallback={
-          <Stack direction="vertical" gap="md" class="page-padded">
-            <Text variant="h2" weight="bold">Access Denied</Text>
-            <Text variant="body" class="text-muted">
-              You do not have permission to view this page. Admin role required.
-            </Text>
-            <Button variant="primary" size="sm" onClick={() => navigate("/dashboard")}>
-              Back to Dashboard
-            </Button>
-          </Stack>
-        }
-      >
-        {props.children}
-      </Show>
-    </ProtectedRoute>
-  );
-}
+const SYSTEM_HEALTH = [
+  { label: "API Gateway", status: "operational" as const, latency: "12ms", uptime: "99.99%" },
+  { label: "Edge Network", status: "operational" as const, latency: "4ms", uptime: "99.98%" },
+  { label: "Database Cluster", status: "operational" as const, latency: "8ms", uptime: "100%" },
+  { label: "AI Inference", status: "degraded" as const, latency: "142ms", uptime: "99.91%" },
+  { label: "WebSocket Layer", status: "operational" as const, latency: "3ms", uptime: "99.97%" },
+  { label: "Sentinel Monitor", status: "operational" as const, latency: "28ms", uptime: "99.95%" },
+];
 
 // ── Stat Card ────────────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
-  value: string | number;
-  subtext?: string;
+  value: string;
+  delta: string;
+  icon: string;
+  accentColor: string;
 }
 
 function StatCard(props: StatCardProps): JSX.Element {
   return (
-    <Card padding="md">
-      <Stack direction="vertical" gap="xs">
-        <Text variant="caption" class="text-muted">{props.label}</Text>
-        <Text variant="h2" weight="bold">{String(props.value)}</Text>
-        <Show when={props.subtext}>
-          <Text variant="caption" class="text-muted">{props.subtext}</Text>
-        </Show>
-      </Stack>
-    </Card>
+    <div
+      class="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6 transition-all duration-300 hover:border-white/[0.12] hover:shadow-lg hover:shadow-black/20 group"
+      style={{
+        background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
+      }}
+    >
+      <div
+        class="absolute -top-12 -right-12 h-32 w-32 rounded-full opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-40"
+        style={{ background: props.accentColor }}
+      />
+      <div class="relative z-10 flex items-start justify-between">
+        <div class="flex flex-col gap-1">
+          <span class="text-xs font-medium uppercase tracking-widest text-gray-500">
+            {props.label}
+          </span>
+          <span class="text-3xl font-bold tracking-tight text-white">
+            {props.value}
+          </span>
+          <span class="mt-1 text-xs font-medium text-emerald-400">{props.delta}</span>
+        </div>
+        <div
+          class="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
+          style={{
+            background: `linear-gradient(135deg, ${props.accentColor}22, ${props.accentColor}44)`,
+            color: props.accentColor,
+          }}
+        >
+          {props.icon}
+        </div>
+      </div>
+      <div
+        class="absolute bottom-0 left-0 h-[2px] w-full opacity-60"
+        style={{ background: `linear-gradient(90deg, transparent, ${props.accentColor}, transparent)` }}
+      />
+    </div>
   );
 }
 
-// ── Health Indicator ─────────────────────────────────────────────────
+// ── Health Row ────────────────────────────────────────────────────────
 
-function HealthIndicator(props: { label: string; status: string }): JSX.Element {
-  const variant = (): "success" | "warning" | "error" => {
-    if (props.status === "ok" || props.status === "active") return "success";
-    if (props.status === "inactive") return "warning";
-    return "error";
+function HealthRow(props: { label: string; status: "operational" | "degraded" | "down"; latency: string; uptime: string }): JSX.Element {
+  const statusColor = (): string => {
+    if (props.status === "operational") return "#10b981";
+    if (props.status === "degraded") return "#f59e0b";
+    return "#ef4444";
   };
 
   return (
-    <Stack direction="horizontal" gap="sm" align="center">
-      <Badge variant={variant()} size="sm">{props.status}</Badge>
-      <Text variant="body">{props.label}</Text>
-    </Stack>
+    <div class="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.03]">
+      <div class="flex items-center gap-3">
+        <div
+          class="h-2.5 w-2.5 rounded-full"
+          style={{ background: statusColor(), "box-shadow": `0 0 8px ${statusColor()}80` }}
+        />
+        <span class="text-sm font-medium text-gray-200">{props.label}</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <span class="text-xs text-gray-500">{props.latency}</span>
+        <span class="text-xs font-medium text-gray-400">{props.uptime}</span>
+        <span
+          class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+          style={{ background: `${statusColor()}18`, color: statusColor() }}
+        >
+          {props.status}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── User Row ─────────────────────────────────────────────────────────
+
+function UserRow(props: {
+  name: string;
+  email: string;
+  plan: string;
+  status: "active" | "inactive" | "suspended";
+  avatar: string;
+  onEdit: () => void;
+  onSuspend: () => void;
+}): JSX.Element {
+  const statusColor = (): string => {
+    if (props.status === "active") return "#10b981";
+    if (props.status === "inactive") return "#6b7280";
+    return "#ef4444";
+  };
+
+  const planColor = (): string => {
+    if (props.plan === "Enterprise") return "#a78bfa";
+    if (props.plan === "Pro") return "#3b82f6";
+    return "#6b7280";
+  };
+
+  return (
+    <div class="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-white/[0.015] px-4 py-3.5 transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.03]">
+      <div
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+        style={{ background: `linear-gradient(135deg, ${planColor()}60, ${planColor()})` }}
+      >
+        {props.avatar}
+      </div>
+      <div class="flex min-w-0 flex-1 flex-col">
+        <span class="text-sm font-medium text-gray-100">{props.name}</span>
+        <span class="text-xs text-gray-500">{props.email}</span>
+      </div>
+      <span
+        class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+        style={{ background: `${planColor()}18`, color: planColor() }}
+      >
+        {props.plan}
+      </span>
+      <div class="flex items-center gap-2">
+        <div
+          class="h-2 w-2 rounded-full"
+          style={{ background: statusColor(), "box-shadow": `0 0 6px ${statusColor()}60` }}
+        />
+        <span class="text-xs capitalize text-gray-400">{props.status}</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={props.onEdit}
+          class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.06] hover:text-white"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={props.onSuspend}
+          class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all duration-200 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
+        >
+          Suspend
+        </button>
+      </div>
+    </div>
   );
 }
 
 // ── Admin Dashboard Page ─────────────────────────────────────────────
 
 export default function AdminPage(): JSX.Element {
-  const [statsData] = createResource(() => trpc.admin.getStats.query());
-  const [recentUsers] = createResource(() => trpc.admin.getRecentUsers.query());
-  const [recentPayments] = createResource(() => trpc.admin.getRecentPayments.query());
-  const [systemHealth] = createResource(() => trpc.admin.getSystemHealth.query());
-  const [flags] = createResource(() => trpc.featureFlags.getAll.query());
-  const [collabRooms] = createResource(() => trpc.collab.getRooms.query());
-  const [supportStats] = createResource(() => trpc.support.getStats.query());
-  const navigateToSupport = (): void => { window.location.href = "/admin/support"; };
+  const [searchQuery, setSearchQuery] = createSignal("");
+  const [filterPlan, setFilterPlan] = createSignal<string>("all");
 
-  const [togglingFlag, setTogglingFlag] = createSignal<string | null>(null);
-
-  const handleToggleFlag = async (key: string, currentEnabled: boolean): Promise<void> => {
-    setTogglingFlag(key);
-    try {
-      await trpc.admin.toggleFeatureFlag.mutate({
-        key,
-        enabled: !currentEnabled,
-      });
-      // Refetch flags -- createResource refetch not available directly,
-      // so we just reload the page section. In production, use a store.
-      window.location.reload();
-    } catch (err) {
-      console.error("Failed to toggle flag:", err);
-    } finally {
-      setTogglingFlag(null);
-    }
-  };
-
-  const formatCurrency = (cents: number): string => {
-    return `$${(cents / 100).toFixed(2)}`;
-  };
-
-  const formatDate = (date: Date | string | null): string => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+  const filteredUsers = (): typeof MOCK_USERS => {
+    return MOCK_USERS.filter((u) => {
+      const matchesSearch =
+        u.name.toLowerCase().includes(searchQuery().toLowerCase()) ||
+        u.email.toLowerCase().includes(searchQuery().toLowerCase());
+      const matchesPlan = filterPlan() === "all" || u.plan === filterPlan();
+      return matchesSearch && matchesPlan;
     });
   };
 
   return (
-    <AdminGuard>
-      <Title>Admin Dashboard - Crontech</Title>
-      <Stack direction="vertical" gap="lg" class="page-padded">
-        <Stack direction="vertical" gap="xs">
-          <Text variant="h1" weight="bold">Admin Dashboard</Text>
-          <Text variant="body" class="text-muted">
-            Platform overview and management controls.
-          </Text>
-        </Stack>
+    <div class="min-h-screen bg-[#060606]">
+      <Title>Admin Panel - Crontech</Title>
 
-        {/* Platform Stats */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h3" weight="semibold">Platform Stats</Text>
-          <Show when={!statsData.loading} fallback={<Spinner />}>
-            <div class="grid-4">
-              <StatCard
-                label="Total Users"
-                value={statsData()?.totalUsers ?? 0}
-              />
-              <StatCard
-                label="Active Subscriptions"
-                value={statsData()?.activeSubscriptions ?? 0}
-              />
-              <StatCard
-                label="Total Revenue"
-                value={formatCurrency(statsData()?.totalRevenue ?? 0)}
-              />
-              <StatCard
-                label="AI Generations"
-                value={statsData()?.aiGenerations ?? 0}
-              />
+      <div class="mx-auto max-w-7xl px-6 py-8">
+        {/* Header */}
+        <div class="mb-8 flex items-end justify-between">
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight text-white">Admin Panel</h1>
+            <p class="mt-1 text-sm text-gray-500">
+              Platform administration and system oversight
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
+            >
+              <span class="text-base">&#128203;</span>
+              View Logs
+            </button>
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
+            >
+              <span class="text-base">&#128229;</span>
+              Export Data
+            </button>
+            <button
+              type="button"
+              class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110"
+            >
+              <span class="text-base">+</span>
+              Invite User
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Total Users" value="12,847" delta="+342 this week" icon="&#128101;" accentColor="#3b82f6" />
+          <StatCard label="Active Projects" value="3,291" delta="+89 this week" icon="&#128640;" accentColor="#8b5cf6" />
+          <StatCard label="API Calls Today" value="1.48M" delta="+12.4% vs yesterday" icon="&#9889;" accentColor="#10b981" />
+          <StatCard label="Revenue (MTD)" value="$284,750" delta="+18.2% vs last month" icon="&#128176;" accentColor="#f59e0b" />
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* User Management - takes 2 cols */}
+          <div class="lg:col-span-2">
+            <div
+              class="rounded-2xl border border-white/[0.06] p-6"
+              style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
+            >
+              <div class="mb-5 flex items-center justify-between">
+                <div>
+                  <h2 class="text-lg font-semibold text-white">User Management</h2>
+                  <p class="text-xs text-gray-500">{MOCK_USERS.length} total users</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  {/* Plan Filter */}
+                  <select
+                    value={filterPlan()}
+                    onChange={(e) => setFilterPlan(e.currentTarget.value)}
+                    class="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-300 outline-none transition-colors duration-200 focus:border-blue-500/50"
+                  >
+                    <option value="all">All Plans</option>
+                    <option value="Free">Free</option>
+                    <option value="Pro">Pro</option>
+                    <option value="Enterprise">Enterprise</option>
+                  </select>
+                  {/* Search */}
+                  <div class="relative">
+                    <input
+                      type="text"
+                      placeholder="Search users..."
+                      value={searchQuery()}
+                      onInput={(e) => setSearchQuery(e.currentTarget.value)}
+                      class="w-56 rounded-lg border border-white/[0.08] bg-white/[0.04] py-2 pl-8 pr-3 text-xs text-gray-200 placeholder-gray-600 outline-none transition-colors duration-200 focus:border-blue-500/50"
+                    />
+                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600 text-xs">&#128270;</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table Header */}
+              <div class="mb-2 flex items-center gap-4 px-4 py-2">
+                <div class="w-9 shrink-0" />
+                <span class="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">User</span>
+                <span class="w-24 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Plan</span>
+                <span class="w-24 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Status</span>
+                <span class="w-36 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Actions</span>
+              </div>
+
+              {/* User Rows */}
+              <div class="flex flex-col gap-2">
+                <For each={filteredUsers()}>
+                  {(user) => (
+                    <UserRow
+                      name={user.name}
+                      email={user.email}
+                      plan={user.plan}
+                      status={user.status}
+                      avatar={user.avatar}
+                      onEdit={() => {}}
+                      onSuspend={() => {}}
+                    />
+                  )}
+                </For>
+              </div>
+
+              <Show when={filteredUsers().length === 0}>
+                <div class="flex flex-col items-center gap-2 py-12">
+                  <span class="text-2xl text-gray-600">&#128269;</span>
+                  <span class="text-sm text-gray-500">No users match your filters</span>
+                </div>
+              </Show>
             </div>
-          </Show>
-        </Stack>
+          </div>
 
-        {/* Support Metrics */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h3" weight="semibold">AI Support Inbox</Text>
-          <Show when={!supportStats.loading} fallback={<Spinner />}>
-            <Card padding="md">
-              <Stack direction="vertical" gap="sm">
-                <div class="grid-4">
-                  <Stack direction="vertical" gap="xs">
-                    <Text variant="caption" class="text-muted">Total tickets</Text>
-                    <Text variant="h2" weight="bold">{supportStats()?.totalTickets ?? 0}</Text>
-                  </Stack>
-                  <Stack direction="vertical" gap="xs">
-                    <Text variant="caption" class="text-muted">Auto-resolved</Text>
-                    <Text variant="h2" weight="bold">
-                      <Badge variant="success" size="sm">{supportStats()?.autoResolved ?? 0}</Badge>
-                    </Text>
-                  </Stack>
-                  <Stack direction="vertical" gap="xs">
-                    <Text variant="caption" class="text-muted">Awaiting review</Text>
-                    <Text variant="h2" weight="bold">
-                      <Badge variant="warning" size="sm">{supportStats()?.awaitingReview ?? 0}</Badge>
-                    </Text>
-                  </Stack>
-                  <Stack direction="vertical" gap="xs">
-                    <Text variant="caption" class="text-muted">Escalated</Text>
-                    <Text variant="h2" weight="bold">
-                      <Badge variant="error" size="sm">{supportStats()?.escalated ?? 0}</Badge>
-                    </Text>
-                  </Stack>
+          {/* System Health - right col */}
+          <div class="flex flex-col gap-6">
+            <div
+              class="rounded-2xl border border-white/[0.06] p-6"
+              style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
+            >
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-white">System Health</h2>
+                <div class="flex items-center gap-2">
+                  <div class="h-2 w-2 rounded-full bg-emerald-400" style={{ "box-shadow": "0 0 8px #10b98180" }} />
+                  <span class="text-xs font-medium text-emerald-400">All Systems Operational</span>
                 </div>
-                <Button variant="primary" size="sm" onClick={navigateToSupport}>
-                  Open support inbox
-                </Button>
-              </Stack>
-            </Card>
-          </Show>
-        </Stack>
-
-        {/* System Health */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h3" weight="semibold">System Health</Text>
-          <Show when={!systemHealth.loading} fallback={<Spinner />}>
-            <Card padding="md">
-              <Stack direction="vertical" gap="sm">
-                <HealthIndicator label="API Server" status={systemHealth()?.api ?? "unknown"} />
-                <HealthIndicator label="Database" status={systemHealth()?.database ?? "unknown"} />
-                <HealthIndicator label="Sentinel Intelligence" status={systemHealth()?.sentinel ?? "unknown"} />
-                <HealthIndicator label="WebSocket" status={systemHealth()?.websocket ?? "unknown"} />
-                <Text variant="caption" class="text-muted">
-                  Feature flags loaded: {systemHealth()?.flagsLoaded ?? 0} | Last check: {formatDate(systemHealth()?.timestamp ?? null)}
-                </Text>
-              </Stack>
-            </Card>
-          </Show>
-        </Stack>
-
-        {/* Recent Signups */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h3" weight="semibold">Recent Signups</Text>
-          <Show when={!recentUsers.loading} fallback={<Spinner />}>
-            <Card padding="md">
-              <Show
-                when={(recentUsers() ?? []).length > 0}
-                fallback={<Text variant="body" class="text-muted">No users yet.</Text>}
-              >
-                <div class="admin-table">
-                  <div class="admin-table-header">
-                    <span>Name</span>
-                    <span>Email</span>
-                    <span>Role</span>
-                    <span>Joined</span>
-                  </div>
-                  <For each={recentUsers()}>
-                    {(user) => (
-                      <div class="admin-table-row">
-                        <span>{user.displayName}</span>
-                        <span>{user.email}</span>
-                        <Badge variant={user.role === "admin" ? "warning" : "default"} size="sm">
-                          {user.role}
-                        </Badge>
-                        <span class="text-muted">{formatDate(user.createdAt)}</span>
-                      </div>
-                    )}
-                  </For>
-                </div>
-              </Show>
-            </Card>
-          </Show>
-        </Stack>
-
-        {/* Recent Payments */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h3" weight="semibold">Recent Payments</Text>
-          <Show when={!recentPayments.loading} fallback={<Spinner />}>
-            <Card padding="md">
-              <Show
-                when={(recentPayments() ?? []).length > 0}
-                fallback={<Text variant="body" class="text-muted">No payments yet.</Text>}
-              >
-                <div class="admin-table">
-                  <div class="admin-table-header">
-                    <span>Amount</span>
-                    <span>Status</span>
-                    <span>User ID</span>
-                    <span>Date</span>
-                  </div>
-                  <For each={recentPayments()}>
-                    {(payment) => (
-                      <div class="admin-table-row">
-                        <span>{formatCurrency(payment.amount)} {payment.currency.toUpperCase()}</span>
-                        <Badge
-                          variant={payment.status === "succeeded" ? "success" : "warning"}
-                          size="sm"
-                        >
-                          {payment.status}
-                        </Badge>
-                        <span class="text-muted">{payment.userId.slice(0, 8)}...</span>
-                        <span class="text-muted">{formatDate(payment.createdAt)}</span>
-                      </div>
-                    )}
-                  </For>
-                </div>
-              </Show>
-            </Card>
-          </Show>
-        </Stack>
-
-        {/* Active Collaboration Rooms */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h3" weight="semibold">Active Collaboration Rooms</Text>
-          <Show when={!collabRooms.loading} fallback={<Spinner />}>
-            <Card padding="md">
-              <Show
-                when={(collabRooms() ?? []).length > 0}
-                fallback={<Text variant="body" class="text-muted">No active rooms.</Text>}
-              >
-                <For each={collabRooms()}>
-                  {(room) => (
-                    <Stack direction="horizontal" gap="sm" align="center" class="admin-room-row">
-                      <Badge variant="success" size="sm">Live</Badge>
-                      <Text variant="body" weight="semibold">{room.name}</Text>
-                      <Text variant="caption" class="text-muted">
-                        {room.users.length} participant{room.users.length !== 1 ? "s" : ""}
-                      </Text>
-                      <Text variant="caption" class="text-muted">
-                        Created {formatDate(room.createdAt)}
-                      </Text>
-                    </Stack>
+              </div>
+              <div class="flex flex-col gap-2">
+                <For each={SYSTEM_HEALTH}>
+                  {(item) => (
+                    <HealthRow
+                      label={item.label}
+                      status={item.status}
+                      latency={item.latency}
+                      uptime={item.uptime}
+                    />
                   )}
                 </For>
-              </Show>
-            </Card>
-          </Show>
-        </Stack>
+              </div>
+            </div>
 
-        {/* Sentinel Intelligence Summary */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h3" weight="semibold">Sentinel Intelligence</Text>
-          <Card padding="md">
-            <Stack direction="vertical" gap="sm">
-              <Text variant="body" class="text-muted">
-                Competitive intelligence monitoring status.
-              </Text>
-              <Show
-                when={systemHealth()?.sentinel === "active"}
-                fallback={
-                  <Badge variant="warning" size="sm">Sentinel is inactive. Enable the sentinel.monitoring flag to activate.</Badge>
-                }
-              >
-                <Badge variant="success" size="sm">Sentinel is active and monitoring.</Badge>
-              </Show>
-            </Stack>
-          </Card>
-        </Stack>
-
-        {/* Feature Flag Toggle Panel */}
-        <Stack direction="vertical" gap="sm">
-          <Text variant="h3" weight="semibold">Feature Flags</Text>
-          <Show when={!flags.loading} fallback={<Spinner />}>
-            <Card padding="md">
-              <Stack direction="vertical" gap="sm">
-                <For each={flags()}>
-                  {(flag) => (
-                    <Stack direction="horizontal" gap="sm" align="center" class="admin-flag-row">
-                      <Button
-                        variant={flag.evaluatedEnabled ? "primary" : "outline"}
-                        size="sm"
-                        onClick={() => handleToggleFlag(flag.key, flag.enabled)}
-                        disabled={togglingFlag() === flag.key}
-                      >
-                        {flag.enabled ? "ON" : "OFF"}
-                      </Button>
-                      <Stack direction="vertical" gap="xs">
-                        <Text variant="body" weight="semibold">{flag.key}</Text>
-                        <Show when={flag.description}>
-                          <Text variant="caption" class="text-muted">{flag.description}</Text>
-                        </Show>
-                      </Stack>
-                      <Badge variant="default" size="sm">
-                        {flag.rolloutPercentage}% rollout
-                      </Badge>
-                    </Stack>
-                  )}
-                </For>
-              </Stack>
-            </Card>
-          </Show>
-        </Stack>
-      </Stack>
-    </AdminGuard>
+            {/* Quick Actions */}
+            <div
+              class="rounded-2xl border border-white/[0.06] p-6"
+              style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
+            >
+              <h2 class="mb-4 text-lg font-semibold text-white">Quick Actions</h2>
+              <div class="flex flex-col gap-2">
+                <button
+                  type="button"
+                  class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
+                >
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#3b82f618", color: "#3b82f6" }}>&#128101;</span>
+                  <div>
+                    <span class="text-sm font-medium text-gray-200">Invite User</span>
+                    <p class="text-[11px] text-gray-500">Send invitation to join the platform</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
+                >
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#10b98118", color: "#10b981" }}>&#128229;</span>
+                  <div>
+                    <span class="text-sm font-medium text-gray-200">Export Data</span>
+                    <p class="text-[11px] text-gray-500">Download CSV of all user data</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
+                >
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#f59e0b18", color: "#f59e0b" }}>&#128203;</span>
+                  <div>
+                    <span class="text-sm font-medium text-gray-200">View Logs</span>
+                    <p class="text-[11px] text-gray-500">Browse system and audit logs</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
+                >
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#a78bfa18", color: "#a78bfa" }}>&#9881;</span>
+                  <div>
+                    <span class="text-sm font-medium text-gray-200">System Config</span>
+                    <p class="text-[11px] text-gray-500">Feature flags and environment settings</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

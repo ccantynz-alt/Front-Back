@@ -1,533 +1,546 @@
 import { Title } from "@solidjs/meta";
-import { Show, For, createSignal, createResource } from "solid-js";
+import { createSignal, For, Show, Switch, Match } from "solid-js";
 import type { JSX } from "solid-js";
-import { Button, Card, Input, Stack, Text, Badge } from "@back-to-the-future/ui";
-import { ProtectedRoute } from "../components/ProtectedRoute";
-import { useAuth, useTheme } from "../stores";
-import { trpc } from "../lib/trpc";
-import { friendlyError } from "../lib/use-trpc";
-import { showToast } from "../components/Toast";
 
-function Section(props: { title: string; description: string; children: JSX.Element }): JSX.Element {
-  return (
-    <Card padding="lg">
-      <Stack direction="vertical" gap="md">
-        <Stack direction="vertical" gap="xs">
-          <Text variant="h4" weight="semibold">{props.title}</Text>
-          <Text variant="caption" class="text-muted">{props.description}</Text>
-        </Stack>
-        {props.children}
-      </Stack>
-    </Card>
-  );
-}
+// ── Types ────────────────────────────────────────────────────────────
 
-// ── API Key Types ───────────────────────────────────────────────────
+type SettingsTab = "profile" | "account" | "api-keys" | "notifications" | "appearance";
 
-interface ApiKeyInfo {
+interface ApiKey {
   id: string;
   name: string;
   prefix: string;
-  maskedKey: string;
-  lastUsedAt: Date | null;
-  expiresAt: Date | null;
-  createdAt: Date;
+  createdAt: string;
+  lastUsed: string;
+  status: "active" | "expired";
 }
 
-interface WebhookInfo {
-  id: string;
-  url: string;
-  events: string[];
-  isActive: boolean;
-  createdAt: Date;
-}
+// ── Mock Data ────────────────────────────────────────────────────────
 
-// ── Fetchers (tRPC client) ──────────────────────────────────────────
+const MOCK_API_KEYS: ApiKey[] = [
+  { id: "1", name: "Production Server", prefix: "ct_sk_prod_...a3f8", createdAt: "Mar 12, 2026", lastUsed: "2 hours ago", status: "active" },
+  { id: "2", name: "CI/CD Pipeline", prefix: "ct_sk_ci_...7b2e", createdAt: "Feb 28, 2026", lastUsed: "14 min ago", status: "active" },
+  { id: "3", name: "Staging Environment", prefix: "ct_sk_stg_...9d1c", createdAt: "Jan 15, 2026", lastUsed: "3 days ago", status: "active" },
+  { id: "4", name: "Legacy Integration", prefix: "ct_sk_leg_...4e0a", createdAt: "Dec 01, 2025", lastUsed: "Never", status: "expired" },
+];
 
-async function fetchApiKeys(): Promise<ApiKeyInfo[]> {
-  const rows = await trpc.apiKeys.list.query();
-  return rows as unknown as ApiKeyInfo[];
-}
+const ACCENT_COLORS = [
+  { name: "Blue", value: "#3b82f6" },
+  { name: "Violet", value: "#8b5cf6" },
+  { name: "Emerald", value: "#10b981" },
+  { name: "Amber", value: "#f59e0b" },
+  { name: "Rose", value: "#f43f5e" },
+  { name: "Cyan", value: "#06b6d4" },
+];
 
-async function fetchWebhooks(): Promise<WebhookInfo[]> {
-  const rows = await trpc.webhooks.list.query();
-  return rows as unknown as WebhookInfo[];
-}
+// ── Tab Button ───────────────────────────────────────────────────────
 
-// ── Developer Section Component ─────────────────────────────────────
-
-function DeveloperSection(): JSX.Element {
-  // API Keys
-  const [apiKeys, { refetch: refetchKeys }] = createResource(fetchApiKeys);
-  const [newKeyName, setNewKeyName] = createSignal("");
-  const [newKeyExpiry, setNewKeyExpiry] = createSignal("");
-  const [createdKey, setCreatedKey] = createSignal<string | null>(null);
-  const [keyCopied, setKeyCopied] = createSignal(false);
-  const [keyCreating, setKeyCreating] = createSignal(false);
-
-  // Webhooks
-  const [webhooks, { refetch: refetchWebhooks }] = createResource(fetchWebhooks);
-  const [newWebhookUrl, setNewWebhookUrl] = createSignal("");
-  const [webhookCreating, setWebhookCreating] = createSignal(false);
-  const [testingWebhookId, setTestingWebhookId] = createSignal<string | null>(null);
-  const [testResult, setTestResult] = createSignal<{ success: boolean; status: string } | null>(null);
-
-  const handleCreateKey = async (): Promise<void> => {
-    if (!newKeyName().trim()) return;
-    setKeyCreating(true);
-    setCreatedKey(null);
-
-    try {
-      const input: { name: string; expiresAt?: Date } = { name: newKeyName() };
-      if (newKeyExpiry()) {
-        input.expiresAt = new Date(newKeyExpiry());
-      }
-      const result = (await trpc.apiKeys.create.mutate(input)) as unknown as { rawKey?: string };
-      if (result?.rawKey) {
-        setCreatedKey(result.rawKey);
-      }
-      setNewKeyName("");
-      setNewKeyExpiry("");
-      void refetchKeys();
-      showToast("API key created", "success");
-    } catch (err) {
-      showToast(friendlyError(err), "error");
-    } finally {
-      setKeyCreating(false);
-    }
-  };
-
-  const handleRevokeKey = async (id: string): Promise<void> => {
-    try {
-      await trpc.apiKeys.revoke.mutate({ id });
-      void refetchKeys();
-      showToast("API key revoked", "success");
-    } catch (err) {
-      showToast(friendlyError(err), "error");
-    }
-  };
-
-  const handleCopyKey = (): void => {
-    const key = createdKey();
-    if (key) {
-      void navigator.clipboard.writeText(key);
-      setKeyCopied(true);
-      setTimeout(() => setKeyCopied(false), 2000);
-    }
-  };
-
-  const handleCreateWebhook = async (): Promise<void> => {
-    if (!newWebhookUrl().trim()) return;
-    setWebhookCreating(true);
-
-    try {
-      await trpc.webhooks.create.mutate({
-        url: newWebhookUrl(),
-        events: ["build.completed", "deployment.ready"],
-      });
-      setNewWebhookUrl("");
-      void refetchWebhooks();
-      showToast("Webhook added", "success");
-    } catch (err) {
-      showToast(friendlyError(err), "error");
-    } finally {
-      setWebhookCreating(false);
-    }
-  };
-
-  const handleDeleteWebhook = async (id: string): Promise<void> => {
-    try {
-      await trpc.webhooks.delete.mutate({ id });
-      void refetchWebhooks();
-      showToast("Webhook deleted", "success");
-    } catch (err) {
-      showToast(friendlyError(err), "error");
-    }
-  };
-
-  const handleTestWebhook = async (id: string): Promise<void> => {
-    setTestingWebhookId(id);
-    setTestResult(null);
-
-    try {
-      const result = (await trpc.webhooks.test.mutate({ id })) as unknown as {
-        success: boolean;
-        statusCode: number;
-        statusText: string;
-      };
-      setTestResult({
-        success: result.success,
-        status: `${result.statusCode} ${result.statusText}`,
-      });
-    } catch (err) {
-      setTestResult({ success: false, status: friendlyError(err) });
-    } finally {
-      setTestingWebhookId(null);
-    }
-  };
-
+function TabButton(props: { label: string; icon: string; isActive: boolean; onClick: () => void }): JSX.Element {
   return (
-    <Stack direction="vertical" gap="lg">
-      {/* API Keys */}
-      <Section title="API Keys" description="Manage API keys for programmatic access. Keys use the btf_sk_ prefix and are hashed with SHA-256.">
-        <Stack direction="vertical" gap="md">
-          {/* Created key alert -- shown only once */}
-          <Show when={createdKey()}>
-            <Card padding="md" class="border-yellow-600 bg-yellow-950/30">
-              <Stack direction="vertical" gap="sm">
-                <Text variant="body" weight="semibold" class="text-yellow-300">
-                  Save your API key now -- it will not be shown again.
-                </Text>
-                <Stack direction="horizontal" gap="sm" align="center">
-                  <code class="bg-gray-900 px-3 py-1.5 rounded text-sm font-mono text-green-400 flex-1 overflow-x-auto">
-                    {createdKey()}
-                  </code>
-                  <Button variant="outline" size="sm" onClick={handleCopyKey}>
-                    {keyCopied() ? "Copied!" : "Copy"}
-                  </Button>
-                </Stack>
-              </Stack>
-            </Card>
-          </Show>
-
-          {/* Existing keys list */}
-          <Show
-            when={(apiKeys() ?? []).length > 0}
-            fallback={
-              <Text variant="caption" class="text-muted">
-                No API keys yet. Create one to get started.
-              </Text>
-            }
-          >
-            <div class="space-y-2">
-              <For each={apiKeys() ?? []}>
-                {(key) => (
-                  <div class="flex items-center justify-between p-3 bg-gray-800/50 border border-gray-700 rounded-lg">
-                    <Stack direction="vertical" gap="xs" class="flex-1 min-w-0">
-                      <Stack direction="horizontal" gap="sm" align="center">
-                        <Text variant="body" weight="semibold">{key.name}</Text>
-                        <Show when={key.expiresAt}>
-                          <Badge variant="default" size="sm">
-                            Expires {new Date(key.expiresAt!).toLocaleDateString()}
-                          </Badge>
-                        </Show>
-                      </Stack>
-                      <code class="text-xs font-mono text-gray-400 truncate">
-                        {key.maskedKey}
-                      </code>
-                      <Show when={key.lastUsedAt}>
-                        <Text variant="caption" class="text-muted">
-                          Last used: {new Date(key.lastUsedAt!).toLocaleDateString()}
-                        </Text>
-                      </Show>
-                    </Stack>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void handleRevokeKey(key.id)}
-                    >
-                      Revoke
-                    </Button>
-                  </div>
-                )}
-              </For>
-            </div>
-          </Show>
-
-          {/* Create new key form */}
-          <Card padding="md" class="bg-gray-800/30">
-            <Stack direction="vertical" gap="sm">
-              <Text variant="body" weight="semibold">Create New Key</Text>
-              <Stack direction="horizontal" gap="sm">
-                <Input
-                  label="Key Name"
-                  type="text"
-                  value={newKeyName()}
-                  onInput={(e) => setNewKeyName(e.currentTarget.value)}
-                  placeholder="e.g., Production, CI/CD"
-                />
-                <Input
-                  label="Expires (optional)"
-                  type="date"
-                  value={newKeyExpiry()}
-                  onInput={(e) => setNewKeyExpiry(e.currentTarget.value)}
-                />
-              </Stack>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => void handleCreateKey()}
-                disabled={!newKeyName().trim() || keyCreating()}
-              >
-                {keyCreating() ? "Creating..." : "Generate Key"}
-              </Button>
-            </Stack>
-          </Card>
-
-          <Text variant="caption" class="text-muted">
-            Keep your API keys secret. Never expose them in client-side code.
-            Use environment variables or secrets management for production deployments.
-          </Text>
-        </Stack>
-      </Section>
-
-      {/* Webhooks */}
-      <Section title="Webhooks" description="Receive HTTP callbacks when events occur in your projects.">
-        <Stack direction="vertical" gap="md">
-          {/* Existing webhooks */}
-          <Show
-            when={(webhooks() ?? []).length > 0}
-            fallback={
-              <Text variant="caption" class="text-muted">
-                No webhooks configured. Add one to receive event notifications.
-              </Text>
-            }
-          >
-            <div class="space-y-2">
-              <For each={webhooks() ?? []}>
-                {(hook) => (
-                  <div class="p-3 bg-gray-800/50 border border-gray-700 rounded-lg">
-                    <Stack direction="horizontal" gap="sm" align="center" class="justify-between">
-                      <Stack direction="vertical" gap="xs" class="flex-1 min-w-0">
-                        <code class="text-sm font-mono text-gray-300 truncate block">
-                          {hook.url}
-                        </code>
-                        <Stack direction="horizontal" gap="xs">
-                          <For each={hook.events}>
-                            {(event) => (
-                              <Badge variant="default" size="sm">{event}</Badge>
-                            )}
-                          </For>
-                        </Stack>
-                        <Show when={!hook.isActive}>
-                          <Badge variant="default" size="sm">Inactive</Badge>
-                        </Show>
-                      </Stack>
-                      <Stack direction="horizontal" gap="sm">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void handleTestWebhook(hook.id)}
-                          disabled={testingWebhookId() === hook.id}
-                        >
-                          {testingWebhookId() === hook.id ? "Testing..." : "Test"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void handleDeleteWebhook(hook.id)}
-                        >
-                          Delete
-                        </Button>
-                      </Stack>
-                    </Stack>
-                  </div>
-                )}
-              </For>
-            </div>
-          </Show>
-
-          {/* Test result */}
-          <Show when={testResult()}>
-            {(result) => (
-              <Card padding="sm" class={result().success ? "border-green-700 bg-green-950/30" : "border-red-700 bg-red-950/30"}>
-                <Text variant="caption" class={result().success ? "text-green-300" : "text-red-300"}>
-                  {result().success ? "Webhook test succeeded" : "Webhook test failed"}: {result().status}
-                </Text>
-              </Card>
-            )}
-          </Show>
-
-          {/* Add webhook form */}
-          <Card padding="md" class="bg-gray-800/30">
-            <Stack direction="vertical" gap="sm">
-              <Text variant="body" weight="semibold">Add Webhook</Text>
-              <Input
-                label="Endpoint URL"
-                type="url"
-                value={newWebhookUrl()}
-                onInput={(e) => setNewWebhookUrl(e.currentTarget.value)}
-                placeholder="https://example.com/webhook"
-              />
-              <Text variant="caption" class="text-muted">
-                Default events: build.completed, deployment.ready. Edit events after creation.
-              </Text>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => void handleCreateWebhook()}
-                disabled={!newWebhookUrl().trim() || webhookCreating()}
-              >
-                {webhookCreating() ? "Creating..." : "Add Webhook"}
-              </Button>
-            </Stack>
-          </Card>
-
-          <Text variant="caption" class="text-muted">
-            Webhooks are signed with HMAC-SHA256. Verify the X-BTF-Signature header to ensure authenticity.
-          </Text>
-        </Stack>
-      </Section>
-
-      {/* API Usage Stats */}
-      <Section title="API Usage" description="Overview of your API key usage.">
-        <Stack direction="vertical" gap="sm">
-          <div class="grid grid-cols-3 gap-4">
-            <Card padding="sm">
-              <Stack direction="vertical" gap="xs" align="center">
-                <Text variant="caption" class="text-muted">Active Keys</Text>
-                <Text variant="h3" weight="bold">{(apiKeys() ?? []).length}</Text>
-              </Stack>
-            </Card>
-            <Card padding="sm">
-              <Stack direction="vertical" gap="xs" align="center">
-                <Text variant="caption" class="text-muted">Webhooks</Text>
-                <Text variant="h3" weight="bold">{(webhooks() ?? []).length}</Text>
-              </Stack>
-            </Card>
-            <Card padding="sm">
-              <Stack direction="vertical" gap="xs" align="center">
-                <Text variant="caption" class="text-muted">Requests Today</Text>
-                <Text variant="h3" weight="bold">--</Text>
-              </Stack>
-            </Card>
-          </div>
-          <Text variant="caption" class="text-muted">
-            Detailed usage analytics coming soon. View the API docs at <a href="/docs" class="text-blue-400 hover:underline">/docs</a>.
-          </Text>
-        </Stack>
-      </Section>
-    </Stack>
+    <button
+      type="button"
+      onClick={props.onClick}
+      class={`flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+        props.isActive
+          ? "border border-white/[0.1] bg-white/[0.06] text-white shadow-lg shadow-black/20"
+          : "text-gray-500 hover:bg-white/[0.03] hover:text-gray-300"
+      }`}
+    >
+      <span class="text-base">{props.icon}</span>
+      {props.label}
+    </button>
   );
 }
 
-// ── Main Settings Page ──────────────────────────────────────────────
+// ── Section Wrapper ──────────────────────────────────────────────────
 
-export default function SettingsPage(): JSX.Element {
-  const auth = useAuth();
-  const { isDark, toggleTheme } = useTheme();
+function SettingsSection(props: { title: string; description: string; children: JSX.Element }): JSX.Element {
+  return (
+    <div
+      class="rounded-2xl border border-white/[0.06] p-6"
+      style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
+    >
+      <div class="mb-5">
+        <h3 class="text-base font-semibold text-white">{props.title}</h3>
+        <p class="mt-0.5 text-xs text-gray-500">{props.description}</p>
+      </div>
+      {props.children}
+    </div>
+  );
+}
 
-  const [displayName, setDisplayName] = createSignal(auth.currentUser()?.displayName ?? "");
-  const [profileSaved, setProfileSaved] = createSignal(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
-  const [activeTab, setActiveTab] = createSignal<"general" | "developer">("general");
+// ── Input Field ──────────────────────────────────────────────────────
 
-  const handleSaveProfile = (): void => {
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 3000);
+function SettingsInput(props: {
+  label: string;
+  value: string;
+  onInput: (val: string) => void;
+  type?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  hint?: string;
+}): JSX.Element {
+  return (
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium uppercase tracking-widest text-gray-500">{props.label}</label>
+      <input
+        type={props.type ?? "text"}
+        value={props.value}
+        onInput={(e) => props.onInput(e.currentTarget.value)}
+        placeholder={props.placeholder}
+        disabled={props.disabled}
+        class={`w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-gray-200 placeholder-gray-600 outline-none transition-all duration-200 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 ${
+          props.disabled ? "cursor-not-allowed opacity-50" : ""
+        }`}
+      />
+      <Show when={props.hint}>
+        <span class="text-[11px] text-gray-600">{props.hint}</span>
+      </Show>
+    </div>
+  );
+}
+
+// ── Profile Tab ──────────────────────────────────────────────────────
+
+function ProfileTab(): JSX.Element {
+  const [name, setName] = createSignal("Craig Robertson");
+  const [email] = createSignal("craig@crontech.dev");
+  const [bio, setBio] = createSignal("Building the future of AI-native development platforms. Founder at Crontech.");
+  const [saved, setSaved] = createSignal(false);
+
+  const handleSave = (): void => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
   };
 
   return (
-    <ProtectedRoute>
+    <div class="flex flex-col gap-6">
+      <SettingsSection title="Profile Information" description="Your public identity on the platform.">
+        <div class="flex flex-col gap-5">
+          {/* Avatar */}
+          <div class="flex items-center gap-5">
+            <div class="relative group">
+              <div
+                class="flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-bold text-white"
+                style={{ background: "linear-gradient(135deg, #3b82f6, #8b5cf6)" }}
+              >
+                CR
+              </div>
+              <button
+                type="button"
+                class="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 text-xs font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              >
+                Change
+              </button>
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-gray-200">Profile Photo</span>
+              <span class="text-xs text-gray-500">PNG, JPG, or WebP. Max 2MB.</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SettingsInput label="Display Name" value={name()} onInput={setName} placeholder="Your name" />
+            <SettingsInput label="Email Address" value={email()} onInput={() => {}} disabled hint="Contact support to change your email" />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium uppercase tracking-widest text-gray-500">Bio</label>
+            <textarea
+              value={bio()}
+              onInput={(e) => setBio(e.currentTarget.value)}
+              rows={3}
+              class="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-gray-200 placeholder-gray-600 outline-none transition-all duration-200 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
+              placeholder="Tell us about yourself..."
+            />
+            <span class="text-right text-[11px] text-gray-600">{bio().length}/280</span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSave}
+              class="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110"
+            >
+              Save Changes
+            </button>
+            <Show when={saved()}>
+              <span class="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+                <span>&#10003;</span> Saved successfully
+              </span>
+            </Show>
+          </div>
+        </div>
+      </SettingsSection>
+    </div>
+  );
+}
+
+// ── Account Tab ──────────────────────────────────────────────────────
+
+function AccountTab(): JSX.Element {
+  const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
+
+  return (
+    <div class="flex flex-col gap-6">
+      <SettingsSection title="Security" description="Manage your authentication methods and security settings.">
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-4">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl text-lg" style={{ background: "#10b98118", color: "#10b981" }}>&#128272;</span>
+              <div>
+                <span class="text-sm font-medium text-gray-200">Passkey Authentication</span>
+                <p class="text-xs text-gray-500">FIDO2 / WebAuthn biometric login</p>
+              </div>
+            </div>
+            <span class="rounded-full bg-emerald-500/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Enabled</span>
+          </div>
+
+          <div class="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-4">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl text-lg" style={{ background: "#3b82f618", color: "#3b82f6" }}>&#128231;</span>
+              <div>
+                <span class="text-sm font-medium text-gray-200">Two-Factor Authentication</span>
+                <p class="text-xs text-gray-500">TOTP via authenticator app</p>
+              </div>
+            </div>
+            <button type="button" class="rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-xs font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:text-white">
+              Enable
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-4">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl text-lg" style={{ background: "#f59e0b18", color: "#f59e0b" }}>&#128187;</span>
+              <div>
+                <span class="text-sm font-medium text-gray-200">Active Sessions</span>
+                <p class="text-xs text-gray-500">3 devices currently signed in</p>
+              </div>
+            </div>
+            <button type="button" class="rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-xs font-medium text-gray-300 transition-all duration-200 hover:border-red-500/30 hover:text-red-400">
+              Revoke All
+            </button>
+          </div>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="Danger Zone" description="Irreversible actions. Proceed with extreme caution.">
+        <Show
+          when={!showDeleteConfirm()}
+          fallback={
+            <div class="rounded-xl border border-red-500/20 bg-red-500/5 p-5">
+              <p class="mb-3 text-sm font-medium text-red-400">This will permanently delete your account, all projects, and all data. This action cannot be undone.</p>
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  class="rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-xs font-medium text-gray-300 transition-all hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-red-500"
+                >
+                  Yes, Delete My Account
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            class="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-3 text-sm font-medium text-red-400 transition-all duration-200 hover:border-red-500/40 hover:bg-red-500/10"
+          >
+            Delete Account
+          </button>
+        </Show>
+      </SettingsSection>
+    </div>
+  );
+}
+
+// ── API Keys Tab ─────────────────────────────────────────────────────
+
+function ApiKeysTab(): JSX.Element {
+  const [keys, setKeys] = createSignal(MOCK_API_KEYS);
+  const [newKeyName, setNewKeyName] = createSignal("");
+  const [copiedId, setCopiedId] = createSignal<string | null>(null);
+
+  const handleCopy = (id: string, prefix: string): void => {
+    void navigator.clipboard.writeText(prefix);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleRevoke = (id: string): void => {
+    setKeys((prev) => prev.filter((k) => k.id !== id));
+  };
+
+  return (
+    <div class="flex flex-col gap-6">
+      <SettingsSection title="API Keys" description="Manage programmatic access to your account. Keys use SHA-256 hashing.">
+        <div class="flex flex-col gap-4">
+          {/* Key List */}
+          <For each={keys()}>
+            {(key) => (
+              <div class="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3.5 transition-all duration-200 hover:border-white/[0.08]">
+                <div
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm"
+                  style={{
+                    background: key.status === "active" ? "#10b98118" : "#6b728018",
+                    color: key.status === "active" ? "#10b981" : "#6b7280",
+                  }}
+                >
+                  &#128273;
+                </div>
+                <div class="flex min-w-0 flex-1 flex-col">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-gray-200">{key.name}</span>
+                    <Show when={key.status === "expired"}>
+                      <span class="rounded-full bg-red-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-red-400">Expired</span>
+                    </Show>
+                  </div>
+                  <code class="text-xs font-mono text-gray-500">{key.prefix}</code>
+                </div>
+                <div class="hidden flex-col items-end gap-0.5 sm:flex">
+                  <span class="text-[11px] text-gray-500">Created {key.createdAt}</span>
+                  <span class="text-[11px] text-gray-600">Last used {key.lastUsed}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(key.id, key.prefix)}
+                    class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all hover:border-white/[0.12] hover:text-white"
+                  >
+                    {copiedId() === key.id ? "Copied!" : "Copy"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRevoke(key.id)}
+                    class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    Revoke
+                  </button>
+                </div>
+              </div>
+            )}
+          </For>
+
+          {/* Generate New Key */}
+          <div class="rounded-xl border border-dashed border-white/[0.08] bg-white/[0.01] p-5">
+            <h4 class="mb-3 text-sm font-semibold text-gray-300">Generate New Key</h4>
+            <div class="flex items-end gap-3">
+              <div class="flex-1">
+                <SettingsInput label="Key Name" value={newKeyName()} onInput={setNewKeyName} placeholder="e.g., Production, CI/CD" />
+              </div>
+              <button
+                type="button"
+                disabled={!newKeyName().trim()}
+                class="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+              >
+                Generate Key
+              </button>
+            </div>
+            <p class="mt-3 text-[11px] text-gray-600">
+              Keys are hashed with SHA-256. The raw key is shown only once after generation.
+            </p>
+          </div>
+        </div>
+      </SettingsSection>
+    </div>
+  );
+}
+
+// ── Notifications Tab ────────────────────────────────────────────────
+
+function NotificationsTab(): JSX.Element {
+  const [emailNotifs, setEmailNotifs] = createSignal(true);
+  const [buildNotifs, setBuildNotifs] = createSignal(true);
+  const [securityNotifs, setSecurityNotifs] = createSignal(true);
+  const [marketingNotifs, setMarketingNotifs] = createSignal(false);
+  const [weeklyDigest, setWeeklyDigest] = createSignal(true);
+
+  function ToggleRow(props: { label: string; description: string; enabled: boolean; onToggle: () => void }): JSX.Element {
+    return (
+      <div class="flex items-center justify-between rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-4">
+        <div>
+          <span class="text-sm font-medium text-gray-200">{props.label}</span>
+          <p class="text-xs text-gray-500">{props.description}</p>
+        </div>
+        <button
+          type="button"
+          onClick={props.onToggle}
+          class={`relative h-6 w-11 rounded-full transition-all duration-300 ${
+            props.enabled ? "bg-blue-600" : "bg-gray-700"
+          }`}
+        >
+          <div
+            class={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-300 ${
+              props.enabled ? "left-[22px]" : "left-0.5"
+            }`}
+          />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <SettingsSection title="Notification Preferences" description="Control how and when you receive notifications.">
+      <div class="flex flex-col gap-3">
+        <ToggleRow label="Email Notifications" description="Receive important updates via email" enabled={emailNotifs()} onToggle={() => setEmailNotifs(!emailNotifs())} />
+        <ToggleRow label="Build & Deploy Alerts" description="Get notified when builds complete or fail" enabled={buildNotifs()} onToggle={() => setBuildNotifs(!buildNotifs())} />
+        <ToggleRow label="Security Alerts" description="Login attempts, API key usage, and security events" enabled={securityNotifs()} onToggle={() => setSecurityNotifs(!securityNotifs())} />
+        <ToggleRow label="Product Updates" description="New features, improvements, and platform news" enabled={marketingNotifs()} onToggle={() => setMarketingNotifs(!marketingNotifs())} />
+        <ToggleRow label="Weekly Digest" description="Summary of your project activity every Monday" enabled={weeklyDigest()} onToggle={() => setWeeklyDigest(!weeklyDigest())} />
+      </div>
+    </SettingsSection>
+  );
+}
+
+// ── Appearance Tab ───────────────────────────────────────────────────
+
+function AppearanceTab(): JSX.Element {
+  const [theme, setTheme] = createSignal<"dark" | "light" | "system">("dark");
+  const [selectedAccent, setSelectedAccent] = createSignal("#3b82f6");
+
+  return (
+    <div class="flex flex-col gap-6">
+      <SettingsSection title="Theme" description="Choose your preferred visual appearance.">
+        <div class="grid grid-cols-3 gap-3">
+          <button
+            type="button"
+            onClick={() => setTheme("dark")}
+            class={`flex flex-col items-center gap-3 rounded-xl border p-5 transition-all duration-200 ${
+              theme() === "dark"
+                ? "border-blue-500/50 bg-blue-500/5"
+                : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]"
+            }`}
+          >
+            <div class="flex h-12 w-16 items-center justify-center rounded-lg bg-[#0a0a0a] border border-white/[0.1]">
+              <div class="h-2 w-8 rounded-full bg-gray-700" />
+            </div>
+            <span class={`text-xs font-medium ${theme() === "dark" ? "text-blue-400" : "text-gray-400"}`}>Dark</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme("light")}
+            class={`flex flex-col items-center gap-3 rounded-xl border p-5 transition-all duration-200 ${
+              theme() === "light"
+                ? "border-blue-500/50 bg-blue-500/5"
+                : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]"
+            }`}
+          >
+            <div class="flex h-12 w-16 items-center justify-center rounded-lg bg-white border border-gray-200">
+              <div class="h-2 w-8 rounded-full bg-gray-300" />
+            </div>
+            <span class={`text-xs font-medium ${theme() === "light" ? "text-blue-400" : "text-gray-400"}`}>Light</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme("system")}
+            class={`flex flex-col items-center gap-3 rounded-xl border p-5 transition-all duration-200 ${
+              theme() === "system"
+                ? "border-blue-500/50 bg-blue-500/5"
+                : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]"
+            }`}
+          >
+            <div class="flex h-12 w-16 items-center justify-center rounded-lg border border-white/[0.1]" style={{ background: "linear-gradient(135deg, #0a0a0a 50%, #f5f5f5 50%)" }}>
+              <div class="h-2 w-8 rounded-full" style={{ background: "linear-gradient(90deg, #4b5563, #d1d5db)" }} />
+            </div>
+            <span class={`text-xs font-medium ${theme() === "system" ? "text-blue-400" : "text-gray-400"}`}>System</span>
+          </button>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="Accent Color" description="Personalize the platform with your preferred accent.">
+        <div class="flex flex-wrap gap-3">
+          <For each={ACCENT_COLORS}>
+            {(color) => (
+              <button
+                type="button"
+                onClick={() => setSelectedAccent(color.value)}
+                class={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all duration-200 ${
+                  selectedAccent() === color.value
+                    ? "border-white/[0.15] bg-white/[0.04]"
+                    : "border-white/[0.04] bg-white/[0.01] hover:border-white/[0.1]"
+                }`}
+              >
+                <div
+                  class="h-8 w-8 rounded-full transition-shadow duration-200"
+                  style={{
+                    background: color.value,
+                    "box-shadow": selectedAccent() === color.value ? `0 0 16px ${color.value}60` : "none",
+                  }}
+                />
+                <span class="text-[11px] text-gray-400">{color.name}</span>
+              </button>
+            )}
+          </For>
+        </div>
+      </SettingsSection>
+    </div>
+  );
+}
+
+// ── Main Settings Page ───────────────────────────────────────────────
+
+export default function SettingsPage(): JSX.Element {
+  const [activeTab, setActiveTab] = createSignal<SettingsTab>("profile");
+
+  const tabs: { id: SettingsTab; label: string; icon: string }[] = [
+    { id: "profile", label: "Profile", icon: "&#128100;" },
+    { id: "account", label: "Account", icon: "&#128274;" },
+    { id: "api-keys", label: "API Keys", icon: "&#128273;" },
+    { id: "notifications", label: "Notifications", icon: "&#128276;" },
+    { id: "appearance", label: "Appearance", icon: "&#127912;" },
+  ];
+
+  return (
+    <div class="min-h-screen bg-[#060606]">
       <Title>Settings - Crontech</Title>
-      <Stack direction="vertical" gap="lg" class="page-padded">
-        <Stack direction="vertical" gap="xs">
-          <Text variant="h1" weight="bold">Settings</Text>
-          <Text variant="body" class="text-muted">
-            Manage your account, preferences, and integrations.
-          </Text>
-        </Stack>
+
+      <div class="mx-auto max-w-5xl px-6 py-8">
+        {/* Header */}
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold tracking-tight text-white">Settings</h1>
+          <p class="mt-1 text-sm text-gray-500">Manage your account, security, and preferences</p>
+        </div>
 
         {/* Tab Navigation */}
-        <Stack direction="horizontal" gap="sm">
-          <Button
-            variant={activeTab() === "general" ? "primary" : "outline"}
-            size="sm"
-            onClick={() => setActiveTab("general")}
-          >
-            General
-          </Button>
-          <Button
-            variant={activeTab() === "developer" ? "primary" : "outline"}
-            size="sm"
-            onClick={() => setActiveTab("developer")}
-          >
-            Developer
-          </Button>
-        </Stack>
+        <div class="mb-8 flex flex-wrap gap-1 rounded-2xl border border-white/[0.04] bg-white/[0.02] p-1.5">
+          <For each={tabs}>
+            {(tab) => (
+              <TabButton
+                label={tab.label}
+                icon={tab.icon}
+                isActive={activeTab() === tab.id}
+                onClick={() => setActiveTab(tab.id)}
+              />
+            )}
+          </For>
+        </div>
 
-        {/* General Tab */}
-        <Show when={activeTab() === "general"}>
-          <Stack direction="vertical" gap="lg">
-            <Section title="Profile" description="Update your personal information.">
-              <Stack direction="vertical" gap="md">
-                <Input
-                  label="Display Name"
-                  type="text"
-                  value={displayName()}
-                  onInput={(e) => setDisplayName(e.currentTarget.value)}
-                  placeholder="Your display name"
-                />
-                <Input
-                  label="Email"
-                  type="email"
-                  value={auth.currentUser()?.email ?? ""}
-                  disabled
-                  placeholder="Email cannot be changed"
-                />
-                <Stack direction="horizontal" gap="sm" align="center">
-                  <Button variant="primary" size="sm" onClick={handleSaveProfile}>
-                    Save Changes
-                  </Button>
-                  <Show when={profileSaved()}>
-                    <Badge variant="success" size="sm">Saved</Badge>
-                  </Show>
-                </Stack>
-              </Stack>
-            </Section>
-
-            <Section title="Appearance" description="Customize the look and feel.">
-              <Stack direction="horizontal" gap="md">
-                <Button
-                  variant={!isDark() ? "primary" : "outline"}
-                  size="sm"
-                  onClick={() => { if (isDark()) toggleTheme(); }}
-                >
-                  Light Mode
-                </Button>
-                <Button
-                  variant={isDark() ? "primary" : "outline"}
-                  size="sm"
-                  onClick={() => { if (!isDark()) toggleTheme(); }}
-                >
-                  Dark Mode
-                </Button>
-              </Stack>
-            </Section>
-
-            <Section title="Danger Zone" description="Irreversible actions.">
-              <Show
-                when={showDeleteConfirm()}
-                fallback={
-                  <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)}>
-                    Delete Account
-                  </Button>
-                }
-              >
-                <Card padding="md">
-                  <Stack direction="vertical" gap="md">
-                    <Text variant="body" weight="semibold">Are you sure?</Text>
-                    <Text variant="caption" class="text-muted">
-                      This will permanently delete your account and all data.
-                    </Text>
-                    <Stack direction="horizontal" gap="sm">
-                      <Button variant="outline" size="sm" onClick={() => { setShowDeleteConfirm(false); alert("Account deletion requested. Contact support to finalize."); }}>Yes, Delete</Button>
-                      <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>
-                        Cancel
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </Card>
-              </Show>
-            </Section>
-          </Stack>
-        </Show>
-
-        {/* Developer Tab */}
-        <Show when={activeTab() === "developer"}>
-          <DeveloperSection />
-        </Show>
-      </Stack>
-    </ProtectedRoute>
+        {/* Tab Content */}
+        <Switch>
+          <Match when={activeTab() === "profile"}>
+            <ProfileTab />
+          </Match>
+          <Match when={activeTab() === "account"}>
+            <AccountTab />
+          </Match>
+          <Match when={activeTab() === "api-keys"}>
+            <ApiKeysTab />
+          </Match>
+          <Match when={activeTab() === "notifications"}>
+            <NotificationsTab />
+          </Match>
+          <Match when={activeTab() === "appearance"}>
+            <AppearanceTab />
+          </Match>
+        </Switch>
+      </div>
+    </div>
   );
 }
