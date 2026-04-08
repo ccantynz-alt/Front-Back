@@ -276,6 +276,7 @@ export default function AdminPage(): JSX.Element {
           <div class="flex items-center gap-3">
             <button
               type="button"
+              onClick={handleViewLogs}
               class="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
             >
               <span class="text-base">&#128203;</span>
@@ -283,6 +284,7 @@ export default function AdminPage(): JSX.Element {
             </button>
             <button
               type="button"
+              onClick={handleExportData}
               class="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
             >
               <span class="text-base">&#128229;</span>
@@ -290,6 +292,7 @@ export default function AdminPage(): JSX.Element {
             </button>
             <button
               type="button"
+              onClick={handleInviteUser}
               class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110"
             >
               <span class="text-base">+</span>
@@ -316,7 +319,7 @@ export default function AdminPage(): JSX.Element {
               <div class="mb-5 flex items-center justify-between">
                 <div>
                   <h2 class="text-lg font-semibold text-white">User Management</h2>
-                  <p class="text-xs text-gray-500">{MOCK_USERS.length} total users</p>
+                  <p class="text-xs text-gray-500">{users().length} total users</p>
                 </div>
                 <div class="flex items-center gap-3">
                   {/* Plan Filter */}
@@ -357,15 +360,60 @@ export default function AdminPage(): JSX.Element {
               <div class="flex flex-col gap-2">
                 <For each={filteredUsers()}>
                   {(user) => (
-                    <UserRow
-                      name={user.name}
-                      email={user.email}
-                      plan={user.plan}
-                      status={user.status}
-                      avatar={user.avatar}
-                      onEdit={() => {}}
-                      onSuspend={() => {}}
-                    />
+                    <div>
+                      <UserRow
+                        name={user.name}
+                        email={user.email}
+                        plan={user.plan}
+                        status={user.status}
+                        avatar={user.avatar}
+                        onEdit={() => handleEditUser(user.id)}
+                        onSuspend={() => handleSuspendUser(user.id)}
+                      />
+                      <Show when={editingUserId() === user.id}>
+                        <div class="mt-1 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
+                          <div class="flex items-center gap-3">
+                            <span class="text-xs text-gray-400">Editing {user.name}</span>
+                            <span class="text-xs text-gray-600">|</span>
+                            <span class="text-xs text-gray-500">{user.email}</span>
+                            <span class="text-xs text-gray-600">|</span>
+                            <span class="text-xs text-gray-500">{user.plan}</span>
+                            <div class="flex-1" />
+                            <button
+                              type="button"
+                              onClick={() => setEditingUserId(null)}
+                              class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-[10px] font-medium text-gray-400 transition-all hover:text-white"
+                            >
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      </Show>
+                      <Show when={showSuspendConfirm() === user.id}>
+                        <div class="mt-1 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
+                          <div class="flex items-center gap-3">
+                            <span class="text-xs text-red-400">
+                              {user.status === "suspended" ? `Reactivate ${user.name}?` : `Suspend ${user.name}?`}
+                            </span>
+                            <div class="flex-1" />
+                            <button
+                              type="button"
+                              onClick={() => setShowSuspendConfirm(null)}
+                              class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-[10px] font-medium text-gray-400 transition-all hover:text-white"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSuspendUser(user.id)}
+                              class="rounded-lg bg-red-600 px-3 py-1 text-[10px] font-semibold text-white transition-all hover:bg-red-500"
+                            >
+                              {user.status === "suspended" ? "Reactivate" : "Confirm Suspend"}
+                            </button>
+                          </div>
+                        </div>
+                      </Show>
+                    </div>
                   )}
                 </For>
               </div>
@@ -415,6 +463,7 @@ export default function AdminPage(): JSX.Element {
               <div class="flex flex-col gap-2">
                 <button
                   type="button"
+                  onClick={handleInviteUser}
                   class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
                 >
                   <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#3b82f618", color: "#3b82f6" }}>&#128101;</span>
@@ -425,6 +474,7 @@ export default function AdminPage(): JSX.Element {
                 </button>
                 <button
                   type="button"
+                  onClick={handleExportData}
                   class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
                 >
                   <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#10b98118", color: "#10b981" }}>&#128229;</span>
@@ -435,6 +485,7 @@ export default function AdminPage(): JSX.Element {
                 </button>
                 <button
                   type="button"
+                  onClick={handleViewLogs}
                   class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
                 >
                   <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#f59e0b18", color: "#f59e0b" }}>&#128203;</span>
@@ -445,6 +496,7 @@ export default function AdminPage(): JSX.Element {
                 </button>
                 <button
                   type="button"
+                  onClick={handleSystemConfig}
                   class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
                 >
                   <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#a78bfa18", color: "#a78bfa" }}>&#9881;</span>
@@ -458,6 +510,52 @@ export default function AdminPage(): JSX.Element {
           </div>
         </div>
       </div>
+
+      {/* Invite User Modal */}
+      <Show when={showInviteModal()}>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div
+            class="mx-4 w-full max-w-md rounded-2xl border border-white/[0.08] p-6 shadow-2xl"
+            style={{ background: "linear-gradient(135deg, rgba(20,20,20,0.98) 0%, rgba(12,12,12,0.99) 100%)" }}
+          >
+            <h3 class="mb-1 text-lg font-bold text-white">Invite User</h3>
+            <p class="mb-5 text-xs text-gray-500">Send an invitation email to join the platform</p>
+            <Show
+              when={!inviteSent()}
+              fallback={
+                <div class="flex flex-col items-center gap-2 py-6">
+                  <span class="text-3xl text-emerald-400">&#10003;</span>
+                  <span class="text-sm font-medium text-emerald-400">Invitation sent to {inviteEmail()}</span>
+                </div>
+              }
+            >
+              <input
+                type="email"
+                placeholder="user@example.com"
+                value={inviteEmail()}
+                onInput={(e) => setInviteEmail(e.currentTarget.value)}
+                class="mb-4 w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50"
+              />
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowInviteModal(false)}
+                  class="flex-1 rounded-lg border border-white/[0.06] bg-white/[0.03] py-2.5 text-xs font-medium text-gray-400 transition-all hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitInvite}
+                  class="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 py-2.5 text-xs font-semibold text-white transition-all hover:brightness-110"
+                >
+                  Send Invitation
+                </button>
+              </div>
+            </Show>
+          </div>
+        </div>
+      </Show>
     </div>
   );
 }
