@@ -59,6 +59,19 @@ export {
 } from "./inference/index";
 
 export {
+  selectCloudModel,
+  buildCloudRequest,
+  computeTierWithReason,
+  CloudInferenceRequestSchema,
+  CloudInferenceResponseSchema,
+  CloudStreamChunkSchema,
+  type CloudInferenceRequest,
+  type CloudInferenceResponse,
+  type CloudStreamChunk,
+  type TierFallbackResult,
+} from "./compute-tier";
+
+export {
   readProviderEnv,
   getModelForTier,
   getFallbackModel,
