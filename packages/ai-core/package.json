@@ -14,7 +14,9 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
     "@back-to-the-future/schemas": "workspace:*",
+    "@huggingface/transformers": "^3.4.0",
     "@mastra/core": "1.22.0",
+    "@mlc-ai/web-llm": "^0.2.78",
     "@qdrant/js-client-rest": "1.17.0",
     "ai": "^6.0.0",
     "zod": "^4.3.6"

@@ -21,8 +21,12 @@ interface AuthState {
   isLoading: Accessor<boolean>;
   error: Accessor<string | null>;
   login: (email: string) => Promise<void>;
+  loginWithPassword: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (redirectTo?: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, displayName: string) => Promise<void>;
+  registerWithPassword: (email: string, password: string, displayName: string) => Promise<void>;
+  handleOAuthCallback: () => void;
   checkSession: () => Promise<void>;
 }
 
@@ -179,6 +183,128 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     }
   };
 
+  /**
+   * Login with email + password via tRPC.
+   */
+  const loginWithPassword = async (email: string, password: string): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await fetchCsrfToken();
+
+      const result = await trpc.auth.loginWithPassword.mutate({
+        email,
+        password,
+      });
+
+      if (result.token) {
+        setStorageItem(SESSION_TOKEN_KEY, result.token);
+        clearCsrfToken();
+        await checkSession();
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login failed";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Register with email + password via tRPC.
+   */
+  const registerWithPasswordFn = async (
+    email: string,
+    password: string,
+    displayName: string,
+  ): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await fetchCsrfToken();
+
+      const result = await trpc.auth.registerWithPassword.mutate({
+        email,
+        password,
+        displayName,
+      });
+
+      if (result.token) {
+        setStorageItem(SESSION_TOKEN_KEY, result.token);
+        clearCsrfToken();
+        await checkSession();
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registration failed";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Redirect to Google OAuth consent screen.
+   * The actual token exchange happens on the callback route
+   * which redirects back with a token query param.
+   */
+  const loginWithGoogle = async (redirectTo?: string): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { url } = await trpc.auth.getGoogleAuthUrl.query({
+        redirectTo,
+      });
+      window.location.href = url;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Google sign-in failed";
+      setError(message);
+      setIsLoading(false);
+      throw err;
+    }
+    // Note: loading stays true since we're navigating away
+  };
+
+  /**
+   * Handle OAuth callback tokens in URL.
+   * Call this on page load to check for token and provider query params
+   * that the OAuth callback redirect sets.
+   */
+  const handleOAuthCallback = (): void => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const provider = params.get("provider");
+    const oauthError = params.get("error");
+
+    if (oauthError) {
+      setError(decodeURIComponent(oauthError));
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("error");
+      window.history.replaceState({}, "", url.toString());
+      return;
+    }
+
+    if (token && provider) {
+      setStorageItem(SESSION_TOKEN_KEY, token);
+      clearCsrfToken();
+
+      // Clean up URL (remove token from address bar for security)
+      const url = new URL(window.location.href);
+      url.searchParams.delete("token");
+      url.searchParams.delete("provider");
+      window.history.replaceState({}, "", url.toString());
+
+      // Fetch user profile
+      checkSession().catch(() => {
+        // Session check failed
+      });
+    }
+  };
+
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     setError(null);
@@ -222,8 +348,12 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     isLoading,
     error,
     login,
+    loginWithPassword,
+    loginWithGoogle,
     logout,
     register,
+    registerWithPassword: registerWithPasswordFn,
+    handleOAuthCallback,
     checkSession,
   };
 

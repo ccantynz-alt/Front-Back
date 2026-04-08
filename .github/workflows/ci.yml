@@ -30,11 +30,17 @@ jobs:
       - name: Type check all packages
         run: bun run check
 
+      - name: Type check (tsc --noEmit)
+        run: bunx tsc --noEmit --skipLibCheck
+
       - name: Check links
         run: bun run check-links
 
       - name: Check buttons
         run: bun run check-buttons
+
+      - name: Accessibility check
+        run: bun run check-a11y
 
   build:
     name: Build
@@ -58,6 +64,21 @@ jobs:
 
       - name: Verify web build output exists
         run: test -d apps/web/.output && echo "Web build OK" || exit 1
+
+      - name: Bundle size check
+        run: bun run check-bundle
+
+      - name: Performance budget summary
+        if: always()
+        run: |
+          echo "## Performance Budgets" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Budget | Enforcement |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|-------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Initial JS Bundle | < 50KB warn / < 100KB fail | bundle-size-check |" >> $GITHUB_STEP_SUMMARY
+          echo "| FCP | < 1.0s | Lighthouse CI (planned) |" >> $GITHUB_STEP_SUMMARY
+          echo "| LCP | < 1.5s | Lighthouse CI (planned) |" >> $GITHUB_STEP_SUMMARY
+          echo "| INP | < 100ms | Lighthouse CI (planned) |" >> $GITHUB_STEP_SUMMARY
 
   test:
     name: Test
@@ -91,6 +112,19 @@ jobs:
           echo "| Lint & Type Check | ${{ needs.lint-and-check.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quality Gates" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Gate | Command | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Biome Lint | \`bunx biome check .\` | ${{ needs.lint-and-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | \`bunx tsc --noEmit\` | ${{ needs.lint-and-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Link Checker | \`bun run check-links\` | ${{ needs.lint-and-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Button Checker | \`bun run check-buttons\` | ${{ needs.lint-and-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Accessibility | \`bun run check-a11y\` | ${{ needs.lint-and-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | \`bun run build\` | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bundle Size | \`bun run check-bundle\` | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | \`bun run test\` | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Fail if any job failed
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
