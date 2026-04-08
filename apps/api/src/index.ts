@@ -21,7 +21,7 @@ import {
 } from "@back-to-the-future/ai-core";
 
 // Initialize OpenTelemetry (no-op if OTEL_EXPORTER_OTLP_ENDPOINT not set)
-const telemetry = initTelemetry();
+initTelemetry();
 
 import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
