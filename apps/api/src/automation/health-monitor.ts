@@ -42,8 +42,8 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ value?: T; error?: stri
 async function checkDb(): Promise<ServiceCheck> {
   const r = await timed(async () => {
     const { db } = await import("@back-to-the-future/db");
-    // @ts-expect-error - drizzle libsql exposes run
-    if (db.run) await db.run("SELECT 1");
+    const dbAny = db as unknown as Record<string, unknown>;
+    if (typeof dbAny.run === "function") await (dbAny.run as (sql: string) => Promise<unknown>)("SELECT 1");
   });
   return {
     name: "database",
@@ -94,7 +94,7 @@ async function checkEmail(): Promise<ServiceCheck> {
 
 async function checkSentinel(): Promise<ServiceCheck> {
   const r = await timed(async () => {
-    const mod = await import("../../../../services/sentinel/src/index").catch(() => null);
+    const mod = await import("../../../../services/sentinel/src/index").catch((): null => null);
     if (!mod) throw new Error("sentinel not loaded");
   });
   return {
