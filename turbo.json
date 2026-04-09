@@ -7,7 +7,25 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".output/**", ".vinxi/**"]
+      "outputs": ["dist/**", ".output/**", ".vinxi/**"],
+      "env": [
+        "DATABASE_URL",
+        "DATABASE_AUTH_TOKEN",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_PUBLISHABLE_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "STRIPE_PRO_PRICE_ID",
+        "STRIPE_ENTERPRISE_PRICE_ID",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "OPENAI_API_KEY",
+        "VITE_PUBLIC_API_URL",
+        "VITE_PUBLIC_URL",
+        "VITE_SITE_NAME",
+        "VITE_API_URL",
+        "PUBLIC_URL",
+        "PUBLIC_API_URL"
+      ]
     },
     "test": {
       "dependsOn": ["build"]
