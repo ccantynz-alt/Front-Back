@@ -54,11 +54,11 @@ async function initializeWorkspace(input: ProvisionInput): Promise<void> {
 
 async function sendWelcomeEmail(input: ProvisionInput): Promise<void> {
   const { sendEmail } = await import("../email/client");
-  const result = await sendEmail({
-    to: input.email,
-    subject: "Welcome to Crontech",
-    html: `<p>Hi ${input.displayName ?? "there"}, your account is ready.</p>`,
-  });
+  const result = await sendEmail(
+    input.email,
+    "Welcome to Crontech",
+    `<p>Hi ${input.displayName ?? "there"}, your account is ready.</p>`,
+  );
   if (!result.success) {
     throw new Error(result.error ?? "email send failed");
   }
@@ -79,7 +79,7 @@ async function provisionTenantDB(input: ProvisionInput): Promise<void> {
   try {
     const mod = await import("@back-to-the-future/db");
     if (typeof mod.provisionTenantDB === "function") {
-      await mod.provisionTenantDB(input.userId);
+      await mod.provisionTenantDB(input.userId, "free");
     }
   } catch (err) {
     // If module unavailable in this build, that's fine - mark provisioning skipped.

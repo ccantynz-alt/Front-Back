@@ -4,7 +4,6 @@ import {
   registerWithPasswordSchema,
   loginWithPasswordSchema,
   calculatePasswordStrength,
-  type PasswordStrength,
 } from "./password";
 
 describe("Password Auth Module", () => {

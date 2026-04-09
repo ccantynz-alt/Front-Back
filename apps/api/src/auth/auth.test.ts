@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { eq, and, gt } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, users, sessions, credentials } from "@back-to-the-future/db";
 import { createSession, validateSession, deleteSession } from "./session";
 import { generateCsrfToken, validateCsrfToken, cleanupExpiredCsrfTokens } from "./csrf";
