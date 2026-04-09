@@ -15,7 +15,7 @@ export interface InboundEmail {
   to: string;
   subject: string;
   body: string;
-  bodyHtml?: string;
+  bodyHtml?: string | undefined;
 }
 
 export type AutoResponderAction = "auto_sent" | "queued" | "escalated";

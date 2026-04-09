@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import { Hono } from "hono";
 import { rateLimiter } from "./rate-limiter";
 
@@ -12,7 +12,7 @@ function createTestApp(opts: { windowMs?: number; max?: number } = {}): Hono {
   return app;
 }
 
-function makeRequest(
+async function makeRequest(
   app: Hono,
   path: string,
   ip: string = "192.168.1.1",

@@ -24,7 +24,7 @@ export const BroadcastMessage = z.object({
   type: z.literal("broadcast"),
   roomId: z.string().min(1).max(255),
   userId: z.string().uuid(),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
 });
 
 export const CursorMoveMessage = z.object({
@@ -42,7 +42,7 @@ export const PresenceUpdateMessage = z.object({
   roomId: z.string().min(1).max(255),
   userId: z.string().uuid(),
   status: z.enum(["active", "idle", "away"]),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const PingMessage = z.object({
@@ -77,7 +77,7 @@ export const RoomJoinedMessage = z.object({
       presence: z
         .object({
           status: z.enum(["active", "idle", "away"]),
-          data: z.record(z.unknown()).optional(),
+          data: z.record(z.string(), z.unknown()).optional(),
         })
         .optional(),
     }),
@@ -93,7 +93,7 @@ export const ServerBroadcastMessage = z.object({
   type: z.literal("broadcast"),
   roomId: z.string(),
   userId: z.string().uuid(),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   timestamp: z.string().datetime(),
 });
 
@@ -129,7 +129,7 @@ export const PresenceSyncMessage = z.object({
   roomId: z.string(),
   userId: z.string().uuid(),
   status: z.enum(["active", "idle", "away"]),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const ServerErrorMessage = z.object({
@@ -176,7 +176,7 @@ export type SSEEventType = z.infer<typeof SSEEventType>;
 
 export const SSEEvent = z.object({
   event: SSEEventType,
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
   id: z.string().optional(),
 });
 

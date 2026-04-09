@@ -3,7 +3,6 @@ import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../init";
 import {
   provisionTenantDB,
-  suspendTenantDB,
   checkTenantHealth,
   getTenantProjectInfo,
 } from "@back-to-the-future/db/tenant-manager";

@@ -6,7 +6,7 @@
 export interface FeatureFlag {
   key: string;
   enabled: boolean;
-  description?: string;
+  description?: string | undefined;
   /** Percentage of users who see this feature (0-100) */
   rolloutPercentage: number;
   /** Optional: specific user IDs that always see this feature */

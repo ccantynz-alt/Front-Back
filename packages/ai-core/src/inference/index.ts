@@ -8,9 +8,6 @@ import type {
   ChatMessage,
   ChatCompletionResult,
   ChatCompletionChunk,
-  ModelLoadProgressCallback,
-  WebLLMModelId,
-  WebLLMModelInfo,
   WebLLMConfig,
 } from "./webllm";
 import type {
@@ -18,8 +15,6 @@ import type {
   ClassificationResult,
   SummarizationResult,
   FeatureExtractionResult,
-  TransformersLoadProgressCallback,
-  TransformersModelId,
   TransformersConfig,
 } from "./transformers";
 

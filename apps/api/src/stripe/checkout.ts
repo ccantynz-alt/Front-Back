@@ -11,7 +11,7 @@ export async function createCheckoutSession(params: {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: params.priceId, quantity: 1 }],
-    customer: params.customerId,
+    ...(params.customerId ? { customer: params.customerId } : {}),
     success_url: params.successUrl ?? `${process.env["PUBLIC_API_URL"] ?? "http://localhost:3000"}/billing?success=true`,
     cancel_url: params.cancelUrl ?? `${process.env["PUBLIC_API_URL"] ?? "http://localhost:3000"}/pricing`,
   });

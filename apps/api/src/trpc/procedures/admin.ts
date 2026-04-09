@@ -6,7 +6,6 @@ import {
   users,
   subscriptions,
   payments,
-  notifications,
   analyticsEvents,
 } from "@back-to-the-future/db";
 import {
