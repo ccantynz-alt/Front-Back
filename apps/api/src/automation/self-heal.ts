@@ -29,8 +29,9 @@ async function tryDbReconnect(): Promise<HealingAction> {
     const { db } = await import("@back-to-the-future/db");
     action.attempted = true;
     // Trivial query to verify connection.
-    await ((db as Record<string, unknown>).run
-      ? (db as Record<string, unknown> & { run: (sql: string) => Promise<unknown> }).run("SELECT 1")
+    const dbAny = db as unknown as Record<string, unknown>;
+    await (typeof dbAny.run === "function"
+      ? (dbAny.run as (sql: string) => Promise<unknown>)("SELECT 1")
       : Promise.resolve());
     action.recovered = true;
   } catch (err) {
