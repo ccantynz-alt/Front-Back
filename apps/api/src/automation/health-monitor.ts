@@ -10,7 +10,7 @@ export interface ServiceCheck {
   name: string;
   status: ServiceStatus;
   latencyMs: number;
-  detail?: string;
+  detail?: string | undefined;
 }
 
 export interface HealthSnapshot {
@@ -42,8 +42,8 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ value?: T; error?: stri
 async function checkDb(): Promise<ServiceCheck> {
   const r = await timed(async () => {
     const { db } = await import("@back-to-the-future/db");
-    // @ts-expect-error - drizzle libsql exposes run
-    if (db.run) await db.run("SELECT 1");
+    const dbAny = db as unknown as Record<string, unknown>;
+    if (typeof dbAny.run === "function") await (dbAny.run as (sql: string) => Promise<unknown>)("SELECT 1");
   });
   return {
     name: "database",
@@ -94,7 +94,9 @@ async function checkEmail(): Promise<ServiceCheck> {
 
 async function checkSentinel(): Promise<ServiceCheck> {
   const r = await timed(async () => {
-    const mod = await import("../../../../services/sentinel/src/index").catch(() => null);
+    // Dynamic import of sentinel -- path resolved at runtime to avoid rootDir constraint.
+    const sentinelPath = "../../../../services/sentinel/src/index";
+    const mod = await import(/* @vite-ignore */ sentinelPath).catch((): null => null);
     if (!mod) throw new Error("sentinel not loaded");
   });
   return {
@@ -117,7 +119,11 @@ async function alertIfDown(snapshot: HealthSnapshot): Promise<void> {
   const broken = snapshot.services.filter((s) => s.status === "down");
   if (broken.length === 0) return;
   try {
-    const alerts = await import("../../../../services/sentinel/src/alerts/types");
+    const alertsPath = "../../../../services/sentinel/src/alerts/types";
+    const alerts = await import(/* @vite-ignore */ alertsPath) as {
+      sendSlackAlert: (msg: Record<string, unknown>) => Promise<void>;
+      sendDiscordAlert: (msg: Record<string, unknown>) => Promise<void>;
+    };
     const message = {
       priority: "critical" as const,
       title: "Health monitor: services down",

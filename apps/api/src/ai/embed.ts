@@ -5,7 +5,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { embed, embedMany } from "ai";
-import { getModelForTier, readProviderEnv } from "@back-to-the-future/ai-core";
+import { readProviderEnv } from "@back-to-the-future/ai-core";
 import { createOpenAI } from "@ai-sdk/openai";
 
 const EmbedInputSchema = z.object({

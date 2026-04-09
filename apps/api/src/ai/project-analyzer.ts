@@ -5,6 +5,13 @@
 
 import type { Component } from "@back-to-the-future/schemas";
 
+/** Narrow view of Component for property access (Component resolves to unknown via ZodType). */
+interface ComponentLike {
+  component: string;
+  props?: Record<string, unknown>;
+  children?: Component[];
+}
+
 export type SuggestionSeverity = "info" | "tip" | "warning";
 
 export interface ProjectSuggestion {
@@ -20,14 +27,14 @@ export interface ProjectSuggestion {
   };
 }
 
-function flatten(tree: Component[] | undefined): Component[] {
-  const out: Component[] = [];
+function flatten(tree: Component[] | undefined): ComponentLike[] {
+  const out: ComponentLike[] = [];
   if (!tree) return out;
   const visit = (node: Component): void => {
-    out.push(node);
-    const maybeChildren = (node as { children?: Component[] }).children;
-    if (Array.isArray(maybeChildren)) {
-      for (const child of maybeChildren) visit(child);
+    const n = node as ComponentLike;
+    out.push(n);
+    if (Array.isArray(n.children)) {
+      for (const child of n.children) visit(child);
     }
   };
   for (const node of tree) visit(node);
@@ -41,7 +48,7 @@ function hasComponent(tree: Component[], name: string): boolean {
 function hasButtonLike(tree: Component[], keywords: string[]): boolean {
   return flatten(tree).some((c) => {
     if (c.component !== "Button") return false;
-    const label = (c.props as { label?: string }).label?.toLowerCase() ?? "";
+    const label = ((c.props as { label?: string } | undefined)?.label ?? "").toLowerCase();
     return keywords.some((k) => label.includes(k));
   });
 }
@@ -67,7 +74,7 @@ export function analyzeProject(tree: Component[]): ProjectSuggestion[] {
   }
 
   // Rule 2: No headline
-  if (!flatten(tree).some((c) => c.component === "Text" && (c.props as { variant?: string }).variant === "h1")) {
+  if (!flatten(tree).some((c) => c.component === "Text" && (c.props as { variant?: string } | undefined)?.variant === "h1")) {
     suggestions.push({
       id: "missing-headline",
       title: "There is no main headline on this page.",
@@ -126,9 +133,9 @@ export function analyzeProject(tree: Component[]): ProjectSuggestion[] {
   const wideStacks = flatten(tree).filter(
     (c) =>
       c.component === "Stack" &&
-      (c.props as { direction?: string }).direction === "horizontal" &&
-      Array.isArray((c as { children?: Component[] }).children) &&
-      ((c as { children?: Component[] }).children?.length ?? 0) > 3,
+      (c.props as { direction?: string } | undefined)?.direction === "horizontal" &&
+      Array.isArray(c.children) &&
+      (c.children?.length ?? 0) > 3,
   );
   if (wideStacks.length > 0) {
     suggestions.push({

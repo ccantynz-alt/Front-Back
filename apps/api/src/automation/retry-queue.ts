@@ -118,7 +118,7 @@ export function getQueueStatus(): {
   processed: number;
   succeeded: number;
   failed: number;
-  jobs: Array<{ id: string; type: JobType; attempts: number; lastError?: string }>;
+  jobs: Array<{ id: string; type: JobType; attempts: number; lastError?: string | undefined }>;
 } {
   return {
     pending: queue.size,
