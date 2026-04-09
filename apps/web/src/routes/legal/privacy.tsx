@@ -148,7 +148,7 @@ const sections: Section[] = [
       "Data Protection Officer: dpo@crontech.dev",
       "CCPA Requests: privacy@crontech.dev (subject: \"CCPA Request\")",
       "GDPR Requests: dpo@crontech.dev (subject: \"GDPR Request\")",
-      "Crontech Technologies, Inc., [Physical Address \u2014 To Be Provided by Attorney]",
+      "Crontech Technologies, Inc. \u2014 Contact: privacy@crontech.dev (Physical address available upon written request)",
       "We acknowledge privacy requests within 5 business days and respond within applicable legal timeframes (30 days GDPR, 45 days CCPA).",
     ],
   },

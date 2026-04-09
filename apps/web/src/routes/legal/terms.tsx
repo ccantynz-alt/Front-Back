@@ -78,6 +78,8 @@ const sections: Section[] = [
       "Server-Side AI Processing. Edge or cloud AI features transmit prompts to our servers or third-party providers for processing, handled per our Privacy Policy and not retained beyond fulfilling your request.",
       "No Warranty of AI Accuracy. AI Output is provided \"as-is.\" Crontech makes no representations regarding the accuracy, completeness, reliability, or fitness of AI Output. AI may produce incorrect, biased, or misleading results. You are solely responsible for reviewing and validating AI Output.",
       "AI Output is not a substitute for professional advice. Do not rely on AI Output for legal, medical, financial, or other professional decisions without independent human review.",
+      "AI Output Liability. CRONTECH SHALL NOT BE LIABLE FOR ANY CLAIMS, DAMAGES, LOSSES, OR EXPENSES ARISING FROM OR RELATED TO AI-GENERATED OUTPUT, INCLUDING BUT NOT LIMITED TO: (A) INACCURATE, INCOMPLETE, OR MISLEADING CONTENT; (B) CONTENT THAT INFRINGES THIRD-PARTY INTELLECTUAL PROPERTY RIGHTS; (C) DECISIONS MADE BASED ON AI OUTPUT; (D) FINANCIAL, LEGAL, MEDICAL, OR OTHER PROFESSIONAL LOSSES RESULTING FROM RELIANCE ON AI OUTPUT. YOU ASSUME ALL RISK ASSOCIATED WITH AI-GENERATED CONTENT.",
+      "AI Output and Third-Party IP. You are solely responsible for ensuring that AI-generated content does not infringe any third-party intellectual property rights before publishing, distributing, or commercially using such content. Crontech provides no indemnification for intellectual property claims arising from AI-generated output.",
     ],
   },
   {
@@ -103,6 +105,7 @@ const sections: Section[] = [
       "CRONTECH'S TOTAL AGGREGATE LIABILITY SHALL NOT EXCEED THE GREATER OF: (A) THE AMOUNT YOU PAID IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM; OR (B) ONE HUNDRED U.S. DOLLARS ($100).",
       "THE FREE TIER IS PROVIDED \"AS IS\" AND \"AS AVAILABLE\" WITHOUT WARRANTIES OF ANY KIND, EXPRESS, IMPLIED, OR STATUTORY.",
       "Some jurisdictions do not allow exclusion of certain damages. In such jurisdictions, limitations apply to the fullest extent permitted.",
+      "BETA AND EARLY ACCESS DISCLAIMER. DURING ANY BETA, EARLY ACCESS, OR PREVIEW PERIOD, THE SERVICE IS PROVIDED ON AN \"AS-IS\" AND \"AS-AVAILABLE\" BASIS WITHOUT ANY WARRANTIES WHATSOEVER. CRONTECH MAKES NO COMMITMENTS REGARDING UPTIME, DATA PRESERVATION, FEATURE AVAILABILITY, OR SERVICE CONTINUITY DURING BETA PERIODS. USE OF BETA FEATURES IS ENTIRELY AT YOUR OWN RISK.",
     ],
   },
   {
@@ -148,6 +151,8 @@ const sections: Section[] = [
       "Assignment. You may not assign these Terms without our consent. We may assign in connection with a merger, acquisition, or asset sale.",
       "Force Majeure. We are not liable for failures caused by events beyond reasonable control, including natural disasters, war, epidemics, government actions, power failures, internet disruptions, or cyberattacks.",
       "Notices. Notices to Crontech: legal@crontech.dev. Notices to you: email on your account. Deemed given 24 hours after sending.",
+      "Independent Contractor. Crontech is an independent technology provider. Nothing in these Terms creates an employment, agency, partnership, or joint venture relationship between you and Crontech.",
+      "No Professional Advice. The Service, including all AI features, does not constitute legal, financial, medical, tax, or any other professional advice. Consult qualified professionals before making decisions based on information obtained through the Service.",
     ],
   },
   {
@@ -156,8 +161,7 @@ const sections: Section[] = [
       "Email: legal@crontech.dev",
       "Billing: billing@crontech.dev",
       "Support: support@crontech.dev",
-      "Crontech Technologies, Inc.",
-      "[Physical Address \u2014 To Be Provided by Attorney]",
+      "Crontech Technologies, Inc. \u2014 Contact: legal@crontech.dev (Physical address available upon written request)",
     ],
   },
 ];
