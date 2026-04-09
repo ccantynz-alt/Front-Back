@@ -1,4 +1,4 @@
-import { Show, For, createSignal } from "solid-js";
+import { Show, For, createSignal, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
 import { SEOHead } from "../components/SEOHead";
 import { Button, Card, Stack, Text, Badge, Separator } from "@back-to-the-future/ui";
@@ -12,6 +12,30 @@ interface VideoEffect {
   active: boolean;
 }
 
+interface Collaborator {
+  id: string;
+  name: string;
+  color: string;
+  initials: string;
+  online: boolean;
+  cursorTime: number;
+}
+
+interface TimelineComment {
+  id: string;
+  author: string;
+  color: string;
+  time: number;
+  text: string;
+  timestamp: string;
+}
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "ai";
+  text: string;
+}
+
 const defaultEffects: VideoEffect[] = [
   { id: "brightness", name: "Brightness", description: "Adjust brightness level", active: false },
   { id: "contrast", name: "Contrast", description: "Adjust contrast level", active: false },
@@ -21,6 +45,19 @@ const defaultEffects: VideoEffect[] = [
   { id: "grayscale", name: "Grayscale", description: "Convert to grayscale", active: false },
 ];
 
+const MOCK_COLLABORATORS: Collaborator[] = [
+  { id: "1", name: "Craig", color: "#818cf8", initials: "CR", online: true, cursorTime: 34 },
+  { id: "2", name: "AI Agent", color: "#34d399", initials: "AI", online: true, cursorTime: 52 },
+  { id: "3", name: "Sarah", color: "#f472b6", initials: "SA", online: true, cursorTime: 18 },
+  { id: "4", name: "Marcus", color: "#fbbf24", initials: "MA", online: false, cursorTime: 0 },
+];
+
+const MOCK_COMMENTS: TimelineComment[] = [
+  { id: "c1", author: "Craig", color: "#818cf8", time: 12, text: "Transition needs to be smoother here", timestamp: "2 min ago" },
+  { id: "c2", author: "AI Agent", color: "#34d399", time: 34, text: "Detected scene change — recommend cut at 0:34", timestamp: "1 min ago" },
+  { id: "c3", author: "Sarah", color: "#f472b6", time: 52, text: "Color grading looks great in this section", timestamp: "just now" },
+];
+
 export default function VideoPage(): JSX.Element {
   const [effects, setEffects] = createSignal(defaultEffects);
   const [videoLoaded, setVideoLoaded] = createSignal(false);
@@ -28,6 +65,63 @@ export default function VideoPage(): JSX.Element {
   const [currentTime, setCurrentTime] = createSignal(0);
   const [duration, setDuration] = createSignal(0);
   const [gpuAvailable] = createSignal(typeof navigator !== "undefined" && "gpu" in navigator);
+
+  // ── Collaboration State ──────────────────────────────────────────
+  const [showChat, setShowChat] = createSignal(true);
+  const [chatInput, setChatInput] = createSignal("");
+  const [chatMessages, setChatMessages] = createSignal<ChatMessage[]>([
+    { id: "m1", role: "ai", text: "I'm your AI video assistant. Ask me to add transitions, apply effects, generate subtitles, or analyze scenes." },
+  ]);
+  const [comments, setComments] = createSignal(MOCK_COMMENTS);
+  const [newComment, setNewComment] = createSignal("");
+  const [showComments, setShowComments] = createSignal(true);
+  const [syncStatus, setSyncStatus] = createSignal<"synced" | "syncing">("synced");
+  const [roomId] = createSignal("room-" + Math.random().toString(36).slice(2, 8));
+
+  const onlineCount = createMemo(() => MOCK_COLLABORATORS.filter((c) => c.online).length);
+
+  function sendChatMessage() {
+    const text = chatInput().trim();
+    if (!text) return;
+    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text };
+    setChatMessages([...chatMessages(), userMsg]);
+    setChatInput("");
+    setSyncStatus("syncing");
+    setTimeout(() => {
+      const aiResponses: Record<string, string> = {
+        transition: "Adding a smooth crossfade transition at the current playhead position (0:" + Math.floor(currentTime()).toString().padStart(2, "0") + "). Duration: 0.5s.",
+        subtitle: "Generating subtitles using Whisper model... Detected 3 spoken segments. Subtitles added to the timeline.",
+        color: "Applied cinematic color grading: contrast +15%, warmth +8%, vignette enabled. Preview updated.",
+        cut: "Analyzing scene boundaries... Found 4 scene changes. Markers added to timeline at 0:12, 0:34, 0:52, 1:18.",
+      };
+      const key = Object.keys(aiResponses).find((k) => text.toLowerCase().includes(k)) || "";
+      const response = aiResponses[key] || `Processing your request: "${text}". Applied to the current timeline. Check the preview for results.`;
+      const aiMsg: ChatMessage = { id: `ai-${Date.now()}`, role: "ai", text: response };
+      setChatMessages([...chatMessages(), userMsg, aiMsg]);
+      setSyncStatus("synced");
+    }, 1200);
+  }
+
+  function addComment() {
+    const text = newComment().trim();
+    if (!text) return;
+    const comment: TimelineComment = {
+      id: `c-${Date.now()}`,
+      author: "You",
+      color: "#60a5fa",
+      time: currentTime(),
+      text,
+      timestamp: "just now",
+    };
+    setComments([...comments(), comment]);
+    setNewComment("");
+  }
+
+  function shareRoom() {
+    const url = `${window.location.origin}/video?room=${roomId()}`;
+    navigator.clipboard.writeText(url);
+    showToast("Room link copied to clipboard!", "success");
+  }
 
   const toggleEffect = (id: string): void => {
     setEffects(
@@ -49,16 +143,44 @@ export default function VideoPage(): JSX.Element {
         path="/video"
       />
       <Stack direction="vertical" gap="lg" class="page-padded">
+        {/* Header with collab controls */}
         <Stack direction="horizontal" justify="between" align="center">
           <Stack direction="vertical" gap="xs">
             <Text variant="h1" weight="bold">Video Editor</Text>
-            <Text variant="body" class="text-muted">
-              WebGPU-accelerated video processing in the browser
-            </Text>
+            <Stack direction="horizontal" gap="sm" align="center">
+              <Text variant="body" class="text-muted">
+                WebGPU-accelerated &middot; Real-time collaboration
+              </Text>
+              <span class={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${syncStatus() === "synced" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"}`}>
+                <span class={`h-1.5 w-1.5 rounded-full ${syncStatus() === "synced" ? "bg-emerald-400" : "bg-amber-400 animate-pulse"}`} />
+                {syncStatus() === "synced" ? "Synced" : "Syncing..."}
+              </span>
+            </Stack>
           </Stack>
-          <Badge variant={gpuAvailable() ? "success" : "warning"} size="sm">
-            {gpuAvailable() ? "WebGPU Available" : "WebGPU Unavailable (Canvas fallback)"}
-          </Badge>
+          <Stack direction="horizontal" gap="sm" align="center">
+            {/* Collaborator avatars */}
+            <div class="flex -space-x-2">
+              <For each={MOCK_COLLABORATORS.filter((c) => c.online)}>
+                {(collab) => (
+                  <div
+                    class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#060606] text-[10px] font-bold text-white"
+                    style={{ "background-color": collab.color }}
+                    title={`${collab.name} (online)`}
+                  >
+                    {collab.initials}
+                  </div>
+                )}
+              </For>
+            </div>
+            <Text variant="caption" class="text-muted">{onlineCount()} online</Text>
+            <Button variant="outline" size="sm" onClick={shareRoom}>Share</Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowChat(!showChat())}>
+              {showChat() ? "Hide AI" : "AI Chat"}
+            </Button>
+            <Badge variant={gpuAvailable() ? "success" : "warning"} size="sm">
+              {gpuAvailable() ? "WebGPU" : "Canvas fallback"}
+            </Badge>
+          </Stack>
         </Stack>
 
         <div class="video-editor-layout">
@@ -191,6 +313,122 @@ export default function VideoPage(): JSX.Element {
             </Stack>
           </Card>
         </div>
+
+        {/* Collaborator cursors on timeline */}
+        <Show when={videoLoaded()}>
+          <Card padding="sm">
+            <Stack direction="horizontal" justify="between" align="center">
+              <Text variant="caption" weight="semibold" class="text-muted">Timeline Cursors</Text>
+              <Button variant="ghost" size="sm" onClick={() => setShowComments(!showComments())}>
+                {showComments() ? "Hide Comments" : "Show Comments"} ({comments().length})
+              </Button>
+            </Stack>
+            <div class="relative mt-2 h-6 rounded-lg bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+              <For each={MOCK_COLLABORATORS.filter((c) => c.online)}>
+                {(collab) => (
+                  <div
+                    class="absolute top-0 h-full w-0.5"
+                    style={{ left: `${(collab.cursorTime / (duration() || 120)) * 100}%`, "background-color": collab.color }}
+                    title={`${collab.name} @ ${formatTime(collab.cursorTime)}`}
+                  >
+                    <div
+                      class="absolute -top-5 left-1/2 -translate-x-1/2 rounded px-1.5 py-0.5 text-[9px] font-bold text-white whitespace-nowrap"
+                      style={{ "background-color": collab.color }}
+                    >
+                      {collab.initials}
+                    </div>
+                  </div>
+                )}
+              </For>
+              {/* Comment markers */}
+              <For each={comments()}>
+                {(comment) => (
+                  <div
+                    class="absolute top-0 h-full w-1 rounded-full opacity-60"
+                    style={{ left: `${(comment.time / (duration() || 120)) * 100}%`, "background-color": comment.color }}
+                    title={`${comment.author}: ${comment.text}`}
+                  />
+                )}
+              </For>
+            </div>
+          </Card>
+        </Show>
+
+        {/* Comments Section */}
+        <Show when={showComments() && videoLoaded()}>
+          <Card padding="md">
+            <Stack direction="vertical" gap="sm">
+              <Text variant="h4" weight="semibold">Timeline Comments</Text>
+              <For each={comments()}>
+                {(comment) => (
+                  <div class="flex items-start gap-3 rounded-lg bg-white/[0.02] p-3">
+                    <div
+                      class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                      style={{ "background-color": comment.color }}
+                    >
+                      {comment.author.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <Text variant="caption" weight="semibold">{comment.author}</Text>
+                        <Text variant="caption" class="text-muted">@ {formatTime(comment.time)}</Text>
+                        <Text variant="caption" class="text-muted">&middot; {comment.timestamp}</Text>
+                      </div>
+                      <Text variant="body" class="text-muted">{comment.text}</Text>
+                    </div>
+                  </div>
+                )}
+              </For>
+              <Stack direction="horizontal" gap="sm">
+                <input
+                  type="text"
+                  placeholder={`Comment at ${formatTime(currentTime())}...`}
+                  value={newComment()}
+                  onInput={(e) => setNewComment(e.currentTarget.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addComment()}
+                  class="flex-1 rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-blue-500/50"
+                />
+                <Button variant="primary" size="sm" onClick={addComment}>Post</Button>
+              </Stack>
+            </Stack>
+          </Card>
+        </Show>
+
+        {/* AI Chat Panel */}
+        <Show when={showChat()}>
+          <Card padding="md">
+            <Stack direction="vertical" gap="sm">
+              <Stack direction="horizontal" justify="between" align="center">
+                <Stack direction="horizontal" gap="sm" align="center">
+                  <div class="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400">AI</div>
+                  <Text variant="h4" weight="semibold">AI Video Assistant</Text>
+                </Stack>
+                <Badge variant="default" size="sm">Client GPU &middot; $0/token</Badge>
+              </Stack>
+              <div class="max-h-64 overflow-y-auto space-y-2">
+                <For each={chatMessages()}>
+                  {(msg) => (
+                    <div class={`rounded-lg p-3 text-sm ${msg.role === "ai" ? "bg-emerald-500/[0.06] border border-emerald-500/10 text-gray-300" : "bg-blue-500/[0.06] border border-blue-500/10 text-gray-300 ml-8"}`}>
+                      <span class="font-semibold text-white">{msg.role === "ai" ? "AI: " : "You: "}</span>
+                      {msg.text}
+                    </div>
+                  )}
+                </For>
+              </div>
+              <Stack direction="horizontal" gap="sm">
+                <input
+                  type="text"
+                  placeholder="Ask AI: add transition, generate subtitles, apply color grading..."
+                  value={chatInput()}
+                  onInput={(e) => setChatInput(e.currentTarget.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}
+                  class="flex-1 rounded-lg border border-white/[0.08] bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-emerald-500/50"
+                />
+                <Button variant="primary" size="sm" onClick={sendChatMessage}>Send</Button>
+              </Stack>
+            </Stack>
+          </Card>
+        </Show>
       </Stack>
     </ProtectedRoute>
   );

@@ -21,7 +21,7 @@ import {
 } from "@back-to-the-future/ai-core";
 
 // Initialize OpenTelemetry (no-op if OTEL_EXPORTER_OTLP_ENDPOINT not set)
-const telemetry = initTelemetry();
+initTelemetry();
 
 import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
@@ -36,6 +36,7 @@ import { securityHeaders } from "./middleware/security-headers";
 import { rateLimiter } from "./middleware/rate-limiter";
 import { csrf } from "./middleware/csrf";
 import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
+import { googleOAuthRoutes } from "./auth/google-oauth";
 
 const app = new Hono().basePath("/api");
 
@@ -43,6 +44,7 @@ const app = new Hono().basePath("/api");
 app.use("*", securityHeaders());
 app.use("*", csrf({ allowedOrigins: ["http://localhost:3000", "http://localhost:3001"] }));
 app.use("/api/trpc/*", rateLimiter({ windowMs: 60_000, max: 200 }));
+app.use("/api/auth/*", rateLimiter({ windowMs: 60_000, max: 20 }));
 app.use("/api/ai/*", rateLimiter({ windowMs: 60_000, max: 30 }));
 
 // ── API Key Authentication ──────────────────────────────────────────
@@ -229,6 +231,9 @@ app.post("/webhooks/inbound-email", async (c) => {
     return c.json({ received: true });
   }
 });
+
+// Mount Google OAuth routes (raw Hono -- needs redirects outside tRPC)
+app.route("/auth", googleOAuthRoutes);
 
 // Mount AI routes (raw Hono -- streaming works better outside tRPC)
 app.route("/ai", aiRoutes);

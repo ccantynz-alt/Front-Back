@@ -16,6 +16,8 @@
     "clean": "turbo clean",
     "check-links": "bun run scripts/link-checker.ts",
     "check-buttons": "bun run scripts/button-checker.ts",
+    "check-bundle": "bun run scripts/bundle-size-check.ts",
+    "check-a11y": "bun run scripts/a11y-check.ts",
     "generate-sitemap": "bun run scripts/generate-sitemap.ts",
     "prebuild": "bun run scripts/generate-sitemap.ts",
     "test:e2e": "playwright test"

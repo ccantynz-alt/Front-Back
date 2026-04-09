@@ -1,6 +1,76 @@
 export { computeTierRouter, type ComputeTier, type DeviceCapabilities } from "./compute-tier";
 export type { ModelRequirements } from "./compute-tier";
 
+// ── Client-Side Inference (WebLLM + Transformers.js) ─────────────
+export {
+  // Unified interface
+  clientInfer,
+  getClientCapabilities,
+  isClientInferenceAvailable,
+  InferenceTask,
+  type ClientCapabilities,
+  type ClientInferOptions,
+  type ClientInferResult,
+  // WebLLM
+  isWebGPUAvailable,
+  initializeWebLLM,
+  chatCompletion,
+  chatCompletionStream,
+  getModelInfo,
+  selectModelForVRAM,
+  unloadWebLLM,
+  isWebLLMReady,
+  getLoadedModelId,
+  WEBLLM_MODELS,
+  WebLLMModelId,
+  WebLLMConfigSchema,
+  type WebLLMConfig,
+  type WebLLMModelInfo,
+  type ChatMessage,
+  type ChatCompletionResult,
+  type ChatCompletionChunk,
+  type ModelLoadProgress,
+  type ModelLoadProgressCallback,
+  // Transformers.js
+  isTransformersAvailable,
+  isTransformersGPUAvailable,
+  generateEmbeddings,
+  classifyText,
+  summarizeText,
+  extractFeatures,
+  getTransformersModelInfo,
+  getModelsForTask,
+  disposePipeline,
+  disposeAllPipelines,
+  getCachedPipelines,
+  TRANSFORMERS_MODELS,
+  TransformersTask,
+  TransformersModelId,
+  TransformersConfigSchema,
+  type TransformersConfig,
+  type TransformersModelInfo,
+  type EmbeddingResult,
+  type ClassificationLabel,
+  type ClassificationResult,
+  type SummarizationResult,
+  type FeatureExtractionResult,
+  type TransformersLoadProgress,
+  type TransformersLoadProgressCallback,
+} from "./inference/index";
+
+export {
+  selectCloudModel,
+  buildCloudRequest,
+  computeTierWithReason,
+  CloudInferenceRequestSchema,
+  CloudInferenceResponseSchema,
+  CloudStreamChunkSchema,
+  type CloudInferenceRequest,
+  type CloudInferenceResponse,
+  type CloudStreamChunk,
+  type TierFallbackResult,
+} from "./compute-tier";
+
 export {
   readProviderEnv,
   getModelForTier,

@@ -3,6 +3,7 @@
 // Runs as a long-lived Bun process with an HTTP health endpoint.
 
 import { githubReleasesCollector } from "./collectors/github-releases";
+import { githubCommitsCollector } from "./collectors/github-commits";
 import { npmRegistryCollector } from "./collectors/npm-registry";
 import { hackernewsCollector } from "./collectors/hackernews";
 import { arxivCollector } from "./collectors/arxiv";
@@ -19,6 +20,7 @@ import type { Collector, CollectorResult, IntelligenceItem } from "./collectors/
 
 const collectors: Collector[] = [
   githubReleasesCollector,
+  githubCommitsCollector,
   npmRegistryCollector,
   hackernewsCollector,
   arxivCollector,
