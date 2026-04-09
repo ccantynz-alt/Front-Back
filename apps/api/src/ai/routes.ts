@@ -371,7 +371,7 @@ aiRoutes.post("/chat", async (c) => {
     const demoResponse = generateDemoChatResponse(messages);
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
-      start(controller): void {
+      start(controller: ReadableStreamDefaultController): void {
         // Stream the demo response character by character for realistic feel
         const chunks = demoResponse.match(/.{1,20}/g) ?? [demoResponse];
         let i = 0;
@@ -527,7 +527,7 @@ aiRoutes.post("/site-builder", async (c) => {
     const demoResponse = generateDemoChatResponse(messages);
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
-      start(controller): void {
+      start(controller: ReadableStreamDefaultController): void {
         const chunks = demoResponse.match(/.{1,20}/g) ?? [demoResponse];
         let i = 0;
         const interval = setInterval(() => {
