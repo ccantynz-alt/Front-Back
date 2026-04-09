@@ -6,7 +6,7 @@ import { analyticsEvents } from "@back-to-the-future/db";
 const AnalyticsEventInput = z.object({
   event: z.string().min(1),
   category: z.enum(["page_view", "feature_usage", "ai_generation", "time_on_page"]),
-  properties: z.record(z.unknown()).optional(),
+  properties: z.record(z.string(), z.unknown()).optional(),
   timestamp: z.string().datetime(),
   sessionId: z.string().optional(),
 });

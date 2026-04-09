@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../init";
+import { router, protectedProcedure } from "../init";
 import { TRPCError } from "@trpc/server";
 import { sendEmail } from "../../email/client";
 import { collaborationInviteEmail } from "../../email/templates";

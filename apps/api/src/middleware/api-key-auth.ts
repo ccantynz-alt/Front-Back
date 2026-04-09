@@ -33,8 +33,7 @@ export const apiKeyAuthMiddleware = createMiddleware<ApiKeyAuthEnv>(
 
     if (!authHeader?.startsWith("Bearer btf_sk_")) {
       c.set("apiKeyId", null);
-      await next();
-      return;
+      return next();
     }
 
     const rawKey = authHeader.slice(7); // Remove "Bearer "
@@ -71,7 +70,7 @@ export const apiKeyAuthMiddleware = createMiddleware<ApiKeyAuthEnv>(
 
       c.set("userId", key.userId);
       c.set("apiKeyId", key.id);
-      await next();
+      return next();
     } catch (err: unknown) {
       console.error(
         "API key auth error:",
