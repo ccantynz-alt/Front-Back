@@ -4,6 +4,11 @@ import { Dynamic } from "solid-js/web";
 export interface TextProps {
   content?: string;
   variant?: "h1" | "h2" | "h3" | "h4" | "body" | "caption" | "code";
+  /**
+   * Override the rendered HTML tag. Defaults are driven by `variant`
+   * (body → p, caption → span, etc.) but you often want e.g. a
+   * semibold `<span>` inside a `<p>` — pass `as="span"` for that.
+   */
   as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span" | "div" | "code" | "label" | "strong" | "em";
   weight?: "normal" | "medium" | "semibold" | "bold";
   align?: "left" | "center" | "right";
@@ -15,12 +20,6 @@ export interface TextProps {
    * call-sites don't have to reach for `as any`.
    */
   style?: JSX.CSSProperties | string;
-  /**
-   * Override the rendered HTML tag. Defaults are driven by `variant`
-   * (body → p, caption → span, etc.) but you often want e.g. a
-   * semibold `<span>` inside a `<p>` — pass `as="span"` for that.
-   */
-  as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span" | "div" | "code" | "strong" | "em";
   children?: JSX.Element;
 }
 
@@ -44,7 +43,6 @@ export function Text(props: TextProps): JSX.Element {
     "size",
     "class",
     "style",
-    "as",
     "children",
   ]);
 

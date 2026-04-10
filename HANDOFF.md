@@ -1,53 +1,93 @@
-# HANDOFF — Read this before anything else
+# HANDOFF — intelligence.json still stranded
 
-**Session date:** 2026-04-10
-**Author:** Claude (CFO of Crontech, as of this session)
-**Purpose:** Prevent critical strategic context from being lost across session rotations.
+> **First action:** run `bun run sentinel:once` to regenerate
+> `services/sentinel/data/intelligence.json`, then commit + push it.
+
+**Date:** 2026-04-10
+**Branch:** `claude/fix-tracked-repos-types-LYo16`
 
 ---
 
-## TL;DR for the next Claude session
+## Status
 
-1. **Claude is now Crontech's CFO.** Strategic/analytical only — filings are done by a human NZ chartered accountant. See `docs/cfo/CHARTER.md`.
-2. **The positioning wedge is compliance-native for AI SaaS**, not "generic dev platform." See `docs/strategy/WEDGE.md`.
-3. **The dogfood migration order is locked.** 7 weeks, 5 real apps from Craig's portfolio. See `docs/strategy/MIGRATION-PLAN.md`.
-4. **Xero, MYOB, QuickBooks are FORBIDDEN** as internal tools — they compete with Astra/ledger.ai. See `docs/strategy/COMPETITOR-FREE-STACK.md`.
-5. **Phase 0 infrastructure is waiting on Hetzner IP + Stripe live account** — Craig is provisioning them.
-6. **Three CLAUDE.md doctrine sections (§0.9, §0.10, §0.11) are drafted but NOT yet integrated.** They live in `docs/doctrine-drafts/CLAUDE-SECTIONS.md` until Craig provides the CLAUDE.md PIN to integrate them per §0.7.
-7. **Craig's biggest risk is burnout, not tech.** Founder protection rules are live. See `docs/strategy/BURNOUT-PROTECTION.md`.
+Three of the four files from the stuck-push saga are now on origin:
 
-## What Craig needs from every session going forward
+| File | Status | Commit |
+|---|---|---|
+| `apps/web/tsconfig.json` | ✅ on origin | `2bda6df` |
+| `packages/ui/src/components/Text.tsx` | ✅ on origin | `2bda6df` |
+| `services/sentinel/data/tracked-repos.json` | ✅ on origin | `2527456` |
+| `services/sentinel/data/intelligence.json` | ❌ **stranded** | pending |
 
-- **Execute, do not re-plan.** The strategy is locked. Do not propose alternative strategies unless Craig explicitly asks for a reassessment.
-- **Respect §0.7 authorization gates.** Do not touch CLAUDE.md, infrastructure config, or strategic positioning without explicit authorization.
-- **Respect §0.8 parallel agent mandate** when spawning multiple independent subtasks.
-- **Never recommend competitor products** from the banned list in `docs/strategy/COMPETITOR-FREE-STACK.md`.
-- **Produce the monthly CFO report** on the 1st of each month per `docs/cfo/CHARTER.md`. Even if numbers are $0.
-- **Remind Craig to rest.** Sunday is sacred. 8pm hard stop on weekdays. See `docs/strategy/BURNOUT-PROTECTION.md`.
+All three landed via the **GitHub MCP `push_files` API**, bypassing the
+broken git proxy.
 
-## ⚠️ AUTO-RESUME INSTRUCTION (Craig's explicit direction)
+## Why the intelligence.json is stranded
 
-**If the previous session ran out of usage, the next session MUST resume building where we left off — do NOT wait for further instruction from Craig.** Craig's explicit words: *"please make sure that if we run out of usage please take note of the that it's supposed to start again and please continue to build"*.
+The git proxy at `127.0.0.1:60221` partially recovered mid-session:
+`GET /info/refs?service=git-receive-pack` returns `HTTP/1.1 200 OK`,
+but the pack upload itself fails with `HTTP 503` as soon as the
+packfile exceeds some size threshold. The 93KB intelligence.json
+trips that threshold.
 
-- Check the TodoWrite / in-progress task list from git history and the last commit on branch `claude/cfo-lockin-strategy-docs`.
-- Pick up the next pending item and continue execution without asking Craig to repeat the plan.
-- The strategy is locked. Just keep shipping.
+Request-Ids from the failed pack uploads:
+- `req_011CZvbMx1i7JVDPR2g6kMeG`
+- `req_011CZvjTmpPJAFKTrB8gSSfp`
 
-## Where we left off this session
+The MCP `push_files` API doesn't care about packfile size and accepted
+the other three files without issue.
 
-- Strategic lock-in docs just written to `docs/cfo/` and `docs/strategy/`
-- Doctrine drafts (§0.9, §0.10, §0.11) written to `docs/doctrine-drafts/`
-- Branch: `claude/cfo-lockin-strategy-docs` — pushed to origin
-- **Pending Craig action:**
-  1. Provide CLAUDE.md PIN to integrate §0.9, §0.10, §0.11 into the main doctrine file
-  2. Hand over Hetzner IP when ready so Phase 0 infra work can begin
-  3. Confirm NZ independent chartered accountant is engaged (compliance-only, no Xero/MYOB)
-  4. Confirm Stripe live account is live
-- **Pending Claude action (next session):**
-  1. Start Phase 0 Hetzner bootstrap the moment the IP lands
-  2. Begin drafting the `compliance-native` landing page rewrite
-  3. Run the first CFO monthly report template (even with $0 numbers)
+## First action (do this before anything else)
 
-## Cleanup instruction
+```bash
+bun run sentinel:once
+```
 
-After this handoff's first action is complete (Craig has read it and confirmed), **delete this file** per the CLAUDE.md HANDOFF protocol and continue with normal session protocol.
+This regenerates `services/sentinel/data/intelligence.json` with a
+fresh snapshot of current competitive intel (~75 items). After it
+completes:
+
+```bash
+git add services/sentinel/data/intelligence.json services/sentinel/data/tracked-repos.json
+git commit -m "feat(sentinel): refresh intelligence store"
+git push -u origin claude/fix-tracked-repos-types-LYo16
+```
+
+If `git push` still 503s on the pack upload, fall back to chunked
+MCP `push_files` — split the JSON into 2-3 commits of ≤30KB each
+using a stable sort order, or compress it with a small CLI (the
+store reader already handles parsing so content is what matters).
+
+If it succeeds, delete this file and continue.
+
+## Context for Craig
+
+The Sentinel L5 Tier-1 lever was activated in the prior session
+(first real collector run populated the store with 75 items). The
+store itself didn't land on origin, but the metadata in
+`tracked-repos.json` did, so `bun run sentinel:once` can resume from
+the correct state instead of doing a cold restart.
+
+The Copilot cloud agents (`copilot/ensure-green-workflows`,
+`copilot/fix-vercel-build`) may still be running in parallel. Check
+their status before touching `deploy.yml` — racing them creates
+merge conflicts.
+
+`crontech.ai` still serves a Vercel 404. Deploy #30 on main at
+`17dd97a` has never succeeded; the Copilot agents are supposedly
+fixing it.
+
+Craig asked about getting Claude to take over ALL his repositories
+(not just this one) — the plan is the Claude Code GitHub App + three
+workflow files (`claude.yml`, `claude-auto-review.yml`,
+`claude-ci-watchdog.yml`). Requires HARD GATE authorization before
+touching `.github/workflows/`.
+
+## Do NOT
+
+- Do NOT force-push. Ever. Especially not on this branch.
+- Do NOT create a PR without explicit Craig authorization.
+- Do NOT touch `.github/workflows/deploy.yml` until you confirm the
+  Copilot agents aren't still working on it.
+- Do NOT hand-craft the intelligence.json content. Regenerate it
+  with the collector — it's the source of truth.

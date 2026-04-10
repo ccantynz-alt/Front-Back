@@ -3,10 +3,7 @@
   "compilerOptions": {
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["bun"],
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "exactOptionalPropertyTypes": false,
+    "types": ["bun", "@webgpu/types"],
     "paths": {
       "~/*": ["./src/*"]
     }

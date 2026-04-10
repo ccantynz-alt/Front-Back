@@ -1,0 +1,80 @@
+name: Claude Auto-Review
+
+# Auto-reviews every PR on open/synchronize against CLAUDE.md doctrine.
+# Enforces the Clean Green Ecosystem rules, strict tsconfig, Zero-HTML,
+# Zod at boundaries, and the "does it extend the lead?" test.
+#
+# This is the Crontech-specific version. Other repos get a stripped-down
+# variant without the doctrine references.
+#
+# Canonical copy: docs/claude-takeover/claude-auto-review.yml
+# Promoted to: .github/workflows/claude-auto-review.yml (after Craig's final review)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Skip draft PRs — review when the author marks it ready.
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are the Claude PR reviewer for Crontech. Read CLAUDE.md
+            first — it is binding doctrine. Then review this PR against
+            the full Crontech standard.
+
+            Hard-fail checks (any of these = request changes):
+            1. Clean Green Ecosystem rules (§0.4.1):
+               - `continue-on-error: true` on any quality gate → breach
+               - Softened tsconfig flags (strict, exactOptionalPropertyTypes,
+                 noUncheckedIndexedAccess, noUnusedLocals, noUnusedParameters,
+                 noImplicitReturns) → breach
+               - `@ts-ignore` / `@ts-expect-error` / cast to `any` → breach
+               - Package added without a test file → breach
+               - Drizzle migration without `--> statement-breakpoint` → breach
+               - Orphan `.ts`/`.tsx` file outside every tsconfig include → breach
+            2. Zero-HTML rule: raw HTML outside JSX → breach
+            3. Zod at every boundary: API input/output, env vars, component
+               props, AI-composable surfaces → breach if missing
+            4. tRPC end-to-end types: any `any`, `unknown` without narrowing,
+               or untyped response → breach
+            5. Performance budgets (§6.6): bundle size, FCP, API response → breach
+               if bundle-size check or perf test regressed
+
+            Soft checks (flag but don't hard-fail):
+            - Does this extend the lead on Vercel/Cloudflare/Supabase/Convex?
+              If it's pure maintenance, say so — that's fine but note it.
+            - Tests cover the new code? If not, what's the test plan?
+            - Any drive-by edits that violate §0.2 anti-scatter-gun?
+            - Any new dependencies — are they the best-in-class choice?
+
+            Output format: inline review comments on specific lines for
+            every hard-fail, a single summary comment at the top of the
+            PR for soft checks. Be direct. No hedging. No "consider" or
+            "you might want to" — just "this is a breach of §0.4.1 rule
+            #3, fix by removing continue-on-error."
+
+            If the PR is clean and extends the lead, approve it with a
+            one-line summary of what it ships.
+          claude_args: "--max-turns 10"
