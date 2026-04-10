@@ -12,6 +12,11 @@ import {
   parseProgressTracker,
   countByStatus,
   totalEntries,
+  filterTracker,
+  commitUrl,
+  type ProgressFilters,
+  type ProgressPriority,
+  type ProgressStatus,
   type ProgressTracker,
   type ProgressEntry,
 } from "./schema";
@@ -208,6 +213,7 @@ describe("countByStatus + totalEntries", () => {
     lastUpdated: "x",
     session: "x",
     doctrine: "x",
+    repoUrl: null,
     categories: [
       {
         id: "c1",
@@ -327,7 +333,11 @@ describe("apps/web/public/progress.json", () => {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function mk(id: string, status: ProgressEntry["status"]): ProgressEntry {
+function mk(
+  id: string,
+  status: ProgressEntry["status"],
+  overrides: Partial<ProgressEntry> = {},
+): ProgressEntry {
   return {
     id,
     title: id,
@@ -339,5 +349,136 @@ function mk(id: string, status: ProgressEntry["status"]): ProgressEntry {
     docLink: null,
     blockedReason: status === "blocked" ? "reason" : null,
     tags: ["tag"],
+    updatedAt: null,
+    ...overrides,
   };
 }
+
+// ── filterTracker + commitUrl ────────────────────────────────────────
+
+describe("filterTracker", () => {
+  const now = new Date("2026-04-10T12:00:00Z");
+  const recent = new Date("2026-04-10T10:00:00Z").toISOString();
+  const stale = new Date("2026-04-08T00:00:00Z").toISOString();
+
+  const base: ProgressTracker = {
+    version: 1,
+    lastUpdated: "x",
+    session: "x",
+    doctrine: "x",
+    repoUrl: "https://github.com/org/repo",
+    categories: [
+      {
+        id: "c1",
+        title: "C1",
+        subtitle: "s",
+        icon: "i",
+        entries: [
+          mk("alpha", "completed", {
+            priority: "p0",
+            tags: ["audit", "core"],
+            updatedAt: recent,
+          }),
+          mk("beta", "in_progress", { priority: "p1", updatedAt: stale }),
+        ],
+      },
+      {
+        id: "c2",
+        title: "C2",
+        subtitle: "s",
+        icon: "i",
+        entries: [
+          mk("gamma", "pending", { priority: "p2" }),
+          mk("delta", "blocked", { priority: "p3", updatedAt: recent }),
+        ],
+      },
+    ],
+  };
+
+  function filters(overrides: Partial<ProgressFilters> = {}): ProgressFilters {
+    return {
+      statuses: new Set<ProgressStatus>(),
+      priorities: new Set<ProgressPriority>(),
+      search: "",
+      within24h: false,
+      now,
+      ...overrides,
+    };
+  }
+
+  test("empty filter returns everything", () => {
+    const out = filterTracker(base, filters());
+    expect(totalEntries(out)).toBe(4);
+    expect(out.categories).toHaveLength(2);
+  });
+
+  test("status filter prunes non-matching entries", () => {
+    const out = filterTracker(
+      base,
+      filters({ statuses: new Set<ProgressStatus>(["completed", "blocked"]) }),
+    );
+    expect(totalEntries(out)).toBe(2);
+  });
+
+  test("priority filter prunes non-matching entries", () => {
+    const out = filterTracker(
+      base,
+      filters({ priorities: new Set<ProgressPriority>(["p0"]) }),
+    );
+    expect(totalEntries(out)).toBe(1);
+    expect(out.categories[0]?.entries[0]?.id).toBe("alpha");
+  });
+
+  test("search matches title/description/tags/id (case-insensitive)", () => {
+    const out = filterTracker(base, filters({ search: "AUDIT" }));
+    expect(totalEntries(out)).toBe(1);
+    expect(out.categories[0]?.entries[0]?.id).toBe("alpha");
+  });
+
+  test("within24h drops entries with null or stale updatedAt", () => {
+    const out = filterTracker(base, filters({ within24h: true }));
+    const ids = out.categories.flatMap((c) => c.entries.map((e) => e.id));
+    expect(ids).toEqual(["alpha", "delta"]);
+  });
+
+  test("empty category is omitted from the result", () => {
+    const out = filterTracker(
+      base,
+      filters({ statuses: new Set<ProgressStatus>(["completed"]) }),
+    );
+    expect(out.categories).toHaveLength(1);
+    expect(out.categories[0]?.id).toBe("c1");
+  });
+
+  test("combined filters compose as AND", () => {
+    const out = filterTracker(
+      base,
+      filters({
+        statuses: new Set<ProgressStatus>(["completed", "blocked"]),
+        within24h: true,
+      }),
+    );
+    const ids = out.categories.flatMap((c) => c.entries.map((e) => e.id));
+    expect(ids).toEqual(["alpha", "delta"]);
+  });
+});
+
+describe("commitUrl", () => {
+  test("returns null when repo or commit missing", () => {
+    expect(commitUrl(null, "abc")).toBeNull();
+    expect(commitUrl("https://github.com/org/repo", null)).toBeNull();
+    expect(commitUrl("https://github.com/org/repo", "")).toBeNull();
+  });
+
+  test("joins repo and commit", () => {
+    expect(commitUrl("https://github.com/org/repo", "abc1234")).toBe(
+      "https://github.com/org/repo/commit/abc1234",
+    );
+  });
+
+  test("trims trailing slash on repo url", () => {
+    expect(commitUrl("https://github.com/org/repo/", "abc1234")).toBe(
+      "https://github.com/org/repo/commit/abc1234",
+    );
+  });
+});

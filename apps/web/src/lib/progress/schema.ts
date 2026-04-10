@@ -21,6 +21,8 @@ export interface ProgressEntry {
   docLink: string | null;
   blockedReason: string | null;
   tags: string[];
+  /** Optional ISO-8601 timestamp. Drives the 24-hour view filter. */
+  updatedAt: string | null;
 }
 
 export interface ProgressCategory {
@@ -36,6 +38,8 @@ export interface ProgressTracker {
   lastUpdated: string;
   session: string;
   doctrine: string;
+  /** Optional https://github.com/owner/repo base URL for commit deeplinks. */
+  repoUrl: string | null;
   categories: ProgressCategory[];
 }
 
@@ -85,6 +89,12 @@ function parseEntry(raw: unknown): ProgressEntry {
   if (!Array.isArray(r.tags) || !r.tags.every(isString)) {
     throw new Error("entry.tags must be string[]");
   }
+  // updatedAt is optional — default to null when absent so older fixtures
+  // keep parsing cleanly.
+  const updatedAtRaw = r.updatedAt;
+  if (updatedAtRaw !== undefined && !isStringOrNull(updatedAtRaw)) {
+    throw new Error("entry.updatedAt must be string|null");
+  }
   return {
     id: r.id,
     title: r.title,
@@ -96,6 +106,7 @@ function parseEntry(raw: unknown): ProgressEntry {
     docLink: r.docLink,
     blockedReason: r.blockedReason,
     tags: r.tags,
+    updatedAt: updatedAtRaw === undefined ? null : updatedAtRaw,
   };
 }
 
@@ -129,11 +140,16 @@ export function parseProgressTracker(raw: unknown): ProgressTracker {
   if (!isString(r.session)) throw new Error("tracker.session must be string");
   if (!isString(r.doctrine)) throw new Error("tracker.doctrine must be string");
   if (!Array.isArray(r.categories)) throw new Error("tracker.categories must be array");
+  const repoUrlRaw = r.repoUrl;
+  if (repoUrlRaw !== undefined && !isStringOrNull(repoUrlRaw)) {
+    throw new Error("tracker.repoUrl must be string|null");
+  }
   return {
     version: r.version,
     lastUpdated: r.lastUpdated,
     session: r.session,
     doctrine: r.doctrine,
+    repoUrl: repoUrlRaw === undefined ? null : repoUrlRaw,
     categories: r.categories.map(parseCategory),
   };
 }
@@ -157,4 +173,74 @@ export function countByStatus(tracker: ProgressTracker): Record<ProgressStatus, 
 /** Total number of entries in the tracker. */
 export function totalEntries(tracker: ProgressTracker): number {
   return tracker.categories.reduce((sum, c) => sum + c.entries.length, 0);
+}
+
+// ── Filtering ───────────────────────────────────────────────────────
+
+export interface ProgressFilters {
+  /** Selected statuses. Empty set === show all. */
+  statuses: ReadonlySet<ProgressStatus>;
+  /** Selected priorities. Empty set === show all. */
+  priorities: ReadonlySet<ProgressPriority>;
+  /** Case-insensitive substring match against title/description/tags/id. */
+  search: string;
+  /** If true, only entries with updatedAt within the last 24h from `now`. */
+  within24h: boolean;
+  /** Clock override — required so the UI stays testable. */
+  now: Date;
+}
+
+function matchesEntry(entry: ProgressEntry, f: ProgressFilters): boolean {
+  if (f.statuses.size > 0 && !f.statuses.has(entry.status)) return false;
+  if (f.priorities.size > 0 && !f.priorities.has(entry.priority)) return false;
+  if (f.search.length > 0) {
+    const needle = f.search.toLowerCase();
+    const haystack = [
+      entry.id,
+      entry.title,
+      entry.description,
+      ...entry.tags,
+    ]
+      .join(" ")
+      .toLowerCase();
+    if (!haystack.includes(needle)) return false;
+  }
+  if (f.within24h) {
+    if (entry.updatedAt === null) return false;
+    const ts = Date.parse(entry.updatedAt);
+    if (Number.isNaN(ts)) return false;
+    const cutoff = f.now.getTime() - 24 * 60 * 60 * 1000;
+    if (ts < cutoff) return false;
+  }
+  return true;
+}
+
+/**
+ * Apply filters to a tracker, returning a NEW tracker with each category's
+ * entries pruned. Categories with zero matching entries are omitted entirely
+ * so the UI stays clean.
+ */
+export function filterTracker(
+  tracker: ProgressTracker,
+  filters: ProgressFilters,
+): ProgressTracker {
+  const categories: ProgressCategory[] = [];
+  for (const category of tracker.categories) {
+    const entries = category.entries.filter((e) => matchesEntry(e, filters));
+    if (entries.length > 0) {
+      categories.push({ ...category, entries });
+    }
+  }
+  return { ...tracker, categories };
+}
+
+/**
+ * Build a GitHub-style commit deeplink. Returns null if either input is
+ * missing so the caller can degrade gracefully to plain text.
+ */
+export function commitUrl(repoUrl: string | null, commit: string | null): string | null {
+  if (repoUrl === null || commit === null) return null;
+  if (commit.length === 0) return null;
+  const base = repoUrl.endsWith("/") ? repoUrl.slice(0, -1) : repoUrl;
+  return `${base}/commit/${commit}`;
 }

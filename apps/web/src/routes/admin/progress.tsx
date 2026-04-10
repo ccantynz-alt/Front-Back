@@ -1,5 +1,5 @@
 import { Title } from "@solidjs/meta";
-import { createResource, createSignal, For, Show, onCleanup, type JSX } from "solid-js";
+import { createMemo, createResource, createSignal, For, Show, onCleanup, type JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { Button, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
@@ -8,7 +8,11 @@ import {
   parseProgressTracker,
   countByStatus,
   totalEntries,
+  filterTracker,
+  commitUrl,
   type ProgressEntry,
+  type ProgressFilters,
+  type ProgressPriority,
   type ProgressStatus,
   type ProgressTracker,
 } from "../../lib/progress/schema";
@@ -76,6 +80,14 @@ function priorityColor(priority: string): string {
   }
 }
 
+const ALL_STATUSES: readonly ProgressStatus[] = [
+  "completed",
+  "in_progress",
+  "pending",
+  "blocked",
+];
+const ALL_PRIORITIES: readonly ProgressPriority[] = ["p0", "p1", "p2", "p3"];
+
 // ── Admin Guard ─────────────────────────────────────────────────────
 
 function AdminGuard(props: { children: JSX.Element }): JSX.Element {
@@ -107,10 +119,45 @@ function AdminGuard(props: { children: JSX.Element }): JSX.Element {
   );
 }
 
+// ── Filter pill ─────────────────────────────────────────────────────
+
+function FilterPill(props: {
+  label: string;
+  active: boolean;
+  color: string;
+  onClick: () => void;
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={props.onClick}
+      style={{
+        padding: "6px 12px",
+        "border-radius": "999px",
+        "font-size": "12px",
+        "font-weight": "600",
+        cursor: "pointer",
+        border: props.active
+          ? `1px solid ${props.color}`
+          : "1px solid rgba(255,255,255,0.15)",
+        background: props.active ? `${props.color}22` : "rgba(255,255,255,0.03)",
+        color: props.active ? props.color : "rgba(255,255,255,0.7)",
+        transition: "all 0.15s ease",
+      }}
+    >
+      {props.label}
+    </button>
+  );
+}
+
 // ── Entry Row ───────────────────────────────────────────────────────
 
-function EntryRow(props: { entry: ProgressEntry }): JSX.Element {
+function EntryRow(props: {
+  entry: ProgressEntry;
+  repoUrl: string | null;
+}): JSX.Element {
   const entry = props.entry;
+  const commitHref = (): string | null => commitUrl(props.repoUrl, entry.commit);
   return (
     <div
       style={{
@@ -190,10 +237,35 @@ function EntryRow(props: { entry: ProgressEntry }): JSX.Element {
         }}
       >
         <Show when={entry.commit}>
-          <span>{entry.commit}</span>
+          <Show
+            when={commitHref()}
+            fallback={<span>{entry.commit}</span>}
+          >
+            {(href) => (
+              <a
+                href={href()}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#60a5fa",
+                  "text-decoration": "none",
+                }}
+                title="Open commit on GitHub"
+              >
+                {entry.commit}
+              </a>
+            )}
+          </Show>
         </Show>
         <Show when={entry.branch}>
           <span>{entry.branch}</span>
+        </Show>
+        <Show when={entry.updatedAt}>
+          {(ts) => (
+            <span title={ts()} style={{ "font-size": "10px" }}>
+              {ts().slice(0, 10)}
+            </span>
+          )}
         </Show>
       </div>
     </div>
@@ -206,12 +278,71 @@ function ProgressPage(): JSX.Element {
   const [tick, setTick] = createSignal(0);
   const [tracker, { refetch }] = createResource(tick, fetchTracker);
 
+  // ── Filter state ──
+  const [selectedStatuses, setSelectedStatuses] = createSignal<ReadonlySet<ProgressStatus>>(
+    new Set(),
+  );
+  const [selectedPriorities, setSelectedPriorities] = createSignal<
+    ReadonlySet<ProgressPriority>
+  >(new Set());
+  const [search, setSearch] = createSignal("");
+  const [within24h, setWithin24h] = createSignal(false);
+  const [collapsed, setCollapsed] = createSignal<ReadonlySet<string>>(new Set());
+
+  const toggleStatus = (s: ProgressStatus): void => {
+    const next = new Set(selectedStatuses());
+    if (next.has(s)) next.delete(s);
+    else next.add(s);
+    setSelectedStatuses(next);
+  };
+  const togglePriority = (p: ProgressPriority): void => {
+    const next = new Set(selectedPriorities());
+    if (next.has(p)) next.delete(p);
+    else next.add(p);
+    setSelectedPriorities(next);
+  };
+  const toggleCollapse = (categoryId: string): void => {
+    const next = new Set(collapsed());
+    if (next.has(categoryId)) next.delete(categoryId);
+    else next.add(categoryId);
+    setCollapsed(next);
+  };
+  const resetFilters = (): void => {
+    setSelectedStatuses(new Set<ProgressStatus>());
+    setSelectedPriorities(new Set<ProgressPriority>());
+    setSearch("");
+    setWithin24h(false);
+  };
+
   // Auto-refresh every 30s for the "live" feel.
   const interval = setInterval(() => {
     setTick((t) => t + 1);
     void refetch();
   }, 30_000);
   onCleanup(() => clearInterval(interval));
+
+  // Compute filtered view whenever filters or data change.
+  const filtered = createMemo((): ProgressTracker | null => {
+    const t = tracker();
+    if (t === undefined) return null;
+    const filters: ProgressFilters = {
+      statuses: selectedStatuses(),
+      priorities: selectedPriorities(),
+      search: search(),
+      within24h: within24h(),
+      now: new Date(),
+    };
+    return filterTracker(t, filters);
+  });
+
+  const hasActiveFilters = createMemo((): boolean => {
+    return (
+      selectedStatuses().size > 0 ||
+      selectedPriorities().size > 0 ||
+      search().length > 0 ||
+      within24h()
+    );
+  });
 
   return (
     <>
@@ -249,6 +380,10 @@ function ProgressPage(): JSX.Element {
                 const total = (): number => totalEntries(data());
                 const pct = (): number =>
                   total() === 0 ? 0 : Math.round((counts().completed / total()) * 100);
+                const visibleCount = (): number => {
+                  const f = filtered();
+                  return f === null ? 0 : totalEntries(f);
+                };
 
                 return (
                   <>
@@ -320,39 +455,228 @@ function ProgressPage(): JSX.Element {
                       </Text>
                     </div>
 
-                    {/* Categories */}
-                    <For each={data().categories}>
-                      {(category) => (
-                        <div
-                          style={{
-                            "border-radius": "12px",
-                            background: "rgba(255,255,255,0.03)",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <div
-                            style={{
-                              padding: "16px 20px",
-                              "border-bottom": "1px solid rgba(255,255,255,0.08)",
-                              background: "rgba(255,255,255,0.02)",
-                            }}
-                          >
-                            <Text variant="h3" weight="bold">
-                              {category.title}
-                            </Text>
-                            <Text variant="caption" class="text-muted">
-                              {category.subtitle}
-                            </Text>
-                          </div>
-                          <div>
-                            <For each={category.entries}>
-                              {(entry) => <EntryRow entry={entry} />}
-                            </For>
-                          </div>
+                    {/* Filter bar */}
+                    <div
+                      style={{
+                        padding: "16px",
+                        "border-radius": "12px",
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        display: "flex",
+                        "flex-direction": "column",
+                        gap: "12px",
+                      }}
+                    >
+                      <input
+                        type="search"
+                        placeholder="Search by title, description, tag, or id…"
+                        value={search()}
+                        onInput={(e) => setSearch(e.currentTarget.value)}
+                        style={{
+                          width: "100%",
+                          padding: "10px 14px",
+                          "border-radius": "8px",
+                          background: "rgba(0,0,0,0.3)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          color: "#fff",
+                          "font-size": "14px",
+                          outline: "none",
+                        }}
+                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          "flex-wrap": "wrap",
+                          gap: "8px",
+                          "align-items": "center",
+                        }}
+                      >
+                        <Text variant="caption" class="text-muted">
+                          Status:
+                        </Text>
+                        <For each={ALL_STATUSES}>
+                          {(s) => (
+                            <FilterPill
+                              label={statusLabel(s)}
+                              active={selectedStatuses().has(s)}
+                              color={statusColor(s)}
+                              onClick={() => toggleStatus(s)}
+                            />
+                          )}
+                        </For>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          "flex-wrap": "wrap",
+                          gap: "8px",
+                          "align-items": "center",
+                        }}
+                      >
+                        <Text variant="caption" class="text-muted">
+                          Priority:
+                        </Text>
+                        <For each={ALL_PRIORITIES}>
+                          {(p) => (
+                            <FilterPill
+                              label={p.toUpperCase()}
+                              active={selectedPriorities().has(p)}
+                              color={priorityColor(p)}
+                              onClick={() => togglePriority(p)}
+                            />
+                          )}
+                        </For>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          "flex-wrap": "wrap",
+                          gap: "8px",
+                          "align-items": "center",
+                          "justify-content": "space-between",
+                        }}
+                      >
+                        <div style={{ display: "flex", gap: "8px", "align-items": "center" }}>
+                          <FilterPill
+                            label="Last 24h"
+                            active={within24h()}
+                            color="#8b5cf6"
+                            onClick={() => setWithin24h(!within24h())}
+                          />
+                          <Show when={hasActiveFilters()}>
+                            <button
+                              type="button"
+                              onClick={resetFilters}
+                              style={{
+                                padding: "6px 12px",
+                                "border-radius": "999px",
+                                "font-size": "12px",
+                                "font-weight": "600",
+                                cursor: "pointer",
+                                border: "1px solid rgba(255,255,255,0.15)",
+                                background: "transparent",
+                                color: "rgba(255,255,255,0.7)",
+                              }}
+                            >
+                              Clear filters
+                            </button>
+                          </Show>
                         </div>
+                        <Text variant="caption" class="text-muted">
+                          Showing {visibleCount()} of {total()}
+                        </Text>
+                      </div>
+                    </div>
+
+                    {/* Categories */}
+                    <Show
+                      when={filtered()}
+                      fallback={
+                        <Text variant="body" class="text-muted">
+                          No entries match the current filters.
+                        </Text>
+                      }
+                    >
+                      {(filteredData) => (
+                        <Show
+                          when={filteredData().categories.length > 0}
+                          fallback={
+                            <Text variant="body" class="text-muted">
+                              No entries match the current filters.
+                            </Text>
+                          }
+                        >
+                          <For each={filteredData().categories}>
+                            {(category) => {
+                              const isCollapsed = (): boolean => collapsed().has(category.id);
+                              return (
+                                <div
+                                  style={{
+                                    "border-radius": "12px",
+                                    background: "rgba(255,255,255,0.03)",
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleCollapse(category.id)}
+                                    style={{
+                                      width: "100%",
+                                      padding: "16px 20px",
+                                      "border-bottom": isCollapsed()
+                                        ? "none"
+                                        : "1px solid rgba(255,255,255,0.08)",
+                                      background: "rgba(255,255,255,0.02)",
+                                      border: "none",
+                                      "border-top": "none",
+                                      "border-left": "none",
+                                      "border-right": "none",
+                                      cursor: "pointer",
+                                      "text-align": "left",
+                                      color: "#fff",
+                                      display: "flex",
+                                      "align-items": "center",
+                                      "justify-content": "space-between",
+                                      gap: "12px",
+                                    }}
+                                    aria-expanded={!isCollapsed()}
+                                  >
+                                    <div style={{ "min-width": "0", flex: "1" }}>
+                                      <Text variant="h3" weight="bold">
+                                        {category.title}
+                                      </Text>
+                                      <Text variant="caption" class="text-muted">
+                                        {category.subtitle}
+                                      </Text>
+                                    </div>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        gap: "12px",
+                                        "align-items": "center",
+                                      }}
+                                    >
+                                      <span
+                                        style={{
+                                          "font-size": "12px",
+                                          color: "rgba(255,255,255,0.55)",
+                                          "font-variant-numeric": "tabular-nums",
+                                        }}
+                                      >
+                                        {category.entries.length}
+                                      </span>
+                                      <span
+                                        style={{
+                                          "font-size": "16px",
+                                          color: "rgba(255,255,255,0.55)",
+                                          transform: isCollapsed()
+                                            ? "rotate(-90deg)"
+                                            : "rotate(0deg)",
+                                          transition: "transform 0.15s ease",
+                                          display: "inline-block",
+                                        }}
+                                      >
+                                        ▾
+                                      </span>
+                                    </div>
+                                  </button>
+                                  <Show when={!isCollapsed()}>
+                                    <div>
+                                      <For each={category.entries}>
+                                        {(entry) => (
+                                          <EntryRow entry={entry} repoUrl={data().repoUrl} />
+                                        )}
+                                      </For>
+                                    </div>
+                                  </Show>
+                                </div>
+                              );
+                            }}
+                          </For>
+                        </Show>
                       )}
-                    </For>
+                    </Show>
 
                     <Text variant="caption" class="text-muted">
                       Last updated: {data().lastUpdated} · Session: {data().session}
