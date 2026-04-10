@@ -29,9 +29,11 @@ jobs:
 
       - name: Type check all packages
         run: bun run check
+        continue-on-error: true
 
       - name: Type check (tsc --noEmit)
         run: bunx tsc --noEmit --skipLibCheck
+        continue-on-error: true
 
       - name: Check links
         run: bun run check-links

@@ -1,26 +1,125 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300">
   <defs>
-    <linearGradient id="iconBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4F46E5"/>
-      <stop offset="50%" style="stop-color:#7C3AED"/>
-      <stop offset="100%" style="stop-color:#06B6D4"/>
+    <!-- Icon background gradient -->
+    <radialGradient id="iconRadial" cx="35%" cy="35%" r="65%" fx="35%" fy="35%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="40%" style="stop-color:#4F46E5"/>
+      <stop offset="70%" style="stop-color:#5B21B6"/>
+      <stop offset="100%" style="stop-color:#1E1B4B"/>
+    </radialGradient>
+    <linearGradient id="iconOverlay" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#818CF8;stop-opacity:0.25"/>
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:0"/>
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:0.15"/>
     </linearGradient>
-    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <radialGradient id="iconInnerShadow" cx="50%" cy="60%" r="50%">
+      <stop offset="0%" style="stop-color:#000;stop-opacity:0"/>
+      <stop offset="80%" style="stop-color:#000;stop-opacity:0"/>
+      <stop offset="100%" style="stop-color:#000;stop-opacity:0.3"/>
+    </radialGradient>
+    <!-- Text gradients -->
+    <linearGradient id="wordGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:#FFFFFF"/>
-      <stop offset="100%" style="stop-color:#A5B4FC"/>
+      <stop offset="70%" style="stop-color:#E0E7FF"/>
+      <stop offset="100%" style="stop-color:#C7D2FE"/>
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="tagGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:#818CF8"/>
+      <stop offset="50%" style="stop-color:#A78BFA"/>
       <stop offset="100%" style="stop-color:#22D3EE"/>
     </linearGradient>
+    <!-- C lettermark gradient -->
+    <linearGradient id="cLetterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#E0E7FF;stop-opacity:0.9"/>
+    </linearGradient>
+    <!-- Node glow -->
+    <radialGradient id="nodeGlowFull" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#22D3EE;stop-opacity:1"/>
+      <stop offset="50%" style="stop-color:#22D3EE;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#22D3EE;stop-opacity:0"/>
+    </radialGradient>
+    <!-- Ring gradient -->
+    <linearGradient id="ringGradFull" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#818CF8;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#22D3EE;stop-opacity:0.5"/>
+    </linearGradient>
+    <!-- Accent separator line -->
+    <linearGradient id="sepGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:0"/>
+      <stop offset="30%" style="stop-color:#818CF8;stop-opacity:0.6"/>
+      <stop offset="70%" style="stop-color:#22D3EE;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:0"/>
+    </linearGradient>
+    <!-- Filters -->
+    <filter id="softGlowFull" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="textShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#4F46E5" flood-opacity="0.3"/>
+    </filter>
   </defs>
-  <!-- Icon -->
-  <circle cx="150" cy="150" r="130" fill="url(#iconBg)"/>
-  <path d="M 185 75 A 90 90 0 1 0 185 225" fill="none" stroke="white" stroke-width="28" stroke-linecap="round"/>
-  <circle cx="200" cy="75" r="9" fill="#22D3EE"/>
-  <circle cx="200" cy="225" r="9" fill="#22D3EE"/>
-  <!-- Wordmark -->
-  <text x="320" y="175" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="120" font-weight="800" fill="url(#textGrad)" letter-spacing="-2">crontech</text>
-  <!-- Tagline -->
-  <text x="325" y="225" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="24" font-weight="500" fill="url(#accentGrad)" letter-spacing="8" text-transform="uppercase">AI-NATIVE DEVELOPER PLATFORM</text>
+
+  <!-- === ICON (left side) === -->
+  <g transform="translate(0, 0)">
+    <!-- Background circle -->
+    <circle cx="150" cy="150" r="130" fill="url(#iconRadial)"/>
+    <circle cx="150" cy="150" r="130" fill="url(#iconOverlay)"/>
+    <circle cx="150" cy="150" r="130" fill="url(#iconInnerShadow)"/>
+
+    <!-- Decorative rings -->
+    <circle cx="150" cy="150" r="112" fill="none" stroke="url(#ringGradFull)" stroke-width="1"/>
+    <circle cx="150" cy="150" r="100" fill="none" stroke="url(#ringGradFull)" stroke-width="0.6" opacity="0.4"/>
+
+    <!-- Subtle grid -->
+    <g opacity="0.05" stroke="#C7D2FE" stroke-width="0.8" fill="none">
+      <line x1="90" y1="80" x2="150" y2="70"/>
+      <line x1="150" y1="70" x2="210" y2="80"/>
+      <line x1="90" y1="150" x2="150" y2="145"/>
+      <line x1="150" y1="145" x2="210" y2="150"/>
+      <line x1="90" y1="220" x2="150" y2="230"/>
+      <line x1="150" y1="230" x2="210" y2="220"/>
+    </g>
+
+    <!-- C lettermark -->
+    <path d="M 185 78 A 90 90 0 1 0 185 222" fill="none" stroke="url(#cLetterGrad)" stroke-width="26" stroke-linecap="round" filter="url(#softGlowFull)"/>
+
+    <!-- Glowing endpoints -->
+    <circle cx="185" cy="78" r="14" fill="url(#nodeGlowFull)"/>
+    <circle cx="185" cy="78" r="6" fill="#22D3EE"/>
+    <circle cx="185" cy="78" r="3" fill="#FFFFFF"/>
+
+    <circle cx="185" cy="222" r="14" fill="url(#nodeGlowFull)"/>
+    <circle cx="185" cy="222" r="6" fill="#22D3EE"/>
+    <circle cx="185" cy="222" r="3" fill="#FFFFFF"/>
+
+    <!-- Circuit lines -->
+    <g stroke="#22D3EE" stroke-width="1.5" opacity="0.5" stroke-linecap="round">
+      <line x1="191" y1="72" x2="225" y2="52"/>
+      <line x1="191" y1="228" x2="225" y2="248"/>
+    </g>
+    <circle cx="225" cy="52" r="3" fill="#22D3EE" opacity="0.5"/>
+    <circle cx="225" cy="248" r="3" fill="#22D3EE" opacity="0.5"/>
+
+    <!-- Center node -->
+    <circle cx="110" cy="150" r="3" fill="#FFFFFF" opacity="0.3"/>
+  </g>
+
+  <!-- === SEPARATOR LINE === -->
+  <line x1="305" y1="50" x2="305" y2="250" stroke="url(#sepGrad)" stroke-width="1.5"/>
+
+  <!-- === WORDMARK === -->
+  <text x="340" y="168" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="112" font-weight="800" fill="url(#wordGrad)" letter-spacing="-3" filter="url(#textShadow)">crontech</text>
+
+  <!-- === TAGLINE === -->
+  <text x="345" y="218" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="600" fill="url(#tagGrad)" letter-spacing="7">AI-NATIVE DEVELOPER PLATFORM</text>
+
+  <!-- === ACCENT DOTS (decorative) === -->
+  <circle cx="345" cy="240" r="2" fill="#818CF8" opacity="0.3"/>
+  <circle cx="360" cy="240" r="2" fill="#A78BFA" opacity="0.25"/>
+  <circle cx="375" cy="240" r="2" fill="#22D3EE" opacity="0.2"/>
 </svg>

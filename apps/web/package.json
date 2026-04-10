@@ -30,6 +30,7 @@
     "yjs": "13.6.30"
   },
   "devDependencies": {
+    "@types/bun": "^1.2.0",
     "@types/node": "^25.5.2",
     "typescript": "^6.0.2"
   }

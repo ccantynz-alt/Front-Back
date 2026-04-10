@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#070816"/>
+      <stop offset="40%" style="stop-color:#0C0E24"/>
+      <stop offset="100%" style="stop-color:#0A0F1F"/>
+    </linearGradient>
+    <!-- Accent glow top-left -->
+    <radialGradient id="glowTL" cx="20%" cy="20%" r="40%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#4F46E5;stop-opacity:0"/>
+    </radialGradient>
+    <!-- Accent glow bottom-right -->
+    <radialGradient id="glowBR" cx="80%" cy="80%" r="40%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:0.12"/>
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:0"/>
+    </radialGradient>
+    <!-- Icon gradient -->
+    <radialGradient id="ogIconRadial" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="40%" style="stop-color:#4F46E5"/>
+      <stop offset="70%" style="stop-color:#5B21B6"/>
+      <stop offset="100%" style="stop-color:#1E1B4B"/>
+    </radialGradient>
+    <linearGradient id="ogIconOverlay" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#818CF8;stop-opacity:0.25"/>
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:0"/>
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:0.15"/>
+    </linearGradient>
+    <radialGradient id="ogInner" cx="50%" cy="60%" r="50%">
+      <stop offset="0%" style="stop-color:#000;stop-opacity:0"/>
+      <stop offset="80%" style="stop-color:#000;stop-opacity:0"/>
+      <stop offset="100%" style="stop-color:#000;stop-opacity:0.3"/>
+    </radialGradient>
+    <!-- Text -->
+    <linearGradient id="ogWordGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#C7D2FE"/>
+    </linearGradient>
+    <linearGradient id="ogTagGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#818CF8"/>
+      <stop offset="100%" style="stop-color:#22D3EE"/>
+    </linearGradient>
+    <!-- C letter -->
+    <linearGradient id="ogCGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#E0E7FF;stop-opacity:0.9"/>
+    </linearGradient>
+    <!-- Node glow -->
+    <radialGradient id="ogNodeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#22D3EE;stop-opacity:1"/>
+      <stop offset="50%" style="stop-color:#22D3EE;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#22D3EE;stop-opacity:0"/>
+    </radialGradient>
+    <!-- Ring -->
+    <linearGradient id="ogRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#818CF8;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#22D3EE;stop-opacity:0.4"/>
+    </linearGradient>
+    <!-- Horizontal accent line -->
+    <linearGradient id="accentLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:0"/>
+      <stop offset="20%" style="stop-color:#818CF8;stop-opacity:0.8"/>
+      <stop offset="80%" style="stop-color:#22D3EE;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:0"/>
+    </linearGradient>
+    <!-- Grid line color -->
+    <linearGradient id="gridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#818CF8;stop-opacity:0.08"/>
+      <stop offset="100%" style="stop-color:#22D3EE;stop-opacity:0.04"/>
+    </linearGradient>
+    <!-- Filters -->
+    <filter id="ogSoftGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="ogTextShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#4F46E5" flood-opacity="0.4"/>
+    </filter>
+    <!-- Border gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:0.5"/>
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#22D3EE;stop-opacity:0.5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)" rx="0"/>
+  <!-- Ambient glow -->
+  <rect width="1200" height="630" fill="url(#glowTL)"/>
+  <rect width="1200" height="630" fill="url(#glowBR)"/>
+
+  <!-- Subtle grid pattern -->
+  <g stroke="url(#gridGrad)" stroke-width="0.5" opacity="0.5">
+    <!-- Vertical lines -->
+    <line x1="100" y1="0" x2="100" y2="630"/>
+    <line x1="200" y1="0" x2="200" y2="630"/>
+    <line x1="300" y1="0" x2="300" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="500" y1="0" x2="500" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="700" y1="0" x2="700" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="900" y1="0" x2="900" y2="630"/>
+    <line x1="1000" y1="0" x2="1000" y2="630"/>
+    <line x1="1100" y1="0" x2="1100" y2="630"/>
+    <!-- Horizontal lines -->
+    <line x1="0" y1="63" x2="1200" y2="63"/>
+    <line x1="0" y1="126" x2="1200" y2="126"/>
+    <line x1="0" y1="189" x2="1200" y2="189"/>
+    <line x1="0" y1="252" x2="1200" y2="252"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="378" x2="1200" y2="378"/>
+    <line x1="0" y1="441" x2="1200" y2="441"/>
+    <line x1="0" y1="504" x2="1200" y2="504"/>
+    <line x1="0" y1="567" x2="1200" y2="567"/>
+  </g>
+
+  <!-- Floating decorative nodes -->
+  <g opacity="0.15">
+    <circle cx="150" cy="100" r="2" fill="#818CF8"/>
+    <circle cx="900" cy="80" r="2" fill="#22D3EE"/>
+    <circle cx="1050" cy="180" r="1.5" fill="#818CF8"/>
+    <circle cx="100" cy="500" r="2" fill="#22D3EE"/>
+    <circle cx="1100" cy="520" r="1.5" fill="#818CF8"/>
+    <circle cx="950" cy="550" r="2" fill="#22D3EE"/>
+    <circle cx="200" cy="200" r="1.5" fill="#A78BFA"/>
+    <circle cx="1000" cy="350" r="2" fill="#A78BFA"/>
+  </g>
+  <!-- Floating connection lines -->
+  <g stroke="#818CF8" stroke-width="0.5" opacity="0.06">
+    <line x1="150" y1="100" x2="200" y2="200"/>
+    <line x1="900" y1="80" x2="1050" y2="180"/>
+    <line x1="1050" y1="180" x2="1000" y2="350"/>
+    <line x1="100" y1="500" x2="200" y2="200"/>
+  </g>
+
+  <!-- === ICON === -->
+  <g transform="translate(200, 165)">
+    <!-- Background circle -->
+    <circle cx="150" cy="150" r="135" fill="url(#ogIconRadial)"/>
+    <circle cx="150" cy="150" r="135" fill="url(#ogIconOverlay)"/>
+    <circle cx="150" cy="150" r="135" fill="url(#ogInner)"/>
+
+    <!-- Decorative rings -->
+    <circle cx="150" cy="150" r="118" fill="none" stroke="url(#ogRingGrad)" stroke-width="1.2"/>
+    <circle cx="150" cy="150" r="105" fill="none" stroke="url(#ogRingGrad)" stroke-width="0.6" opacity="0.4"/>
+
+    <!-- C lettermark -->
+    <path d="M 190 68 A 100 100 0 1 0 190 232" fill="none" stroke="url(#ogCGrad)" stroke-width="30" stroke-linecap="round" filter="url(#ogSoftGlow)"/>
+
+    <!-- Glowing endpoints -->
+    <circle cx="190" cy="68" r="16" fill="url(#ogNodeGlow)"/>
+    <circle cx="190" cy="68" r="7" fill="#22D3EE"/>
+    <circle cx="190" cy="68" r="3.5" fill="#FFFFFF"/>
+
+    <circle cx="190" cy="232" r="16" fill="url(#ogNodeGlow)"/>
+    <circle cx="190" cy="232" r="7" fill="#22D3EE"/>
+    <circle cx="190" cy="232" r="3.5" fill="#FFFFFF"/>
+
+    <!-- Circuit lines -->
+    <g stroke="#22D3EE" stroke-width="1.5" opacity="0.5" stroke-linecap="round">
+      <line x1="198" y1="60" x2="240" y2="38"/>
+      <line x1="198" y1="240" x2="240" y2="262"/>
+    </g>
+    <circle cx="240" cy="38" r="3.5" fill="#22D3EE" opacity="0.5"/>
+    <circle cx="240" cy="262" r="3.5" fill="#22D3EE" opacity="0.5"/>
+
+    <!-- Center node -->
+    <circle cx="105" cy="150" r="4" fill="#FFFFFF" opacity="0.25"/>
+    <circle cx="105" cy="150" r="2" fill="#FFFFFF" opacity="0.5"/>
+  </g>
+
+  <!-- === TEXT CONTENT === -->
+  <!-- Wordmark -->
+  <text x="560" y="310" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="96" font-weight="800" fill="url(#ogWordGrad)" letter-spacing="-2" filter="url(#ogTextShadow)">crontech</text>
+
+  <!-- Accent line under wordmark -->
+  <line x1="560" y1="335" x2="900" y2="335" stroke="url(#accentLine)" stroke-width="2"/>
+
+  <!-- Tagline -->
+  <text x="563" y="378" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="600" fill="url(#ogTagGrad)" letter-spacing="5">AI-NATIVE DEVELOPER PLATFORM</text>
+
+  <!-- Subtitle -->
+  <text x="563" y="415" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="400" fill="#6B7280" letter-spacing="1">The developer platform for the next decade</text>
+
+  <!-- Subtle border -->
+  <rect width="1200" height="630" fill="none" stroke="url(#borderGrad)" stroke-width="2" rx="0"/>
+</svg>
