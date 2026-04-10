@@ -10,7 +10,7 @@
       "defaultBranch": "canary",
       "lastKnownRelease": "v16.2.1-canary.31",
       "lastKnownReleaseAt": "2026-04-10T08:52:15Z",
-      "lastCommitCheckAt": "2026-04-10T13:12:05.056Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:14.703Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -23,8 +23,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:17.344Z",
+      "baselineCommitsPerWeek": 1
     },
     {
       "owner": "sveltejs",
@@ -36,8 +36,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:17.614Z",
+      "baselineCommitsPerWeek": 24
     },
     {
       "owner": "QwikDev",
@@ -49,8 +49,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:19.691Z",
+      "baselineCommitsPerWeek": 1
     },
     {
       "owner": "withastro",
@@ -62,8 +62,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "astro@6.1.5",
       "lastKnownReleaseAt": "2026-04-08T13:52:10Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:17.932Z",
+      "baselineCommitsPerWeek": 25
     },
     {
       "owner": "honojs",
@@ -75,8 +75,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.12",
       "lastKnownReleaseAt": "2026-04-07T04:15:34Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:14.911Z",
+      "baselineCommitsPerWeek": 9
     },
     {
       "owner": "solidjs",
@@ -86,10 +86,10 @@
       "category": "framework",
       "description": "Our primary frontend framework. True reactive signals, zero VDOM.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastKnownRelease": "v2.0.0-beta.0",
+      "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:15.116Z",
+      "baselineCommitsPerWeek": 0
     },
     {
       "owner": "trpc",
@@ -99,8 +99,8 @@
       "category": "api",
       "description": "End-to-end typesafe API layer. Core to our type safety story.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
+      "lastKnownRelease": "v11.16.0",
+      "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
       "lastCommitCheckAt": null,
       "baselineCommitsPerWeek": null
     },
@@ -112,9 +112,9 @@
       "category": "ai",
       "description": "AI SDK for streaming responses and generative UI. Core AI orchestration layer.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T18:42:07.284Z",
+      "lastKnownRelease": "ai@6.0.158",
+      "lastKnownReleaseAt": "2026-04-10T18:35:33Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:15.693Z",
       "baselineCommitsPerWeek": 70
     },
     {
@@ -127,8 +127,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "@langchain/xai@1.3.16",
       "lastKnownReleaseAt": "2026-04-10T15:11:21Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:18.238Z",
+      "baselineCommitsPerWeek": 12
     },
     {
       "owner": "cloudflare",
@@ -138,9 +138,9 @@
       "category": "backend",
       "description": "Wrangler + Workers tooling. We run on this today; we also compete on DX.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T18:42:07.559Z",
+      "lastKnownRelease": "wrangler@4.81.1",
+      "lastKnownReleaseAt": "2026-04-09T15:35:47Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:15.956Z",
       "baselineCommitsPerWeek": 33
     },
     {
@@ -153,7 +153,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T18:42:08.637Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:18.461Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -164,10 +164,10 @@
       "category": "backend",
       "description": "Open-source BaaS competitor. Auth + Postgres + edge functions.",
       "defaultBranch": "master",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastKnownRelease": "v1.26.04",
+      "lastKnownReleaseAt": "2026-04-09T14:38:08Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:16.528Z",
+      "baselineCommitsPerWeek": 100
     },
     {
       "owner": "get-convex",
@@ -179,8 +179,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "precompiled-2026-04-10-905a614",
       "lastKnownReleaseAt": "2026-04-10T01:51:25Z",
-      "lastCommitCheckAt": "2026-04-10T18:42:08.171Z",
-      "baselineCommitsPerWeek": 96
+      "lastCommitCheckAt": "2026-04-10T21:20:16.992Z",
+      "baselineCommitsPerWeek": 97
     },
     {
       "owner": "superfly",
@@ -192,8 +192,8 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v0.4.33",
       "lastKnownReleaseAt": "2026-04-09T19:35:39Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:18.851Z",
+      "baselineCommitsPerWeek": 19
     },
     {
       "owner": "renovatebot",
@@ -205,7 +205,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T18:42:09.675Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:20.237Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -218,7 +218,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T18:42:09.896Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:20.585Z",
       "baselineCommitsPerWeek": 6
     },
     {
@@ -231,7 +231,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T18:42:08.934Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:19.143Z",
       "baselineCommitsPerWeek": 8
     },
     {
@@ -244,8 +244,8 @@
       "defaultBranch": "master",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:20.788Z",
+      "baselineCommitsPerWeek": 0
     },
     {
       "owner": "codeclimate",
@@ -270,8 +270,8 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v4.4.7",
       "lastKnownReleaseAt": "2025-07-17T14:30:19Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:21.212Z",
+      "baselineCommitsPerWeek": 0
     },
     {
       "owner": "snyk",
@@ -296,7 +296,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v20250625",
       "lastKnownReleaseAt": "2025-06-26T01:06:09Z",
-      "lastCommitCheckAt": "2026-04-10T18:42:09.196Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:19.472Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -309,10 +309,10 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T18:42:08.286Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:17.192Z",
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-10T18:42:09.896Z",
+  "lastUpdated": "2026-04-10T21:20:21.213Z",
   "schemaVersion": 1
 }

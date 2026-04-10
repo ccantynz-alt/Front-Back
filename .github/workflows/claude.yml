@@ -7,8 +7,9 @@ name: Claude Code
 # @claude in the body of a new issue. Claude will spin up with repo access,
 # do the work, push commits, and respond with a summary.
 #
-# Canonical copy: docs/claude-takeover/claude.yml
-# Promoted to: .github/workflows/claude.yml (after Craig's final review)
+# This is the LIVE copy. The other two Claude workflows (auto-review and
+# ci-watchdog) remain as drafts in docs/claude-takeover/ until this one
+# is proven on a test issue.
 
 on:
   issue_comment:
