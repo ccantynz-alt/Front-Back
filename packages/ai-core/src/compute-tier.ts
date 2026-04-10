@@ -9,7 +9,16 @@ import { z } from "zod";
 
 import type { InferenceTask } from "./inference/index";
 
-export type ComputeTier = "client" | "edge" | "cloud";
+export const ComputeTierSchema = z.enum(["client", "edge", "cloud"]);
+export type ComputeTier = z.infer<typeof ComputeTierSchema>;
+
+/**
+ * Runtime type guard for ComputeTier. Useful when narrowing values
+ * from telemetry, routing hints, or URL params without throwing.
+ */
+export function isComputeTier(value: unknown): value is ComputeTier {
+  return ComputeTierSchema.safeParse(value).success;
+}
 
 export interface DeviceCapabilities {
   hasWebGPU: boolean;

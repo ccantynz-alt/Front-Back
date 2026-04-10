@@ -2,9 +2,20 @@
  * Automated health monitoring.
  * Runs every 60 seconds, retains last 1000 checks, alerts via Sentinel.
  */
+import { z } from "zod";
 import { writeAudit } from "./audit-log";
 
-export type ServiceStatus = "ok" | "degraded" | "down" | "unknown";
+export const ServiceStatusSchema = z.enum(["ok", "degraded", "down", "unknown"]);
+export type ServiceStatus = z.infer<typeof ServiceStatusSchema>;
+
+/**
+ * Runtime type guard for ServiceStatus. Used when narrowing status
+ * values coming from an external source (e.g. upstream health endpoint
+ * response payloads) without throwing.
+ */
+export function isServiceStatus(value: unknown): value is ServiceStatus {
+  return ServiceStatusSchema.safeParse(value).success;
+}
 
 export interface ServiceCheck {
   name: string;
