@@ -39,7 +39,7 @@ const PLANS: PlanTier[] = [
       "1 GB storage",
     ],
     highlighted: false,
-    ctaLabel: "Get Started",
+    ctaLabel: "Start free",
     accentColor: "#6b7280",
   },
   {
@@ -61,7 +61,7 @@ const PLANS: PlanTier[] = [
       "API access",
     ],
     highlighted: true,
-    ctaLabel: "Start Pro Trial",
+    ctaLabel: "Start building",
     accentColor: "#3b82f6",
   },
   {
@@ -85,7 +85,7 @@ const PLANS: PlanTier[] = [
       "Custom integrations",
     ],
     highlighted: false,
-    ctaLabel: "Contact Sales",
+    ctaLabel: "Talk to the team",
     accentColor: "#a78bfa",
   },
 ];
@@ -139,11 +139,11 @@ function PlanCard(props: { plan: PlanTier; isAnnual: boolean }): JSX.Element {
 
   const handleCtaClick = (): void => {
     if (props.plan.id === "enterprise") {
-      window.location.href = "/contact?plan=enterprise";
+      window.location.href = "/support?topic=enterprise";
     } else if (props.plan.id === "pro") {
-      window.location.href = "/signup?plan=pro&billing=" + (props.isAnnual ? "annual" : "monthly");
+      window.location.href = "/register?plan=pro&billing=" + (props.isAnnual ? "annual" : "monthly");
     } else {
-      window.location.href = "/signup?plan=free";
+      window.location.href = "/register?plan=free";
     }
   };
 
@@ -276,7 +276,7 @@ export default function PricingPage(): JSX.Element {
 
   return (
     <div class="min-h-screen bg-[#060606]">
-      <Title>Pricing - Crontech</Title>
+      <Title>Pricing — Crontech</Title>
 
       {/* Hero */}
       <div class="relative overflow-hidden">
@@ -285,10 +285,10 @@ export default function PricingPage(): JSX.Element {
 
         <div class="relative mx-auto max-w-6xl px-6 pt-16 pb-12 text-center">
           <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Simple, transparent pricing
+            Pricing that scales with what you ship
           </h1>
           <p class="mx-auto mt-4 max-w-2xl text-base text-gray-500">
-            Start free with client-side AI inference. Scale with edge and cloud compute as you grow. No hidden fees. No surprise charges.
+            Free to start. On-device AI inference at $0. Edge and cloud compute when you need more power. No hidden fees, no surprise bills, no credit card to begin.
           </p>
 
           {/* Billing Toggle */}
@@ -306,6 +306,21 @@ export default function PricingPage(): JSX.Element {
               <span class="ml-1.5 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">Save 17%</span>
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Founding customer banner */}
+      <div class="mx-auto max-w-4xl px-6 pb-10">
+        <div
+          class="rounded-2xl border border-white/[0.08] px-6 py-5 text-center"
+          style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(139,92,246,0.08) 100%)" }}
+        >
+          <p class="text-xs font-semibold uppercase tracking-widest text-blue-300">
+            Founding customer program · private beta
+          </p>
+          <p class="mt-2 text-sm text-gray-300">
+            The first wave of paid customers lock in <span class="font-semibold text-white">50% off any plan for life</span> and a direct line to the team building the platform.
+          </p>
         </div>
       </div>
 
@@ -371,24 +386,24 @@ export default function PricingPage(): JSX.Element {
         >
           <div class="absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-96 rounded-full opacity-20 blur-[80px]" style={{ background: "linear-gradient(135deg, #3b82f6, #8b5cf6)" }} />
           <div class="relative">
-            <h3 class="text-2xl font-bold text-white">Ready to build the future?</h3>
+            <h3 class="text-2xl font-bold text-white">Ready to build on the next decade's stack?</h3>
             <p class="mt-2 text-sm text-gray-400">
-              Start free with zero-cost AI inference on your device. Upgrade when you need more power.
+              Start free with on-device AI inference. Upgrade when you need the edge or the cloud.
             </p>
             <div class="mt-6 flex items-center justify-center gap-4">
               <button
                 type="button"
-                onClick={() => { window.location.href = "/signup?plan=free"; }}
+                onClick={() => { window.location.href = "/register?plan=free"; }}
                 class="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110"
               >
-                Get Started Free
+                Start building
               </button>
               <button
                 type="button"
-                onClick={() => { window.location.href = "/contact?plan=enterprise"; }}
+                onClick={() => { window.location.href = "/support?topic=enterprise"; }}
                 class="rounded-xl border border-white/[0.1] bg-white/[0.04] px-8 py-3 text-sm font-medium text-gray-200 transition-all hover:border-white/[0.2] hover:bg-white/[0.08]"
               >
-                Talk to Sales
+                Talk to the team
               </button>
             </div>
           </div>
