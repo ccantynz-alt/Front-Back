@@ -2,17 +2,33 @@
 // Pre-built, production-ready component trees for one-click project starts.
 // Every template uses the existing ComponentCatalog so AI can edit them.
 
+import { z } from "zod";
 import type { Component } from "./components";
 
-export type TemplateCategory =
-  | "landing"
-  | "portfolio"
-  | "ecommerce"
-  | "blog"
-  | "saas"
-  | "app";
+export const TemplateCategorySchema = z.enum([
+  "landing",
+  "portfolio",
+  "ecommerce",
+  "blog",
+  "saas",
+  "app",
+]);
+export type TemplateCategory = z.infer<typeof TemplateCategorySchema>;
 
-export type TemplateDifficulty = "beginner" | "intermediate" | "advanced";
+export const TemplateDifficultySchema = z.enum(["beginner", "intermediate", "advanced"]);
+export type TemplateDifficulty = z.infer<typeof TemplateDifficultySchema>;
+
+/**
+ * Runtime type guards. Useful when narrowing values from template
+ * marketplace listings or URL filter params without throwing.
+ */
+export function isTemplateCategory(value: unknown): value is TemplateCategory {
+  return TemplateCategorySchema.safeParse(value).success;
+}
+
+export function isTemplateDifficulty(value: unknown): value is TemplateDifficulty {
+  return TemplateDifficultySchema.safeParse(value).success;
+}
 
 export interface Template {
   id: string;
