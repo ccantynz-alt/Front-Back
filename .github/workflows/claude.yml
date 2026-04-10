@@ -1,0 +1,59 @@
+name: Claude Code
+
+# Responds to @claude mentions in issues, PR comments, and PR review comments.
+# Replaces GitHub Copilot cloud agents for interactive, on-demand work.
+#
+# Trigger: mention @claude in any comment on an issue or PR, or include
+# @claude in the body of a new issue. Claude will spin up with repo access,
+# do the work, push commits, and respond with a summary.
+#
+# This is the LIVE copy. The other two Claude workflows (auto-review and
+# ci-watchdog) remain as drafts in docs/claude-takeover/ until this one
+# is proven on a test issue.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, assigned]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    # Only run if @claude is actually mentioned in the comment/body.
+    # The claude-code-action handles this check internally, but we
+    # short-circuit here to save a runner spin-up on unrelated events.
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Re-read doctrine on every invocation so behaviour stays
+          # anchored to CLAUDE.md even if a long session drifts.
+          claude_args: "--max-turns 20"
