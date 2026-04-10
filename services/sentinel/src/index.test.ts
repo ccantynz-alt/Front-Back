@@ -6,6 +6,9 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import {
   IntelligenceItemSchema,
+  TrackedRepoSchema,
+  TrackedReposFileSchema,
+  DEFAULT_TRACKED_REPOS,
   type IntelligenceItem,
   type Severity,
 } from "./collectors/types";
@@ -24,7 +27,7 @@ import {
 import { generateDigest, type DailyDigest } from "./digest/daily-digest";
 import { checkDeadMansSwitch, reportSuccess } from "./dead-mans-switch";
 import { join } from "path";
-import { unlinkSync, existsSync } from "fs";
+import { readFileSync, unlinkSync, existsSync } from "fs";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -69,6 +72,70 @@ describe("IntelligenceItemSchema", () => {
       const result = IntelligenceItemSchema.safeParse(item);
       expect(result.success).toBe(true);
     }
+  });
+});
+
+// ── Tracked Repos Schema Tests ──────────────────────────────────────
+
+describe("TrackedRepoSchema / DEFAULT_TRACKED_REPOS", () => {
+  test("every DEFAULT_TRACKED_REPOS entry passes TrackedRepoSchema.parse", () => {
+    for (const repo of DEFAULT_TRACKED_REPOS) {
+      const result = TrackedRepoSchema.safeParse(repo);
+      if (!result.success) {
+        throw new Error(
+          `Invalid tracked repo ${repo.owner}/${repo.repo}: ${JSON.stringify(result.error.issues)}`,
+        );
+      }
+      expect(result.success).toBe(true);
+    }
+  });
+
+  test("DEFAULT_TRACKED_REPOS has no duplicate owner/repo pairs", () => {
+    const seen = new Set<string>();
+    for (const repo of DEFAULT_TRACKED_REPOS) {
+      const key = `${repo.owner}/${repo.repo}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+    }
+  });
+
+  test("tracked-repos.json file validates against TrackedReposFileSchema", () => {
+    const jsonPath = join(
+      (import.meta as { dir?: string }).dir ?? process.cwd(),
+      "..",
+      "data",
+      "tracked-repos.json",
+    );
+    expect(existsSync(jsonPath)).toBe(true);
+    const raw = readFileSync(jsonPath, "utf-8");
+    const parsed: unknown = JSON.parse(raw);
+    const result = TrackedReposFileSchema.safeParse(parsed);
+    if (!result.success) {
+      throw new Error(
+        `tracked-repos.json invalid: ${JSON.stringify(result.error.issues)}`,
+      );
+    }
+    expect(result.success).toBe(true);
+  });
+
+  test("tracked-repos.json covers the core empire competitors", () => {
+    const jsonPath = join(
+      (import.meta as { dir?: string }).dir ?? process.cwd(),
+      "..",
+      "data",
+      "tracked-repos.json",
+    );
+    const raw = readFileSync(jsonPath, "utf-8");
+    const parsed = TrackedReposFileSchema.parse(JSON.parse(raw));
+    const slugs = new Set(parsed.repos.map((r) => `${r.owner}/${r.repo}`));
+    // Sanity-check a representative subset of the new competitors
+    expect(slugs.has("cloudflare/workers-sdk")).toBe(true);
+    expect(slugs.has("supabase/supabase")).toBe(true);
+    expect(slugs.has("get-convex/convex-backend")).toBe(true);
+    expect(slugs.has("netlify/cli")).toBe(true);
+    expect(slugs.has("snyk/snyk")).toBe(true);
+    expect(slugs.has("openai/whisper")).toBe(true);
+    expect(slugs.has("stackblitz/bolt.new")).toBe(true);
   });
 });
 
