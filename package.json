@@ -14,6 +14,7 @@
     "format": "turbo format",
     "check": "turbo check",
     "clean": "turbo clean",
+    "sentinel:once": "cd services/sentinel && bun run src/run-once.ts",
     "check-links": "bun run scripts/link-checker.ts",
     "check-buttons": "bun run scripts/button-checker.ts",
     "check-bundle": "bun run scripts/bundle-size-check.ts",
