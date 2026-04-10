@@ -86,9 +86,9 @@ export const billingRouter = router({
       status: "free" as const,
       plan: "Free",
       userId: ctx.userId,
-      stripeSubscriptionId: null,
-      stripeCustomerId: null,
-      currentPeriodEnd: null,
+      stripeSubscriptionId: null as string | null,
+      stripeCustomerId: null as string | null,
+      currentPeriodEnd: null as number | null,
       cancelAtPeriodEnd: false,
     };
   }),
