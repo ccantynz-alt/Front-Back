@@ -14,20 +14,20 @@ type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error";
 interface RoomUser {
   userId: string;
   metadata?: {
-    displayName?: string;
-    color?: string;
-  };
+    displayName?: string | undefined;
+    color?: string | undefined;
+  } | undefined;
   presence?: {
     status: "active" | "idle" | "away";
-    data?: Record<string, unknown>;
-  };
+    data?: Record<string, unknown> | undefined;
+  } | undefined;
 }
 
 interface CursorPosition {
   userId: string;
   x: number;
   y: number;
-  target?: string;
+  target?: string | undefined;
   timestamp: number;
 }
 
@@ -86,7 +86,11 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
   let wsUrl: string | null = null;
   let cursorCleanupInterval: ReturnType<typeof setInterval> | null = null;
   let pingInterval: ReturnType<typeof setInterval> | null = null;
-  let lastJoinParams: { roomId: string; userId: string; metadata?: { displayName?: string; color?: string } } | null = null;
+  let lastJoinParams: {
+    roomId: string;
+    userId: string;
+    metadata?: { displayName?: string | undefined; color?: string | undefined } | undefined;
+  } | null = null;
   const messageHandlers = new Set<(message: ServerMessage) => void>();
 
   function startCursorCleanup(): void {

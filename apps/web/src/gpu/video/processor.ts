@@ -3,7 +3,7 @@
  * Detects GPU capabilities and routes processing accordingly.
  */
 
-import { effectRegistry, type VideoEffectParams } from "./effects";
+import { effectRegistry } from "./effects";
 import { shaderSources } from "./shaders";
 import type { AppliedEffect } from "./timeline";
 

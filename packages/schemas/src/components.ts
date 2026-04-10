@@ -212,7 +212,44 @@ export const SeparatorSchema = z.object({
 // ── Component Registry (Union of all components) ───────────────────
 // This is the master schema. AI agents use this to validate any component tree.
 
-export const ComponentSchema: z.ZodType = z.discriminatedUnion("component", [
+export type Button = z.infer<typeof ButtonSchema>;
+export type Input = z.infer<typeof InputSchema>;
+export type Card = z.infer<typeof CardSchema>;
+export type Stack = z.infer<typeof StackSchema>;
+export type Text = z.infer<typeof TextSchema>;
+export type Modal = z.infer<typeof ModalSchema>;
+export type Badge = z.infer<typeof BadgeSchema>;
+export type Alert = z.infer<typeof AlertSchema>;
+export type Avatar = z.infer<typeof AvatarSchema>;
+export type Tabs = z.infer<typeof TabsSchema>;
+export type Select = z.infer<typeof SelectSchema>;
+export type Textarea = z.infer<typeof TextareaSchema>;
+export type Spinner = z.infer<typeof SpinnerSchema>;
+export type Tooltip = z.infer<typeof TooltipSchema>;
+export type Separator = z.infer<typeof SeparatorSchema>;
+
+// The discriminated union of every component type the AI can emit.
+// We keep the schema-level annotation loose (z.ZodType) because the child
+// schemas are recursive via z.lazy, but the exported `Component` TS type is a
+// proper union so call sites get real discrimination instead of `unknown`.
+export type Component =
+  | Button
+  | Input
+  | Card
+  | Stack
+  | Text
+  | Modal
+  | Badge
+  | Alert
+  | Avatar
+  | Tabs
+  | Select
+  | Textarea
+  | Spinner
+  | Tooltip
+  | Separator;
+
+export const ComponentSchema: z.ZodType<Component> = z.discriminatedUnion("component", [
   ButtonSchema,
   InputSchema,
   CardSchema,
@@ -229,23 +266,6 @@ export const ComponentSchema: z.ZodType = z.discriminatedUnion("component", [
   TooltipSchema,
   SeparatorSchema,
 ]);
-
-export type Button = z.infer<typeof ButtonSchema>;
-export type Input = z.infer<typeof InputSchema>;
-export type Card = z.infer<typeof CardSchema>;
-export type Stack = z.infer<typeof StackSchema>;
-export type Text = z.infer<typeof TextSchema>;
-export type Modal = z.infer<typeof ModalSchema>;
-export type Badge = z.infer<typeof BadgeSchema>;
-export type Alert = z.infer<typeof AlertSchema>;
-export type Avatar = z.infer<typeof AvatarSchema>;
-export type Tabs = z.infer<typeof TabsSchema>;
-export type Select = z.infer<typeof SelectSchema>;
-export type Textarea = z.infer<typeof TextareaSchema>;
-export type Spinner = z.infer<typeof SpinnerSchema>;
-export type Tooltip = z.infer<typeof TooltipSchema>;
-export type Separator = z.infer<typeof SeparatorSchema>;
-export type Component = z.infer<typeof ComponentSchema>;
 
 // ── Component Catalog (for AI agent discovery) ─────────────────────
 

@@ -2,8 +2,8 @@ import type { JSX } from "solid-js";
 import { splitProps } from "solid-js";
 
 export interface InputProps extends JSX.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
+  label?: string | undefined;
+  error?: string | undefined;
 }
 
 export function Input(props: InputProps): JSX.Element {

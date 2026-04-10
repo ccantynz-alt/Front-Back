@@ -1,5 +1,5 @@
 import { Title } from "@solidjs/meta";
-import { createSignal, For, Show, onMount } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -173,11 +173,14 @@ export default function AIPlayground(): JSX.Element {
   const [codeInserted, setCodeInserted] = createSignal(false);
 
   // Performance stats
-  const [tokensPerSec, setTokensPerSec] = createSignal(41.2);
+  const [tokensPerSec] = createSignal(41.2);
   const [totalTokens, setTotalTokens] = createSignal(1284);
-  const [sessionCost, setSessionCost] = createSignal("$0.00");
+  const [sessionCost] = createSignal("$0.00");
 
-  const currentModel = (): ModelOption => MODELS.find((m) => m.id === selectedModel()) ?? MODELS[0];
+  const currentModel = (): ModelOption => {
+    const found = MODELS.find((m) => m.id === selectedModel());
+    return found ?? (MODELS[0] as ModelOption);
+  };
 
   const handleSend = (): void => {
     if (!input().trim() || isGenerating()) return;

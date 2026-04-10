@@ -3,7 +3,6 @@
 // collaborators. They hold cursors, make selections, and edit alongside
 // human users via the same Yjs CRDT primitives.
 
-import * as Y from "yjs";
 import type { CollabRoom, CollabUser } from "./yjs-provider";
 import {
   getSharedText,

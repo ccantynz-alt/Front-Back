@@ -48,8 +48,10 @@
         "@back-to-the-future/api": "workspace:*",
         "@back-to-the-future/schemas": "workspace:*",
         "@back-to-the-future/ui": "workspace:*",
+        "@huggingface/transformers": "^3.4.0",
         "@json-render/core": "0.16.0",
         "@json-render/solid": "0.16.0",
+        "@mlc-ai/web-llm": "^0.2.78",
         "@simplewebauthn/browser": "13.3.0",
         "@solidjs/meta": "^0.29.4",
         "@solidjs/router": "^0.16.1",
@@ -63,7 +65,9 @@
         "yjs": "13.6.30",
       },
       "devDependencies": {
+        "@types/bun": "^1.2.0",
         "@types/node": "^25.5.2",
+        "@webgpu/types": "0.1.69",
         "typescript": "^6.0.2",
       },
     },
@@ -866,6 +870,8 @@
     "@vinxi/plugin-directives": ["@vinxi/plugin-directives@0.5.1", "", { "dependencies": { "@babel/parser": "^7.23.5", "acorn": "^8.10.0", "acorn-jsx": "^5.3.2", "acorn-loose": "^8.3.0", "acorn-typescript": "^1.4.3", "astring": "^1.8.6", "magicast": "^0.2.10", "recast": "^0.23.4", "tslib": "^2.6.2" }, "peerDependencies": { "vinxi": "^0.5.5" } }, "sha512-pH/KIVBvBt7z7cXrUH/9uaqcdxjegFC7+zvkZkdOyWzs+kQD5KPf3cl8kC+5ayzXHT+OMlhGhyitytqN3cGmHg=="],
 
     "@vinxi/server-components": ["@vinxi/server-components@0.5.1", "", { "dependencies": { "@vinxi/plugin-directives": "0.5.1", "acorn": "^8.10.0", "acorn-loose": "^8.3.0", "acorn-typescript": "^1.4.3", "astring": "^1.8.6", "magicast": "^0.2.10", "recast": "^0.23.4" }, "peerDependencies": { "vinxi": "^0.5.5" } }, "sha512-0BsG95qac3dkhfdRZxqzqYWJE4NvPL7ILlV43B6K6ho1etXWB2e5b0IxsUAUbyqpqiXM7mSRivojuXjb2G4OsQ=="],
+
+    "@webgpu/types": ["@webgpu/types@0.1.69", "", {}, "sha512-RPmm6kgRbI8e98zSD3RVACvnuktIja5+yLgDAkTmxLr90BEwdTXRQWNLF3ETTTyH/8mKhznZuN5AveXYFEsMGQ=="],
 
     "@workflow/serde": ["@workflow/serde@4.1.0-beta.2", "", {}, "sha512-8kkeoQKLDaKXefjV5dbhBj2aErfKp1Mc4pb6tj8144cF+Em5SPbyMbyLCHp+BVrFfFVCBluCtMx+jjvaFVZGww=="],
 

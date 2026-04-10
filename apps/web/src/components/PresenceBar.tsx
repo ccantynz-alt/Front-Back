@@ -4,7 +4,7 @@
 
 import { For, Show, createSignal, createEffect } from "solid-js";
 import type { JSX } from "solid-js";
-import { Button, Badge, Tooltip, Stack, Text } from "@back-to-the-future/ui";
+import { Button, Badge, Tooltip } from "@back-to-the-future/ui";
 import type { AwarenessState } from "../collab/collaborative-doc";
 
 // ── Types ────────────────────────────────────────────────────────────

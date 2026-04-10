@@ -9,8 +9,8 @@ interface NavigationEvent {
   from: string;
   to: string;
   timestamp: number;
-  userId?: string;
-  duration?: number;
+  userId?: string | undefined;
+  duration?: number | undefined;
 }
 
 interface RouteStats {

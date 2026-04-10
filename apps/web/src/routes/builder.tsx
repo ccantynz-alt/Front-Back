@@ -166,7 +166,7 @@ export default function BuilderPage(): JSX.Element {
   ]);
   const [input, setInput] = createSignal("");
   const [isGenerating, setIsGenerating] = createSignal(false);
-  const [collabConnected, setCollabConnected] = createSignal(false);
+  const [collabConnected] = createSignal(false);
   const [_componentTree, setComponentTree] = createSignal<ComponentNode[]>([]);
 
   function handleTreeChange(tree: ComponentNode[]): void {
@@ -234,11 +234,6 @@ export default function BuilderPage(): JSX.Element {
   function handleShare(): void {
     const newRoomId = `room-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     navigate(`/builder?room=${newRoomId}`);
-  }
-
-  function handleInviteAI(): void {
-    // The CollaborativeBuilder handles AI invitation internally
-    // This is a placeholder for additional AI invite logic
   }
 
   function handleCopyLink(): void {

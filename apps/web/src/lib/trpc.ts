@@ -2,7 +2,7 @@
 // Type-safe API client connecting the SolidStart frontend to the
 // Hono API server via tRPC. End-to-end type safety with zero codegen.
 
-import { createTRPCClient, httpBatchLink, TRPCClientError } from "@trpc/client";
+import { createTRPCClient, httpBatchLink, TRPCClientError, type TRPCClient } from "@trpc/client";
 import type { AppRouter } from "@back-to-the-future/api/trpc";
 
 const SESSION_TOKEN_KEY = "btf_session_token";
@@ -52,7 +52,7 @@ export function clearCsrfToken(): void {
   }
 }
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc: TRPCClient<AppRouter> = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: `${getApiUrl()}/api/trpc`,

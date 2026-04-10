@@ -63,7 +63,7 @@ export default function VideoPage(): JSX.Element {
   const [videoLoaded, setVideoLoaded] = createSignal(false);
   const [playing, setPlaying] = createSignal(false);
   const [currentTime, setCurrentTime] = createSignal(0);
-  const [duration, setDuration] = createSignal(0);
+  const [duration] = createSignal(0);
   const [gpuAvailable] = createSignal(typeof navigator !== "undefined" && "gpu" in navigator);
 
   // ── Collaboration State ──────────────────────────────────────────

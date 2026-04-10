@@ -6,12 +6,8 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import {
   IntelligenceItemSchema,
-  TrackedRepoSchema,
-  TrackedReposFileSchema,
   type IntelligenceItem,
   type Severity,
-  type TrackedRepo,
-  DEFAULT_TRACKED_REPOS,
 } from "./collectors/types";
 import { analyzeThreat, analyzeThreats, type ThreatAnalysis } from "./analyzers/threat-analyzer";
 import { findOpportunities, type Opportunity } from "./analyzers/opportunity-finder";
@@ -25,13 +21,6 @@ import {
   pruneOlderThan,
   setStorePath,
 } from "./storage/intelligence-store";
-import {
-  loadTrackedRepos,
-  saveTrackedRepos,
-  updateTrackedRepo,
-  setTrackedReposPath,
-  clearTrackedReposCache,
-} from "./storage/tracked-repos-store";
 import { generateDigest, type DailyDigest } from "./digest/daily-digest";
 import { checkDeadMansSwitch, reportSuccess } from "./dead-mans-switch";
 import { join } from "path";

@@ -146,6 +146,5 @@ export const CollabProvider: ParentComponent = (props) => {
 
   const store: CollabStore = [state, actions];
 
-  // @ts-expect-error - SolidJS context provider typing
   return CollabContext.Provider({ value: store, children: props.children });
 };

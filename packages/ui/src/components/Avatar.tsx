@@ -1,11 +1,11 @@
 import { type JSX, Show, splitProps, createSignal } from "solid-js";
 
 export interface AvatarProps {
-  src?: string;
-  alt?: string;
-  initials?: string;
-  size?: "sm" | "md" | "lg";
-  class?: string;
+  src?: string | undefined;
+  alt?: string | undefined;
+  initials?: string | undefined;
+  size?: "sm" | "md" | "lg" | undefined;
+  class?: string | undefined;
 }
 
 export function Avatar(props: AvatarProps): JSX.Element {

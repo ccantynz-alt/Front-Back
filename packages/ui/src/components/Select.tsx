@@ -4,19 +4,19 @@ import { splitProps, Show, For } from "solid-js";
 export interface SelectOption {
   value: string;
   label: string;
-  disabled?: boolean;
+  disabled?: boolean | undefined;
 }
 
 export interface SelectProps {
   options: SelectOption[];
-  value?: string;
-  placeholder?: string;
-  label?: string;
-  error?: string;
-  disabled?: boolean;
-  name?: string;
-  class?: string;
-  onChange?: (value: string) => void;
+  value?: string | undefined;
+  placeholder?: string | undefined;
+  label?: string | undefined;
+  error?: string | undefined;
+  disabled?: boolean | undefined;
+  name?: string | undefined;
+  class?: string | undefined;
+  onChange?: ((value: string) => void) | undefined;
 }
 
 export function Select(props: SelectProps): JSX.Element {

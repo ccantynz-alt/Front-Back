@@ -1,0 +1,15 @@
+# ── Crontech Code Owners ─────────────────────────────────────────────
+# GitHub uses this file to enforce required reviewers on PRs that
+# touch protected paths. Branch protection on `main` must have
+# "Require review from Code Owners" enabled for these rules to bite.
+#
+# Format: <path-glob> <owner1> <owner2> ...
+# Last matching pattern wins.
+
+# ── Doctrine — Layer 2 of CLAUDE.md change protection ────────────────
+# CLAUDE.md is the project Bible. No PR touching it can merge without
+# Craig's explicit approval. See CLAUDE.md §0 "CLAUDE.md CHANGE PROTECTION".
+/CLAUDE.md           @ccantynz-alt
+
+# Positioning is locked. Same protection as CLAUDE.md — see CLAUDE.md §16.
+/docs/POSITIONING.md @ccantynz-alt

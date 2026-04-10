@@ -1,7 +1,7 @@
 import { createSignal, For, Show, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
-import { Button, Badge } from "@back-to-the-future/ui";
+import { Badge } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
 
 // ── Types ───────────────────────────────────────────────────────────

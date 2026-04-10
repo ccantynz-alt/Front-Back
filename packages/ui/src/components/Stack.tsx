@@ -7,6 +7,7 @@ export interface StackProps {
   align?: "start" | "center" | "end" | "stretch";
   justify?: "start" | "center" | "end" | "between" | "around";
   class?: string;
+  style?: JSX.CSSProperties;
   children?: JSX.Element;
 }
 
@@ -17,6 +18,7 @@ export function Stack(props: StackProps): JSX.Element {
     "align",
     "justify",
     "class",
+    "style",
     "children",
   ]);
 
@@ -28,6 +30,7 @@ export function Stack(props: StackProps): JSX.Element {
   return (
     <div
       class={`flex ${dir() === "horizontal" ? "flex-row" : "flex-col"} ${gapClass()} ${alignClass()} ${justifyClass()} ${local.class ?? ""}`}
+      style={local.style}
       {...rest}
     >
       {local.children}

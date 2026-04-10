@@ -152,7 +152,7 @@ export function getCursorPositions(
   awareness: WebsocketProvider["awareness"],
 ): CursorPosition[] {
   const cursors: CursorPosition[] = [];
-  for (const [clientId, state] of awareness.getStates()) {
+  for (const [, state] of awareness.getStates()) {
     if (state["cursor"] && state["user"]) {
       cursors.push({
         ...(state["cursor"] as Omit<CursorPosition, "userId">),

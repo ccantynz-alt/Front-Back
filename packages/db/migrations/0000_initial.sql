@@ -1,16 +1,20 @@
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` text PRIMARY KEY NOT NULL,
   `email` text NOT NULL,
   `display_name` text NOT NULL,
   `role` text DEFAULT 'viewer' NOT NULL,
   `passkey_credential_id` text,
+  `password_hash` text,
+  `auth_provider` text,
+  `google_id` text,
+  `avatar_url` text,
   `created_at` integer NOT NULL,
   `updated_at` integer NOT NULL
 );
-
-CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);
-
-CREATE TABLE `credentials` (
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `users_email_unique` ON `users` (`email`);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `credentials` (
   `id` text PRIMARY KEY NOT NULL,
   `user_id` text NOT NULL,
   `credential_id` text NOT NULL,
@@ -22,10 +26,10 @@ CREATE TABLE `credentials` (
   `created_at` integer NOT NULL,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade
 );
-
-CREATE UNIQUE INDEX `credentials_credential_id_unique` ON `credentials` (`credential_id`);
-
-CREATE TABLE `sessions` (
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `credentials_credential_id_unique` ON `credentials` (`credential_id`);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `sessions` (
   `id` text PRIMARY KEY NOT NULL,
   `user_id` text NOT NULL,
   `token` text NOT NULL,
@@ -33,10 +37,10 @@ CREATE TABLE `sessions` (
   `created_at` integer NOT NULL,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade
 );
-
-CREATE UNIQUE INDEX `sessions_token_unique` ON `sessions` (`token`);
-
-CREATE TABLE `plans` (
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `sessions_token_unique` ON `sessions` (`token`);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `plans` (
   `id` text PRIMARY KEY NOT NULL,
   `name` text NOT NULL,
   `description` text,
@@ -47,10 +51,10 @@ CREATE TABLE `plans` (
   `is_active` integer DEFAULT true NOT NULL,
   `created_at` integer NOT NULL
 );
-
-CREATE UNIQUE INDEX `plans_stripe_price_id_unique` ON `plans` (`stripe_price_id`);
-
-CREATE TABLE `subscriptions` (
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `plans_stripe_price_id_unique` ON `plans` (`stripe_price_id`);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `subscriptions` (
   `id` text PRIMARY KEY NOT NULL,
   `user_id` text NOT NULL,
   `stripe_customer_id` text NOT NULL,
@@ -64,10 +68,10 @@ CREATE TABLE `subscriptions` (
   `updated_at` integer NOT NULL,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade
 );
-
-CREATE UNIQUE INDEX `subscriptions_stripe_subscription_id_unique` ON `subscriptions` (`stripe_subscription_id`);
-
-CREATE TABLE `payments` (
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `subscriptions_stripe_subscription_id_unique` ON `subscriptions` (`stripe_subscription_id`);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `payments` (
   `id` text PRIMARY KEY NOT NULL,
   `user_id` text NOT NULL,
   `stripe_payment_intent_id` text NOT NULL,
@@ -77,10 +81,10 @@ CREATE TABLE `payments` (
   `created_at` integer NOT NULL,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade
 );
-
-CREATE UNIQUE INDEX `payments_stripe_payment_intent_id_unique` ON `payments` (`stripe_payment_intent_id`);
-
-CREATE TABLE `audit_logs` (
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `payments_stripe_payment_intent_id_unique` ON `payments` (`stripe_payment_intent_id`);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `audit_logs` (
   `id` text PRIMARY KEY NOT NULL,
   `timestamp` text NOT NULL,
   `actor_id` text NOT NULL,

@@ -2,7 +2,7 @@
 // Global toast notifications with success/error/info/warning variants.
 // Use showToast() from anywhere to give user feedback.
 
-import { createSignal, For, Show, onCleanup } from "solid-js";
+import { createSignal, For, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
 
 export type ToastVariant = "success" | "error" | "info" | "warning";

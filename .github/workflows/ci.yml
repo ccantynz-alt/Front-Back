@@ -30,9 +30,6 @@ jobs:
       - name: Type check all packages
         run: bun run check
 
-      - name: Type check (tsc --noEmit)
-        run: bunx tsc --noEmit --skipLibCheck
-
       - name: Check links
         run: bun run check-links
 
