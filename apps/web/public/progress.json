@@ -485,14 +485,26 @@
         {
           "id": "t1-anchor-customer",
           "title": "Anchor customer hunt",
-          "description": "First paying customer who validates the compliance-native wedge. HIGHEST priority of everything.",
-          "status": "pending",
+          "description": "First paying customer who validates the compliance-native wedge. HIGHEST priority of everything. Playbook drafted.",
+          "status": "in_progress",
           "priority": "p0",
           "commit": null,
-          "branch": null,
-          "docLink": null,
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "docs/ANCHOR_CUSTOMER_HUNT.md",
           "blockedReason": null,
           "tags": ["tier-1", "revenue"]
+        },
+        {
+          "id": "t1-anchor-playbook",
+          "title": "Anchor customer hunt playbook authored",
+          "description": "docs/ANCHOR_CUSTOMER_HUNT.md — full ICP, channels, outreach cadence, qualifying criteria, deal structure, exit criteria, failure modes. Draft awaiting Craig's voice pass.",
+          "status": "completed",
+          "priority": "p0",
+          "commit": null,
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "docs/ANCHOR_CUSTOMER_HUNT.md",
+          "blockedReason": null,
+          "tags": ["tier-1", "docs"]
         },
         {
           "id": "t1-founder-brand",
