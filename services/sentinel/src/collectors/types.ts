@@ -36,20 +36,6 @@ export interface Collector {
   collect(): Promise<CollectorResult>;
 }
 
-export interface TrackedRepo {
-  owner: string;
-  repo: string;
-  displayName: string;
-  priority: RepoPriority;
-  category: RepoCategory;
-  description: string;
-  defaultBranch: string;
-  lastKnownRelease: string | null;
-  lastKnownReleaseAt: string | null;
-  lastCommitCheckAt: string | null;
-  baselineCommitsPerWeek: number | null;
-}
-
 export const TrackedRepoSchema = z.object({
   owner: z.string(),
   repo: z.string(),
@@ -63,6 +49,8 @@ export const TrackedRepoSchema = z.object({
   lastCommitCheckAt: z.string().nullable(),
   baselineCommitsPerWeek: z.number().nullable(),
 });
+
+export type TrackedRepo = z.infer<typeof TrackedRepoSchema>;
 
 export const TrackedReposFileSchema = z.object({
   repos: z.array(TrackedRepoSchema),
