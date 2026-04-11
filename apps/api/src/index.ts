@@ -33,7 +33,7 @@ import {
 import { getQueueStatus } from "./automation/retry-queue";
 
 import { securityHeaders } from "./middleware/security-headers";
-import { rateLimiter } from "./middleware/rate-limiter";
+import { createRateLimiter, type KvNamespaceLike } from "./middleware/rate-limiter";
 import { csrf } from "./middleware/csrf";
 import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
 import { googleOAuthRoutes } from "./auth/google-oauth";
@@ -43,9 +43,17 @@ const app = new Hono().basePath("/api");
 // ── Security Middleware ──────────────────────────────────────────────
 app.use("*", securityHeaders());
 app.use("*", csrf({ allowedOrigins: ["http://localhost:3000", "http://localhost:3001"] }));
-app.use("/api/trpc/*", rateLimiter({ windowMs: 60_000, max: 200 }));
-app.use("/api/auth/*", rateLimiter({ windowMs: 60_000, max: 20 }));
-app.use("/api/ai/*", rateLimiter({ windowMs: 60_000, max: 30 }));
+// Rate limiter: auto-selects Cloudflare KV when `RATE_LIMIT_KV` is bound to
+// the Worker env, otherwise falls back to the in-memory limiter. This lets the
+// same code run in `bun run dev` locally and on Cloudflare Workers in prod
+// without branching. Define the binding in wrangler.toml and run
+// `wrangler kv:namespace create RATE_LIMIT_KV` to provision.
+const rateLimitEnv = (globalThis as { RATE_LIMIT_KV?: KvNamespaceLike }).RATE_LIMIT_KV
+  ? { RATE_LIMIT_KV: (globalThis as { RATE_LIMIT_KV?: KvNamespaceLike }).RATE_LIMIT_KV }
+  : undefined;
+app.use("/api/trpc/*", createRateLimiter({ windowMs: 60_000, max: 200, env: rateLimitEnv }));
+app.use("/api/auth/*", createRateLimiter({ windowMs: 60_000, max: 20, env: rateLimitEnv }));
+app.use("/api/ai/*", createRateLimiter({ windowMs: 60_000, max: 30, env: rateLimitEnv }));
 
 // ── API Key Authentication ──────────────────────────────────────────
 // Allows Bearer btf_sk_... tokens to authenticate against the API keys table.

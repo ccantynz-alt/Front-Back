@@ -19,3 +19,14 @@ ENVIRONMENT = "production"
 # [[kv_namespaces]]
 # binding = "CACHE"
 # id = "<your-kv-namespace-id>"
+
+# Rate limiter store — shared across isolates so rate limiting survives
+# cold starts (the in-memory Map implementation loses state on every spin-up,
+# which effectively breaks rate limiting at Workers scale).
+#
+# Provisioning:
+#   wrangler kv:namespace create RATE_LIMIT_KV
+# Then copy the generated id below and uncomment.
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "<run `wrangler kv:namespace create RATE_LIMIT_KV` and paste the id>"
