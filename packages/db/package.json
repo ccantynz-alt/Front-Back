@@ -10,7 +10,8 @@
     "./neon": "./src/neon.ts",
     "./neon-provisioning": "./src/neon-provisioning.ts",
     "./tenant-manager": "./src/tenant-manager.ts",
-    "./migrate": "./src/migrate.ts"
+    "./migrate": "./src/migrate.ts",
+    "./scoped-query": "./src/scoped-query.ts"
   },
   "scripts": {
     "check": "tsc --noEmit",
