@@ -1,0 +1,63 @@
+# Crontech Platform - Caddy Reverse Proxy
+# Auto-TLS via Let's Encrypt for all domains
+#
+# Domain environment variables (set in /opt/crontech/.env):
+#   CRONTECH_DOMAIN  - default: crontech.ai
+#   ZOOBICON_DOMAIN  - default: zoobicon.com
+#   EMAILED_DOMAIN   - default: emailed.dev
+#   GATETEST_DOMAIN  - default: gatetest.io
+#   MARCOREID_DOMAIN - default: marcoreid.com
+
+# === CRONTECH (Main Platform) ===
+
+{$CRONTECH_DOMAIN:crontech.ai} {
+	reverse_proxy crontech-api:3000
+}
+
+api.{$CRONTECH_DOMAIN:crontech.ai} {
+	reverse_proxy crontech-api:8787
+}
+
+# Wildcard for tenant subdomains (e.g. acme.crontech.ai)
+*.{$CRONTECH_DOMAIN:crontech.ai} {
+	reverse_proxy crontech-api:8787
+}
+
+# === ZOOBICON ===
+
+{$ZOOBICON_DOMAIN:zoobicon.com} {
+	reverse_proxy zoobicon:3000
+}
+
+www.{$ZOOBICON_DOMAIN:zoobicon.com} {
+	redir https://{$ZOOBICON_DOMAIN:zoobicon.com}{uri}
+}
+
+# === EMAILED ===
+
+{$EMAILED_DOMAIN:emailed.dev} {
+	reverse_proxy emailed-web:3000
+}
+
+api.{$EMAILED_DOMAIN:emailed.dev} {
+	reverse_proxy emailed-api:8787
+}
+
+# === GATETEST ===
+
+{$GATETEST_DOMAIN:gatetest.io} {
+	reverse_proxy gatetest:3000
+}
+
+# === MARCOREID ===
+
+{$MARCOREID_DOMAIN:marcoreid.com} {
+	reverse_proxy marcoreid:3000
+}
+
+www.{$MARCOREID_DOMAIN:marcoreid.com} {
+	redir https://{$MARCOREID_DOMAIN:marcoreid.com}{uri}
+}
+
+# SMTP for emailed (not handled by Caddy)
+# Port 25 and 587 are handled directly by the emailed-mta container

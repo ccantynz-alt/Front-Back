@@ -1,0 +1,190 @@
+version: "3.8"
+
+# Crontech Platform - Docker Compose
+# All 5 apps + Redis + Caddy reverse proxy
+#
+# Usage:
+#   cd /opt/crontech
+#   docker compose up -d          # start everything
+#   docker compose logs -f        # tail all logs
+#   docker compose ps             # check status
+#   docker compose build <app>    # rebuild single app
+#   docker compose up -d <app>    # restart single app
+
+services:
+  # === CRONTECH (Platform + API) ===
+  crontech-api:
+    build:
+      context: /opt/crontech/apps/crontech
+      dockerfile: Dockerfile
+    ports:
+      - "8787:8787"
+    env_file: .env
+    environment:
+      - PORT=8787
+    networks:
+      - crontech
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - redis
+
+  # === ZOOBICON ===
+  zoobicon:
+    build:
+      context: /opt/crontech/apps/zoobicon
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    env_file: .env
+    environment:
+      - PORT=3000
+    networks:
+      - crontech
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - redis
+
+  # === EMAILED ===
+  emailed-web:
+    build:
+      context: /opt/crontech/apps/emailed
+      dockerfile: Dockerfile.web
+    ports:
+      - "3002:3000"
+    env_file: .env
+    environment:
+      - PORT=3000
+    networks:
+      - crontech
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  emailed-api:
+    build:
+      context: /opt/crontech/apps/emailed
+      dockerfile: Dockerfile.api
+    ports:
+      - "8788:8787"
+    env_file: .env
+    environment:
+      - PORT=8787
+    networks:
+      - crontech
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - redis
+
+  emailed-mta:
+    build:
+      context: /opt/crontech/apps/emailed
+      dockerfile: Dockerfile.mta
+    ports:
+      - "25:25"
+      - "587:587"
+    env_file: .env
+    networks:
+      - crontech
+    restart: unless-stopped
+
+  # === GATETEST ===
+  gatetest:
+    build:
+      context: /opt/crontech/apps/gatetest
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3000"
+    env_file: .env
+    environment:
+      - PORT=3000
+    networks:
+      - crontech
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # === MARCOREID ===
+  marcoreid:
+    build:
+      context: /opt/crontech/apps/marcoreid
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3000"
+    env_file: .env
+    environment:
+      - PORT=3000
+    networks:
+      - crontech
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # === INFRASTRUCTURE ===
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - crontech
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    env_file: .env
+    networks:
+      - crontech
+    restart: unless-stopped
+    depends_on:
+      - crontech-api
+      - zoobicon
+      - emailed-web
+      - emailed-api
+      - gatetest
+      - marcoreid
+
+networks:
+  crontech:
+    driver: bridge
+
+volumes:
+  redis-data:
+  caddy-data:
+  caddy-config:
