@@ -38,9 +38,15 @@ import { securityHeaders } from "./middleware/security-headers";
 import { createRateLimiter, type KvNamespaceLike } from "./middleware/rate-limiter";
 import { csrf } from "./middleware/csrf";
 import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
+import { subdomainRouter } from "./middleware/subdomain";
 import { googleOAuthRoutes } from "./auth/google-oauth";
+import { unsubscribeRoutes } from "./email/unsubscribe";
+import { withAudit } from "./middleware/audit";
 
 const app = new Hono().basePath("/api");
+
+// ── Subdomain Routing (Multi-Tenant) ────────────────────────────────
+app.use("*", subdomainRouter);
 
 // ── Security Middleware ──────────────────────────────────────────────
 app.use("*", securityHeaders());
@@ -193,6 +199,10 @@ app.get("/mcp/resources/:uri{.+}", (c) => {
   return c.json({ result });
 });
 
+// ── Audit middleware on critical route groups ──────────────────────
+app.use("/auth/*", withAudit("auth.action"));
+app.use("/webhooks/*", withAudit("webhook.inbound"));
+
 // ── Stripe Webhook (raw Hono -- needs raw body for signature verification) ──
 app.post("/webhooks/stripe", async (c) => {
   const { constructWebhookEvent, handleWebhookEvent } = await import("./stripe/webhooks");
@@ -266,6 +276,9 @@ app.post("/webhooks/inbound-email", async (c) => {
 
 // Mount Google OAuth routes (raw Hono -- needs redirects outside tRPC)
 app.route("/auth", googleOAuthRoutes);
+
+// Mount GDPR unsubscribe routes (GET + POST /api/unsubscribe, /api/resubscribe)
+app.route("/", unsubscribeRoutes);
 
 // Mount AI routes (raw Hono -- streaming works better outside tRPC)
 app.route("/ai", aiRoutes);

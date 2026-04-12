@@ -23,6 +23,7 @@ import {
   calculatePasswordStrength,
 } from "../../auth/password";
 import { buildGoogleAuthUrl } from "../../auth/google-oauth";
+import { auditMiddleware } from "../../middleware/audit";
 
 // In-memory challenge store with TTL cleanup.
 // In production, replace with Redis or a DB-backed store.
@@ -188,6 +189,7 @@ export const authRouter = router({
           response: registrationResponseSchema,
         }),
       )
+      .use(auditMiddleware("auth.register.passkey"))
       .mutation(async ({ input, ctx }) => {
         // CSRF validation on finish step
         requireCsrfToken(ctx.csrfToken);
@@ -318,6 +320,7 @@ export const authRouter = router({
           response: authenticationResponseSchema,
         }),
       )
+      .use(auditMiddleware("auth.login.passkey"))
       .mutation(async ({ input, ctx }) => {
         // CSRF validation on finish step
         requireCsrfToken(ctx.csrfToken);
@@ -410,7 +413,7 @@ export const authRouter = router({
       }),
   }),
 
-  logout: protectedProcedure.mutation(async ({ ctx }) => {
+  logout: protectedProcedure.use(auditMiddleware("auth.logout")).mutation(async ({ ctx }) => {
     if (ctx.sessionToken) {
       await deleteSession(ctx.sessionToken, ctx.db);
     }
@@ -420,6 +423,7 @@ export const authRouter = router({
   // ── Password Authentication ──────────────────────────────────────
   registerWithPassword: publicProcedure
     .input(registerWithPasswordSchema)
+    .use(auditMiddleware("auth.register.password"))
     .mutation(async ({ input, ctx }) => {
       requireCsrfToken(ctx.csrfToken);
 
@@ -432,6 +436,7 @@ export const authRouter = router({
 
   loginWithPassword: publicProcedure
     .input(loginWithPasswordSchema)
+    .use(auditMiddleware("auth.login.password"))
     .mutation(async ({ input, ctx }) => {
       requireCsrfToken(ctx.csrfToken);
 

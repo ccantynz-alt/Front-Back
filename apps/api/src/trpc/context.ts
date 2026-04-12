@@ -1,5 +1,5 @@
 import type { Context } from "hono";
-import { db } from "@back-to-the-future/db";
+import { db, scopedDb, type ScopedQueryClient } from "@back-to-the-future/db";
 import { getUserIdFromHeader } from "../auth/middleware";
 
 type Database = typeof db;
@@ -9,6 +9,15 @@ export interface TRPCContext {
   userId: string | null;
   sessionToken: string | null;
   csrfToken: string | null;
+  /**
+   * Tenant-scoped database client. Auto-injects userId filtering on
+   * every SELECT, INSERT, UPDATE, DELETE. Only available when userId
+   * is set (i.e., authenticated requests). For unauthenticated
+   * requests, this is null — use `ctx.db` for public procedures.
+   *
+   * Admin procedures that need cross-tenant access should use `ctx.db`.
+   */
+  scopedDb: ScopedQueryClient | null;
 }
 
 export async function createContext(c: Context): Promise<TRPCContext> {
@@ -25,5 +34,6 @@ export async function createContext(c: Context): Promise<TRPCContext> {
     userId,
     sessionToken,
     csrfToken,
+    scopedDb: userId ? scopedDb(db, userId) : null,
   };
 }

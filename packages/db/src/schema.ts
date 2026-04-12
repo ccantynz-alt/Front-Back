@@ -347,3 +347,126 @@ export const siteVersions = sqliteTable("site_versions", {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+// ── AI Response Cache ──────────────────────────────────────────────
+// Content-addressable cache for LLM/embedding calls. Tenant-scoped
+// so cache hits never leak across customers. Used by the
+// cachedAICall() wrapper in apps/api/src/ai/cache.ts.
+
+export const aiCache = sqliteTable("ai_cache", {
+  cacheKey: text("cache_key").primaryKey(),
+  tenantId: text("tenant_id"),
+  model: text("model").notNull(),
+  promptHash: text("prompt_hash").notNull(),
+  responseJson: text("response_json").notNull(),
+  tokensUsed: integer("tokens_used").notNull().default(0),
+  costUsd: integer("cost_usd").notNull().default(0),
+  hitCount: integer("hit_count").notNull().default(0),
+  lastHitAt: integer("last_hit_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  expiresAt: integer("expires_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── UI Component Catalog ───────────────────────────────────────────
+// Schema-first component registry for the generative-UI system.
+// AI agents and deterministic composers read from this catalog to
+// assemble validated component trees.
+
+// ── Files (R2 File Storage Metadata) ──────────────────────────────────
+// Tracks files uploaded to Cloudflare R2. Each row maps a logical file
+// to its R2 object key. Tenant-scoped via `tenantId`.
+
+export const files = sqliteTable("files", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  key: text("key").notNull().unique(),
+  filename: text("filename").notNull(),
+  contentType: text("content_type").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  uploadedBy: text("uploaded_by").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── UI Component Catalog ───────────────────────────────────────────
+// Schema-first component registry for the generative-UI system.
+// AI agents and deterministic composers read from this catalog to
+// assemble validated component trees.
+
+// ── Tenants (Multi-Tenant Platform) ──────────────────────────────────
+// Each tenant represents an organisation or project on the platform.
+// Tenants are identified by a unique slug which becomes their subdomain
+// (e.g. "zoobicon" → zoobicon.crontech.ai).
+
+export const tenants = sqliteTable("tenants", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  plan: text("plan", {
+    enum: ["free", "starter", "pro", "enterprise"],
+  })
+    .notNull()
+    .default("free"),
+  ownerEmail: text("owner_email").notNull(),
+  customDomain: text("custom_domain"),
+  status: text("status", {
+    enum: ["provisioning", "active", "suspended"],
+  })
+    .notNull()
+    .default("provisioning"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Feature Flags (DB-backed persistence) ───────────────────────────
+
+export const featureFlags = sqliteTable("feature_flags", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  rolloutPercent: integer("rollout_percent").notNull().default(0),
+  allowList: text("allow_list"), // JSON array of tenant IDs
+  denyList: text("deny_list"), // JSON array of tenant IDs
+  updatedAt: text("updated_at"),
+  updatedBy: text("updated_by"),
+});
+
+// ── Email Preferences (GDPR unsubscribe) ────────────────────────────
+
+export const emailPreferences = sqliteTable("email_preferences", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  weeklyDigest: integer("weekly_digest", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  collaborationInvite: integer("collaboration_invite", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const uiComponents = sqliteTable("ui_components", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  descriptorJson: text("descriptor_json").notNull(),
+  registeredBy: text("registered_by"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});

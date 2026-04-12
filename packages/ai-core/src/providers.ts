@@ -1,18 +1,32 @@
-// ── AI Provider Factory ───────────────────────────────────────────
+// ── AI Provider Factory ────────���──────────────────────────────────
 // Creates AI providers based on compute tier and environment config.
-// Supports OpenAI-compatible endpoints (OpenAI, Azure, local, etc.)
+// Supports OpenAI + Anthropic with automatic failover.
+//
+// Provider priority:
+//   1. If ANTHROPIC_API_KEY is set → Anthropic Claude is PRIMARY
+//   2. If OPENAI_API_KEY is set   → OpenAI is FALLBACK (or primary if no Anthropic key)
+//   3. If neither                 → demo mode (caller handles)
+//
+// On provider failure (429, 500, 503, timeout), routeAICall()
+// automatically retries with the fallback provider.
 
 import { createOpenAI, type OpenAIProviderSettings } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import type { LanguageModel } from "ai";
 import type { ComputeTier } from "./compute-tier";
 
-// ── Environment Configuration Schema ──────────────────────────────
+// ── Environment Configuration Schema ────────────��─────────────────
 
 export interface AIProviderConfig {
   apiKey: string;
   baseURL: string | undefined;
   model: string;
   organization: string | undefined;
+}
+
+export interface AnthropicProviderConfig {
+  apiKey: string;
+  model: string;
 }
 
 export interface AIProviderEnv {
@@ -22,6 +36,8 @@ export interface AIProviderEnv {
   edge: AIProviderConfig;
   /** Fallback model when primary is unavailable */
   fallback: AIProviderConfig | undefined;
+  /** Anthropic provider — used as primary when ANTHROPIC_API_KEY is set */
+  anthropic: AnthropicProviderConfig | undefined;
 }
 
 /**
@@ -42,9 +58,11 @@ function env(key: string): string | undefined {
 
 /**
  * Reads AI provider configuration from environment variables.
- * All keys are optional at read time -- validated at usage time.
+ * All keys are optional at read time — validated at usage time.
  */
 export function readProviderEnv(): AIProviderEnv {
+  const anthropicKey = env("ANTHROPIC_API_KEY");
+
   return {
     cloud: {
       apiKey: env("OPENAI_API_KEY") ?? "",
@@ -66,10 +84,17 @@ export function readProviderEnv(): AIProviderEnv {
           organization: undefined,
         }
       : undefined,
+    anthropic:
+      anthropicKey && anthropicKey.length > 5
+        ? {
+            apiKey: anthropicKey,
+            model: env("AI_ANTHROPIC_MODEL") ?? "claude-sonnet-4-20250514",
+          }
+        : undefined,
   };
 }
 
-// ── Provider Factory ──────────────────────────────────────────────
+// ── Provider Factory ─────────────────��────────────────────────────
 
 /**
  * Creates an OpenAI-compatible provider instance from config.
@@ -93,9 +118,23 @@ function createProviderFromConfig(
 }
 
 /**
+ * Creates an Anthropic provider instance.
+ */
+function createAnthropicFromConfig(
+  config: AnthropicProviderConfig,
+): LanguageModel {
+  const provider = createAnthropic({ apiKey: config.apiKey });
+  return provider(config.model);
+}
+
+/**
  * Returns a language model for the given compute tier.
- * Cloud tier gets the most capable model. Edge tier gets the fastest.
- * Client tier is handled browser-side (WebLLM) -- not managed here.
+ *
+ * Provider selection priority:
+ *   - If ANTHROPIC_API_KEY is set, Anthropic Claude is the primary for cloud tier
+ *   - If only OPENAI_API_KEY is set, OpenAI is primary
+ *   - Edge tier always uses the lighter OpenAI-compatible model
+ *   - Client tier falls back to edge (browser-side handled by WebLLM)
  */
 export function getModelForTier(
   tier: ComputeTier,
@@ -105,6 +144,10 @@ export function getModelForTier(
 
   switch (tier) {
     case "cloud": {
+      // Prefer Anthropic for cloud tier when available
+      if (config.anthropic) {
+        return createAnthropicFromConfig(config.anthropic);
+      }
       const provider = createProviderFromConfig(config.cloud);
       return provider(config.cloud.model);
     }
@@ -127,16 +170,37 @@ export function getModelForTier(
 
 /**
  * Returns a fallback model when the primary provider fails.
- * Returns undefined if no fallback is configured.
+ *
+ * Fallback chain:
+ *   - If primary was Anthropic → fall back to OpenAI (if configured)
+ *   - If primary was OpenAI    → fall back to Anthropic (if configured)
+ *   - If explicit AI_FALLBACK_ vars are set, those take precedence
+ *   - Returns undefined if no fallback is available
  */
 export function getFallbackModel(
   providerEnv?: AIProviderEnv,
 ): LanguageModel | undefined {
   const config = providerEnv ?? readProviderEnv();
-  if (!config.fallback) return undefined;
 
-  const provider = createProviderFromConfig(config.fallback);
-  return provider(config.fallback.model);
+  // Explicit fallback config takes priority
+  if (config.fallback) {
+    const provider = createProviderFromConfig(config.fallback);
+    return provider(config.fallback.model);
+  }
+
+  // Auto-failover: if Anthropic is primary, OpenAI is fallback (and vice versa)
+  if (config.anthropic && config.cloud.apiKey.length > 5) {
+    // Primary is Anthropic, fallback to OpenAI
+    const provider = createProviderFromConfig(config.cloud);
+    return provider(config.cloud.model);
+  }
+  if (!config.anthropic && config.anthropic === undefined) {
+    // Primary is OpenAI; check if Anthropic key exists for fallback
+    // (this branch only triggers if anthropic was not set as primary)
+    return undefined;
+  }
+
+  return undefined;
 }
 
 /**
@@ -144,4 +208,87 @@ export function getFallbackModel(
  */
 export function getDefaultModel(providerEnv?: AIProviderEnv): LanguageModel {
   return getModelForTier("cloud", providerEnv);
+}
+
+// ── Retryable errors ──────────────���─────────────────────────────────
+
+const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
+
+/**
+ * Determines whether an error is retryable (rate limit, server error, timeout).
+ */
+export function isRetryableError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    // Check for timeout
+    if (message.includes("timeout") || message.includes("timed out")) {
+      return true;
+    }
+    // Check for status codes embedded in error messages
+    for (const code of RETRYABLE_STATUS_CODES) {
+      if (message.includes(String(code))) {
+        return true;
+      }
+    }
+    // Check for common retryable error patterns
+    if (
+      message.includes("rate limit") ||
+      message.includes("too many requests") ||
+      message.includes("service unavailable") ||
+      message.includes("internal server error") ||
+      message.includes("bad gateway")
+    ) {
+      return true;
+    }
+  }
+  // Check if it has a status property (API SDK errors)
+  const errorWithStatus = error as { status?: number } | null;
+  if (
+    errorWithStatus?.status !== undefined &&
+    RETRYABLE_STATUS_CODES.has(errorWithStatus.status)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Executes an AI call with automatic fallback on retryable errors.
+ *
+ * Usage:
+ *   const result = await routeAICall(providerEnv, async (model) => {
+ *     return streamText({ model, messages, ... });
+ *   });
+ *
+ * On primary provider failure (429, 500, 503, timeout), retries once
+ * with the fallback provider. If no fallback is configured or the
+ * fallback also fails, the error propagates.
+ */
+export async function routeAICall<T>(
+  providerEnv: AIProviderEnv,
+  fn: (model: LanguageModel) => Promise<T>,
+  tier: ComputeTier = "cloud",
+): Promise<T> {
+  const primaryModel = getModelForTier(tier, providerEnv);
+
+  try {
+    return await fn(primaryModel);
+  } catch (primaryError: unknown) {
+    if (!isRetryableError(primaryError)) {
+      throw primaryError;
+    }
+
+    const fallbackModel = getFallbackModel(providerEnv);
+    if (!fallbackModel) {
+      throw primaryError;
+    }
+
+    console.warn(
+      "[ai-provider] Primary provider failed with retryable error, switching to fallback:",
+      primaryError instanceof Error ? primaryError.message : String(primaryError),
+    );
+
+    // Attempt with fallback — if this also fails, let it propagate
+    return await fn(fallbackModel);
+  }
 }

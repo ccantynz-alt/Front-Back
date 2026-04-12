@@ -6,6 +6,7 @@ import {
   sessions,
   sites,
   siteVersions,
+  scopedDb,
 } from "@back-to-the-future/db";
 import { appRouter } from "./router";
 import { createSession } from "../auth/session";
@@ -14,11 +15,13 @@ import type { TRPCContext } from "./context";
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 function createTestContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
+  const userId = overrides.userId ?? null;
   return {
     db,
-    userId: null,
+    userId,
     sessionToken: null,
     csrfToken: null,
+    scopedDb: userId ? scopedDb(db, userId) : null,
     ...overrides,
   };
 }

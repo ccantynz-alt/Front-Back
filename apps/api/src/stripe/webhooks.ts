@@ -4,6 +4,7 @@ import { db } from "@back-to-the-future/db";
 import { subscriptions, payments } from "@back-to-the-future/db/schema";
 import { getStripe } from "./client";
 import { provisionTenantDB } from "@back-to-the-future/db/tenant-manager";
+import { writeAudit } from "../automation/audit-log";
 
 export function constructWebhookEvent(
   rawBody: string,
@@ -255,9 +256,30 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
       default:
         console.log(`[stripe] Unhandled event: ${event.type}`);
     }
+
+    // Audit log for every stripe webhook event
+    await writeAudit({
+      actorId: "stripe-webhook",
+      action: "CREATE",
+      resourceType: `stripe.${event.type}`,
+      resourceId: event.id,
+      result: "success",
+      detail: JSON.stringify({ eventType: event.type }),
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[stripe] Error handling ${event.type}: ${message}`);
+
+    // Audit the failure too
+    writeAudit({
+      actorId: "stripe-webhook",
+      action: "CREATE",
+      resourceType: `stripe.${event.type}`,
+      resourceId: event.id,
+      result: "failure",
+      detail: message,
+    }).catch(() => { /* audit is best-effort */ });
+
     throw err;
   }
 }
