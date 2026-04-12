@@ -398,6 +398,32 @@ export const files = sqliteTable("files", {
 // AI agents and deterministic composers read from this catalog to
 // assemble validated component trees.
 
+// ── Tenants (Multi-Tenant Platform) ──────────────────────────────────
+// Each tenant represents an organisation or project on the platform.
+// Tenants are identified by a unique slug which becomes their subdomain
+// (e.g. "zoobicon" → zoobicon.crontech.ai).
+
+export const tenants = sqliteTable("tenants", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  plan: text("plan", {
+    enum: ["free", "starter", "pro", "enterprise"],
+  })
+    .notNull()
+    .default("free"),
+  ownerEmail: text("owner_email").notNull(),
+  customDomain: text("custom_domain"),
+  status: text("status", {
+    enum: ["provisioning", "active", "suspended"],
+  })
+    .notNull()
+    .default("provisioning"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const uiComponents = sqliteTable("ui_components", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),

@@ -27,7 +27,7 @@ export type ProcessWebhookJob = z.infer<typeof ProcessWebhookJobSchema>;
 
 export const ProvisionTenantJobSchema = z.object({
   tenantId: z.string().min(1),
-  plan: z.enum(["free", "pro", "enterprise"]),
+  plan: z.enum(["free", "starter", "pro", "enterprise"]),
 });
 export type ProvisionTenantJob = z.infer<typeof ProvisionTenantJobSchema>;
 
