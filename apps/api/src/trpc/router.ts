@@ -15,6 +15,7 @@ import { apiKeysRouter } from "./procedures/apiKeys";
 import { webhooksRouter } from "./procedures/webhooks";
 import { supportRouter } from "./procedures/support";
 import { aiRouter } from "./procedures/ai";
+import { chatRouter } from "./procedures/chat";
 import { productsRouter } from "./procedures/products";
 import { productTenantsRouter } from "./procedures/productTenants";
 import { uiRouter } from "./procedures/ui";
@@ -45,6 +46,7 @@ export const appRouter = router({
   webhooks: webhooksRouter,
   support: supportRouter,
   ai: aiRouter,
+  chat: chatRouter,
   products: productsRouter,
   productTenants: productTenantsRouter,
   ui: uiRouter,

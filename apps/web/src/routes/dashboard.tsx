@@ -258,6 +258,15 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       gradient: "#10b981",
     },
     {
+      title: "Claude Chat",
+      description:
+        "Direct Anthropic API access. No subscriptions. Your key, your data, your control.",
+      href: "/chat",
+      label: "Open chat",
+      icon: "\u{26A1}",
+      gradient: "#f97316",
+    },
+    {
       title: "Templates",
       description:
         "Start from a battle-tested blueprint. Clone, customize, deploy in under five minutes.",

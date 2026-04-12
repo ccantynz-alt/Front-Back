@@ -1,10 +1,21 @@
 // ── AI Provider Factory ───────────────────────────────────────────
 // Creates AI providers based on compute tier and environment config.
-// Supports OpenAI-compatible endpoints (OpenAI, Azure, local, etc.)
+// Supports OpenAI-compatible endpoints AND Anthropic natively.
 
 import { createOpenAI, type OpenAIProviderSettings } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import type { LanguageModel } from "ai";
 import type { ComputeTier } from "./compute-tier";
+
+// ── Anthropic Model IDs ──────────────────────────────────────────
+
+export const ANTHROPIC_MODELS = {
+  "claude-opus-4-20250514": { name: "Claude Opus 4", inputCostPer1M: 15, outputCostPer1M: 75 },
+  "claude-sonnet-4-20250514": { name: "Claude Sonnet 4", inputCostPer1M: 3, outputCostPer1M: 15 },
+  "claude-haiku-4-20250506": { name: "Claude Haiku 4", inputCostPer1M: 0.80, outputCostPer1M: 4 },
+} as const;
+
+export type AnthropicModelId = keyof typeof ANTHROPIC_MODELS;
 
 // ── Environment Configuration Schema ──────────────────────────────
 
@@ -144,4 +155,53 @@ export function getFallbackModel(
  */
 export function getDefaultModel(providerEnv?: AIProviderEnv): LanguageModel {
   return getModelForTier("cloud", providerEnv);
+}
+
+// ── Anthropic Provider ───────────────────────────────────────────
+
+/**
+ * Creates an Anthropic language model from an API key and model ID.
+ * Used by the internal chat interface where the user supplies their
+ * own Anthropic API key.
+ */
+export function getAnthropicModel(
+  apiKey: string,
+  modelId?: string,
+): LanguageModel {
+  const provider = createAnthropic({ apiKey });
+  return provider(modelId ?? "claude-sonnet-4-20250514");
+}
+
+/**
+ * Returns an Anthropic model from environment variables if configured.
+ */
+export function getAnthropicModelFromEnv(): LanguageModel | undefined {
+  const key = env("ANTHROPIC_API_KEY");
+  if (!key) return undefined;
+  const modelId = env("ANTHROPIC_MODEL") ?? "claude-sonnet-4-20250514";
+  return getAnthropicModel(key, modelId);
+}
+
+/**
+ * Checks whether an Anthropic API key is available (from env or user-supplied).
+ */
+export function hasAnthropicProvider(): boolean {
+  const key = env("ANTHROPIC_API_KEY");
+  return key !== undefined && key.length > 5;
+}
+
+/**
+ * Estimate cost in microdollars for a given model and token counts.
+ * Returns cost in microdollars (1/1,000,000 of a dollar) for precision.
+ */
+export function estimateCost(
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number,
+): number {
+  const modelInfo = ANTHROPIC_MODELS[modelId as AnthropicModelId];
+  if (!modelInfo) return 0;
+  const inputCost = (inputTokens / 1_000_000) * modelInfo.inputCostPer1M;
+  const outputCost = (outputTokens / 1_000_000) * modelInfo.outputCostPer1M;
+  return Math.round((inputCost + outputCost) * 1_000_000);
 }

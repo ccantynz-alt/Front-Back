@@ -3,6 +3,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
+import { chatStreamRoutes } from "./ai/chat-stream";
 import { wsApp, websocket, sseApp, yjsWsApp } from "./realtime";
 import { initTelemetry, httpRequestCount, httpRequestDuration, recordRequest, getMetrics } from "./telemetry";
 import { getAllFlags, isFeatureEnabled } from "./feature-flags";
@@ -269,6 +270,9 @@ app.route("/auth", googleOAuthRoutes);
 
 // Mount AI routes (raw Hono -- streaming works better outside tRPC)
 app.route("/ai", aiRoutes);
+
+// Mount Anthropic chat streaming routes
+app.route("/chat", chatStreamRoutes);
 
 app.use("/trpc/*", async (c) => {
   const response = await fetchRequestHandler({

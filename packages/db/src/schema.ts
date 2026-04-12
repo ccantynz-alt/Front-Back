@@ -347,3 +347,104 @@ export const siteVersions = sqliteTable("site_versions", {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+// ── AI Cache ──────────────────────────────────────────────────────
+// Content-addressable cache for LLM/embedding responses. Keyed by
+// SHA-256 of (model + prompt + params). Tenant-scoped.
+
+export const aiCache = sqliteTable("ai_cache", {
+  cacheKey: text("cache_key").primaryKey(),
+  tenantId: text("tenant_id"),
+  model: text("model").notNull(),
+  promptHash: text("prompt_hash").notNull(),
+  responseJson: text("response_json").notNull(),
+  tokensUsed: integer("tokens_used").notNull().default(0),
+  costUsd: integer("cost_usd").notNull().default(0),
+  hitCount: integer("hit_count").notNull().default(0),
+  lastHitAt: integer("last_hit_at", { mode: "timestamp" }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── UI Components Registry ────────────────────────────────────────
+// Schema-first component catalog. Each row is a registered component
+// with its JSON descriptor (Zod schema, props, slots, variants).
+
+export const uiComponents = sqliteTable("ui_components", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  descriptorJson: text("descriptor_json").notNull(),
+  registeredBy: text("registered_by"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── AI Chat Conversations ─────────────────────────────────────────
+// Persistent conversation threads for the internal Anthropic-powered
+// chat interface. Each conversation tracks model, token usage, and
+// cost so Craig can see exactly what the API spend looks like.
+
+export const conversations = sqliteTable("conversations", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  model: text("model").notNull().default("claude-sonnet-4-20250514"),
+  systemPrompt: text("system_prompt"),
+  totalTokens: integer("total_tokens").notNull().default(0),
+  totalCost: integer("total_cost").notNull().default(0),
+  archived: integer("archived", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const chatMessages = sqliteTable("chat_messages", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id")
+    .notNull()
+    .references(() => conversations.id, { onDelete: "cascade" }),
+  role: text("role", { enum: ["user", "assistant", "system"] }).notNull(),
+  content: text("content").notNull(),
+  model: text("model"),
+  inputTokens: integer("input_tokens"),
+  outputTokens: integer("output_tokens"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── User Provider Keys ────────────────────────────────────────────
+// Encrypted storage for user-supplied API keys (Anthropic, OpenAI, etc).
+// The key is encrypted at rest — only the prefix is stored in plaintext
+// so users can identify which key they configured.
+
+export const userProviderKeys = sqliteTable("user_provider_keys", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider", {
+    enum: ["anthropic", "openai"],
+  }).notNull(),
+  encryptedKey: text("encrypted_key").notNull(),
+  keyPrefix: text("key_prefix").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});

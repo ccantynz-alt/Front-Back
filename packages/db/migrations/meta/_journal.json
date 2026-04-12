@@ -11,6 +11,7 @@
     { "idx": 6, "version": "6", "when": 1712900000000, "tag": "0006_wave2_hooks", "breakpoints": true },
     { "idx": 7, "version": "6", "when": 1713000000000, "tag": "0007_product_registry", "breakpoints": true },
     { "idx": 8, "version": "6", "when": 1713100000000, "tag": "0008_ui_components", "breakpoints": true },
-    { "idx": 9, "version": "6", "when": 1713200000000, "tag": "0009_webhook_deliveries", "breakpoints": true }
+    { "idx": 9, "version": "6", "when": 1713200000000, "tag": "0009_webhook_deliveries", "breakpoints": true },
+    { "idx": 10, "version": "6", "when": 1713300000000, "tag": "0010_chat_and_provider_keys", "breakpoints": true }
   ]
 }
