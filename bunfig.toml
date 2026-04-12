@@ -9,3 +9,4 @@ save = true
 [test]
 # Exclude Playwright e2e tests from bun test (run via: bunx playwright test)
 exclude = ["e2e/**"]
+preload = ["./apps/api/test/setup.ts"]

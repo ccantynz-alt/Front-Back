@@ -10,9 +10,10 @@ import {
 } from "@back-to-the-future/db";
 import {
   getAllFlags,
-  updateFlag,
+  persistFlag,
   isFeatureEnabled,
 } from "../../feature-flags";
+import { auditMiddleware } from "../../middleware/audit";
 
 // ── Admin Middleware ──────────────────────────────────────────────────
 
@@ -112,14 +113,15 @@ export const adminRouter = router({
   }),
 
   toggleFeatureFlag: adminProcedure
+    .use(auditMiddleware("admin.toggleFeatureFlag"))
     .input(
       z.object({
         key: z.string().min(1),
         enabled: z.boolean(),
       }),
     )
-    .mutation(({ input }) => {
-      const updated = updateFlag(input.key, { enabled: input.enabled });
+    .mutation(async ({ input }) => {
+      const updated = await persistFlag(input.key, { enabled: input.enabled });
       if (!updated) {
         throw new TRPCError({
           code: "NOT_FOUND",
