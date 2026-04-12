@@ -210,6 +210,18 @@
         "typescript": "^5.7.0",
       },
     },
+    "services/orchestrator": {
+      "name": "@back-to-the-future/orchestrator",
+      "version": "0.0.1",
+      "dependencies": {
+        "hono": "^4.7.0",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/sentinel": {
       "name": "@back-to-the-future/sentinel",
       "version": "0.0.1",
@@ -380,6 +392,8 @@
     "@back-to-the-future/edge-workers": ["@back-to-the-future/edge-workers@workspace:services/edge-workers"],
 
     "@back-to-the-future/gpu-workers": ["@back-to-the-future/gpu-workers@workspace:services/gpu-workers"],
+
+    "@back-to-the-future/orchestrator": ["@back-to-the-future/orchestrator@workspace:services/orchestrator"],
 
     "@back-to-the-future/queue": ["@back-to-the-future/queue@workspace:packages/queue"],
 

@@ -1,8 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "exit 0",
-  "installCommand": "echo 'Crontech deploys via Cloudflare Pages, not Vercel.'",
-  "buildCommand": "echo 'Skipping Vercel build. Canonical deploy target is Cloudflare Pages via .github/workflows/deploy.yml.'",
-  "outputDirectory": ".vercel-noop",
+  "installCommand": "bun install",
+  "buildCommand": "if [ -f app.config.ts ]; then SERVER_PRESET=vercel npx vinxi build; else cd apps/web && SERVER_PRESET=vercel npx vinxi build; fi",
   "framework": null
 }

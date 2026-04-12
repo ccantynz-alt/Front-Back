@@ -8,9 +8,9 @@
       "category": "framework",
       "description": "React framework for production. Primary competitor in full-stack web.",
       "defaultBranch": "canary",
-      "lastKnownRelease": "v16.2.1-canary.31",
-      "lastKnownReleaseAt": "2026-04-10T08:52:15Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:14.703Z",
+      "lastKnownRelease": "v16.2.1-canary.33",
+      "lastKnownReleaseAt": "2026-04-11T23:44:03Z",
+      "lastCommitCheckAt": "2026-04-12T02:51:39.833Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -75,7 +75,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.12",
       "lastKnownReleaseAt": "2026-04-07T04:15:34Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:14.911Z",
+      "lastCommitCheckAt": "2026-04-12T02:51:40.275Z",
       "baselineCommitsPerWeek": 9
     },
     {
@@ -88,7 +88,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v2.0.0-beta.0",
       "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:15.116Z",
+      "lastCommitCheckAt": "2026-04-12T02:51:40.895Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -101,8 +101,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v11.16.0",
       "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-12T02:51:41.164Z",
+      "baselineCommitsPerWeek": 0
     },
     {
       "owner": "vercel",
@@ -112,8 +112,8 @@
       "category": "ai",
       "description": "AI SDK for streaming responses and generative UI. Core AI orchestration layer.",
       "defaultBranch": "main",
-      "lastKnownRelease": "ai@6.0.158",
-      "lastKnownReleaseAt": "2026-04-10T18:35:33Z",
+      "lastKnownRelease": "@ai-sdk/google@3.0.62",
+      "lastKnownReleaseAt": "2026-04-11T16:23:09Z",
       "lastCommitCheckAt": "2026-04-10T21:20:15.693Z",
       "baselineCommitsPerWeek": 70
     },
@@ -313,6 +313,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-10T21:20:21.213Z",
+  "lastUpdated": "2026-04-12T02:51:41.165Z",
   "schemaVersion": 1
 }

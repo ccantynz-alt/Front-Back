@@ -16,6 +16,29 @@ import { fileExists } from "@back-to-the-future/storage/client";
 import { enqueueTenantProvision } from "@back-to-the-future/queue";
 import { auditMiddleware } from "../../middleware/audit";
 
+// ── Orchestrator Client ─────────────────────────────────────────────
+const ORCHESTRATOR_URL = process.env["ORCHESTRATOR_URL"] ?? "http://127.0.0.1:9000";
+
+async function orchestratorFetch<T>(
+  path: string,
+  options?: RequestInit,
+): Promise<T> {
+  const res = await fetch(`${ORCHESTRATOR_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+    signal: AbortSignal.timeout(120_000),
+  });
+  const data: unknown = await res.json();
+  if (!res.ok) {
+    const errMsg = (data as { error?: string }).error ?? `Orchestrator error ${res.status}`;
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: errMsg });
+  }
+  return data as T;
+}
+
 // ── Admin Middleware ──────────────────────────────────────────────────
 
 const enforceAdmin = middleware(async ({ ctx, next }) => {
@@ -286,4 +309,112 @@ export const tenantRouter = router({
         });
       }
     }),
+
+  // ── Deploy: trigger app deployment via orchestrator ────────────────
+
+  deploy: adminProcedure
+    .use(auditMiddleware("tenant.deploy"))
+    .input(
+      z.object({
+        appName: z.string().min(1).max(100),
+        repoUrl: z.string().url(),
+        branch: z.string().min(1).default("main"),
+        domain: z.string().min(1),
+        subdomain: z.string().optional(),
+        port: z.number().int().min(1024).max(65535),
+        runtime: z.enum(["nextjs", "bun"]),
+        envVars: z.record(z.string(), z.string()).optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      return orchestratorFetch<{
+        containerId: string;
+        appName: string;
+        domain: string;
+        url: string;
+        status: string;
+        healthCheck: string;
+      }>("/deploy", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    }),
+
+  // ── App Status: get container status + health ─────────────────────
+
+  appStatus: adminProcedure
+    .input(z.object({ appName: z.string().min(1) }))
+    .query(async ({ input }) => {
+      return orchestratorFetch<{
+        name: string;
+        containerId: string;
+        image: string;
+        status: string;
+        port: number;
+        domain: string;
+        healthUrl: string | null;
+        uptime: string;
+        createdAt: string;
+      }>(`/status/${encodeURIComponent(input.appName)}`);
+    }),
+
+  // ── App Logs: get recent container logs ───────────────────────────
+
+  appLogs: adminProcedure
+    .input(
+      z.object({
+        appName: z.string().min(1),
+        tail: z.number().int().min(1).max(1000).default(100),
+      }),
+    )
+    .query(async ({ input }) => {
+      return orchestratorFetch<{ appName: string; logs: string }>(
+        `/logs/${encodeURIComponent(input.appName)}?tail=${input.tail}`,
+      );
+    }),
+
+  // ── Rollback: revert to previous image ────────────────────────────
+
+  appRollback: adminProcedure
+    .use(auditMiddleware("tenant.rollback"))
+    .input(z.object({ appName: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      return orchestratorFetch<{ status: string; appName: string }>(
+        "/rollback",
+        {
+          method: "POST",
+          body: JSON.stringify({ appName: input.appName }),
+        },
+      );
+    }),
+
+  // ── Undeploy: stop and remove an app ──────────────────────────────
+
+  appUndeploy: adminProcedure
+    .use(auditMiddleware("tenant.undeploy"))
+    .input(z.object({ appName: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      return orchestratorFetch<{ status: string; appName: string }>(
+        "/undeploy",
+        {
+          method: "POST",
+          body: JSON.stringify({ appName: input.appName }),
+        },
+      );
+    }),
+
+  // ── List All Deployed Apps ────────────────────────────────────────
+
+  appList: adminProcedure.query(async () => {
+    return orchestratorFetch<{
+      apps: Array<{
+        name: string;
+        containerId: string;
+        image: string;
+        status: string;
+        port: number;
+        domain: string;
+      }>;
+    }>("/apps");
+  }),
 });
