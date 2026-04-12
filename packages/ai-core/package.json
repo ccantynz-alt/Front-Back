@@ -12,6 +12,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "3.0.69",
     "@ai-sdk/openai": "^3.0.0",
     "@back-to-the-future/schemas": "workspace:*",
     "@huggingface/transformers": "^3.4.0",

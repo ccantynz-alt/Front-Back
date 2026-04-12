@@ -76,7 +76,10 @@ export {
   getModelForTier,
   getFallbackModel,
   getDefaultModel,
+  isRetryableError,
+  routeAICall,
   type AIProviderConfig,
+  type AnthropicProviderConfig,
   type AIProviderEnv,
 } from "./providers";
 
