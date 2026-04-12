@@ -376,6 +376,28 @@ export const aiCache = sqliteTable("ai_cache", {
 // AI agents and deterministic composers read from this catalog to
 // assemble validated component trees.
 
+// ── Files (R2 File Storage Metadata) ──────────────────────────────────
+// Tracks files uploaded to Cloudflare R2. Each row maps a logical file
+// to its R2 object key. Tenant-scoped via `tenantId`.
+
+export const files = sqliteTable("files", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  key: text("key").notNull().unique(),
+  filename: text("filename").notNull(),
+  contentType: text("content_type").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  uploadedBy: text("uploaded_by").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── UI Component Catalog ───────────────────────────────────────────
+// Schema-first component registry for the generative-UI system.
+// AI agents and deterministic composers read from this catalog to
+// assemble validated component trees.
+
 export const uiComponents = sqliteTable("ui_components", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),
