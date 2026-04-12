@@ -73,6 +73,7 @@ app.use(
     allowHeaders: [
       "Content-Type",
       "Authorization",
+      "X-CSRF-Token",
       "X-Request-ID",
       "X-Forwarded-For",
     ],
@@ -249,11 +250,14 @@ app.all("/api/trpc/*", async (c) => {
           : undefined,
     });
 
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-    });
+    // Copy upstream response body + status but use c.body() so Hono's
+    // middleware pipeline (CORS, security headers) can append its headers.
+    const body = await response.arrayBuffer();
+    const upstreamContentType = response.headers.get("content-type");
+    if (upstreamContentType) {
+      c.header("Content-Type", upstreamContentType);
+    }
+    return c.body(body, response.status as 200);
   } catch (error) {
     return c.json(
       {
@@ -454,11 +458,12 @@ app.post("/api/webhooks/stripe", async (c) => {
       body: c.req.raw.body,
     });
 
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-    });
+    const body = await response.arrayBuffer();
+    const upstreamContentType = response.headers.get("content-type");
+    if (upstreamContentType) {
+      c.header("Content-Type", upstreamContentType);
+    }
+    return c.body(body, response.status as 200);
   } catch (error) {
     return c.json(
       {

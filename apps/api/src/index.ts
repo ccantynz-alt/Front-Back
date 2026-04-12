@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
@@ -49,9 +50,44 @@ const app = new Hono().basePath("/api");
 // ── Subdomain Routing (Multi-Tenant) ────────────────────────────────
 app.use("*", subdomainRouter);
 
+// ── CORS (must be before other middleware so preflight OPTIONS work) ──
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://crontech.ai",
+  "https://www.crontech.ai",
+  // Cloudflare Pages preview/production URLs
+  ...(process.env.CORS_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean) ?? []),
+];
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      if (!origin) return "http://localhost:3000";
+      if (ALLOWED_ORIGINS.includes(origin)) return origin;
+      // Allow any *.pages.dev subdomain for Cloudflare Pages previews
+      if (origin.endsWith(".pages.dev")) return origin;
+      return null as unknown as string;
+    },
+    allowHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Request-ID"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    exposeHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "X-Request-ID"],
+    maxAge: 86400,
+    credentials: true,
+  }),
+);
+
 // ── Security Middleware ──────────────────────────────────────────────
 app.use("*", securityHeaders());
-app.use("*", csrf({ allowedOrigins: ["http://localhost:3000", "http://localhost:3001"] }));
+app.use("*", csrf({
+  allowedOrigins: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://crontech.ai",
+    "https://www.crontech.ai",
+    ...(process.env.CORS_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean) ?? []),
+  ],
+}));
 // Rate limiter: auto-selects Cloudflare KV when `RATE_LIMIT_KV` is bound to
 // the Worker env, otherwise falls back to the in-memory limiter. This lets the
 // same code run in `bun run dev` locally and on Cloudflare Workers in prod
