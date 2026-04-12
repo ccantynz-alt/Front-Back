@@ -167,6 +167,37 @@ export const userWebhooks = sqliteTable("user_webhooks", {
     .$defaultFn(() => new Date()),
 });
 
+// ── Webhook Deliveries ──────────────────────────────────────────────
+// Every outbound webhook POST goes through this table. The dispatcher
+// loop (apps/api/src/webhooks/dispatcher.ts) selects pending rows whose
+// `next_retry_at` is due, POSTs them, and transitions them to
+// `delivered` or `failed`. Idempotent by design: a crashed dispatcher
+// leaves unmarked rows that the next run picks up.
+
+export const webhookDeliveries = sqliteTable("webhook_deliveries", {
+  id: text("id").primaryKey(),
+  webhookId: text("webhook_id")
+    .notNull()
+    .references(() => userWebhooks.id, { onDelete: "cascade" }),
+  event: text("event").notNull(),
+  payload: text("payload").notNull(),
+  status: text("status", {
+    enum: ["pending", "delivered", "failed"],
+  })
+    .notNull()
+    .default("pending"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  lastError: text("last_error"),
+  lastStatusCode: integer("last_status_code"),
+  nextRetryAt: integer("next_retry_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  deliveredAt: integer("delivered_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 // ── Audit Logs ───────────────────────────────────────────────────────
 
 export const auditLogs = sqliteTable("audit_logs", {

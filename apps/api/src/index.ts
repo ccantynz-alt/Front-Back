@@ -25,6 +25,8 @@ initTelemetry();
 
 import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
+import { runDispatcher } from "./webhooks/dispatcher";
+import { db as defaultDb } from "@back-to-the-future/db";
 import {
   startHealthMonitor,
   getCurrentHealth,
@@ -33,7 +35,7 @@ import {
 import { getQueueStatus } from "./automation/retry-queue";
 
 import { securityHeaders } from "./middleware/security-headers";
-import { rateLimiter } from "./middleware/rate-limiter";
+import { createRateLimiter, type KvNamespaceLike } from "./middleware/rate-limiter";
 import { csrf } from "./middleware/csrf";
 import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
 import { googleOAuthRoutes } from "./auth/google-oauth";
@@ -43,9 +45,39 @@ const app = new Hono().basePath("/api");
 // ── Security Middleware ──────────────────────────────────────────────
 app.use("*", securityHeaders());
 app.use("*", csrf({ allowedOrigins: ["http://localhost:3000", "http://localhost:3001"] }));
-app.use("/api/trpc/*", rateLimiter({ windowMs: 60_000, max: 200 }));
-app.use("/api/auth/*", rateLimiter({ windowMs: 60_000, max: 20 }));
-app.use("/api/ai/*", rateLimiter({ windowMs: 60_000, max: 30 }));
+// Rate limiter: auto-selects Cloudflare KV when `RATE_LIMIT_KV` is bound to
+// the Worker env, otherwise falls back to the in-memory limiter. This lets the
+// same code run in `bun run dev` locally and on Cloudflare Workers in prod
+// without branching. Define the binding in wrangler.toml and run
+// `wrangler kv:namespace create RATE_LIMIT_KV` to provision.
+const maybeKv = (globalThis as { RATE_LIMIT_KV?: KvNamespaceLike }).RATE_LIMIT_KV;
+const rateLimitEnv: { RATE_LIMIT_KV?: KvNamespaceLike } | undefined = maybeKv
+  ? { RATE_LIMIT_KV: maybeKv }
+  : undefined;
+app.use(
+  "/api/trpc/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 200, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 200 },
+  ),
+);
+app.use(
+  "/api/auth/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 20, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 20 },
+  ),
+);
+app.use(
+  "/api/ai/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 30, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 30 },
+  ),
+);
 
 // ── API Key Authentication ──────────────────────────────────────────
 // Allows Bearer btf_sk_... tokens to authenticate against the API keys table.
@@ -284,6 +316,20 @@ startQueue();
 startHealingLoop();
 startHealthMonitor();
 
+// Webhook dispatcher: drains the `webhook_deliveries` queue every minute
+// in long-running server mode (Bun). On Cloudflare Workers, wire the same
+// `runDispatcher` call into a cron trigger via the exported `scheduled`
+// handler below.
+const webhookDispatcherInterval = setInterval(() => {
+  runDispatcher(defaultDb).catch((err) => {
+    console.warn("[webhook-dispatcher] run failed:", err);
+  });
+}, 60_000);
+// Unref so the interval does not keep a test process alive.
+if (typeof (webhookDispatcherInterval as unknown as { unref?: () => void }).unref === "function") {
+  (webhookDispatcherInterval as unknown as { unref: () => void }).unref();
+}
+
 const port = Number(process.env.API_PORT) || 3001;
 
 Bun.serve({
@@ -295,5 +341,32 @@ Bun.serve({
 console.log(`API server running on http://localhost:${port}`);
 console.log(`  WebSocket: ws://localhost:${port}/api/ws`);
 console.log(`  SSE: http://localhost:${port}/api/realtime/events/:roomId`);
+
+// ── Cloudflare Workers entry point ─────────────────────────────────
+// `default export = app` stays for compatibility with existing importers
+// (bun scripts, tests). The `workerHandler` export below is the shape
+// Workers expects for `fetch` + `scheduled` cron triggers. Wire
+// `wrangler.toml` `[triggers] crons = ["*/1 * * * *"]` to the
+// `workerHandler.scheduled` path.
+export const workerHandler = {
+  fetch: app.fetch,
+  async scheduled(
+    _event: unknown,
+    _env: unknown,
+    ctx: { waitUntil: (promise: Promise<unknown>) => void },
+  ): Promise<void> {
+    ctx.waitUntil(
+      runDispatcher(defaultDb)
+        .then((result) => {
+          console.log(
+            `[webhook-dispatcher] scheduled run: delivered=${result.delivered} failed=${result.failed}`,
+          );
+        })
+        .catch((err) => {
+          console.warn("[webhook-dispatcher] scheduled run failed:", err);
+        }),
+    );
+  },
+};
 
 export default app;
