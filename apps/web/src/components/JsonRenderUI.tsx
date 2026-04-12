@@ -6,7 +6,6 @@
 import { createSignal, For, Show } from "solid-js";
 import type { JSX, Component } from "solid-js";
 import {
-  createRenderer,
   Renderer,
   useChatUI,
   useUIStream,
@@ -31,13 +30,35 @@ import {
 // Since @json-render/solid v0.16 works with any catalog shape,
 // we define components as a simple registry for the Renderer.
 
+// AI-generated props arrive as unstructured strings; validate them against the
+// component's literal union and fall back to a sane default when the value is
+// missing or unknown. Keeps the renderer strict without trusting the model.
+const asEnum = <T extends string>(
+  value: unknown,
+  valid: readonly T[],
+  fallback: T,
+): T => (typeof value === "string" && (valid as readonly string[]).includes(value) ? (value as T) : fallback);
+
+const BUTTON_VARIANTS = ["default", "primary", "secondary", "destructive", "outline", "ghost", "link"] as const;
+const BUTTON_SIZES = ["sm", "md", "lg", "icon"] as const;
+const CARD_PADDINGS = ["none", "sm", "md", "lg"] as const;
+const STACK_DIRECTIONS = ["horizontal", "vertical"] as const;
+const STACK_GAPS = ["none", "xs", "sm", "md", "lg", "xl"] as const;
+const TEXT_VARIANTS = ["h1", "h2", "h3", "h4", "body", "caption", "code"] as const;
+const TEXT_WEIGHTS = ["normal", "medium", "semibold", "bold"] as const;
+const BADGE_VARIANTS = ["default", "success", "warning", "error", "info"] as const;
+const ALERT_VARIANTS = ["success", "warning", "error", "info"] as const;
+const AVATAR_SIZES = ["sm", "md", "lg"] as const;
+const SPINNER_SIZES = ["sm", "md", "lg"] as const;
+const SEPARATOR_ORIENTATIONS = ["horizontal", "vertical"] as const;
+
 export const componentRegistry: Record<string, Component<ComponentRenderProps>> = {
   Button: (props: ComponentRenderProps) => {
     const p = props.element.props as Record<string, unknown>;
     return (
       <Button
-        variant={(p.variant as string) ?? "default"}
-        size={(p.size as string) ?? "md"}
+        variant={asEnum(p.variant, BUTTON_VARIANTS, "default")}
+        size={asEnum(p.size, BUTTON_SIZES, "md")}
         disabled={p.disabled as boolean}
         loading={p.loading as boolean}
         onClick={() => props.emit("press")}
@@ -64,7 +85,7 @@ export const componentRegistry: Record<string, Component<ComponentRenderProps>> 
     return (
       <Card
         title={p.title as string}
-        padding={(p.padding as string) ?? "md"}
+        padding={asEnum(p.padding, CARD_PADDINGS, "md")}
       >
         {props.children}
       </Card>
@@ -75,8 +96,8 @@ export const componentRegistry: Record<string, Component<ComponentRenderProps>> 
     const p = props.element.props as Record<string, unknown>;
     return (
       <Stack
-        direction={(p.direction as string) ?? "vertical"}
-        gap={(p.gap as string) ?? "md"}
+        direction={asEnum(p.direction, STACK_DIRECTIONS, "vertical")}
+        gap={asEnum(p.gap, STACK_GAPS, "md")}
       >
         {props.children}
       </Stack>
@@ -87,8 +108,8 @@ export const componentRegistry: Record<string, Component<ComponentRenderProps>> 
     const p = props.element.props as Record<string, unknown>;
     return (
       <Text
-        variant={(p.variant as string) ?? "body"}
-        weight={(p.weight as string) ?? "normal"}
+        variant={asEnum(p.variant, TEXT_VARIANTS, "body")}
+        weight={asEnum(p.weight, TEXT_WEIGHTS, "normal")}
       >
         {(p.content as string) ?? ""}
       </Text>
@@ -111,7 +132,7 @@ export const componentRegistry: Record<string, Component<ComponentRenderProps>> 
     const p = props.element.props as Record<string, unknown>;
     return (
       <Badge
-        variant={(p.variant as string) ?? "default"}
+        variant={asEnum(p.variant, BADGE_VARIANTS, "default")}
         label={(p.label as string) ?? ""}
       />
     );
@@ -121,7 +142,7 @@ export const componentRegistry: Record<string, Component<ComponentRenderProps>> 
     const p = props.element.props as Record<string, unknown>;
     return (
       <Alert
-        variant={(p.variant as string) ?? "info"}
+        variant={asEnum(p.variant, ALERT_VARIANTS, "info")}
         title={p.title as string}
       >
         {props.children}
@@ -134,7 +155,7 @@ export const componentRegistry: Record<string, Component<ComponentRenderProps>> 
     return (
       <Avatar
         initials={p.initials as string}
-        size={(p.size as string) ?? "md"}
+        size={asEnum(p.size, AVATAR_SIZES, "md")}
       />
     );
   },
@@ -170,7 +191,7 @@ export const componentRegistry: Record<string, Component<ComponentRenderProps>> 
 
   Spinner: (props: ComponentRenderProps) => {
     const p = props.element.props as Record<string, unknown>;
-    return <Spinner size={(p.size as string) ?? "md"} />;
+    return <Spinner size={asEnum(p.size, SPINNER_SIZES, "md")} />;
   },
 
   Tooltip: (props: ComponentRenderProps) => {
@@ -186,7 +207,7 @@ export const componentRegistry: Record<string, Component<ComponentRenderProps>> 
     const p = props.element.props as Record<string, unknown>;
     return (
       <Separator
-        orientation={(p.orientation as string) ?? "horizontal"}
+        orientation={asEnum(p.orientation, SEPARATOR_ORIENTATIONS, "horizontal")}
       />
     );
   },
@@ -214,7 +235,7 @@ interface StreamingGenUIProps {
 export function StreamingGenUI(props: StreamingGenUIProps): JSX.Element {
   const stream = useUIStream({
     api: props.api,
-    onComplete: props.onComplete,
+    ...(props.onComplete ? { onComplete: props.onComplete } : {}),
     onError: (err) => console.error("[StreamingGenUI] Error:", err),
   });
 

@@ -3,7 +3,7 @@ import { type JSX, For, splitProps, createSignal } from "solid-js";
 export interface TabItem {
   id: string;
   label: string;
-  content: JSX.Element;
+  content?: JSX.Element;
   disabled?: boolean;
 }
 

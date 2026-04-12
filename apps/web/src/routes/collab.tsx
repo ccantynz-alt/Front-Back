@@ -1,7 +1,7 @@
-import { For, Show, createSignal, onMount } from "solid-js";
+import { For, Show, createSignal } from "solid-js";
 import type { JSX } from "solid-js";
 import { SEOHead } from "../components/SEOHead";
-import { Button, Card, Input, Stack, Text, Badge, Separator } from "@back-to-the-future/ui";
+import { Button, Card, Input, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
 interface Room {
@@ -14,7 +14,6 @@ interface Room {
 export default function CollabPage(): JSX.Element {
   const [rooms, setRooms] = createSignal<Room[]>([]);
   const [newRoomName, setNewRoomName] = createSignal("");
-  const [connected, setConnected] = createSignal(false);
 
   const createRoom = (): void => {
     const name = newRoomName().trim();

@@ -1,12 +1,12 @@
 import { type JSX, Show, splitProps, createSignal } from "solid-js";
 
 export interface AlertProps {
-  variant?: "info" | "success" | "warning" | "error";
-  title?: string;
-  description?: string;
-  dismissible?: boolean;
-  class?: string;
-  children?: JSX.Element;
+  variant?: "info" | "success" | "warning" | "error" | undefined;
+  title?: string | undefined;
+  description?: string | undefined;
+  dismissible?: boolean | undefined;
+  class?: string | undefined;
+  children?: JSX.Element | undefined;
 }
 
 export function Alert(props: AlertProps): JSX.Element {

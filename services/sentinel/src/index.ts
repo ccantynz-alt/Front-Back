@@ -7,14 +7,11 @@ import { githubCommitsCollector } from "./collectors/github-commits";
 import { npmRegistryCollector } from "./collectors/npm-registry";
 import { hackernewsCollector } from "./collectors/hackernews";
 import { arxivCollector } from "./collectors/arxiv";
-import { analyzeThreats } from "./analyzers/threat-analyzer";
-import { findOpportunities } from "./analyzers/opportunity-finder";
-import { scoutTech } from "./analyzers/tech-scout";
-import { type AlertMessage, sendSlackAlert, sendDiscordAlert } from "./alerts/types";
-import { reportSuccess, runDeadMansSwitch } from "./dead-mans-switch";
-import { storeItems, getItemCount } from "./storage/intelligence-store";
+import { runDeadMansSwitch } from "./dead-mans-switch";
+import { getItemCount } from "./storage/intelligence-store";
 import { sendDailyDigest } from "./digest/daily-digest";
-import type { Collector, CollectorResult, IntelligenceItem } from "./collectors/types";
+import { runCycle } from "./runner";
+import type { Collector } from "./collectors/types";
 
 // ── Configuration ───────────────────────────────────────────────────
 
@@ -32,81 +29,31 @@ let totalCollections = 0;
 let totalItemsCollected = 0;
 let lastDigestAt: string | null = null;
 
-// ── Collector Runner ────────────────────────────────────────────────
-
-async function runCollector(collector: Collector): Promise<CollectorResult> {
-  console.log(`[sentinel] Running collector: ${collector.name}`);
-  try {
-    const result = await collector.collect();
-    if (result.success) {
-      reportSuccess(collector.name, collector.intervalMs);
-    }
-    console.log(
-      `[sentinel] ${collector.name}: ${result.items.length} items in ${result.durationMs}ms${result.error ? ` (errors: ${result.error})` : ""}`,
-    );
-    return result;
-  } catch (err) {
-    console.error(`[sentinel] ${collector.name} failed:`, err);
-    return {
-      source: collector.name,
-      items: [],
-      collectedAt: new Date().toISOString(),
-      success: false,
-      error: err instanceof Error ? err.message : "Unknown error",
-      durationMs: 0,
-    };
-  }
-}
-
-// ── Intelligence Processing ─────────────────────────────────────────
-
-async function processIntelligence(items: IntelligenceItem[]): Promise<void> {
-  if (items.length === 0) return;
-
-  // Persist to store
-  const newCount = storeItems(items);
-  totalItemsCollected += newCount;
-
-  const threats = analyzeThreats(items);
-  const opportunities = findOpportunities(items);
-  const techScouting = scoutTech(items);
-
-  console.log(
-    `[sentinel] Analysis: ${threats.length} threats, ${opportunities.length} opportunities, ${techScouting.length} tech signals (${newCount} new items stored)`,
-  );
-
-  // Send critical alerts immediately
-  for (const threat of threats) {
-    if (threat.threatLevel === "critical" || threat.threatLevel === "high") {
-      const alert: AlertMessage = {
-        priority: "critical",
-        title: threat.item.title,
-        body: `${threat.impact}\n\nRecommendation: ${threat.recommendation}`,
-        url: threat.item.url,
-        timestamp: new Date().toISOString(),
-      };
-      await sendSlackAlert(alert);
-      await sendDiscordAlert(alert);
-    }
-  }
-}
-
 // ── Collection Orchestrator ─────────────────────────────────────────
+// Delegates to the shared runner in src/runner.ts so the long-lived
+// scheduler and the one-shot CLI share a single code path.
 
 async function runAllCollectors(): Promise<void> {
-  const results = await Promise.allSettled(collectors.map(runCollector));
-  const allItems: IntelligenceItem[] = [];
-
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      allItems.push(...result.value.items);
-    }
+  const result = await runCycle(collectors, { emitAlerts: true });
+  lastCollectionAt = result.finishedAt;
+  totalCollections += 1;
+  totalItemsCollected += result.itemsStored;
+  console.log(
+    `[sentinel] cycle: ${result.itemsCollected} collected, ${result.itemsStored} stored, ${result.threats} threats, ${result.opportunities} opportunities, ${result.techSignals} tech signals in ${result.durationMs}ms`,
+  );
+  if (result.collectorErrors.length > 0) {
+    console.warn(`[sentinel] collector errors: ${result.collectorErrors.join("; ")}`);
   }
+}
 
-  lastCollectionAt = new Date().toISOString();
-  totalCollections++;
-
-  await processIntelligence(allItems);
+async function runSingleCollector(collector: Collector): Promise<void> {
+  const result = await runCycle([collector], { emitAlerts: true });
+  totalItemsCollected += result.itemsStored;
+  if (result.collectorErrors.length > 0) {
+    console.warn(
+      `[sentinel] ${collector.name} errors: ${result.collectorErrors.join("; ")}`,
+    );
+  }
 }
 
 // ── Health Endpoint ─────────────────────────────────────────────────
@@ -175,14 +122,11 @@ function startScheduler(): void {
   // Run all collectors immediately on start
   void runAllCollectors();
 
-  // Schedule each collector independently
+  // Schedule each collector independently. Each tick delegates to
+  // runSingleCollector which internally uses the shared runner.
   for (const collector of collectors) {
     setInterval(() => {
-      void runCollector(collector).then((result) => {
-        if (result.items.length > 0) {
-          void processIntelligence(result.items);
-        }
-      });
+      void runSingleCollector(collector);
     }, collector.intervalMs);
   }
 

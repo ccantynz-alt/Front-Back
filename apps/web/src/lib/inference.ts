@@ -28,11 +28,11 @@ export interface ModelInfo {
 }
 
 export interface GenerateOptions {
-  maxTokens?: number;
-  temperature?: number;
-  topP?: number;
-  onToken?: (token: string) => void;
-  systemPrompt?: string;
+  maxTokens?: number | undefined;
+  temperature?: number | undefined;
+  topP?: number | undefined;
+  onToken?: ((token: string) => void) | undefined;
+  systemPrompt?: string | undefined;
 }
 
 export interface GenerateResult {

@@ -142,19 +142,26 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build web app
+      - name: Build web app (cloudflare-pages preset)
         run: bun run build
         working-directory: apps/web
+        env:
+          SERVER_PRESET: cloudflare-pages
 
       - name: Verify build output exists
         run: |
-          if [ ! -d "apps/web/.output/public" ]; then
-            echo "::error::Build output directory apps/web/.output/public does not exist"
-            ls -la apps/web/.output/ || true
+          if [ ! -d "apps/web/dist" ]; then
+            echo "::error::Build output directory apps/web/dist does not exist"
+            ls -la apps/web/ || true
+            exit 1
+          fi
+          if [ ! -e "apps/web/dist/_worker.js" ]; then
+            echo "::error::apps/web/dist/_worker.js missing — cloudflare-pages preset did not emit a worker bundle"
+            ls -la apps/web/dist/ || true
             exit 1
           fi
           echo "Build output verified."
-          du -sh apps/web/.output/public
+          du -sh apps/web/dist
 
       - name: Ensure Cloudflare Pages project exists (idempotent)
         env:
@@ -170,7 +177,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/.output/public --project-name=crontech-web --branch=main --commit-dirty=true
+          command: pages deploy apps/web/dist --project-name=crontech-web --branch=main --commit-dirty=true
 
   post-deploy-smoke:
     name: Post-Deploy Smoke Test

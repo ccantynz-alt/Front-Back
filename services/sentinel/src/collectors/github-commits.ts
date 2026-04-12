@@ -8,6 +8,7 @@ import {
   type Collector,
   type CollectorResult,
   type IntelligenceItem,
+  type RepoPriority,
   type Severity,
   type TrackedRepo,
 } from "./types";
@@ -230,16 +231,16 @@ export const githubCommitsCollector: Collector = {
 
     const repos = loadTrackedRepos();
 
-    // Process repos in priority order
-    const priorityOrder: Record<string, number> = {
+    // Process repos in priority order. Record<RepoPriority, ...> forces the
+    // compiler to flag this map if a new priority level is added without
+    // updating the ordering here.
+    const priorityOrder: Record<RepoPriority, number> = {
       critical: 0,
       high: 1,
       medium: 2,
     };
     const sortedRepos = [...repos].sort(
-      (a, b) =>
-        (priorityOrder[a.priority] ?? 2) -
-        (priorityOrder[b.priority] ?? 2),
+      (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority],
     );
 
     for (const repo of sortedRepos) {

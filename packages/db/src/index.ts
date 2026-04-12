@@ -19,3 +19,4 @@ export {
   getTenantProjectInfo,
 } from "./tenant-manager";
 export type { TenantProject } from "./tenant-manager";
+export { scopedDb, type ScopedQueryClient } from "./scoped-query";

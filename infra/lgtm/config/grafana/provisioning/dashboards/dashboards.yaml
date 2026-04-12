@@ -1,0 +1,16 @@
+# ── Grafana dashboard auto-loader ──────────────────────────────────
+
+apiVersion: 1
+
+providers:
+  - name: crontech
+    orgId: 1
+    folder: Crontech
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

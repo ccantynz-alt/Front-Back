@@ -3,6 +3,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
+import { chatStreamRoutes } from "./ai/chat-stream";
 import { wsApp, websocket, sseApp, yjsWsApp } from "./realtime";
 import { initTelemetry, httpRequestCount, httpRequestDuration, recordRequest, getMetrics } from "./telemetry";
 import { getAllFlags, isFeatureEnabled } from "./feature-flags";
@@ -25,6 +26,8 @@ initTelemetry();
 
 import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
+import { runDispatcher } from "./webhooks/dispatcher";
+import { db as defaultDb } from "@back-to-the-future/db";
 import {
   startHealthMonitor,
   getCurrentHealth,
@@ -33,19 +36,55 @@ import {
 import { getQueueStatus } from "./automation/retry-queue";
 
 import { securityHeaders } from "./middleware/security-headers";
-import { rateLimiter } from "./middleware/rate-limiter";
+import { createRateLimiter, type KvNamespaceLike } from "./middleware/rate-limiter";
 import { csrf } from "./middleware/csrf";
 import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
+import { subdomainRouter } from "./middleware/subdomain";
 import { googleOAuthRoutes } from "./auth/google-oauth";
+import { unsubscribeRoutes } from "./email/unsubscribe";
+import { withAudit } from "./middleware/audit";
 
 const app = new Hono().basePath("/api");
+
+// ── Subdomain Routing (Multi-Tenant) ────────────────────────────────
+app.use("*", subdomainRouter);
 
 // ── Security Middleware ──────────────────────────────────────────────
 app.use("*", securityHeaders());
 app.use("*", csrf({ allowedOrigins: ["http://localhost:3000", "http://localhost:3001"] }));
-app.use("/api/trpc/*", rateLimiter({ windowMs: 60_000, max: 200 }));
-app.use("/api/auth/*", rateLimiter({ windowMs: 60_000, max: 20 }));
-app.use("/api/ai/*", rateLimiter({ windowMs: 60_000, max: 30 }));
+// Rate limiter: auto-selects Cloudflare KV when `RATE_LIMIT_KV` is bound to
+// the Worker env, otherwise falls back to the in-memory limiter. This lets the
+// same code run in `bun run dev` locally and on Cloudflare Workers in prod
+// without branching. Define the binding in wrangler.toml and run
+// `wrangler kv:namespace create RATE_LIMIT_KV` to provision.
+const maybeKv = (globalThis as { RATE_LIMIT_KV?: KvNamespaceLike }).RATE_LIMIT_KV;
+const rateLimitEnv: { RATE_LIMIT_KV?: KvNamespaceLike } | undefined = maybeKv
+  ? { RATE_LIMIT_KV: maybeKv }
+  : undefined;
+app.use(
+  "/api/trpc/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 200, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 200 },
+  ),
+);
+app.use(
+  "/api/auth/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 20, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 20 },
+  ),
+);
+app.use(
+  "/api/ai/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 30, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 30 },
+  ),
+);
 
 // ── API Key Authentication ──────────────────────────────────────────
 // Allows Bearer btf_sk_... tokens to authenticate against the API keys table.
@@ -161,6 +200,10 @@ app.get("/mcp/resources/:uri{.+}", (c) => {
   return c.json({ result });
 });
 
+// ── Audit middleware on critical route groups ──────────────────────
+app.use("/auth/*", withAudit("auth.action"));
+app.use("/webhooks/*", withAudit("webhook.inbound"));
+
 // ── Stripe Webhook (raw Hono -- needs raw body for signature verification) ──
 app.post("/webhooks/stripe", async (c) => {
   const { constructWebhookEvent, handleWebhookEvent } = await import("./stripe/webhooks");
@@ -235,8 +278,14 @@ app.post("/webhooks/inbound-email", async (c) => {
 // Mount Google OAuth routes (raw Hono -- needs redirects outside tRPC)
 app.route("/auth", googleOAuthRoutes);
 
+// Mount GDPR unsubscribe routes (GET + POST /api/unsubscribe, /api/resubscribe)
+app.route("/", unsubscribeRoutes);
+
 // Mount AI routes (raw Hono -- streaming works better outside tRPC)
 app.route("/ai", aiRoutes);
+
+// Mount Anthropic chat streaming routes
+app.route("/chat", chatStreamRoutes);
 
 app.use("/trpc/*", async (c) => {
   const response = await fetchRequestHandler({
@@ -284,6 +333,20 @@ startQueue();
 startHealingLoop();
 startHealthMonitor();
 
+// Webhook dispatcher: drains the `webhook_deliveries` queue every minute
+// in long-running server mode (Bun). On Cloudflare Workers, wire the same
+// `runDispatcher` call into a cron trigger via the exported `scheduled`
+// handler below.
+const webhookDispatcherInterval = setInterval(() => {
+  runDispatcher(defaultDb).catch((err) => {
+    console.warn("[webhook-dispatcher] run failed:", err);
+  });
+}, 60_000);
+// Unref so the interval does not keep a test process alive.
+if (typeof (webhookDispatcherInterval as unknown as { unref?: () => void }).unref === "function") {
+  (webhookDispatcherInterval as unknown as { unref: () => void }).unref();
+}
+
 const port = Number(process.env.API_PORT) || 3001;
 
 Bun.serve({
@@ -295,5 +358,32 @@ Bun.serve({
 console.log(`API server running on http://localhost:${port}`);
 console.log(`  WebSocket: ws://localhost:${port}/api/ws`);
 console.log(`  SSE: http://localhost:${port}/api/realtime/events/:roomId`);
+
+// ── Cloudflare Workers entry point ─────────────────────────────────
+// `default export = app` stays for compatibility with existing importers
+// (bun scripts, tests). The `workerHandler` export below is the shape
+// Workers expects for `fetch` + `scheduled` cron triggers. Wire
+// `wrangler.toml` `[triggers] crons = ["*/1 * * * *"]` to the
+// `workerHandler.scheduled` path.
+export const workerHandler = {
+  fetch: app.fetch,
+  async scheduled(
+    _event: unknown,
+    _env: unknown,
+    ctx: { waitUntil: (promise: Promise<unknown>) => void },
+  ): Promise<void> {
+    ctx.waitUntil(
+      runDispatcher(defaultDb)
+        .then((result) => {
+          console.log(
+            `[webhook-dispatcher] scheduled run: delivered=${result.delivered} failed=${result.failed}`,
+          );
+        })
+        .catch((err) => {
+          console.warn("[webhook-dispatcher] scheduled run failed:", err);
+        }),
+    );
+  },
+};
 
 export default app;

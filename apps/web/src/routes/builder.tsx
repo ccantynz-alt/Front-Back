@@ -1,4 +1,4 @@
-import { For, Show, createSignal } from "solid-js";
+import { For, Show, createSignal, onMount } from "solid-js";
 import type { JSX } from "solid-js";
 import { useSearchParams, useNavigate } from "@solidjs/router";
 import { SEOHead } from "../components/SEOHead";
@@ -6,6 +6,11 @@ import { Button, Card, Input, Stack, Text, Badge } from "@back-to-the-future/ui"
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { CollaborativeBuilder } from "../components/CollaborativeBuilder";
 import type { ComponentNode } from "../collab/collaborative-doc";
+import type { PageLayout } from "@back-to-the-future/ai-core";
+import type { ComputeTier } from "@back-to-the-future/ai-core";
+import { PageLayoutRenderer } from "../components/PageLayoutRenderer";
+import { trpc } from "../lib/trpc";
+import { computeTier, tierReason, detectAndSetTier } from "../lib/ai-client";
 
 // ── Chat Message Type ─────────────────────────────────────────────────
 
@@ -31,86 +36,156 @@ function ChatBubble(props: { message: ChatMessage }): JSX.Element {
   );
 }
 
-// ── Preview Panel ─────────────────────────────────────────────────────
+// ── Compute Tier Pill ────────────────────────────────────────────────
+// Surfaces the three-tier compute router state in the builder header.
+// Crontech's architectural moat: small agents run on the user's GPU
+// via WebGPU (tier=client, cost=$0), mid-range on the edge, heavy on
+// cloud GPU. Every generation shows exactly where it ran and what it
+// cost — Lovable and Zoobicon cannot show this because every call
+// goes to a paid cloud API.
 
-function PreviewPanel(): JSX.Element {
-  const [device, setDevice] = createSignal<"desktop" | "tablet" | "mobile">("desktop");
+function tierColor(tier: ComputeTier): { bg: string; border: string; dot: string } {
+  switch (tier) {
+    case "client":
+      return {
+        bg: "rgba(34, 197, 94, 0.12)",
+        border: "rgba(34, 197, 94, 0.35)",
+        dot: "#22c55e",
+      };
+    case "edge":
+      return {
+        bg: "rgba(59, 130, 246, 0.12)",
+        border: "rgba(59, 130, 246, 0.35)",
+        dot: "#3b82f6",
+      };
+    case "cloud":
+      return {
+        bg: "rgba(249, 115, 22, 0.12)",
+        border: "rgba(249, 115, 22, 0.35)",
+        dot: "#f97316",
+      };
+  }
+}
+
+function tierLabel(tier: ComputeTier): string {
+  switch (tier) {
+    case "client":
+      return "Client GPU";
+    case "edge":
+      return "Edge";
+    case "cloud":
+      return "Cloud GPU";
+  }
+}
+
+// Rough cost-per-generation estimate for the preview. Client-side
+// inference via WebGPU is literally $0/token (the user's GPU does
+// the work). Edge and cloud are order-of-magnitude estimates — good
+// enough to make the architectural advantage visible.
+function tierCost(tier: ComputeTier, source: "ai" | "stub" | null): string {
+  if (source === "stub") return "$0 (stub)";
+  switch (tier) {
+    case "client":
+      return "$0";
+    case "edge":
+      return "<$0.001";
+    case "cloud":
+      return "~$0.02";
+  }
+}
+
+function ComputeTierPill(props: {
+  tier: ComputeTier;
+  reason: string;
+  cost: string;
+}): JSX.Element {
+  const colors = (): { bg: string; border: string; dot: string } =>
+    tierColor(props.tier);
+  return (
+    <div
+      title={props.reason}
+      style={{
+        display: "flex",
+        "align-items": "center",
+        gap: "8px",
+        padding: "4px 10px",
+        "border-radius": "12px",
+        background: colors().bg,
+        border: `1px solid ${colors().border}`,
+      }}
+    >
+      <div
+        style={{
+          width: "8px",
+          height: "8px",
+          "border-radius": "50%",
+          background: colors().dot,
+        }}
+      />
+      <Text variant="caption" weight="semibold">
+        {tierLabel(props.tier)}
+      </Text>
+      <Text variant="caption">·</Text>
+      <Text variant="caption" weight="semibold">
+        {props.cost}
+      </Text>
+    </div>
+  );
+}
+
+// ── Preview Panel ─────────────────────────────────────────────────────
+// Renders the generated PageLayout through PageLayoutRenderer. The
+// preview is the moment Crontech's architecture becomes visible to a
+// human being: prompt in, validated component tree out, rendered by
+// real SolidJS primitives at ~60fps with zero hallucinated markup.
+
+function PreviewPanel(props: { layout: PageLayout | null }): JSX.Element {
+  const [device, setDevice] = createSignal<"desktop" | "tablet" | "mobile">(
+    "desktop",
+  );
   return (
     <Card class="preview-panel" padding="none">
       <Stack direction="vertical" gap="none" class="preview-inner">
         <div class="preview-toolbar">
-          <Text variant="caption" weight="semibold">Live Preview ({device()})</Text>
+          <Text variant="caption" weight="semibold">
+            Live Preview ({device()})
+          </Text>
           <Stack direction="horizontal" gap="xs">
-            <Button variant="ghost" size="sm" onClick={() => setDevice("desktop")}>Desktop</Button>
-            <Button variant="ghost" size="sm" onClick={() => setDevice("tablet")}>Tablet</Button>
-            <Button variant="ghost" size="sm" onClick={() => setDevice("mobile")}>Mobile</Button>
+            <Button variant="ghost" size="sm" onClick={() => setDevice("desktop")}>
+              Desktop
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setDevice("tablet")}>
+              Tablet
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setDevice("mobile")}>
+              Mobile
+            </Button>
           </Stack>
         </div>
-        <div class="preview-canvas">
-          <Stack direction="vertical" align="center" justify="center" class="preview-placeholder">
-            <Text variant="h3" class="text-muted">Preview Area</Text>
-            <Text variant="body" class="text-muted">
-              Describe your website in the chat and the AI will build it here.
-            </Text>
-          </Stack>
+        <div class={`preview-canvas preview-canvas-${device()}`}>
+          <PageLayoutRenderer
+            layout={props.layout}
+            fallback={
+              <Stack
+                direction="vertical"
+                align="center"
+                justify="center"
+                class="preview-placeholder"
+              >
+                <Text variant="h3" class="text-muted">
+                  Preview Area
+                </Text>
+                <Text variant="body" class="text-muted">
+                  Describe your website in the chat and the AI will build it
+                  here.
+                </Text>
+              </Stack>
+            }
+          />
         </div>
       </Stack>
     </Card>
   );
-}
-
-// ── AI Streaming Helper ──────────────────────────────────────────────
-
-function getApiUrl(): string {
-  if (typeof window !== "undefined") {
-    const meta = import.meta as unknown as Record<string, Record<string, string> | undefined>;
-    return meta.env?.VITE_PUBLIC_API_URL ?? "http://localhost:3001";
-  }
-  return "http://localhost:3001";
-}
-
-async function streamAIResponse(
-  messages: Array<{ role: string; content: string }>,
-  onToken: (token: string) => void,
-  onDone: () => void,
-  onError: (error: string) => void,
-): Promise<void> {
-  try {
-    const response = await fetch(`${getApiUrl()}/api/ai/site-builder`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages,
-        computeTier: "cloud",
-        maxTokens: 4096,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({ error: "Request failed" }));
-      onError((body as { error?: string }).error ?? `HTTP ${response.status}`);
-      return;
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      onError("No response stream available");
-      return;
-    }
-
-    const decoder = new TextDecoder();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      onToken(chunk);
-    }
-
-    onDone();
-  } catch (err) {
-    onError(err instanceof Error ? err.message : "Stream failed");
-  }
 }
 
 // ── Connection Status Indicator ──────────────────────────────────────
@@ -160,20 +235,30 @@ export default function BuilderPage(): JSX.Element {
       id: "welcome",
       role: "assistant",
       content:
-        "Welcome to the AI Website Builder. Describe the website you want to create, and I will build it for you in real time. You can ask for changes, add pages, or adjust styling at any point.",
+        "Welcome to the AI Website Builder. Describe the website you want to create, and I will build it for you using validated Crontech components. Every generation shows you exactly which compute tier ran it and what it cost.",
       timestamp: Date.now(),
     },
   ]);
   const [input, setInput] = createSignal("");
   const [isGenerating, setIsGenerating] = createSignal(false);
-  const [collabConnected, setCollabConnected] = createSignal(false);
+  const [collabConnected] = createSignal(false);
   const [_componentTree, setComponentTree] = createSignal<ComponentNode[]>([]);
+  const [currentLayout, setCurrentLayout] = createSignal<PageLayout | null>(
+    null,
+  );
+  const [lastSource, setLastSource] = createSignal<"ai" | "stub" | null>(null);
+
+  // Detect device capabilities on mount so the tier pill shows the
+  // right tier before the user generates anything.
+  onMount(() => {
+    void detectAndSetTier();
+  });
 
   function handleTreeChange(tree: ComponentNode[]): void {
     setComponentTree(tree);
   }
 
-  const handleSend = (): void => {
+  const handleSend = async (): Promise<void> => {
     const text = input().trim();
     if (!text || isGenerating()) return;
 
@@ -191,54 +276,62 @@ export default function BuilderPage(): JSX.Element {
     const assistantId = `assistant-${Date.now()}`;
     setMessages((prev) => [
       ...prev,
-      { id: assistantId, role: "assistant", content: "", timestamp: Date.now() },
+      {
+        id: assistantId,
+        role: "assistant",
+        content: "Generating layout...",
+        timestamp: Date.now(),
+      },
     ]);
 
-    const conversationHistory = messages()
-      .filter((m) => m.id !== "welcome")
-      .map((m) => ({ role: m.role, content: m.content }));
-    conversationHistory.push({ role: "user", content: text });
+    try {
+      const result = await trpc.ai.siteBuilder.generate.mutate({
+        prompt: text,
+        tier: computeTier(),
+      });
 
-    streamAIResponse(
-      conversationHistory,
-      (token) => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId ? { ...m, content: m.content + token } : m,
-          ),
-        );
-      },
-      () => {
-        setIsGenerating(false);
-      },
-      (error) => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId
-              ? { ...m, content: `Error: ${error}. Make sure the API server is running and OPENAI_API_KEY is set.` }
-              : m,
-          ),
-        );
-        setIsGenerating(false);
-      },
-    );
+      setCurrentLayout(result.layout);
+      setLastSource(result.source);
+
+      const componentCount = result.layout.components.length;
+      const sourceLabel =
+        result.source === "ai"
+          ? `Generated ${componentCount} root component${componentCount === 1 ? "" : "s"} via ${tierLabel(computeTier())} — ${tierCost(computeTier(), result.source)}.`
+          : `Preview stub rendered (${componentCount} component${componentCount === 1 ? "" : "s"}). Configure OPENAI_API_KEY for real AI generation.`;
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId ? { ...m, content: sourceLabel } : m,
+        ),
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Site builder request failed";
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? {
+                ...m,
+                content: `Error: ${message}. Make sure the API server is running.`,
+              }
+            : m,
+        ),
+      );
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent): void => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   };
 
   function handleShare(): void {
     const newRoomId = `room-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     navigate(`/builder?room=${newRoomId}`);
-  }
-
-  function handleInviteAI(): void {
-    // The CollaborativeBuilder handles AI invitation internally
-    // This is a placeholder for additional AI invite logic
   }
 
   function handleCopyLink(): void {
@@ -258,6 +351,11 @@ export default function BuilderPage(): JSX.Element {
             <Stack direction="horizontal" gap="sm" align="center" justify="between">
               <Text variant="h3" weight="bold">AI Website Builder</Text>
               <Stack direction="horizontal" gap="sm" align="center">
+                <ComputeTierPill
+                  tier={computeTier()}
+                  reason={tierReason()}
+                  cost={tierCost(computeTier(), lastSource())}
+                />
                 <Show when={isCollaborative()}>
                   <ConnectionStatus connected={collabConnected()} />
                   <Button variant="ghost" size="sm" onClick={handleCopyLink}>
@@ -279,10 +377,10 @@ export default function BuilderPage(): JSX.Element {
             <For each={messages()}>
               {(msg) => <ChatBubble message={msg} />}
             </For>
-            <Show when={isGenerating() && messages()[messages().length - 1]?.content === ""}>
+            <Show when={isGenerating()}>
               <div class="chat-bubble chat-bubble-assistant">
                 <Text variant="caption" weight="semibold" class="chat-role">AI Builder</Text>
-                <Text variant="body" class="text-muted">Generating...</Text>
+                <Text variant="body" class="text-muted">Composing validated components...</Text>
               </div>
             </Show>
           </div>
@@ -298,7 +396,9 @@ export default function BuilderPage(): JSX.Element {
               />
               <Button
                 variant="primary"
-                onClick={handleSend}
+                onClick={() => {
+                  void handleSend();
+                }}
                 loading={isGenerating()}
                 disabled={!input().trim()}
               >
@@ -309,7 +409,7 @@ export default function BuilderPage(): JSX.Element {
         </Stack>
       </div>
       <div class="builder-preview">
-        <PreviewPanel />
+        <PreviewPanel layout={currentLayout()} />
       </div>
     </div>
   );
@@ -318,7 +418,7 @@ export default function BuilderPage(): JSX.Element {
     <ProtectedRoute>
       <SEOHead
         title="AI Builder"
-        description="Build websites with AI in real-time. Describe what you want and watch AI create it using validated component trees and collaborative editing."
+        description="Build websites with AI in real-time. Describe what you want and watch AI compose validated SolidJS components across Crontech's three-tier compute fabric."
         path="/builder"
       />
       <Show

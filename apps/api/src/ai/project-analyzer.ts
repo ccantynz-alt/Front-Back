@@ -3,6 +3,7 @@
 // Demo mode (no key needed) uses smart rule-based heuristics.
 // With an API key, the same shape is produced by an LLM (future).
 
+import { z } from "zod";
 import type { Component } from "@back-to-the-future/schemas";
 
 /** Narrow view of Component for property access (Component resolves to unknown via ZodType). */
@@ -12,7 +13,19 @@ interface ComponentLike {
   children?: Component[];
 }
 
-export type SuggestionSeverity = "info" | "tip" | "warning";
+export const SuggestionSeveritySchema = z.enum(["info", "tip", "warning"]);
+export type SuggestionSeverity = z.infer<typeof SuggestionSeveritySchema>;
+
+/**
+ * Runtime type guard for SuggestionSeverity. Narrows unknown values
+ * (e.g. LLM JSON output) before they enter the suggestion pipeline.
+ */
+export function isSuggestionSeverity(value: unknown): value is SuggestionSeverity {
+  return SuggestionSeveritySchema.safeParse(value).success;
+}
+
+export const SuggestionFixKindSchema = z.enum(["add", "modify", "remove"]);
+export type SuggestionFixKind = z.infer<typeof SuggestionFixKindSchema>;
 
 export interface ProjectSuggestion {
   id: string;
@@ -21,7 +34,7 @@ export interface ProjectSuggestion {
   severity: SuggestionSeverity;
   // A machine-readable hint for how to apply the fix automatically.
   fix: {
-    kind: "add" | "modify" | "remove";
+    kind: SuggestionFixKind;
     target?: string;
     component?: Component;
   };

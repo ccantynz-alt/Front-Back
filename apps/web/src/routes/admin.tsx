@@ -1,15 +1,8 @@
 import { Title } from "@solidjs/meta";
-import { createSignal, For, Show, Switch, Match } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 
 // ── Mock Data ────────────────────────────────────────────────────────
-
-const MOCK_STATS = {
-  totalUsers: 12_847,
-  activeProjects: 3_291,
-  apiCallsToday: 1_482_003,
-  revenue: 284_750,
-};
 
 const MOCK_USERS = [
   { id: "1", name: "Elena Vasquez", email: "elena@acme.dev", plan: "Enterprise", status: "active" as const, avatar: "EV" },

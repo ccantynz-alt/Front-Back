@@ -11,7 +11,7 @@ import {
   startAuthentication,
 } from "@simplewebauthn/browser";
 import type { User } from "@back-to-the-future/schemas";
-import { trpc, fetchCsrfToken, clearCsrfToken, checkApiHealth } from "../lib/trpc";
+import { trpc, fetchCsrfToken, clearCsrfToken } from "../lib/trpc";
 
 // ── Auth State Types ──────────────────────────────────────────────────
 

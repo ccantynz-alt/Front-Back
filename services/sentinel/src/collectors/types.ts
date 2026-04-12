@@ -1,10 +1,28 @@
 import { z } from "zod";
 
-export type Severity = "low" | "medium" | "high" | "critical";
+export const SeveritySchema = z.enum(["low", "medium", "high", "critical"]);
+export type Severity = z.infer<typeof SeveritySchema>;
 
-export type RepoPriority = "critical" | "high" | "medium";
+export const RepoPrioritySchema = z.enum(["critical", "high", "medium"]);
+export type RepoPriority = z.infer<typeof RepoPrioritySchema>;
 
-export type RepoCategory = "framework" | "backend" | "api" | "ai";
+export const RepoCategorySchema = z.enum(["framework", "backend", "api", "ai"]);
+export type RepoCategory = z.infer<typeof RepoCategorySchema>;
+
+/**
+ * Runtime type guard for RepoPriority. Useful when narrowing a `string`
+ * coming from JSON, env vars, or CLI args without throwing on bad input.
+ */
+export function isRepoPriority(value: unknown): value is RepoPriority {
+  return RepoPrioritySchema.safeParse(value).success;
+}
+
+/**
+ * Runtime type guard for RepoCategory. Same contract as `isRepoPriority`.
+ */
+export function isRepoCategory(value: unknown): value is RepoCategory {
+  return RepoCategorySchema.safeParse(value).success;
+}
 
 export const IntelligenceItemSchema = z.object({
   id: z.string(),
@@ -12,7 +30,7 @@ export const IntelligenceItemSchema = z.object({
   title: z.string(),
   description: z.string(),
   url: z.string(),
-  severity: z.enum(["low", "medium", "high", "critical"]),
+  severity: SeveritySchema,
   tags: z.array(z.string()),
   metadata: z.record(z.string(), z.unknown()),
   collectedAt: z.string(),
@@ -40,8 +58,8 @@ export const TrackedRepoSchema = z.object({
   owner: z.string(),
   repo: z.string(),
   displayName: z.string(),
-  priority: z.enum(["critical", "high", "medium"]),
-  category: z.enum(["framework", "backend", "api", "ai"]),
+  priority: RepoPrioritySchema,
+  category: RepoCategorySchema,
   description: z.string(),
   defaultBranch: z.string(),
   lastKnownRelease: z.string().nullable(),
@@ -186,6 +204,193 @@ export const DEFAULT_TRACKED_REPOS: TrackedRepo[] = [
     priority: "high",
     category: "ai",
     description: "JS framework for LLM applications.",
+    defaultBranch: "main",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  // ── Dev Platform Competitors (Crontech direct rivals) ────────────
+  {
+    owner: "cloudflare",
+    repo: "workers-sdk",
+    displayName: "Cloudflare Workers SDK",
+    priority: "critical",
+    category: "backend",
+    description: "Wrangler + Workers tooling. We run on this today; we also compete on DX.",
+    defaultBranch: "main",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "cloudflare",
+    repo: "pages-action",
+    displayName: "Cloudflare Pages Action",
+    priority: "high",
+    category: "backend",
+    description: "Official Pages deploy GitHub Action. Track deploy surface evolution.",
+    defaultBranch: "main",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "supabase",
+    repo: "supabase",
+    displayName: "Supabase",
+    priority: "critical",
+    category: "backend",
+    description: "Open-source BaaS competitor. Auth + Postgres + edge functions.",
+    defaultBranch: "master",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "get-convex",
+    repo: "convex-backend",
+    displayName: "Convex",
+    priority: "critical",
+    category: "backend",
+    description: "Reactive backend competitor. Sync engine + TS functions.",
+    defaultBranch: "main",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "superfly",
+    repo: "flyctl",
+    displayName: "Fly.io (flyctl)",
+    priority: "high",
+    category: "backend",
+    description: "Firecracker microVM platform. Long-lived process competitor.",
+    defaultBranch: "master",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "renovatebot",
+    repo: "renovate",
+    displayName: "Renovate",
+    priority: "medium",
+    category: "backend",
+    description: "We use Renovate; track feature evolution for self-evolution pipeline.",
+    defaultBranch: "main",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "railwayapp",
+    repo: "cli",
+    displayName: "Railway CLI",
+    priority: "medium",
+    category: "backend",
+    description: "Railway PaaS competitor for deploy/runtime story.",
+    defaultBranch: "master",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "netlify",
+    repo: "cli",
+    displayName: "Netlify CLI",
+    priority: "high",
+    category: "backend",
+    description: "Netlify deploy/edge competitor.",
+    defaultBranch: "main",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  // ── Accounting / Ledger Integration Targets (Astra vertical) ──────
+  {
+    owner: "XeroAPI",
+    repo: "xero-node",
+    displayName: "Xero Node SDK",
+    priority: "medium",
+    category: "api",
+    description: "Xero accounting API client. Astra/ledger.ai integration & competitive surface.",
+    defaultBranch: "master",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  // ── QA / Security / Compliance Tooling (GateTest compete) ────────
+  {
+    owner: "codeclimate",
+    repo: "codeclimate",
+    displayName: "Code Climate CLI",
+    priority: "medium",
+    category: "api",
+    description: "Code quality / maintainability scanner. GateTest competitor.",
+    defaultBranch: "master",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "codacy",
+    repo: "codacy-analysis-cli-action",
+    displayName: "Codacy Analysis Action",
+    priority: "medium",
+    category: "api",
+    description: "Codacy static analysis GitHub Action. GateTest competitor.",
+    defaultBranch: "master",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  {
+    owner: "snyk",
+    repo: "snyk",
+    displayName: "Snyk CLI",
+    priority: "high",
+    category: "api",
+    description: "Snyk vulnerability/security scanner. GateTest + compliance competitor.",
+    defaultBranch: "main",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  // ── Voice / Transcription (voice vertical) ────────────────────────
+  {
+    owner: "openai",
+    repo: "whisper",
+    displayName: "OpenAI Whisper",
+    priority: "high",
+    category: "ai",
+    description: "ASR model powering voice/transcription. Track releases and ecosystem forks.",
+    defaultBranch: "main",
+    lastKnownRelease: null,
+    lastKnownReleaseAt: null,
+    lastCommitCheckAt: null,
+    baselineCommitsPerWeek: null,
+  },
+  // ── AI Website Builders (Zoobicon compete) ────────────────────────
+  {
+    owner: "stackblitz",
+    repo: "bolt.new",
+    displayName: "StackBlitz Bolt",
+    priority: "critical",
+    category: "ai",
+    description: "AI website builder direct competitor. WebContainers + LLM-driven codegen.",
     defaultBranch: "main",
     lastKnownRelease: null,
     lastKnownReleaseAt: null,

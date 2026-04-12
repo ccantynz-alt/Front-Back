@@ -4,14 +4,13 @@
 
 import {
   createSignal,
-  createEffect,
   onMount,
   onCleanup,
   Show,
   For,
 } from "solid-js";
 import type { JSX } from "solid-js";
-import { Text, Badge, Stack } from "@back-to-the-future/ui";
+import { Text, Stack } from "@back-to-the-future/ui";
 import {
   CollaborativeDocument,
   type AwarenessState,

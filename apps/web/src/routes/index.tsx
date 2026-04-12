@@ -5,68 +5,73 @@ import { Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 import { SEOHead } from "../components/SEOHead";
 
-interface FeatureCard {
+// ── Data ──────────────────────────────────────────────────────────────
+
+interface Pillar {
+  badge: string;
   title: string;
   description: string;
-  badge: string;
 }
 
-const features: FeatureCard[] = [
+// Compliance-native pillars. Derived from docs/strategy/WEDGE.md §4.
+const pillars: Pillar[] = [
   {
-    badge: "AI-Native",
-    title: "Build sites by describing them",
-    description: "Type a sentence. Ship a product. Our agents compose validated component trees in real time — no templates, no boilerplate.",
+    badge: "SOC 2-ready",
+    title: "SOC 2 primitives on day one",
+    description:
+      "Immutable audit trails, least-privilege access, zero-trust networking, and evidence export — built into every tier, not sold as an add-on.",
   },
   {
-    badge: "WebGPU",
-    title: "Video editing at $0/token",
-    description: "GPU-accelerated encoding, effects, and inference that runs on your users' hardware. Zero server cost. Near-native speed.",
+    badge: "Encrypted",
+    title: "Encrypted-at-rest Postgres",
+    description:
+      "AES-256-GCM at rest, TLS 1.3 in transit, envelope encryption with rotating KMS keys. The default posture, not a premium upsell.",
   },
   {
-    badge: "Live",
-    title: "Humans and agents, one canvas",
-    description: "CRDT-powered collaboration where your team and AI agents edit the same document at the same time. Sub-50ms globally.",
+    badge: "Tamper-evident",
+    title: "Hash-chained audit logs",
+    description:
+      "Every event signed, every entry chained to the previous hash. Cryptographic integrity your next audit can actually verify.",
   },
   {
-    badge: "Edge-First",
-    title: "Three tiers. One runtime.",
-    description: "Client GPU, edge, and cloud unified into a single compute mesh. Workloads route themselves to the cheapest tier that can handle them.",
+    badge: "Polyglot",
+    title: "TypeScript, Python, Rust — one runtime",
+    description:
+      "A polyglot runtime host from day one. Ship your Python AI service and your TypeScript web app on a single compliance-native substrate.",
   },
   {
-    badge: "Always On",
-    title: "Sentinel watches the market",
-    description: "24/7 competitive intelligence. Know about every competitor release, every new model, every threat — before your rivals announce them.",
+    badge: "One bill",
+    title: "One platform instead of seven",
+    description:
+      "Hosting, database, auth, audit logging, observability, secrets, evidence storage — unified. One dashboard. One bill. One vendor on your audit questionnaire.",
   },
   {
-    badge: "Type-Safe",
-    title: "Runtime errors are a choice",
-    description: "End-to-end type safety from database to DOM. tRPC, Zod, and TypeScript strict mode eliminate whole classes of bugs before they ship.",
+    badge: "Sovereign",
+    title: "Your data, your audit trail",
+    description:
+      "Configurable data residency, WORM-compliant evidence storage, and exports you own. Sovereign infrastructure for teams that cannot afford ambiguity.",
   },
 ];
 
-const stats = [
-  { value: "10x", label: "Faster than Next.js" },
-  { value: "$0", label: "Per token on WebGPU" },
-  { value: "<50ms", label: "Global edge latency" },
-  { value: "41 t/s", label: "Llama 3.1 in browser" },
-];
+// ── Dogfood proof strip ───────────────────────────────────────────────
+// Real migration status from docs/strategy/MIGRATION-PLAN.md.
+// Nothing is claimed as "running on Crontech" until it actually is — status
+// labels reflect the current state honestly.
 
-const testimonials = [
-  {
-    quote: "We cut our time-to-prototype from two weeks to a single afternoon. The AI-composable components are unlike anything else on the market.",
-    name: "Jordan Mercer",
-    title: "CTO, Fortune 500 Media Group",
-  },
-  {
-    quote: "Three-tier compute sounded like marketing until we shipped it. Our inference bill dropped 94% overnight.",
-    name: "Priya Anand",
-    title: "VP Engineering, Series C SaaS",
-  },
-  {
-    quote: "Finally, a platform that treats AI as architecture instead of a feature. We will never go back.",
-    name: "Marcus Reeves",
-    title: "Head of Product, AI Video Startup",
-  },
+interface ProofPoint {
+  name: string;
+  role: string;
+  status: "coming-soon" | "in-migration";
+}
+
+const proofPoints: ProofPoint[] = [
+  { name: "Crontech",                    role: "Crontech runs Crontech — self-hosted substrate",       status: "in-migration" },
+  { name: "MarcoReid.com",               role: "Dress rehearsal migration",                             status: "coming-soon" },
+  { name: "emailed",                     role: "Stack-identical dogfood",                               status: "coming-soon" },
+  { name: "Astra (ledger.ai)",           role: "Polyglot Python + real banking + Stripe",               status: "coming-soon" },
+  { name: "AI-Immigration-Compliance",   role: "§5A primitives under real compliance load",             status: "coming-soon" },
+  { name: "GateTest",                    role: "Revenue-bearing SaaS on Crontech",                      status: "coming-soon" },
+  { name: "Zoobicon.com",                role: "The AI website builder, running on Crontech",           status: "coming-soon" },
 ];
 
 export default function Home(): JSX.Element {
@@ -75,73 +80,64 @@ export default function Home(): JSX.Element {
   return (
     <>
       <SEOHead
-        title="Crontech — The AI-native full-stack platform"
-        description="Build websites and edit video with AI agents, WebGPU, and real-time collaboration. Edge-first. Type-safe end-to-end. Zero HTML."
+        title="Crontech — The compliance-native developer platform for AI SaaS"
+        description="SOC 2 primitives, encrypted-at-rest Postgres, hash-chained audit logs, polyglot runtime. Built in. Day one. The compliance-native developer platform for AI SaaS."
         path="/"
       />
       <Stack direction="vertical" gap="xl" class="page-padded">
         {/* Hero */}
         <Stack direction="vertical" align="center" justify="center" gap="md" class="hero">
-          <Badge variant="info" size="sm">Now in private beta</Badge>
+          <Badge variant="info" size="sm">Founding Member cohort open — first 100 only</Badge>
           <Text variant="h1" weight="bold" align="center" class="heading hero-gradient">
-            Ship the impossible.
+            The compliance-native developer platform for AI SaaS.
           </Text>
           <Text variant="body" align="center" class="tagline">
-            The AI-native full-stack platform for builders who refuse to wait for the future.
+            SOC 2 primitives, encrypted-at-rest Postgres, hash-chained audit logs, polyglot runtime. Built in. Day one.
           </Text>
           <Text variant="body" align="center" class="description">
-            WebGPU inference. Edge-first compute. Real-time collaboration with AI agents as first-class peers.
-            One unified runtime. Zero HTML.
+            Every AI SaaS hits the SOC 2 wall. Most founders scramble to stitch together seven vendors just to reach the starting line of an audit.
+            Crontech is the other option: one platform where every layer is compliance-native from the first deploy.
           </Text>
           <Stack direction="horizontal" gap="md" justify="center">
+            <A href="/founding">
+              <Button variant="primary" size="lg">Claim Founding Member — first 100 only</Button>
+            </A>
             <Show
               when={auth.isAuthenticated()}
               fallback={
-                <A href="/register">
-                  <Button variant="primary" size="lg">Start building — free</Button>
+                <A href="/docs">
+                  <Button variant="outline" size="lg">See the primitives</Button>
                 </A>
               }
             >
               <A href="/dashboard">
-                <Button variant="primary" size="lg">Open dashboard</Button>
+                <Button variant="outline" size="lg">Open dashboard</Button>
               </A>
             </Show>
-            <A href="/pricing">
-              <Button variant="outline" size="lg">See pricing</Button>
-            </A>
           </Stack>
         </Stack>
 
-        {/* Stats */}
-        <div class="stats-grid">
-          <For each={stats}>
-            {(s) => (
-              <div class="stat-card">
-                <div class="stat-value">{s.value}</div>
-                <div class="stat-label">{s.label}</div>
-              </div>
-            )}
-          </For>
-        </div>
-
-        {/* Features Grid */}
+        {/* Proof strip — real migrations, real status */}
         <Stack direction="vertical" gap="md">
           <Stack direction="vertical" gap="xs" align="center">
             <Text variant="h2" weight="bold" align="center">
-              Everything you need. Nothing you don't.
+              Proved on production workloads.
             </Text>
             <Text variant="body" class="text-muted" align="center">
-              Six primitives that replace your entire stack.
+              Crontech launches with real apps already running on it — not slideware.
+              Each migration forces a compliance-native primitive into existence.
             </Text>
           </Stack>
           <div class="grid-3">
-            <For each={features}>
-              {(feature) => (
+            <For each={proofPoints}>
+              {(p) => (
                 <Card padding="lg">
                   <Stack direction="vertical" gap="sm">
-                    <Badge variant="info" size="sm">{feature.badge}</Badge>
-                    <Text variant="h4" weight="semibold">{feature.title}</Text>
-                    <Text variant="body" class="text-muted">{feature.description}</Text>
+                    <Badge variant="info" size="sm">
+                      {p.status === "in-migration" ? "In migration" : "Coming soon"}
+                    </Badge>
+                    <Text variant="h4" weight="semibold">{p.name}</Text>
+                    <Text variant="body" class="text-muted">{p.role}</Text>
                   </Stack>
                 </Card>
               )}
@@ -149,38 +145,48 @@ export default function Home(): JSX.Element {
           </div>
         </Stack>
 
-        {/* Social proof */}
+        {/* Pillars Grid */}
         <Stack direction="vertical" gap="md">
-          <Text variant="h2" weight="bold" align="center">
-            Trusted by teams who ship first.
-          </Text>
+          <Stack direction="vertical" gap="xs" align="center">
+            <Text variant="h2" weight="bold" align="center">
+              Compliance-native at every layer.
+            </Text>
+            <Text variant="body" class="text-muted" align="center">
+              Not a checklist. Not a premium tier. The default posture of the platform.
+            </Text>
+          </Stack>
           <div class="grid-3">
-            <For each={testimonials}>
-              {(t) => (
-                <div class="testimonial-card">
-                  <div class="testimonial-quote">"{t.quote}"</div>
-                  <div class="testimonial-author">
-                    <strong>{t.name}</strong> — {t.title}
-                  </div>
-                </div>
+            <For each={pillars}>
+              {(pillar) => (
+                <Card padding="lg">
+                  <Stack direction="vertical" gap="sm">
+                    <Badge variant="info" size="sm">{pillar.badge}</Badge>
+                    <Text variant="h4" weight="semibold">{pillar.title}</Text>
+                    <Text variant="body" class="text-muted">{pillar.description}</Text>
+                  </Stack>
+                </Card>
               )}
             </For>
           </div>
         </Stack>
 
-        {/* CTA */}
+        {/* Closing CTA */}
         <Card padding="lg">
           <Stack direction="vertical" gap="md" align="center">
-            <Text variant="h3" weight="semibold" align="center">Your competitors are still shipping last year's stack.</Text>
+            <Text variant="h3" weight="semibold" align="center">
+              Your audit log should run on a platform that could pass its own audit.
+            </Text>
             <Text variant="body" class="text-muted" align="center">
-              Join the teams building two years ahead of the market. Free to start. No credit card required.
+              Founding Members get the compliance-native primitives, the polyglot runtime, and a direct line to the team building it. First 100 seats only.
             </Text>
             <Stack direction="horizontal" gap="sm" justify="center">
-              <A href="/register">
-                <Button variant="primary" size="lg">Start building</Button>
+              <A href="/founding">
+                <Button variant="primary" size="lg">Claim Founding Member — first 100 only</Button>
               </A>
               <A href="/docs">
-                <Button variant="outline" size="lg">Read the docs</Button>
+                <Button variant="outline" size="lg">
+                  Read the docs
+                </Button>
               </A>
             </Stack>
           </Stack>

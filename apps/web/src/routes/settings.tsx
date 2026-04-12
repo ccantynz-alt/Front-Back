@@ -4,7 +4,7 @@ import type { JSX } from "solid-js";
 
 // ── Types ────────────────────────────────────────────────────────────
 
-type SettingsTab = "profile" | "account" | "api-keys" | "notifications" | "appearance";
+type SettingsTab = "profile" | "account" | "api-keys" | "ai-providers" | "notifications" | "appearance";
 
 interface ApiKey {
   id: string;
@@ -526,6 +526,166 @@ function AppearanceTab(): JSX.Element {
   );
 }
 
+// ── AI Providers Tab ────────────────────────────────────────────────
+
+function AIProvidersTab(): JSX.Element {
+  const [anthropicKey, setAnthropicKey] = createSignal("");
+  const [savedKey, setSavedKey] = createSignal<{ prefix: string; createdAt: string } | null>(null);
+  const [saving, setSaving] = createSignal(false);
+  const [deleteConfirm, setDeleteConfirm] = createSignal(false);
+  const [message, setMessage] = createSignal<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Check for existing key on mount
+  const checkExistingKey = async (): Promise<void> => {
+    try {
+      const { trpc } = await import("../lib/trpc");
+      const result = await trpc.chat.getProviderKey.query({ provider: "anthropic" });
+      if (result) {
+        setSavedKey({
+          prefix: result.prefix,
+          createdAt: new Date(result.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        });
+      }
+    } catch {
+      // Not logged in or network error
+    }
+  };
+
+  void checkExistingKey();
+
+  const handleSave = async (): Promise<void> => {
+    const key = anthropicKey().trim();
+    if (!key) return;
+    if (!key.startsWith("sk-ant-")) {
+      setMessage({ type: "error", text: "Invalid Anthropic API key. Keys should start with sk-ant-" });
+      return;
+    }
+
+    setSaving(true);
+    setMessage(null);
+    try {
+      const { trpc } = await import("../lib/trpc");
+      const result = await trpc.chat.saveProviderKey.mutate({ provider: "anthropic", apiKey: key });
+      setSavedKey({ prefix: result.prefix, createdAt: "Just now" });
+      setAnthropicKey("");
+      setMessage({ type: "success", text: "Anthropic API key saved successfully." });
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save key" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (): Promise<void> => {
+    try {
+      const { trpc } = await import("../lib/trpc");
+      await trpc.chat.deleteProviderKey.mutate({ provider: "anthropic" });
+      setSavedKey(null);
+      setDeleteConfirm(false);
+      setMessage({ type: "success", text: "API key deleted." });
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to delete key" });
+    }
+  };
+
+  return (
+    <div class="flex flex-col gap-6">
+      <SettingsSection title="Anthropic API Key" description="Connect your Anthropic API key to use Claude models directly. Pay only for what you use.">
+        <div class="flex flex-col gap-4">
+          {/* Status message */}
+          <Show when={message()}>
+            {(msg) => (
+              <div class={`rounded-xl border px-4 py-3 text-xs font-medium ${
+                msg().type === "success"
+                  ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
+                  : "border-red-500/20 bg-red-500/5 text-red-400"
+              }`}>
+                {msg().text}
+              </div>
+            )}
+          </Show>
+
+          {/* Existing key display */}
+          <Show when={savedKey()}>
+            {(key) => (
+              <div class="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3.5">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm" style={{ background: "#f9731618", color: "#f97316" }}>
+                  &#9889;
+                </div>
+                <div class="flex min-w-0 flex-1 flex-col">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-gray-200">Anthropic (Claude)</span>
+                    <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-400">Active</span>
+                  </div>
+                  <code class="text-xs font-mono text-gray-500">{key().prefix}</code>
+                </div>
+                <div class="hidden flex-col items-end gap-0.5 sm:flex">
+                  <span class="text-[11px] text-gray-500">Added {key().createdAt}</span>
+                </div>
+                <Show when={!deleteConfirm()} fallback={
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" onClick={() => setDeleteConfirm(false)} class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all hover:text-white">Cancel</button>
+                    <button type="button" onClick={() => void handleDelete()} class="rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:bg-red-500">Delete</button>
+                  </div>
+                }>
+                  <button type="button" onClick={() => setDeleteConfirm(true)} class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400">
+                    Remove
+                  </button>
+                </Show>
+              </div>
+            )}
+          </Show>
+
+          {/* Add new key */}
+          <div class="rounded-xl border border-dashed border-white/[0.08] bg-white/[0.01] p-5">
+            <h4 class="mb-3 text-sm font-semibold text-gray-300">{savedKey() ? "Replace Key" : "Add API Key"}</h4>
+            <div class="flex items-end gap-3">
+              <div class="flex-1">
+                <SettingsInput
+                  label="Anthropic API Key"
+                  value={anthropicKey()}
+                  onInput={setAnthropicKey}
+                  type="password"
+                  placeholder="sk-ant-api03-..."
+                  hint="Get your key from console.anthropic.com"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!anthropicKey().trim() || saving()}
+                onClick={() => void handleSave()}
+                class="shrink-0 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition-all duration-200 hover:shadow-orange-500/40 hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+              >
+                {saving() ? "Saving..." : "Save Key"}
+              </button>
+            </div>
+            <p class="mt-3 text-[11px] text-gray-600">
+              Your key is encrypted at rest. Only the prefix is stored in plaintext for identification.
+            </p>
+          </div>
+
+          {/* Cost comparison */}
+          <div class="rounded-xl border border-white/[0.04] bg-white/[0.02] p-5">
+            <h4 class="mb-3 text-sm font-semibold text-gray-300">Cost Comparison</h4>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded-lg border border-red-500/10 bg-red-500/5 p-4">
+                <span class="text-xs text-gray-500">Subscriptions</span>
+                <div class="mt-1 text-2xl font-bold text-red-400">$1,800<span class="text-sm font-normal text-gray-600">/mo</span></div>
+                <span class="text-[10px] text-gray-600">Fixed cost, whether you use it or not</span>
+              </div>
+              <div class="rounded-lg border border-emerald-500/10 bg-emerald-500/5 p-4">
+                <span class="text-xs text-gray-500">API Direct</span>
+                <div class="mt-1 text-2xl font-bold text-emerald-400">Pay-per-use</div>
+                <span class="text-[10px] text-gray-600">$3/1M input tokens with Sonnet</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </SettingsSection>
+    </div>
+  );
+}
+
 // ── Main Settings Page ───────────────────────────────────────────────
 
 export default function SettingsPage(): JSX.Element {
@@ -535,6 +695,7 @@ export default function SettingsPage(): JSX.Element {
     { id: "profile", label: "Profile", icon: "&#128100;" },
     { id: "account", label: "Account", icon: "&#128274;" },
     { id: "api-keys", label: "API Keys", icon: "&#128273;" },
+    { id: "ai-providers", label: "AI Providers", icon: "&#9889;" },
     { id: "notifications", label: "Notifications", icon: "&#128276;" },
     { id: "appearance", label: "Appearance", icon: "&#127912;" },
   ];
@@ -574,6 +735,9 @@ export default function SettingsPage(): JSX.Element {
           </Match>
           <Match when={activeTab() === "api-keys"}>
             <ApiKeysTab />
+          </Match>
+          <Match when={activeTab() === "ai-providers"}>
+            <AIProvidersTab />
           </Match>
           <Match when={activeTab() === "notifications"}>
             <NotificationsTab />

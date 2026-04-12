@@ -1,5 +1,5 @@
 import type { JSX } from "solid-js";
-import { A, useNavigate } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import { Button, Card, Stack, Text } from "@back-to-the-future/ui";
 
 interface ErrorStateProps {

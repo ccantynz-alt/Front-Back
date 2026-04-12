@@ -13,7 +13,7 @@ interface FeatureFlagData {
   key: string;
   enabled: boolean;
   evaluatedEnabled: boolean;
-  description?: string;
+  description?: string | undefined;
   rolloutPercentage: number;
 }
 

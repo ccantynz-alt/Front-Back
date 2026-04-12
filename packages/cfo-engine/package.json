@@ -1,0 +1,23 @@
+{
+  "name": "@back-to-the-future/cfo-engine",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "description": "Double-entry ledger with audit-log integration. Powers the Astra accounting vertical.",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@crontech/audit-log": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/bun": "^1.2.0"
+  }
+}

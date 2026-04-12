@@ -14,11 +14,12 @@ export const emailRouter = router({
         joinLink: z.string().url(),
       }),
     )
-    .mutation(async ({ input }) => {
-      const html = collaborationInviteEmail(
+    .mutation(async ({ input, ctx }) => {
+      const { html } = collaborationInviteEmail(
         input.inviterName,
         input.roomName,
         input.joinLink,
+        ctx.userId,
       );
 
       const result = await sendEmail(

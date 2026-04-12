@@ -4,6 +4,7 @@
  */
 
 import { eq, desc, and } from "drizzle-orm";
+import { z } from "zod";
 import { db, supportTickets, supportMessages } from "@back-to-the-future/db";
 import { sendEmail } from "../email/client";
 import { classifyEmail } from "./classifier";
@@ -18,7 +19,16 @@ export interface InboundEmail {
   bodyHtml?: string | undefined;
 }
 
-export type AutoResponderAction = "auto_sent" | "queued" | "escalated";
+export const AutoResponderActionSchema = z.enum(["auto_sent", "queued", "escalated"]);
+export type AutoResponderAction = z.infer<typeof AutoResponderActionSchema>;
+
+/**
+ * Runtime type guard for AutoResponderAction. Useful when narrowing
+ * values from queue payloads or webhook replay jobs without throwing.
+ */
+export function isAutoResponderAction(value: unknown): value is AutoResponderAction {
+  return AutoResponderActionSchema.safeParse(value).success;
+}
 
 export interface AutoResponderResult {
   action: AutoResponderAction;

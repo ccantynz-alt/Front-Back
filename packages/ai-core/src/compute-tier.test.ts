@@ -1,6 +1,8 @@
 import { describe, test, expect } from "bun:test";
 import {
+  ComputeTierSchema,
   computeTierRouter,
+  isComputeTier,
   type DeviceCapabilities,
   type ModelRequirements,
 } from "./compute-tier";
@@ -198,6 +200,51 @@ describe("computeTierRouter - fallback chain", () => {
     for (const [device, model] of scenarios) {
       const result = computeTierRouter(device, model);
       expect(tiers).toContain(result);
+    }
+  });
+
+  test("router output is always a valid ComputeTierSchema value", () => {
+    const scenarios: [DeviceCapabilities, ModelRequirements][] = [
+      [makeDevice(), makeModel()],
+      [makeDevice({ hasWebGPU: false }), makeModel({ parametersBillion: 5 })],
+      [makeDevice({ hasWebGPU: false }), makeModel({ parametersBillion: 70 })],
+    ];
+    for (const [device, model] of scenarios) {
+      const result = computeTierRouter(device, model);
+      expect(ComputeTierSchema.safeParse(result).success).toBe(true);
+    }
+  });
+});
+
+// ── ComputeTier type guard ──────────────────────────────────────────
+
+describe("isComputeTier", () => {
+  test("accepts every enum value", () => {
+    expect(isComputeTier("client")).toBe(true);
+    expect(isComputeTier("edge")).toBe(true);
+    expect(isComputeTier("cloud")).toBe(true);
+  });
+
+  test("rejects typos, casing variants, and foreign values", () => {
+    expect(isComputeTier("Client")).toBe(false);
+    expect(isComputeTier("clinet")).toBe(false);
+    expect(isComputeTier("")).toBe(false);
+    expect(isComputeTier(undefined)).toBe(false);
+    expect(isComputeTier(null)).toBe(false);
+    expect(isComputeTier(42)).toBe(false);
+    expect(isComputeTier({ tier: "client" })).toBe(false);
+  });
+
+  test("narrows unknown values to ComputeTier in conditional branches", () => {
+    const raw: unknown = "edge";
+    if (isComputeTier(raw)) {
+      // Inside this branch the compiler knows raw is ComputeTier.
+      // The assertion below is redundant at runtime but forces the
+      // type narrowing to be exercised.
+      const tier: "client" | "edge" | "cloud" = raw;
+      expect(tier).toBe("edge");
+    } else {
+      throw new Error("isComputeTier should have narrowed 'edge' to ComputeTier");
     }
   });
 });

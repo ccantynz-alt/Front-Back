@@ -14,11 +14,11 @@ interface ComputeTierIndicatorProps {
   compact?: boolean;
 }
 
-const TIER_CONFIG: Record<string, { label: string; color: string; cost: string; latency: string }> = {
+const TIER_CONFIG = {
   client: { label: "Client GPU", color: "bg-green-500", cost: "$0", latency: "<10ms" },
   edge: { label: "Edge", color: "bg-blue-500", cost: "$", latency: "<50ms" },
   cloud: { label: "Cloud", color: "bg-purple-500", cost: "$$", latency: "<2s" },
-};
+} as const satisfies Record<string, { label: string; color: string; cost: string; latency: string }>;
 
 const STATUS_CONFIG: Record<ModelStatus, { label: string; color: string }> = {
   idle: { label: "No model", color: "text-gray-400" },
@@ -37,8 +37,10 @@ export function ComputeTierIndicator(props: ComputeTierIndicatorProps): JSX.Elem
     await detectAndSetTier();
   });
 
-  const tierConfig = (): { label: string; color: string; cost: string; latency: string } =>
-    TIER_CONFIG[computeTier()] ?? TIER_CONFIG.cloud;
+  const tierConfig = (): { label: string; color: string; cost: string; latency: string } => {
+    const tier = computeTier();
+    return TIER_CONFIG[tier as keyof typeof TIER_CONFIG] ?? TIER_CONFIG.cloud;
+  };
 
   const modelStatus = (): ModelStatus => getModelStatus();
   const statusConfig = (): { label: string; color: string } =>

@@ -2,15 +2,15 @@
 // Detects device GPU capabilities for three-tier compute routing.
 // Client GPU ($0/token) → Edge (sub-50ms) → Cloud (full power)
 
-import type { DeviceCapabilities, ComputeTier } from "@back-to-the-future/ai-core";
+import type { DeviceCapabilities } from "@back-to-the-future/ai-core";
 
 export interface WebGPUInfo {
   supported: boolean;
-  adapterName?: string;
-  vendor?: string;
-  architecture?: string;
-  maxBufferSize?: number;
-  maxComputeWorkgroupsPerDimension?: number;
+  adapterName?: string | undefined;
+  vendor?: string | undefined;
+  architecture?: string | undefined;
+  maxBufferSize?: number | undefined;
+  maxComputeWorkgroupsPerDimension?: number | undefined;
   estimatedVRAMMB: number;
 }
 

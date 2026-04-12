@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { eq } from "drizzle-orm";
-import { db, users, sessions } from "@back-to-the-future/db";
+import { db, users, sessions, scopedDb } from "@back-to-the-future/db";
 import { appRouter } from "./router";
 import { createSession } from "../auth/session";
 import { generateCsrfToken } from "../auth/csrf";
@@ -9,11 +9,13 @@ import type { TRPCContext } from "./context";
 // ── Test Helpers ─────────────────────────────────────────────────────
 
 function createTestContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
+  const userId = overrides.userId ?? null;
   return {
     db,
-    userId: null,
+    userId,
     sessionToken: null,
     csrfToken: null,
+    scopedDb: userId ? scopedDb(db, userId) : null,
     ...overrides,
   };
 }

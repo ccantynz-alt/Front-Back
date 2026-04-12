@@ -25,6 +25,9 @@ Thumbs.db
 # Bun
 bun.lockb
 
+# Vite/Vinxi temp files
+app.config.timestamp_*
+
 # Turbo
 .turbo/
 
@@ -36,3 +39,10 @@ credentials.json
 
 # SQLite databases (generated at runtime)
 *.db
+
+# Sentinel runtime cache — regenerated via `bun run sentinel:once`.
+# The canonical dedupe state is tracked-repos.json (lastKnownRelease,
+# lastCommitCheckAt). intelligence.json is the full collector output
+# and is too large to push reliably through the current git proxy.
+# Losing it only costs one noisy "initial-detection" pass on next run.
+services/sentinel/data/intelligence.json

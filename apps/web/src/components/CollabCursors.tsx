@@ -4,7 +4,7 @@
 
 import { For, Show, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
-import { Text, Badge, Avatar, Stack } from "@back-to-the-future/ui";
+import { Text, Badge, Stack } from "@back-to-the-future/ui";
 
 // ── Types ────────────────────────────────────────────────────────────
 

@@ -12,6 +12,13 @@ import {
   TrackedReposFileSchema,
 } from "../collectors/types";
 
+/**
+ * Schema version for the tracked-repos.json on-disk format. Bump when the
+ * file layout changes in a way that requires a migration. A single source
+ * of truth prevents load/save drift.
+ */
+export const TRACKED_REPOS_SCHEMA_VERSION = 1;
+
 function getDefaultPath(): string {
   const baseDir = (import.meta as { dir?: string }).dir ?? process.cwd();
   return join(baseDir, "..", "..", "data", "tracked-repos.json");
@@ -58,7 +65,7 @@ export function loadTrackedRepos(): TrackedRepo[] {
   cached = {
     repos: DEFAULT_TRACKED_REPOS,
     lastUpdated: null,
-    schemaVersion: 1,
+    schemaVersion: TRACKED_REPOS_SCHEMA_VERSION,
   };
   saveTrackedRepos(cached.repos);
   return cached.repos;
@@ -69,7 +76,7 @@ export function saveTrackedRepos(repos: TrackedRepo[]): void {
   const data: TrackedReposFile = {
     repos,
     lastUpdated: new Date().toISOString(),
-    schemaVersion: 1,
+    schemaVersion: TRACKED_REPOS_SCHEMA_VERSION,
   };
 
   try {

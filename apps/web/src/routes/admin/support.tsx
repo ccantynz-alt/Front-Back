@@ -177,9 +177,15 @@ export default function AdminSupportPage(): JSX.Element {
     setEditing(false);
   };
 
-  const setFilterAwaiting = (): void => setFilter("awaiting_review");
-  const setFilterEscalated = (): void => setFilter("escalated");
-  const setFilterAll = (): void => setFilter("all");
+  const setFilterAwaiting = (): void => {
+    setFilter("awaiting_review");
+  };
+  const setFilterEscalated = (): void => {
+    setFilter("escalated");
+  };
+  const setFilterAll = (): void => {
+    setFilter("all");
+  };
 
   return (
     <AdminGuard>

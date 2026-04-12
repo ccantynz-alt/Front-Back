@@ -1,0 +1,845 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-04-10T07:45:00Z",
+  "session": "CFO Lock-in — Overnight Grind Wave 2",
+  "doctrine": "Aggressor. 80-100% ahead. Zero broken anything. Compliance-native wedge.",
+  "repoUrl": "https://github.com/ccantynz-alt/front-back",
+  "categories": [
+    {
+      "id": "doctrine",
+      "title": "Strategic Doctrine Lock-in",
+      "subtitle": "The CFO charter and the foundational decisions",
+      "icon": "scroll",
+      "entries": [
+        {
+          "id": "cfo-charter",
+          "title": "CFO charter + authority grant",
+          "description": "Craig grants autonomous CFO authority to Claude. Decision framework, scope, escalation gates documented.",
+          "status": "completed",
+          "priority": "p0",
+          "commit": null,
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "docs/CFO_CHARTER.md",
+          "blockedReason": null,
+          "tags": ["charter", "authority"]
+        },
+        {
+          "id": "compliance-wedge",
+          "title": "Compliance-native wedge positioning",
+          "description": "Public positioning lock: Crontech is the compliance-native developer platform. SOC 2, HIPAA, FedRAMP-path built in.",
+          "status": "in_progress",
+          "priority": "p0",
+          "commit": null,
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "docs/POSITIONING.md",
+          "blockedReason": null,
+          "tags": ["positioning", "wedge"]
+        },
+        {
+          "id": "competitor-free-stack",
+          "title": "Competitor-free stack rule",
+          "description": "Never ship on infrastructure owned by a competitor we compete with at the platform layer. Locks out Vercel, Netlify, etc.",
+          "status": "completed",
+          "priority": "p0",
+          "commit": null,
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "docs/STACK_RULES.md",
+          "blockedReason": null,
+          "tags": ["stack", "doctrine"]
+        },
+        {
+          "id": "advantage-levers",
+          "title": "Advantage Levers Tier 1-4 framework",
+          "description": "Tier 1 = do now. Tier 2 = next 90 days. Tier 3 = next 12 months. Tier 4 = anti-traps to AVOID.",
+          "status": "completed",
+          "priority": "p0",
+          "commit": null,
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "docs/ADVANTAGE_LEVERS.md",
+          "blockedReason": null,
+          "tags": ["strategy", "framework"]
+        },
+        {
+          "id": "founder-protection",
+          "title": "Founder Protection Framework (Simmer Protocol)",
+          "description": "Sundays off. 8pm NZT hard stop. Monthly walk-away day. Weekly check-in rhythm. Generational succession to Craig's daughter (20-30yr horizon).",
+          "status": "completed",
+          "priority": "p0",
+          "commit": null,
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "docs/SIMMER_PROTOCOL.md",
+          "blockedReason": null,
+          "tags": ["founder", "wellbeing"]
+        },
+        {
+          "id": "generational-plan",
+          "title": "Generational succession plan",
+          "description": "Crontech is built to outlive Craig. 20-30 year horizon. Daughter as long-term successor. Every decision filters through this lens.",
+          "status": "completed",
+          "priority": "p0",
+          "commit": null,
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "docs/SUCCESSION.md",
+          "blockedReason": null,
+          "tags": ["legacy"]
+        },
+        {
+          "id": "employment-mission",
+          "title": "Employment Mission (NZ/PH/US jobs toward $5M ARR)",
+          "description": "Hire 1 FTE now → 1 PH FTE (Month 6) → 3-5 FTEs (Month 12) → 20 FTEs ($5M ARR) → 35 FTEs ($10M ARR).",
+          "status": "completed",
+          "priority": "p0",
+          "commit": null,
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "docs/EMPLOYMENT_MISSION.md",
+          "blockedReason": null,
+          "tags": ["hiring", "mission"]
+        }
+      ]
+    },
+    {
+      "id": "claude-md-pin",
+      "title": "CLAUDE.md PIN-gated drafts",
+      "subtitle": "Awaiting Craig's PIN to merge into the Bible",
+      "icon": "lock",
+      "entries": [
+        {
+          "id": "claude-0-9-employment",
+          "title": "§0.9 Employment Mission",
+          "description": "Lock the employment mission as binding doctrine in CLAUDE.md.",
+          "status": "blocked",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": "CLAUDE.md",
+          "blockedReason": "Requires Craig's PIN to modify CLAUDE.md",
+          "tags": ["doctrine", "pin-gated"]
+        },
+        {
+          "id": "claude-0-10-simmer",
+          "title": "§0.10 Simmer Protocol + Generational Plan",
+          "description": "Lock founder protection and succession plan as binding doctrine.",
+          "status": "blocked",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": "CLAUDE.md",
+          "blockedReason": "Requires Craig's PIN to modify CLAUDE.md",
+          "tags": ["doctrine", "pin-gated"]
+        },
+        {
+          "id": "claude-0-11-stack",
+          "title": "§0.11 Competitor-Free Stack Rule",
+          "description": "Lock the no-competitor-infrastructure rule as binding doctrine.",
+          "status": "blocked",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": "CLAUDE.md",
+          "blockedReason": "Requires Craig's PIN to modify CLAUDE.md",
+          "tags": ["doctrine", "pin-gated"]
+        }
+      ]
+    },
+    {
+      "id": "sentinel",
+      "title": "Sentinel & Tracked Repos",
+      "subtitle": "24/7 competitive intelligence infrastructure",
+      "icon": "eye",
+      "entries": [
+        {
+          "id": "sentinel-zod-first",
+          "title": "Zod-first enum refactor (Severity, RepoPriority, RepoCategory)",
+          "description": "Types derived from Zod schemas. Runtime type guards added. Single source of truth.",
+          "status": "completed",
+          "priority": "p1",
+          "commit": "150069a",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "services/sentinel/src/collectors/types.ts",
+          "blockedReason": null,
+          "tags": ["sentinel", "types"]
+        },
+        {
+          "id": "sentinel-tracked-repos",
+          "title": "15 new competitor repos added",
+          "description": "Cloudflare Workers SDK, Supabase, Convex, Fly, Netlify, Snyk, Whisper, bolt.new, and more.",
+          "status": "completed",
+          "priority": "p1",
+          "commit": "8c512a9",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "services/sentinel/data/tracked-repos.json",
+          "blockedReason": null,
+          "tags": ["sentinel", "intelligence"]
+        },
+        {
+          "id": "sentinel-priority-exhaustive",
+          "title": "Exhaustive priorityOrder via Record<RepoPriority, number>",
+          "description": "Removed loose Record<string, number> with fallback. Compiler now enforces exhaustiveness.",
+          "status": "completed",
+          "priority": "p2",
+          "commit": "3b61357",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "services/sentinel/src/collectors/github-releases.ts",
+          "blockedReason": null,
+          "tags": ["sentinel", "types"]
+        },
+        {
+          "id": "sentinel-schema-version",
+          "title": "TRACKED_REPOS_SCHEMA_VERSION constant extraction",
+          "description": "Eliminated load/save drift by extracting the hardcoded schemaVersion.",
+          "status": "completed",
+          "priority": "p2",
+          "commit": "fc4ef6a",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "services/sentinel/src/storage/tracked-repos-store.ts",
+          "blockedReason": null,
+          "tags": ["sentinel", "cleanup"]
+        },
+        {
+          "id": "sentinel-test-expansion",
+          "title": "Test coverage expansion (25 → 37 tests, 150 expects)",
+          "description": "Added competitor coverage, dedup, priority/category coverage, type guard positive/negative, compiler narrowing.",
+          "status": "completed",
+          "priority": "p2",
+          "commit": "150069a",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "services/sentinel/src/index.test.ts",
+          "blockedReason": null,
+          "tags": ["sentinel", "tests"]
+        },
+        {
+          "id": "sentinel-alerts-zod",
+          "title": "Zod-first AlertPriority + exhaustive Discord color map",
+          "description": "alerts/types.ts refactored to derive AlertPriority from Zod enum. isAlertPriority runtime guard added. DISCORD_EMBED_COLOR keyed as Record<AlertPriority, number> so the compiler flags any new priority.",
+          "status": "completed",
+          "priority": "p2",
+          "commit": "82e2825",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "services/sentinel/src/alerts/types.ts",
+          "blockedReason": null,
+          "tags": ["sentinel", "types", "zod"]
+        },
+        {
+          "id": "zod-sweep-ai-core",
+          "title": "Zod-first ComputeTier (ai-core)",
+          "description": "ComputeTier derived from z.enum. isComputeTier runtime guard. 4 new tests covering schema validation, positive/negative guard, branch narrowing. The three-tier compute model (CLAUDE.md §4.1) now has a runtime guard any consumer can use to validate routing telemetry.",
+          "status": "completed",
+          "priority": "p2",
+          "commit": "72d92cf",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "packages/ai-core/src/compute-tier.ts",
+          "blockedReason": null,
+          "tags": ["platform", "types", "zod"]
+        },
+        {
+          "id": "zod-sweep-api",
+          "title": "Zod-first ServiceStatus + AutoResponderAction + SuggestionSeverity (api)",
+          "description": "Three api enum types hardened: health-monitor ServiceStatus, support auto-responder action, ai project-analyzer severity + fix kind. All with runtime guards. 115 api tests still passing.",
+          "status": "completed",
+          "priority": "p2",
+          "commit": "9203981",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "apps/api/src/automation/health-monitor.ts",
+          "blockedReason": null,
+          "tags": ["api", "types", "zod"]
+        },
+        {
+          "id": "zod-sweep-schemas",
+          "title": "Zod-first TemplateCategory + TemplateDifficulty (schemas)",
+          "description": "Starter template enums in @back-to-the-future/schemas moved to Zod-first with isTemplateCategory + isTemplateDifficulty guards. 137 schemas tests still passing.",
+          "status": "completed",
+          "priority": "p3",
+          "commit": "8848f33",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "packages/schemas/src/templates.ts",
+          "blockedReason": null,
+          "tags": ["schemas", "types", "zod"]
+        },
+        {
+          "id": "progress-tracker-tests",
+          "title": "Progress tracker schema + JSON lock tests",
+          "description": "17 tests covering parseProgressTracker validator (happy path + every rejection case) plus real progress.json file locks (unique ids, blocked-has-reason, commit SHA format, tag presence). Prevents silent /admin/progress breakage.",
+          "status": "completed",
+          "priority": "p2",
+          "commit": "37de380",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "apps/web/src/lib/progress/schema.test.ts",
+          "blockedReason": null,
+          "tags": ["web", "tests", "tracker"]
+        }
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "title": "Infrastructure & Phase 0 Bootstrap",
+      "subtitle": "Hetzner bare-metal + LGTM observability",
+      "icon": "server",
+      "entries": [
+        {
+          "id": "hetzner-provision",
+          "title": "Hetzner box provisioning",
+          "description": "Provision the Phase 0 Hetzner bare-metal box. Install base OS, firewall, SSH hardening.",
+          "status": "blocked",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "infra/phase-0.sh",
+          "blockedReason": "Requires Craig to create the Hetzner account and share SSH access",
+          "tags": ["infra", "phase-0"]
+        },
+        {
+          "id": "phase-0-script",
+          "title": "Phase 0 bootstrap script authored",
+          "description": "infra/phase-0.sh — idempotent Hetzner bootstrap. Hardens OS, creates crontech user, installs Docker + Bun + Caddy, creates /srv/crontech layout, deploys LGTM stack. 262 lines, bash -n clean.",
+          "status": "completed",
+          "priority": "p0",
+          "commit": "0c8dc20",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "infra/phase-0.sh",
+          "blockedReason": null,
+          "tags": ["infra", "phase-0"]
+        },
+        {
+          "id": "phase-0-bootstrap",
+          "title": "Phase 0 bootstrap script execution",
+          "description": "Run phase-0.sh on the Hetzner box to install Docker, Bun, Caddy, and the core runtime.",
+          "status": "blocked",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "infra/README.md",
+          "blockedReason": "Requires Hetzner box + SSH access",
+          "tags": ["infra", "phase-0"]
+        },
+        {
+          "id": "lgtm-stack-authored",
+          "title": "LGTM observability stack authored",
+          "description": "infra/lgtm/ — full docker-compose with Loki 3.2.1, Tempo 2.6.1, Mimir 2.14.2, Grafana 11.3.1, OTel Collector 0.112.0. Configs for all 5 services. Auto-provisioned datasources. All bound to 127.0.0.1 (Caddy fronts them).",
+          "status": "completed",
+          "priority": "p1",
+          "commit": "0c8dc20",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "infra/lgtm/docker-compose.yml",
+          "blockedReason": null,
+          "tags": ["infra", "observability"]
+        },
+        {
+          "id": "lgtm-deploy",
+          "title": "LGTM observability stack deployment",
+          "description": "docker compose up on Hetzner box. Auto-provisioning wires Loki/Tempo/Mimir into Grafana on first start.",
+          "status": "blocked",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": "infra/lgtm/docker-compose.yml",
+          "blockedReason": "Requires Hetzner box online",
+          "tags": ["infra", "observability"]
+        },
+        {
+          "id": "phase-0-runbook",
+          "title": "Phase 0 runbook authored",
+          "description": "infra/README.md — provision → bootstrap → SSH keys → harden → DNS → Caddyfile → verify. Exit criteria checklist. Scaling notes.",
+          "status": "completed",
+          "priority": "p1",
+          "commit": "0c8dc20",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "infra/README.md",
+          "blockedReason": null,
+          "tags": ["infra", "docs"]
+        },
+        {
+          "id": "stripe-live",
+          "title": "Stripe live mode activation",
+          "description": "Switch Stripe from test mode to live mode. Webhook secrets rotated. Live product IDs configured.",
+          "status": "pending",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["billing", "phase-0"]
+        },
+        {
+          "id": "nz-accountant",
+          "title": "NZ chartered accountant engagement",
+          "description": "Engage a NZ chartered accountant for GST, PAYE, tax structure advice.",
+          "status": "blocked",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": "Craig must select and engage the firm",
+          "tags": ["legal", "nz"]
+        },
+        {
+          "id": "myhr-nz",
+          "title": "MyHR NZ retainer (employment compliance)",
+          "description": "Employment compliance partner for NZ hires. Required before first FTE offer.",
+          "status": "blocked",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": "Craig must engage MyHR NZ",
+          "tags": ["legal", "hiring"]
+        },
+        {
+          "id": "nz-estate",
+          "title": "NZ estate planning lawyer",
+          "description": "Estate planning to protect generational succession. Trust structure + will update.",
+          "status": "blocked",
+          "priority": "p2",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": "Craig must engage estate lawyer",
+          "tags": ["legal", "succession"]
+        }
+      ]
+    },
+    {
+      "id": "migration",
+      "title": "7-Week Dogfood Migration",
+      "subtitle": "Move every Craig property onto Crontech",
+      "icon": "truck",
+      "entries": [
+        {
+          "id": "migration-playbooks",
+          "title": "7-week migration playbooks authored",
+          "description": "docs/migrations/ — overview README + 7 weekly playbooks (week-1 through week-7). Day-by-day pre-flight, inventory, scaffold, port, migrate, cutover, decommission. Exit criteria + rollback triggers per week. ~1100 lines total.",
+          "status": "completed",
+          "priority": "p0",
+          "commit": "8f089f1",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "docs/migrations/README.md",
+          "blockedReason": null,
+          "tags": ["migration", "docs"]
+        },
+        {
+          "id": "week-0-bootstrap",
+          "title": "Week 0: Bootstrap exit criteria",
+          "description": "Hetzner box live, LGTM green, Stripe live, auth working, deploy pipeline working.",
+          "status": "in_progress",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/migrations/README.md",
+          "blockedReason": null,
+          "tags": ["migration", "week-0"]
+        },
+        {
+          "id": "week-1-marcoreid",
+          "title": "Week 1: MarcoReid.com dress rehearsal",
+          "description": "First production site on Crontech. Low-stakes dress rehearsal for the migration pipeline. Playbook authored.",
+          "status": "pending",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/migrations/week-1-marcoreid.md",
+          "blockedReason": "Requires Week 0 exit criteria",
+          "tags": ["migration", "week-1"]
+        },
+        {
+          "id": "week-2-emailed",
+          "title": "Week 2: emailed.io",
+          "description": "Migrate emailed to Crontech. First real SaaS workload with active Stripe subscriptions. Playbook authored.",
+          "status": "pending",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/migrations/week-2-emailed.md",
+          "blockedReason": "Requires Week 1",
+          "tags": ["migration", "week-2"]
+        },
+        {
+          "id": "week-3-astra",
+          "title": "Week 3: Astra + CFO engine + audit log debut",
+          "description": "Migrate Astra accounting platform. Neon for ledger. Hash-chained audit log with RFC 3161 timestamps debuts. 14-day decommission buffer. Playbook authored.",
+          "status": "pending",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/migrations/week-3-astra.md",
+          "blockedReason": "Requires Week 2",
+          "tags": ["migration", "week-3"]
+        },
+        {
+          "id": "week-4-ai-immigration",
+          "title": "Week 4: AI-Immigration-Compliance",
+          "description": "First compliance-heavy legal tech workload. WORM document storage. Client-side WebGPU inference for PII. Chain of custody audit log. Playbook authored.",
+          "status": "pending",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/migrations/week-4-ai-immigration.md",
+          "blockedReason": "Requires Week 3",
+          "tags": ["migration", "week-4"]
+        },
+        {
+          "id": "week-5-gatetest",
+          "title": "Week 5: GateTest (recursive self-scan)",
+          "description": "Migrate GateTest QA/security platform. GateTest scans Front-Back itself on Day 5. Isolated scan workers. Playbook authored.",
+          "status": "pending",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/migrations/week-5-gatetest.md",
+          "blockedReason": "Requires Week 4",
+          "tags": ["migration", "week-5"]
+        },
+        {
+          "id": "week-6-voice",
+          "title": "Week 6: Voice/transcription (three-tier AI)",
+          "description": "Migrate the voice + transcription stack. Three-tier inference: WebGPU (tiny) → Workers AI (small/medium) → Modal H100 (large-v3). Qdrant semantic search. Playbook authored.",
+          "status": "pending",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/migrations/week-6-voice.md",
+          "blockedReason": "Requires Week 5",
+          "tags": ["migration", "week-6"]
+        },
+        {
+          "id": "week-7-zoobicon",
+          "title": "Week 7: Zoobicon (AI website builder flagship)",
+          "description": "Migrate Zoobicon. Generative UI (component trees, not raw HTML). Yjs collab with AI agent as first-class participant. Completes the 7-week cycle. Playbook authored.",
+          "status": "pending",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/migrations/week-7-zoobicon.md",
+          "blockedReason": "Requires Week 6",
+          "tags": ["migration", "week-7"]
+        }
+      ]
+    },
+    {
+      "id": "tier-1",
+      "title": "Tier 1 Advantage Levers",
+      "subtitle": "Do now. Non-negotiable.",
+      "icon": "target",
+      "entries": [
+        {
+          "id": "t1-wedge-lock",
+          "title": "Compliance-native wedge publicly locked",
+          "description": "POSITIONING.md committed. Landing page copy aligned. All marketing surfaces on-message.",
+          "status": "in_progress",
+          "priority": "p0",
+          "commit": null,
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "docs/POSITIONING.md",
+          "blockedReason": null,
+          "tags": ["tier-1", "positioning"]
+        },
+        {
+          "id": "t1-anchor-customer",
+          "title": "Anchor customer hunt",
+          "description": "First paying customer who validates the compliance-native wedge. HIGHEST priority of everything. Playbook drafted.",
+          "status": "in_progress",
+          "priority": "p0",
+          "commit": null,
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "docs/ANCHOR_CUSTOMER_HUNT.md",
+          "blockedReason": null,
+          "tags": ["tier-1", "revenue"]
+        },
+        {
+          "id": "t1-anchor-playbook",
+          "title": "Anchor customer hunt playbook authored",
+          "description": "docs/ANCHOR_CUSTOMER_HUNT.md — full ICP, channels, outreach cadence, qualifying criteria, deal structure, exit criteria, failure modes. Draft awaiting Craig's voice pass.",
+          "status": "completed",
+          "priority": "p0",
+          "commit": null,
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "docs/ANCHOR_CUSTOMER_HUNT.md",
+          "blockedReason": null,
+          "tags": ["tier-1", "docs"]
+        },
+        {
+          "id": "t1-founder-brand",
+          "title": "Founder brand cadence",
+          "description": "Craig writes publicly 2-3x/week. Build in public. Compliance-native thesis on display.",
+          "status": "pending",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-1", "marketing"]
+        },
+        {
+          "id": "t1-audit-log-oss",
+          "title": "@crontech/audit-log OSS library",
+          "description": "Hash-chained, RFC 3161 timestamped audit log library. Open source. Lead-gen for the compliance wedge.",
+          "status": "in_progress",
+          "priority": "p1",
+          "commit": "036ed49",
+          "branch": "worktree-agent-a53e415e",
+          "docLink": "packages/audit-log",
+          "blockedReason": null,
+          "tags": ["tier-1", "oss"]
+        }
+      ]
+    },
+    {
+      "id": "tier-2",
+      "title": "Tier 2 Advantage Levers",
+      "subtitle": "Next 90 days",
+      "icon": "calendar",
+      "entries": [
+        {
+          "id": "t2-soc2",
+          "title": "SOC 2 Type I readiness",
+          "description": "Full SOC 2 Type I audit prep. Policies, controls, evidence collection in place.",
+          "status": "pending",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-2", "compliance"]
+        },
+        {
+          "id": "t2-first-ph-fte",
+          "title": "First Philippines FTE",
+          "description": "First PH engineering hire. Part of the employment mission ladder.",
+          "status": "pending",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-2", "hiring"]
+        },
+        {
+          "id": "t2-design-partners",
+          "title": "Three design partners",
+          "description": "Three non-paying design partners shaping v1. Compliance-heavy verticals preferred.",
+          "status": "pending",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-2", "customers"]
+        },
+        {
+          "id": "t2-sentinel-product",
+          "title": "Sentinel productization",
+          "description": "Spin Sentinel out as a standalone product. Revenue channel + moat.",
+          "status": "pending",
+          "priority": "p2",
+          "commit": null,
+          "branch": null,
+          "docLink": "services/sentinel",
+          "blockedReason": null,
+          "tags": ["tier-2", "product"]
+        }
+      ]
+    },
+    {
+      "id": "tier-3",
+      "title": "Tier 3 Advantage Levers",
+      "subtitle": "Next 12 months",
+      "icon": "horizon",
+      "entries": [
+        {
+          "id": "t3-nz-gov",
+          "title": "NZ government contracts",
+          "description": "Pursue NZ government compliance contracts. Leverages NZ sovereignty + our compliance wedge.",
+          "status": "pending",
+          "priority": "p2",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-3", "gov"]
+        },
+        {
+          "id": "t3-patents",
+          "title": "Provisional patents",
+          "description": "File provisional patents on our novel compliance primitives (hash-chained audit, three-tier compute, CRDT + AI collab).",
+          "status": "pending",
+          "priority": "p2",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-3", "ip"]
+        },
+        {
+          "id": "t3-advisory",
+          "title": "Advisory board",
+          "description": "Assemble a compliance + legal-tech advisory board. 3-5 people. Quarterly meetings.",
+          "status": "pending",
+          "priority": "p3",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-3", "governance"]
+        }
+      ]
+    },
+    {
+      "id": "tier-4",
+      "title": "Tier 4 Anti-Traps (ACTIVE DISCIPLINE)",
+      "subtitle": "Things we MUST NOT do",
+      "icon": "shield",
+      "entries": [
+        {
+          "id": "t4-no-vercel-clone",
+          "title": "Don't match Vercel feature-for-feature",
+          "description": "We do not compete on breadth. We compete on the compliance wedge. Every feature must serve the wedge.",
+          "status": "in_progress",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/ADVANTAGE_LEVERS.md",
+          "blockedReason": null,
+          "tags": ["tier-4", "discipline"]
+        },
+        {
+          "id": "t4-no-perfect-arch",
+          "title": "Don't perfect the architecture",
+          "description": "Ship crappy and fix. Perfection is the enemy of the anchor customer.",
+          "status": "in_progress",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-4", "discipline"]
+        },
+        {
+          "id": "t4-no-over-admin",
+          "title": "Don't over-build the admin",
+          "description": "Admin is a tool, not a product. Ship the minimum that unblocks operators.",
+          "status": "in_progress",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-4", "discipline"]
+        },
+        {
+          "id": "t4-no-vc",
+          "title": "Don't take VC money",
+          "description": "Bootstrap to $5M ARR. VC optionality preserved only at $10M+ ARR and only for specific strategic reasons.",
+          "status": "in_progress",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-4", "discipline"]
+        },
+        {
+          "id": "t4-no-gm-early",
+          "title": "Don't hire a GM early",
+          "description": "Craig runs the company until product-market fit is undeniable. No GM until $3M+ ARR.",
+          "status": "in_progress",
+          "priority": "p1",
+          "commit": null,
+          "branch": null,
+          "docLink": null,
+          "blockedReason": null,
+          "tags": ["tier-4", "discipline"]
+        },
+        {
+          "id": "t4-no-broaden",
+          "title": "Don't broaden positioning",
+          "description": "Compliance-native wedge only. No 'also a general PaaS'. No 'also for AI builders'. ONE wedge.",
+          "status": "in_progress",
+          "priority": "p0",
+          "commit": null,
+          "branch": null,
+          "docLink": "docs/POSITIONING.md",
+          "blockedReason": null,
+          "tags": ["tier-4", "discipline"]
+        }
+      ]
+    },
+    {
+      "id": "wave-1-agents",
+      "title": "Wave 1 Parallel Agents",
+      "subtitle": "Worktrees awaiting merge review",
+      "icon": "branches",
+      "entries": [
+        {
+          "id": "w1-landing",
+          "title": "Agent 1: Landing page",
+          "description": "New landing page with compliance-native wedge copy.",
+          "status": "in_progress",
+          "priority": "p1",
+          "commit": "e7ba36a",
+          "branch": "cfo-lockin-strategy-docs",
+          "docLink": "apps/web/src/routes/index.tsx",
+          "blockedReason": null,
+          "tags": ["wave-1", "landing"]
+        },
+        {
+          "id": "w1-audit-log",
+          "title": "Agent 2: @crontech/audit-log",
+          "description": "OSS hash-chained audit log library.",
+          "status": "in_progress",
+          "priority": "p1",
+          "commit": "036ed49",
+          "branch": "worktree-agent-a53e415e",
+          "docLink": "packages/audit-log",
+          "blockedReason": null,
+          "tags": ["wave-1", "oss"]
+        },
+        {
+          "id": "w1-founding",
+          "title": "Agent 3: /founding page",
+          "description": "Founding customer page. Tier 1 anchor hunt asset.",
+          "status": "in_progress",
+          "priority": "p1",
+          "commit": "71809c8",
+          "branch": "worktree-agent-afaa6bae",
+          "docLink": "apps/web/src/routes/founding.tsx",
+          "blockedReason": null,
+          "tags": ["wave-1", "landing"]
+        },
+        {
+          "id": "w1-substrate",
+          "title": "Agent 4: Substrate scaffold",
+          "description": "Core platform substrate scaffold.",
+          "status": "in_progress",
+          "priority": "p1",
+          "commit": "a582639",
+          "branch": "worktree-agent-a91d21a3",
+          "docLink": "packages/substrate",
+          "blockedReason": null,
+          "tags": ["wave-1", "platform"]
+        },
+        {
+          "id": "w1-admin-skeleton",
+          "title": "Agent 5: Admin skeleton",
+          "description": "Admin area skeleton + navigation.",
+          "status": "in_progress",
+          "priority": "p2",
+          "commit": "f80fd86",
+          "branch": "feat/admin-area-skeleton",
+          "docLink": "apps/web/src/routes/admin.tsx",
+          "blockedReason": null,
+          "tags": ["wave-1", "admin"]
+        },
+        {
+          "id": "w1-sentinel",
+          "title": "Agent 6: Sentinel expansion",
+          "description": "Sentinel tracked-repos expansion. Cherry-picked into current branch.",
+          "status": "completed",
+          "priority": "p1",
+          "commit": "8c512a9",
+          "branch": "claude/fix-tracked-repos-types-LYo16",
+          "docLink": "services/sentinel",
+          "blockedReason": null,
+          "tags": ["wave-1", "sentinel"]
+        }
+      ]
+    }
+  ]
+}

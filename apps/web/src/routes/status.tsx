@@ -1,6 +1,5 @@
-import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
+import { createSignal, For, onMount, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
-import { Badge } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
 
 // ── Types ───────────────────────────────────────────────────────────
@@ -12,14 +11,6 @@ interface ServiceStatus {
   responseTime: number;
   uptime: number;
   icon: string;
-}
-
-interface Incident {
-  id: string;
-  date: string;
-  title: string;
-  status: "resolved" | "investigating" | "monitoring";
-  description: string;
 }
 
 // ── Service Data ────────────────────────────────────────────────────

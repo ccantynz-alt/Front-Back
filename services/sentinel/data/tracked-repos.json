@@ -8,9 +8,9 @@
       "category": "framework",
       "description": "React framework for production. Primary competitor in full-stack web.",
       "defaultBranch": "canary",
-      "lastKnownRelease": "v16.2.3",
-      "lastKnownReleaseAt": "2026-04-08T18:53:10Z",
-      "lastCommitCheckAt": "2026-04-09T18:07:31.642Z",
+      "lastKnownRelease": "v16.2.1-canary.31",
+      "lastKnownReleaseAt": "2026-04-10T08:52:15Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:14.703Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -23,8 +23,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:17.344Z",
+      "baselineCommitsPerWeek": 1
     },
     {
       "owner": "sveltejs",
@@ -36,8 +36,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:17.614Z",
+      "baselineCommitsPerWeek": 24
     },
     {
       "owner": "QwikDev",
@@ -49,8 +49,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:19.691Z",
+      "baselineCommitsPerWeek": 1
     },
     {
       "owner": "withastro",
@@ -60,10 +60,10 @@
       "category": "framework",
       "description": "Content-focused web framework. Islands architecture for partial hydration.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastKnownRelease": "astro@6.1.5",
+      "lastKnownReleaseAt": "2026-04-08T13:52:10Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:17.932Z",
+      "baselineCommitsPerWeek": 25
     },
     {
       "owner": "honojs",
@@ -75,8 +75,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.12",
       "lastKnownReleaseAt": "2026-04-07T04:15:34Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastCommitCheckAt": "2026-04-10T21:20:14.911Z",
+      "baselineCommitsPerWeek": 9
     },
     {
       "owner": "solidjs",
@@ -86,10 +86,10 @@
       "category": "framework",
       "description": "Our primary frontend framework. True reactive signals, zero VDOM.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastKnownRelease": "v2.0.0-beta.0",
+      "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:15.116Z",
+      "baselineCommitsPerWeek": 0
     },
     {
       "owner": "trpc",
@@ -99,8 +99,8 @@
       "category": "api",
       "description": "End-to-end typesafe API layer. Core to our type safety story.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
+      "lastKnownRelease": "v11.16.0",
+      "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
       "lastCommitCheckAt": null,
       "baselineCommitsPerWeek": null
     },
@@ -112,10 +112,10 @@
       "category": "ai",
       "description": "AI SDK for streaming responses and generative UI. Core AI orchestration layer.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
+      "lastKnownRelease": "ai@6.0.158",
+      "lastKnownReleaseAt": "2026-04-10T18:35:33Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:15.693Z",
+      "baselineCommitsPerWeek": 70
     },
     {
       "owner": "langchain-ai",
@@ -125,12 +125,194 @@
       "category": "ai",
       "description": "JS framework for LLM applications. Multi-agent orchestration via LangGraph.",
       "defaultBranch": "main",
+      "lastKnownRelease": "@langchain/xai@1.3.16",
+      "lastKnownReleaseAt": "2026-04-10T15:11:21Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:18.238Z",
+      "baselineCommitsPerWeek": 12
+    },
+    {
+      "owner": "cloudflare",
+      "repo": "workers-sdk",
+      "displayName": "Cloudflare Workers SDK",
+      "priority": "critical",
+      "category": "backend",
+      "description": "Wrangler + Workers tooling. We run on this today; we also compete on DX.",
+      "defaultBranch": "main",
+      "lastKnownRelease": "wrangler@4.81.1",
+      "lastKnownReleaseAt": "2026-04-09T15:35:47Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:15.956Z",
+      "baselineCommitsPerWeek": 33
+    },
+    {
+      "owner": "cloudflare",
+      "repo": "pages-action",
+      "displayName": "Cloudflare Pages Action",
+      "priority": "high",
+      "category": "backend",
+      "description": "Official Pages deploy GitHub Action. Track deploy surface evolution.",
+      "defaultBranch": "main",
+      "lastKnownRelease": null,
+      "lastKnownReleaseAt": null,
+      "lastCommitCheckAt": "2026-04-10T21:20:18.461Z",
+      "baselineCommitsPerWeek": 0
+    },
+    {
+      "owner": "supabase",
+      "repo": "supabase",
+      "displayName": "Supabase",
+      "priority": "critical",
+      "category": "backend",
+      "description": "Open-source BaaS competitor. Auth + Postgres + edge functions.",
+      "defaultBranch": "master",
+      "lastKnownRelease": "v1.26.04",
+      "lastKnownReleaseAt": "2026-04-09T14:38:08Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:16.528Z",
+      "baselineCommitsPerWeek": 100
+    },
+    {
+      "owner": "get-convex",
+      "repo": "convex-backend",
+      "displayName": "Convex",
+      "priority": "critical",
+      "category": "backend",
+      "description": "Reactive backend competitor. Sync engine + TS functions.",
+      "defaultBranch": "main",
+      "lastKnownRelease": "precompiled-2026-04-10-905a614",
+      "lastKnownReleaseAt": "2026-04-10T01:51:25Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:16.992Z",
+      "baselineCommitsPerWeek": 97
+    },
+    {
+      "owner": "superfly",
+      "repo": "flyctl",
+      "displayName": "Fly.io (flyctl)",
+      "priority": "high",
+      "category": "backend",
+      "description": "Firecracker microVM platform. Long-lived process competitor.",
+      "defaultBranch": "master",
+      "lastKnownRelease": "v0.4.33",
+      "lastKnownReleaseAt": "2026-04-09T19:35:39Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:18.851Z",
+      "baselineCommitsPerWeek": 19
+    },
+    {
+      "owner": "renovatebot",
+      "repo": "renovate",
+      "displayName": "Renovate",
+      "priority": "medium",
+      "category": "backend",
+      "description": "We use Renovate; track feature evolution for self-evolution pipeline.",
+      "defaultBranch": "main",
+      "lastKnownRelease": null,
+      "lastKnownReleaseAt": null,
+      "lastCommitCheckAt": "2026-04-10T21:20:20.237Z",
+      "baselineCommitsPerWeek": 100
+    },
+    {
+      "owner": "railwayapp",
+      "repo": "cli",
+      "displayName": "Railway CLI",
+      "priority": "medium",
+      "category": "backend",
+      "description": "Railway PaaS competitor for deploy/runtime story.",
+      "defaultBranch": "master",
+      "lastKnownRelease": null,
+      "lastKnownReleaseAt": null,
+      "lastCommitCheckAt": "2026-04-10T21:20:20.585Z",
+      "baselineCommitsPerWeek": 6
+    },
+    {
+      "owner": "netlify",
+      "repo": "cli",
+      "displayName": "Netlify CLI",
+      "priority": "high",
+      "category": "backend",
+      "description": "Netlify deploy/edge competitor.",
+      "defaultBranch": "main",
+      "lastKnownRelease": null,
+      "lastKnownReleaseAt": null,
+      "lastCommitCheckAt": "2026-04-10T21:20:19.143Z",
+      "baselineCommitsPerWeek": 8
+    },
+    {
+      "owner": "XeroAPI",
+      "repo": "xero-node",
+      "displayName": "Xero Node SDK",
+      "priority": "medium",
+      "category": "api",
+      "description": "Xero accounting API client. Astra/ledger.ai integration & competitive surface.",
+      "defaultBranch": "master",
+      "lastKnownRelease": null,
+      "lastKnownReleaseAt": null,
+      "lastCommitCheckAt": "2026-04-10T21:20:20.788Z",
+      "baselineCommitsPerWeek": 0
+    },
+    {
+      "owner": "codeclimate",
+      "repo": "codeclimate",
+      "displayName": "Code Climate CLI",
+      "priority": "medium",
+      "category": "api",
+      "description": "Code quality / maintainability scanner. GateTest competitor.",
+      "defaultBranch": "master",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
       "lastCommitCheckAt": null,
       "baselineCommitsPerWeek": null
+    },
+    {
+      "owner": "codacy",
+      "repo": "codacy-analysis-cli-action",
+      "displayName": "Codacy Analysis Action",
+      "priority": "medium",
+      "category": "api",
+      "description": "Codacy static analysis GitHub Action. GateTest competitor.",
+      "defaultBranch": "master",
+      "lastKnownRelease": "v4.4.7",
+      "lastKnownReleaseAt": "2025-07-17T14:30:19Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:21.212Z",
+      "baselineCommitsPerWeek": 0
+    },
+    {
+      "owner": "snyk",
+      "repo": "snyk",
+      "displayName": "Snyk CLI",
+      "priority": "high",
+      "category": "api",
+      "description": "Snyk vulnerability/security scanner. GateTest + compliance competitor.",
+      "defaultBranch": "main",
+      "lastKnownRelease": null,
+      "lastKnownReleaseAt": null,
+      "lastCommitCheckAt": null,
+      "baselineCommitsPerWeek": null
+    },
+    {
+      "owner": "openai",
+      "repo": "whisper",
+      "displayName": "OpenAI Whisper",
+      "priority": "high",
+      "category": "ai",
+      "description": "ASR model powering voice/transcription. Track releases and ecosystem forks.",
+      "defaultBranch": "main",
+      "lastKnownRelease": "v20250625",
+      "lastKnownReleaseAt": "2025-06-26T01:06:09Z",
+      "lastCommitCheckAt": "2026-04-10T21:20:19.472Z",
+      "baselineCommitsPerWeek": 0
+    },
+    {
+      "owner": "stackblitz",
+      "repo": "bolt.new",
+      "displayName": "StackBlitz Bolt",
+      "priority": "critical",
+      "category": "ai",
+      "description": "AI website builder direct competitor. WebContainers + LLM-driven codegen.",
+      "defaultBranch": "main",
+      "lastKnownRelease": null,
+      "lastKnownReleaseAt": null,
+      "lastCommitCheckAt": "2026-04-10T21:20:17.192Z",
+      "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-09T18:07:31.643Z",
+  "lastUpdated": "2026-04-10T21:20:21.213Z",
   "schemaVersion": 1
 }

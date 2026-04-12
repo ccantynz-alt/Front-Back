@@ -1,0 +1,35 @@
+{
+  "name": "@crontech/audit-log",
+  "version": "0.1.0",
+  "description": "Hash-chained, tamper-evident audit log with pluggable WORM storage and RFC 3161 trusted timestamping. Court-admissible under FRE 901/902.",
+  "private": false,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "keywords": [
+    "audit-log",
+    "tamper-evident",
+    "hash-chain",
+    "rfc-3161",
+    "compliance",
+    "fre-901",
+    "fre-902",
+    "worm",
+    "soc2",
+    "hipaa"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/bun": "^1.2.0"
+  }
+}

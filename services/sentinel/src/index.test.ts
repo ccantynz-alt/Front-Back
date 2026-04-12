@@ -6,8 +6,15 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import {
   IntelligenceItemSchema,
+  TrackedRepoSchema,
+  TrackedReposFileSchema,
+  DEFAULT_TRACKED_REPOS,
+  isRepoPriority,
+  isRepoCategory,
   type IntelligenceItem,
   type Severity,
+  type RepoPriority,
+  type RepoCategory,
 } from "./collectors/types";
 import { analyzeThreat, analyzeThreats, type ThreatAnalysis } from "./analyzers/threat-analyzer";
 import { findOpportunities, type Opportunity } from "./analyzers/opportunity-finder";
@@ -24,7 +31,7 @@ import {
 import { generateDigest, type DailyDigest } from "./digest/daily-digest";
 import { checkDeadMansSwitch, reportSuccess } from "./dead-mans-switch";
 import { join } from "path";
-import { unlinkSync, existsSync } from "fs";
+import { readFileSync, unlinkSync, existsSync } from "fs";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -68,6 +75,148 @@ describe("IntelligenceItemSchema", () => {
       const item = makeItem({ severity });
       const result = IntelligenceItemSchema.safeParse(item);
       expect(result.success).toBe(true);
+    }
+  });
+});
+
+// ── Tracked Repos Schema Tests ──────────────────────────────────────
+
+describe("TrackedRepoSchema / DEFAULT_TRACKED_REPOS", () => {
+  test("every DEFAULT_TRACKED_REPOS entry passes TrackedRepoSchema.parse", () => {
+    for (const repo of DEFAULT_TRACKED_REPOS) {
+      const result = TrackedRepoSchema.safeParse(repo);
+      if (!result.success) {
+        throw new Error(
+          `Invalid tracked repo ${repo.owner}/${repo.repo}: ${JSON.stringify(result.error.issues)}`,
+        );
+      }
+      expect(result.success).toBe(true);
+    }
+  });
+
+  test("DEFAULT_TRACKED_REPOS has no duplicate owner/repo pairs", () => {
+    const seen = new Set<string>();
+    for (const repo of DEFAULT_TRACKED_REPOS) {
+      const key = `${repo.owner}/${repo.repo}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+    }
+  });
+
+  test("tracked-repos.json file validates against TrackedReposFileSchema", () => {
+    const jsonPath = join(
+      (import.meta as { dir?: string }).dir ?? process.cwd(),
+      "..",
+      "data",
+      "tracked-repos.json",
+    );
+    expect(existsSync(jsonPath)).toBe(true);
+    const raw = readFileSync(jsonPath, "utf-8");
+    const parsed: unknown = JSON.parse(raw);
+    const result = TrackedReposFileSchema.safeParse(parsed);
+    if (!result.success) {
+      throw new Error(
+        `tracked-repos.json invalid: ${JSON.stringify(result.error.issues)}`,
+      );
+    }
+    expect(result.success).toBe(true);
+  });
+
+  test("tracked-repos.json covers the core empire competitors", () => {
+    const jsonPath = join(
+      (import.meta as { dir?: string }).dir ?? process.cwd(),
+      "..",
+      "data",
+      "tracked-repos.json",
+    );
+    const raw = readFileSync(jsonPath, "utf-8");
+    const parsed = TrackedReposFileSchema.parse(JSON.parse(raw));
+    const slugs = new Set(parsed.repos.map((r) => `${r.owner}/${r.repo}`));
+    // Sanity-check a representative subset of the new competitors
+    expect(slugs.has("cloudflare/workers-sdk")).toBe(true);
+    expect(slugs.has("supabase/supabase")).toBe(true);
+    expect(slugs.has("get-convex/convex-backend")).toBe(true);
+    expect(slugs.has("netlify/cli")).toBe(true);
+    expect(slugs.has("snyk/snyk")).toBe(true);
+    expect(slugs.has("openai/whisper")).toBe(true);
+    expect(slugs.has("stackblitz/bolt.new")).toBe(true);
+  });
+
+  test("tracked-repos.json has no duplicate owner/repo pairs", () => {
+    const jsonPath = join(
+      (import.meta as { dir?: string }).dir ?? process.cwd(),
+      "..",
+      "data",
+      "tracked-repos.json",
+    );
+    const raw = readFileSync(jsonPath, "utf-8");
+    const parsed = TrackedReposFileSchema.parse(JSON.parse(raw));
+    const seen = new Set<string>();
+    for (const repo of parsed.repos) {
+      const key = `${repo.owner}/${repo.repo}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+    }
+  });
+
+  test("every RepoPriority level has at least one tracked repo", () => {
+    const priorities = new Set(DEFAULT_TRACKED_REPOS.map((r) => r.priority));
+    for (const p of ["critical", "high", "medium"] as RepoPriority[]) {
+      expect(priorities.has(p)).toBe(true);
+    }
+  });
+
+  test("every RepoCategory is represented in DEFAULT_TRACKED_REPOS", () => {
+    const categories = new Set(DEFAULT_TRACKED_REPOS.map((r) => r.category));
+    for (const c of ["framework", "backend", "api", "ai"] as RepoCategory[]) {
+      expect(categories.has(c)).toBe(true);
+    }
+  });
+});
+
+// ── Type Guard Tests ────────────────────────────────────────────────
+
+describe("isRepoPriority / isRepoCategory type guards", () => {
+  test("isRepoPriority accepts all valid levels", () => {
+    expect(isRepoPriority("critical")).toBe(true);
+    expect(isRepoPriority("high")).toBe(true);
+    expect(isRepoPriority("medium")).toBe(true);
+  });
+
+  test("isRepoPriority rejects invalid inputs", () => {
+    expect(isRepoPriority("low")).toBe(false);
+    expect(isRepoPriority("")).toBe(false);
+    expect(isRepoPriority(null)).toBe(false);
+    expect(isRepoPriority(undefined)).toBe(false);
+    expect(isRepoPriority(1)).toBe(false);
+    expect(isRepoPriority({})).toBe(false);
+  });
+
+  test("isRepoCategory accepts all valid categories", () => {
+    expect(isRepoCategory("framework")).toBe(true);
+    expect(isRepoCategory("backend")).toBe(true);
+    expect(isRepoCategory("api")).toBe(true);
+    expect(isRepoCategory("ai")).toBe(true);
+  });
+
+  test("isRepoCategory rejects invalid inputs", () => {
+    expect(isRepoCategory("compliance")).toBe(false);
+    expect(isRepoCategory("")).toBe(false);
+    expect(isRepoCategory(null)).toBe(false);
+    expect(isRepoCategory(42)).toBe(false);
+  });
+
+  test("type guards narrow for the compiler", () => {
+    const raw: unknown = "critical";
+    if (isRepoPriority(raw)) {
+      // TS narrows to RepoPriority here -- assign to a typed slot.
+      const p: RepoPriority = raw;
+      expect(p).toBe("critical");
+    }
+    const rawCat: unknown = "ai";
+    if (isRepoCategory(rawCat)) {
+      const c: RepoCategory = rawCat;
+      expect(c).toBe("ai");
     }
   });
 });

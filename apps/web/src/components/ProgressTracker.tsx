@@ -71,11 +71,11 @@ export function ProgressTracker(): ReturnType<typeof Card> {
 
   const motivation = createMemo<string>(() => {
     const p = percent();
-    if (p === 0) return MOTIVATIONS[0];
-    if (p < 50) return MOTIVATIONS[0];
-    if (p < 80) return MOTIVATIONS[1];
-    if (p < 100) return MOTIVATIONS[2];
-    return MOTIVATIONS[3];
+    if (p === 0) return MOTIVATIONS[0] ?? "";
+    if (p < 50) return MOTIVATIONS[0] ?? "";
+    if (p < 80) return MOTIVATIONS[1] ?? "";
+    if (p < 100) return MOTIVATIONS[2] ?? "";
+    return MOTIVATIONS[3] ?? "";
   });
 
   const earnedRewards = createMemo<string[]>(() => {

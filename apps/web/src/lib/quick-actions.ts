@@ -142,6 +142,16 @@ export const QUICK_ACTIONS: QuickAction[] = [
     },
   },
   {
+    id: "open-chat",
+    name: "Open Claude Chat",
+    description: "Chat with Claude via Anthropic API.",
+    icon: "message",
+    category: "ai",
+    execute: async () => {
+      navigate("/chat");
+    },
+  },
+  {
     id: "go-dashboard",
     name: "Go to Dashboard",
     description: "Return to your main dashboard.",

@@ -1,12 +1,11 @@
 import { Title } from "@solidjs/meta";
 import { A } from "@solidjs/router";
-import { For, Show, createMemo, createSignal } from "solid-js";
+import { For, Show, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
-import { Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
+import { Badge } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { OnboardingWizard } from "../components/OnboardingWizard";
 import { ProgressTracker } from "../components/ProgressTracker";
-import { EmptyState } from "../components/ErrorState";
 import { useAuth } from "../stores";
 import { trpc } from "../lib/trpc";
 import { useQuery } from "../lib/use-trpc";
@@ -79,7 +78,7 @@ interface QuickActionProps {
   description: string;
   href: string;
   label: string;
-  badge?: string;
+  badge?: string | undefined;
   icon: string;
   gradient: string;
 }
@@ -193,10 +192,10 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
     return "Working late";
   });
 
-  const firstName = createMemo(() => {
+  const firstName = createMemo((): string => {
     const name = auth.currentUser()?.displayName;
     if (!name) return "builder";
-    return name.split(" ")[0];
+    return name.split(" ")[0] ?? "builder";
   });
 
   const usage = useQuery(() =>
@@ -257,6 +256,15 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       label: "Open playground",
       icon: "\u{1F9EA}",
       gradient: "#10b981",
+    },
+    {
+      title: "Claude Chat",
+      description:
+        "Direct Anthropic API access. No subscriptions. Your key, your data, your control.",
+      href: "/chat",
+      label: "Open chat",
+      icon: "\u{26A1}",
+      gradient: "#f97316",
     },
     {
       title: "Templates",

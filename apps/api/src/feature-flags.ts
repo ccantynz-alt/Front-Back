@@ -2,6 +2,12 @@
 // Progressive delivery for every new capability. Nothing goes from
 // zero to 100% instantly. Everything rolls out gradually, measured,
 // with automatic rollback if metrics degrade.
+//
+// Flags are persisted to the DB and cached in-memory. On startup, flags
+// load from DB into memory. `defineFlag()` still works but checks DB
+// first, in-memory second. A 60-second polling loop refreshes the cache.
+
+import { db, featureFlags as featureFlagsTable } from "@back-to-the-future/db";
 
 export interface FeatureFlag {
   key: string;
@@ -15,16 +21,102 @@ export interface FeatureFlag {
   denyList: string[];
   /** When this flag was last updated */
   updatedAt: string;
+  /** Who last updated this flag */
+  updatedBy?: string | undefined;
 }
 
-// ── In-Memory Flag Store (upgradeable to PostHog/Unleash) ────────────
+// ── In-Memory Flag Cache ────────────────────────────────────────────
 
 const flags = new Map<string, FeatureFlag>();
+
+/** Whether initial DB load has completed. */
+let dbLoaded = false;
+
+// ── DB <-> Cache Sync ───────────────────────────────────────────────
+
+function dbRowToFlag(row: {
+  id: string;
+  name: string;
+  enabled: boolean;
+  rolloutPercent: number;
+  allowList: string | null;
+  denyList: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}): FeatureFlag {
+  return {
+    key: row.name,
+    enabled: row.enabled,
+    rolloutPercentage: row.rolloutPercent,
+    allowList: row.allowList ? (JSON.parse(row.allowList) as string[]) : [],
+    denyList: row.denyList ? (JSON.parse(row.denyList) as string[]) : [],
+    updatedAt: row.updatedAt ?? new Date().toISOString(),
+    updatedBy: row.updatedBy ?? undefined,
+  };
+}
+
+/**
+ * Load all flags from DB into in-memory cache.
+ * Called on startup and every 60 seconds.
+ */
+export async function loadFlagsFromDB(): Promise<void> {
+  try {
+    const rows = await db.select().from(featureFlagsTable);
+    for (const row of rows) {
+      const flag = dbRowToFlag(row);
+      flags.set(flag.key, flag);
+    }
+    dbLoaded = true;
+  } catch (err) {
+    console.warn("[feature-flags] DB load failed, using in-memory defaults:", err);
+  }
+}
+
+/**
+ * Write a flag to DB and update in-memory cache.
+ */
+async function persistFlag(flag: FeatureFlag): Promise<void> {
+  try {
+    await db
+      .insert(featureFlagsTable)
+      .values({
+        id: crypto.randomUUID(),
+        name: flag.key,
+        enabled: flag.enabled,
+        rolloutPercent: flag.rolloutPercentage,
+        allowList: flag.allowList.length > 0 ? JSON.stringify(flag.allowList) : null,
+        denyList: flag.denyList.length > 0 ? JSON.stringify(flag.denyList) : null,
+        updatedAt: flag.updatedAt,
+        updatedBy: flag.updatedBy ?? null,
+      })
+      .onConflictDoUpdate({
+        target: featureFlagsTable.name,
+        set: {
+          enabled: flag.enabled,
+          rolloutPercent: flag.rolloutPercentage,
+          allowList: flag.allowList.length > 0 ? JSON.stringify(flag.allowList) : null,
+          denyList: flag.denyList.length > 0 ? JSON.stringify(flag.denyList) : null,
+          updatedAt: flag.updatedAt,
+          updatedBy: flag.updatedBy ?? null,
+        },
+      });
+  } catch (err) {
+    console.warn("[feature-flags] DB persist failed, cache-only:", err);
+  }
+}
+
+// ── Public API ──────────────────────────────────────────────────────
 
 export function defineFlag(
   key: string,
   config: Partial<Omit<FeatureFlag, "key">> = {},
 ): FeatureFlag {
+  // If DB has already loaded this flag, prefer the DB version
+  const existing = flags.get(key);
+  if (dbLoaded && existing) {
+    return existing;
+  }
+
   const flag: FeatureFlag = {
     key,
     enabled: config.enabled ?? false,
@@ -33,6 +125,7 @@ export function defineFlag(
     allowList: config.allowList ?? [],
     denyList: config.denyList ?? [],
     updatedAt: config.updatedAt ?? new Date().toISOString(),
+    updatedBy: config.updatedBy,
   };
   flags.set(key, flag);
   return flag;
@@ -46,6 +139,31 @@ export function getAllFlags(): FeatureFlag[] {
   return Array.from(flags.values());
 }
 
+/**
+ * Update a flag in both cache and DB.
+ * Used by admin procedures for runtime flag toggling.
+ */
+export async function updateFlagPersisted(
+  key: string,
+  updates: Partial<Omit<FeatureFlag, "key">>,
+): Promise<FeatureFlag | undefined> {
+  const existing = flags.get(key);
+  if (!existing) return undefined;
+
+  const updated: FeatureFlag = {
+    ...existing,
+    ...updates,
+    key, // key is immutable
+    updatedAt: new Date().toISOString(),
+  };
+  flags.set(key, updated);
+  await persistFlag(updated);
+  return updated;
+}
+
+/**
+ * Synchronous in-memory-only update (backwards compat).
+ */
 export function updateFlag(
   key: string,
   updates: Partial<Omit<FeatureFlag, "key">>,
@@ -56,7 +174,7 @@ export function updateFlag(
   const updated: FeatureFlag = {
     ...existing,
     ...updates,
-    key, // key is immutable
+    key,
     updatedAt: new Date().toISOString(),
   };
   flags.set(key, updated);
@@ -147,3 +265,21 @@ defineFlag("sentinel.monitoring", {
   description: "Enable Sentinel competitive intelligence monitoring",
   rolloutPercentage: 0,
 });
+
+// ── Startup: load from DB + polling ─────────────────────────────────
+
+loadFlagsFromDB().catch((err) =>
+  console.warn("[feature-flags] Initial DB load failed:", err),
+);
+
+// Refresh from DB every 60 seconds
+const _pollInterval = setInterval(() => {
+  loadFlagsFromDB().catch((err) =>
+    console.warn("[feature-flags] Poll refresh failed:", err),
+  );
+}, 60_000);
+
+// Don't keep process alive for tests
+if (typeof (_pollInterval as unknown as { unref?: () => void }).unref === "function") {
+  (_pollInterval as unknown as { unref: () => void }).unref();
+}
