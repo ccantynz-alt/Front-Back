@@ -25,6 +25,9 @@ Thumbs.db
 # Bun
 bun.lockb
 
+# Vite/Vinxi temp files
+app.config.timestamp_*
+
 # Turbo
 .turbo/
 
