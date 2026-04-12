@@ -4,6 +4,7 @@ import { db } from "@back-to-the-future/db";
 import { plans, subscriptions } from "@back-to-the-future/db/schema";
 import { router, publicProcedure, protectedProcedure } from "../init";
 import { createCheckoutSession, createPortalSession } from "../../stripe/checkout";
+import { auditMiddleware } from "../../middleware/audit";
 
 const hardcodedPlans = [
   {
@@ -95,12 +96,14 @@ export const billingRouter = router({
 
   createCheckoutSession: protectedProcedure
     .input(z.object({ priceId: z.string() }))
+    .use(auditMiddleware("billing.checkout"))
     .mutation(async ({ input }) => {
       return createCheckoutSession({ priceId: input.priceId });
     }),
 
   createPortalSession: protectedProcedure
     .input(z.object({ customerId: z.string() }))
+    .use(auditMiddleware("billing.portal"))
     .mutation(async ({ input }) => {
       return createPortalSession({ customerId: input.customerId });
     }),

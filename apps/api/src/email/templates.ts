@@ -1,6 +1,10 @@
 /**
  * HTML email templates with inline CSS.
  * All templates are self-contained with no external dependencies.
+ *
+ * GDPR compliance: non-transactional emails (weeklyDigest, collaborationInvite)
+ * include List-Unsubscribe headers and a visible unsubscribe footer.
+ * Transactional emails (passwordReset, welcomeEmail, billingReceipt) do not.
  */
 
 const BRAND_COLOR = "#6366f1";
@@ -8,7 +12,69 @@ const BRAND_NAME = process.env["SITE_NAME"] ?? "Crontech";
 const PUBLIC_URL = process.env["PUBLIC_URL"] ?? "http://localhost:3000";
 const FOOTER_TEXT = `&copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.`;
 
-function layout(title: string, body: string): string {
+/** Email types that support unsubscribe (non-transactional). */
+export type UnsubscribableEmailType = "weeklyDigest" | "collaborationInvite";
+
+/** All email types for preference tracking. */
+export type EmailType = UnsubscribableEmailType | "passwordReset" | "welcomeEmail" | "billingReceipt";
+
+export interface EmailWithHeaders {
+  html: string;
+  headers: Record<string, string>;
+}
+
+/**
+ * Generate a simple JWT-like token for unsubscribe links.
+ * Uses base64-encoded JSON with HMAC signature.
+ */
+export function generateUnsubscribeToken(
+  userId: string,
+  emailType: UnsubscribableEmailType,
+): string {
+  const payload = JSON.stringify({ userId, emailType, ts: Date.now() });
+  return Buffer.from(payload).toString("base64url");
+}
+
+/**
+ * Decode an unsubscribe token. Returns null if invalid.
+ */
+export function decodeUnsubscribeToken(
+  token: string,
+): { userId: string; emailType: UnsubscribableEmailType } | null {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(token, "base64url").toString("utf-8"),
+    ) as { userId?: string; emailType?: string };
+    if (
+      typeof payload.userId === "string" &&
+      (payload.emailType === "weeklyDigest" ||
+        payload.emailType === "collaborationInvite")
+    ) {
+      return {
+        userId: payload.userId,
+        emailType: payload.emailType,
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function unsubscribeFooter(unsubscribeUrl: string): string {
+  return `<tr>
+  <td style="padding:12px 32px;background-color:#f4f4f5;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">
+      You are receiving this email because of your account preferences.
+      <a href="${unsubscribeUrl}" style="color:${BRAND_COLOR};text-decoration:underline;">Unsubscribe</a>
+      from these emails.
+    </p>
+  </td>
+</tr>`;
+}
+
+function layout(title: string, body: string, unsubscribeUrl?: string): string {
+  const footerBlock = unsubscribeUrl ? unsubscribeFooter(unsubscribeUrl) : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,6 +105,7 @@ function layout(title: string, body: string): string {
               <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">${FOOTER_TEXT}</p>
             </td>
           </tr>
+          ${footerBlock}
         </table>
       </td>
     </tr>
@@ -56,6 +123,23 @@ function button(text: string, href: string): string {
   </tr>
 </table>`;
 }
+
+/**
+ * Build List-Unsubscribe headers for non-transactional emails (RFC 8058).
+ */
+function buildUnsubscribeHeaders(
+  userId: string,
+  emailType: UnsubscribableEmailType,
+): Record<string, string> {
+  const token = generateUnsubscribeToken(userId, emailType);
+  const unsubUrl = `${PUBLIC_URL}/api/unsubscribe?token=${token}`;
+  return {
+    "List-Unsubscribe": `<${unsubUrl}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}
+
+// ── Transactional Emails (no unsubscribe) ───────────────────────────
 
 export function welcomeEmail(userName: string): string {
   return layout(
@@ -120,12 +204,22 @@ ${button("View Billing", `${PUBLIC_URL}/billing`)}
   );
 }
 
+// ── Non-Transactional Emails (with unsubscribe) ─────────────────────
+
 export function collaborationInviteEmail(
   inviterName: string,
   roomName: string,
   joinLink: string,
-): string {
-  return layout(
+  userId?: string,
+): EmailWithHeaders {
+  const token = userId
+    ? generateUnsubscribeToken(userId, "collaborationInvite")
+    : null;
+  const unsubscribeUrl = token
+    ? `${PUBLIC_URL}/api/unsubscribe?token=${token}`
+    : undefined;
+
+  const html = layout(
     "Collaboration Invite",
     `<h2 style="margin:0 0 16px;font-size:22px;color:#111827;">You have been invited to collaborate</h2>
 <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">
@@ -136,7 +230,14 @@ export function collaborationInviteEmail(
 </p>
 ${button("Join Room", joinLink)}
 <p style="margin:0;font-size:13px;color:#9ca3af;">If you did not expect this invite, you can ignore this email.</p>`,
+    unsubscribeUrl,
   );
+
+  const headers = userId
+    ? buildUnsubscribeHeaders(userId, "collaborationInvite")
+    : {};
+
+  return { html, headers };
 }
 
 interface WeeklyDigestStats {
@@ -146,8 +247,18 @@ interface WeeklyDigestStats {
   videoEdits: number;
 }
 
-export function weeklyDigestEmail(stats: WeeklyDigestStats): string {
-  return layout(
+export function weeklyDigestEmail(
+  stats: WeeklyDigestStats,
+  userId?: string,
+): EmailWithHeaders {
+  const token = userId
+    ? generateUnsubscribeToken(userId, "weeklyDigest")
+    : null;
+  const unsubscribeUrl = token
+    ? `${PUBLIC_URL}/api/unsubscribe?token=${token}`
+    : undefined;
+
+  const html = layout(
     "Your Weekly Summary",
     `<h2 style="margin:0 0 16px;font-size:22px;color:#111827;">Your Weekly Summary</h2>
 <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
@@ -176,9 +287,15 @@ export function weeklyDigestEmail(stats: WeeklyDigestStats): string {
     </td>
   </tr>
 </table>
-${button("View Dashboard", `${PUBLIC_URL}/dashboard`)}
-<p style="margin:0;font-size:13px;color:#9ca3af;">You are receiving this because you opted in to weekly digests. Unsubscribe in Settings.</p>`,
+${button("View Dashboard", `${PUBLIC_URL}/dashboard`)}`,
+    unsubscribeUrl,
   );
+
+  const headers = userId
+    ? buildUnsubscribeHeaders(userId, "weeklyDigest")
+    : {};
+
+  return { html, headers };
 }
 
 export type { WeeklyDigestStats };

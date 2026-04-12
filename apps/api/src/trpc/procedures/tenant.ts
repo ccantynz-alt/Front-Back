@@ -14,6 +14,7 @@ import {
 import { createProjectBranch } from "@back-to-the-future/db/neon-provisioning";
 import { fileExists } from "@back-to-the-future/storage/client";
 import { enqueueTenantProvision } from "@back-to-the-future/queue";
+import { auditMiddleware } from "../../middleware/audit";
 
 // ── Admin Middleware ──────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ export const tenantRouter = router({
   // ── New: Provision a tenant (admin-only) ───────────────────────────
 
   provision: adminProcedure
+    .use(auditMiddleware("tenant.provision"))
     .input(
       z.object({
         name: z.string().min(1).max(100),

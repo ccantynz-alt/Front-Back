@@ -424,6 +424,37 @@ export const tenants = sqliteTable("tenants", {
     .$defaultFn(() => new Date()),
 });
 
+// ── Feature Flags (DB-backed persistence) ───────────────────────────
+
+export const featureFlags = sqliteTable("feature_flags", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  rolloutPercent: integer("rollout_percent").notNull().default(0),
+  allowList: text("allow_list"), // JSON array of tenant IDs
+  denyList: text("deny_list"), // JSON array of tenant IDs
+  updatedAt: text("updated_at"),
+  updatedBy: text("updated_by"),
+});
+
+// ── Email Preferences (GDPR unsubscribe) ────────────────────────────
+
+export const emailPreferences = sqliteTable("email_preferences", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  weeklyDigest: integer("weekly_digest", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  collaborationInvite: integer("collaboration_invite", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const uiComponents = sqliteTable("ui_components", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),
