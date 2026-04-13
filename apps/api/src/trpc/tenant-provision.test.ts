@@ -70,7 +70,7 @@ describe("Tenant provisioning", () => {
       id,
       name: "Test Tenant",
       slug,
-      plan: "starter",
+      plan: "free",
       ownerEmail: "test@example.com",
       customDomain: "custom.example.com",
       status: "provisioning",
@@ -93,7 +93,7 @@ describe("Tenant provisioning", () => {
     expect(tenant).toBeDefined();
     expect(tenant!.name).toBe("Test Tenant");
     expect(tenant!.slug).toBe(slug);
-    expect(tenant!.plan).toBe("starter");
+    expect(tenant!.plan).toBe("free");
     expect(tenant!.ownerEmail).toBe("test@example.com");
     expect(tenant!.customDomain).toBe("custom.example.com");
     expect(tenant!.status).toBe("active");
@@ -101,12 +101,12 @@ describe("Tenant provisioning", () => {
 
   test("plan validation: only valid plans are accepted by schema", () => {
     const { z } = require("zod");
-    const planSchema = z.enum(["free", "starter", "pro", "enterprise"]);
+    const planSchema = z.enum(["free", "pro", "enterprise"]);
 
     expect(planSchema.safeParse("free").success).toBe(true);
-    expect(planSchema.safeParse("starter").success).toBe(true);
     expect(planSchema.safeParse("pro").success).toBe(true);
     expect(planSchema.safeParse("enterprise").success).toBe(true);
+    expect(planSchema.safeParse("starter").success).toBe(false);
     expect(planSchema.safeParse("invalid").success).toBe(false);
     expect(planSchema.safeParse("").success).toBe(false);
   });

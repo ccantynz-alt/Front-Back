@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "bun install",
-  "buildCommand": "if [ -f app.config.ts ]; then SERVER_PRESET=vercel npx vinxi build; else cd apps/web && SERVER_PRESET=vercel npx vinxi build; fi",
+  "buildCommand": "SERVER_PRESET=vercel npx vinxi build",
   "framework": null
 }

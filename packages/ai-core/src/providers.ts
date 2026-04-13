@@ -245,6 +245,50 @@ export function hasAnthropicProvider(): boolean {
   return key !== undefined && key.length > 5;
 }
 
+// ── Automatic Failover ───────────────────────────────────────────
+
+const RETRYABLE_PATTERNS = [
+  "429", "rate limit", "too many requests",
+  "500", "internal server error",
+  "503", "service unavailable", "overloaded",
+  "timed out", "timeout", "ECONNRESET", "ECONNREFUSED",
+];
+
+export function isRetryableError(err: Error | { status?: number; message: string }): boolean {
+  const msg = (err.message ?? "").toLowerCase();
+  if ("status" in err && typeof err.status === "number") {
+    const s = err.status;
+    if (s === 429 || s === 500 || s === 502 || s === 503 || s === 504) return true;
+    if (s === 400 || s === 401 || s === 403 || s === 404 || s === 422) return false;
+  }
+  return RETRYABLE_PATTERNS.some((p) => msg.includes(p.toLowerCase()));
+}
+
+/**
+ * Routes an AI call through the primary provider, automatically
+ * failing over to the fallback on retryable errors (429, 503, etc.).
+ * Non-retryable errors (401, 400) propagate immediately.
+ */
+export async function routeAICall<T>(
+  providerEnv: AIProviderEnv,
+  fn: (model: LanguageModel) => Promise<T>,
+  tier: ComputeTier = "cloud",
+): Promise<T> {
+  const primaryModel = getModelForTier(tier, providerEnv);
+  try {
+    return await fn(primaryModel);
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    if (!isRetryableError(error)) throw error;
+
+    // Attempt fallback
+    const fallbackModel = getFallbackModel(providerEnv);
+    if (!fallbackModel) throw error;
+
+    return fn(fallbackModel);
+  }
+}
+
 /**
  * Estimate cost in microdollars for a given model and token counts.
  * Returns cost in microdollars (1/1,000,000 of a dollar) for precision.

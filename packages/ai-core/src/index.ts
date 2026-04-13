@@ -80,6 +80,7 @@ export {
   getAnthropicModelFromEnv,
   hasAnthropicProvider,
   estimateCost,
+  routeAICall,
   ANTHROPIC_MODELS,
   type AIProviderConfig,
   type AnthropicProviderConfig,

@@ -348,6 +348,50 @@ export const siteVersions = sqliteTable("site_versions", {
     .$defaultFn(() => new Date()),
 });
 
+// ── Tenants ───────────────────────────────────────────────────────
+
+export const tenants = sqliteTable("tenants", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  plan: text("plan", {
+    enum: ["free", "pro", "enterprise"],
+  }).notNull().default("free"),
+  ownerEmail: text("owner_email").notNull(),
+  customDomain: text("custom_domain"),
+  status: text("status", {
+    enum: ["provisioning", "active", "suspended", "deleting"],
+  }).notNull().default("provisioning"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Feature Flags ─────────────────────────────────────────────────
+
+export const featureFlags = sqliteTable("feature_flags", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  rolloutPercent: integer("rollout_percent").notNull().default(0),
+  allowList: text("allow_list"),
+  denyList: text("deny_list"),
+  updatedAt: text("updated_at"),
+  updatedBy: text("updated_by"),
+});
+
+// ── Email Preferences ────────────────────────────────────────────
+
+export const emailPreferences = sqliteTable("email_preferences", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  weeklyDigest: integer("weekly_digest", { mode: "boolean" }).notNull().default(true),
+  collaborationInvite: integer("collaboration_invite", { mode: "boolean" }).notNull().default(true),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
 // ── AI Cache ──────────────────────────────────────────────────────
 // Content-addressable cache for LLM/embedding responses. Keyed by
 // SHA-256 of (model + prompt + params). Tenant-scoped.
@@ -438,7 +482,7 @@ export const userProviderKeys = sqliteTable("user_provider_keys", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   provider: text("provider", {
-    enum: ["anthropic", "openai"],
+    enum: ["anthropic", "openai", "github"],
   }).notNull(),
   encryptedKey: text("encrypted_key").notNull(),
   keyPrefix: text("key_prefix").notNull(),

@@ -526,6 +526,123 @@ function AppearanceTab(): JSX.Element {
   );
 }
 
+// ── GitHub Token Section ────────────────────────────────────────────
+
+function GitHubTokenSection(): JSX.Element {
+  const [ghToken, setGhToken] = createSignal("");
+  const [savedGh, setSavedGh] = createSignal<{ prefix: string; createdAt: string } | null>(null);
+  const [ghSaving, setGhSaving] = createSignal(false);
+  const [ghDeleteConfirm, setGhDeleteConfirm] = createSignal(false);
+  const [ghMessage, setGhMessage] = createSignal<{ type: "success" | "error"; text: string } | null>(null);
+
+  const checkExistingGh = async (): Promise<void> => {
+    try {
+      const { trpc } = await import("../lib/trpc");
+      const result = await trpc.chat.getProviderKey.query({ provider: "github" });
+      if (result) {
+        setSavedGh({
+          prefix: result.prefix,
+          createdAt: new Date(result.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        });
+      }
+    } catch {
+      // Not logged in
+    }
+  };
+  void checkExistingGh();
+
+  const handleGhSave = async (): Promise<void> => {
+    const key = ghToken().trim();
+    if (!key) return;
+    if (!key.startsWith("ghp_") && !key.startsWith("github_pat_")) {
+      setGhMessage({ type: "error", text: "Invalid GitHub token. Should start with ghp_ or github_pat_" });
+      return;
+    }
+    setGhSaving(true);
+    setGhMessage(null);
+    try {
+      const { trpc } = await import("../lib/trpc");
+      const result = await trpc.chat.saveProviderKey.mutate({ provider: "github", apiKey: key });
+      setSavedGh({ prefix: result.prefix, createdAt: "Just now" });
+      setGhToken("");
+      setGhMessage({ type: "success", text: "GitHub token saved. Your repos are now accessible." });
+    } catch (err) {
+      setGhMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save" });
+    } finally {
+      setGhSaving(false);
+    }
+  };
+
+  const handleGhDelete = async (): Promise<void> => {
+    try {
+      const { trpc } = await import("../lib/trpc");
+      await trpc.chat.deleteProviderKey.mutate({ provider: "github" });
+      setSavedGh(null);
+      setGhDeleteConfirm(false);
+      setGhMessage({ type: "success", text: "GitHub token deleted." });
+    } catch (err) {
+      setGhMessage({ type: "error", text: err instanceof Error ? err.message : "Failed" });
+    }
+  };
+
+  return (
+    <SettingsSection title="GitHub Personal Access Token" description="Connect your GitHub account to view repos, PRs, issues, and CI status from within Crontech.">
+      <div class="flex flex-col gap-4">
+        <Show when={ghMessage()}>
+          {(msg) => (
+            <div class={`rounded-xl border px-4 py-3 text-xs font-medium ${
+              msg().type === "success" ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400" : "border-red-500/20 bg-red-500/5 text-red-400"
+            }`}>{msg().text}</div>
+          )}
+        </Show>
+
+        <Show when={savedGh()}>
+          {(key) => (
+            <div class="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3.5">
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "#a78bfa18", color: "#a78bfa" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+              </div>
+              <div class="flex min-w-0 flex-1 flex-col">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium text-gray-200">GitHub</span>
+                  <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-400">Active</span>
+                </div>
+                <code class="text-xs font-mono text-gray-500">{key().prefix}</code>
+              </div>
+              <span class="hidden text-[11px] text-gray-500 sm:block">Added {key().createdAt}</span>
+              <Show when={!ghDeleteConfirm()} fallback={
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onClick={() => setGhDeleteConfirm(false)} class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-white">Cancel</button>
+                  <button type="button" onClick={() => void handleGhDelete()} class="rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-red-500">Delete</button>
+                </div>
+              }>
+                <button type="button" onClick={() => setGhDeleteConfirm(true)} class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400">Remove</button>
+              </Show>
+            </div>
+          )}
+        </Show>
+
+        <div class="rounded-xl border border-dashed border-white/[0.08] bg-white/[0.01] p-5">
+          <h4 class="mb-3 text-sm font-semibold text-gray-300">{savedGh() ? "Replace Token" : "Add GitHub Token"}</h4>
+          <div class="flex items-end gap-3">
+            <div class="flex-1">
+              <SettingsInput label="GitHub PAT" value={ghToken()} onInput={setGhToken} type="password" placeholder="ghp_xxxxxxxxxxxx" hint="Generate at github.com/settings/tokens (needs repo scope)" />
+            </div>
+            <button
+              type="button"
+              disabled={!ghToken().trim() || ghSaving()}
+              onClick={() => void handleGhSave()}
+              class="shrink-0 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-all duration-200 hover:shadow-violet-500/40 hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+            >
+              {ghSaving() ? "Saving..." : "Save Token"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </SettingsSection>
+  );
+}
+
 // ── AI Providers Tab ────────────────────────────────────────────────
 
 function AIProvidersTab(): JSX.Element {
@@ -663,6 +780,9 @@ function AIProvidersTab(): JSX.Element {
               Your key is encrypted at rest. Only the prefix is stored in plaintext for identification.
             </p>
           </div>
+
+          {/* GitHub PAT */}
+          <GitHubTokenSection />
 
           {/* Cost comparison */}
           <div class="rounded-xl border border-white/[0.04] bg-white/[0.02] p-5">

@@ -66,7 +66,7 @@ const UpdateConversationInput = z.object({
 });
 
 const SaveProviderKeyInput = z.object({
-  provider: z.enum(["anthropic", "openai"]),
+  provider: z.enum(["anthropic", "openai", "github"]),
   apiKey: z.string().min(10).max(500),
 });
 
@@ -300,7 +300,7 @@ export const chatRouter = router({
 
   /** Get the active provider key info (prefix only, never the full key). */
   getProviderKey: protectedProcedure
-    .input(z.object({ provider: z.enum(["anthropic", "openai"]) }))
+    .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .query(async ({ ctx, input }) => {
       const rows = await ctx.db
         .select({
@@ -325,7 +325,7 @@ export const chatRouter = router({
 
   /** Delete a provider key. */
   deleteProviderKey: protectedProcedure
-    .input(z.object({ provider: z.enum(["anthropic", "openai"]) }))
+    .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db
         .delete(userProviderKeys)
@@ -340,7 +340,7 @@ export const chatRouter = router({
 
   /** Internal: decrypt the user's provider key for use by the streaming endpoint. */
   _getDecryptedKey: protectedProcedure
-    .input(z.object({ provider: z.enum(["anthropic", "openai"]) }))
+    .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .query(async ({ ctx, input }) => {
       const rows = await ctx.db
         .select()

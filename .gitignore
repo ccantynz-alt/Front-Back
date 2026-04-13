@@ -6,6 +6,7 @@ dist/
 .output/
 .vinxi/
 .turbo/
+.vercel/
 
 # Environment
 .env

@@ -152,6 +152,16 @@ export const QUICK_ACTIONS: QuickAction[] = [
     },
   },
   {
+    id: "open-repos",
+    name: "Open Repositories",
+    description: "View GitHub repos, PRs, issues, and CI status.",
+    icon: "code",
+    category: "deploy",
+    execute: async () => {
+      navigate("/repos");
+    },
+  },
+  {
     id: "go-dashboard",
     name: "Go to Dashboard",
     description: "Return to your main dashboard.",

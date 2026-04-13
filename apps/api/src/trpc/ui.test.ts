@@ -23,10 +23,7 @@ function createTestContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
     userId: null,
     sessionToken: null,
     csrfToken: null,
-    idempotencyKey: null,
-    tenantId: null,
-    actorIp: null,
-    actorDevice: null,
+    scopedDb: null,
     ...overrides,
   };
 }

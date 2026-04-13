@@ -20,6 +20,7 @@ import { productsRouter } from "./procedures/products";
 import { productTenantsRouter } from "./procedures/productTenants";
 import { uiRouter } from "./procedures/ui";
 import { storageRouter } from "./procedures/storage";
+import { reposRouter } from "./procedures/repos";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -52,6 +53,7 @@ export const appRouter = router({
   productTenants: productTenantsRouter,
   ui: uiRouter,
   storage: storageRouter,
+  repos: reposRouter,
 });
 
 export type AppRouter = typeof appRouter;
