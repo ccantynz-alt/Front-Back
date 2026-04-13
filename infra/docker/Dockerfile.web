@@ -1,57 +1,23 @@
-# ── Back to the Future: Web Production Build ─────────────────────────
-# Multi-stage build for SolidStart (Vinxi) application.
+# Crontech Web — Production Build (SolidStart + Vinxi)
 
-# Stage 1: Install dependencies
-FROM oven/bun:1 AS deps
-
-WORKDIR /app
-
-# Copy workspace root files
-COPY package.json bunfig.toml turbo.json ./
-COPY bun.lock* ./
-
-# Copy all package.json files for workspace resolution
-COPY apps/web/package.json apps/web/
-COPY apps/api/package.json apps/api/
-COPY packages/schemas/package.json packages/schemas/
-COPY packages/db/package.json packages/db/
-COPY packages/ai-core/package.json packages/ai-core/
-COPY packages/ui/package.json packages/ui/
-COPY packages/config/package.json packages/config/
-COPY packages/audit-log/package.json packages/audit-log/
-COPY packages/cfo-engine/package.json packages/cfo-engine/
-COPY packages/queue/package.json packages/queue/
-COPY packages/storage/package.json packages/storage/
-COPY services/edge-workers/package.json services/edge-workers/
-COPY services/gpu-workers/package.json services/gpu-workers/
-COPY services/orchestrator/package.json services/orchestrator/
-COPY services/sentinel/package.json services/sentinel/
-
-RUN bun install
-
-# Stage 2: Build
+# Stage 1: Build
 FROM oven/bun:1 AS builder
 
 WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# node-server preset for self-hosted deployment (not Vercel/Cloudflare)
+RUN bun install
 ENV SERVER_PRESET=node-server
 RUN bun run build --filter=@back-to-the-future/web
 
-# Stage 3: Production
-FROM oven/bun:1-slim AS runner
+# Stage 2: Run
+FROM oven/bun:1-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy the Vinxi output
 COPY --from=builder /app/apps/web/.output ./.output
 COPY --from=builder /app/apps/web/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
