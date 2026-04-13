@@ -12,11 +12,20 @@ COPY turbo.json ./
 
 # Copy all package.json files for workspace resolution
 COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
 COPY packages/schemas/package.json packages/schemas/
 COPY packages/db/package.json packages/db/
 COPY packages/ai-core/package.json packages/ai-core/
 COPY packages/ui/package.json packages/ui/
 COPY packages/config/package.json packages/config/
+COPY packages/audit-log/package.json packages/audit-log/
+COPY packages/cfo-engine/package.json packages/cfo-engine/
+COPY packages/queue/package.json packages/queue/
+COPY packages/storage/package.json packages/storage/
+COPY services/edge-workers/package.json services/edge-workers/
+COPY services/gpu-workers/package.json services/gpu-workers/
+COPY services/orchestrator/package.json services/orchestrator/
+COPY services/sentinel/package.json services/sentinel/
 
 RUN bun install --frozen-lockfile
 
@@ -32,6 +41,8 @@ RUN bun run build --filter=@back-to-the-future/api
 
 # Stage 3: Production
 FROM oven/bun:1-slim AS runner
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
