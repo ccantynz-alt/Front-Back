@@ -3,15 +3,14 @@
 #
 # Usage:
 #   cd /opt/crontech
-#   cp .env.example .env        # fill in your secrets
-#   docker compose -f docker-compose.crontech.yml up -d
-#   docker compose -f docker-compose.crontech.yml logs -f
+#   docker compose -f infra/hetzner/docker-compose.crontech.yml --env-file .env up -d
+#   docker compose -f infra/hetzner/docker-compose.crontech.yml logs -f
 
 services:
   # === Crontech Web (SolidStart SSR) ===
   crontech-web:
     build:
-      context: .
+      context: ../..
       dockerfile: infra/docker/Dockerfile.web
     environment:
       - PORT=3000
@@ -33,7 +32,7 @@ services:
   # === Crontech API (Hono + Bun) ===
   crontech-api:
     build:
-      context: .
+      context: ../..
       dockerfile: infra/docker/Dockerfile.api
     environment:
       - API_PORT=3001
