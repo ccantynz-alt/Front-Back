@@ -7,13 +7,13 @@
 
 # === crontech.ai → Web App (SolidStart SSR) ===
 
-{$CRONTECH_DOMAIN:crontech.ai} {
+crontech.ai {
 	encode gzip zstd
 
 	# Security headers
 	header {
 		X-Content-Type-Options "nosniff"
-		X-Frame-Options "DENY"
+		X-Frame-Options "SAMEORIGIN"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 	}
@@ -24,13 +24,13 @@
 	}
 }
 
-www.{$CRONTECH_DOMAIN:crontech.ai} {
-	redir https://{$CRONTECH_DOMAIN:crontech.ai}{uri}
+www.crontech.ai {
+	redir https://crontech.ai{uri}
 }
 
 # === api.crontech.ai → API Server (Hono + Bun) ===
 
-api.{$CRONTECH_DOMAIN:crontech.ai} {
+api.crontech.ai {
 	encode gzip zstd
 
 	header {
