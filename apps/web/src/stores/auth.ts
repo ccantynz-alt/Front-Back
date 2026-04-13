@@ -1,6 +1,7 @@
 import {
   type Accessor,
   type JSX,
+  createComponent,
   createContext,
   createEffect,
   createSignal,
@@ -357,12 +358,12 @@ export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
     checkSession,
   };
 
-  const Provider = AuthContext.Provider as (props: {
-    value: AuthState;
-    children: JSX.Element;
-  }) => JSX.Element;
-
-  return Provider({ value: state, children: props.children });
+  return createComponent(AuthContext.Provider, {
+    value: state,
+    get children() {
+      return props.children;
+    },
+  });
 }
 
 export function useAuth(): AuthState {
