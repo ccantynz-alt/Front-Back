@@ -1,6 +1,7 @@
 import {
   type Accessor,
   type JSX,
+  createComponent,
   createContext,
   createEffect,
   createSignal,
@@ -79,12 +80,12 @@ export function ThemeProvider(props: { children: JSX.Element }): JSX.Element {
     setTheme,
   };
 
-  const Provider = ThemeContext.Provider as (props: {
-    value: ThemeState;
-    children: JSX.Element;
-  }) => JSX.Element;
-
-  return Provider({ value: state, children: props.children });
+  return createComponent(ThemeContext.Provider, {
+    value: state,
+    get children() {
+      return props.children;
+    },
+  });
 }
 
 export function useTheme(): ThemeState {
