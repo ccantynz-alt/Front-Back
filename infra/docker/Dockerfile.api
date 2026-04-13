@@ -1,29 +1,18 @@
-# Crontech API — Production Build (Hono + Bun)
+# Crontech API — Production (Hono + Bun)
+FROM oven/bun:1
 
-# Stage 1: Build
-FROM oven/bun:1 AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . .
 RUN bun install
 RUN bun run build --filter=@back-to-the-future/api
 
-# Stage 2: Run
-FROM oven/bun:1-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
 ENV NODE_ENV=production
 ENV API_PORT=3001
-
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-
 EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3001/api/health || exit 1
 
-CMD ["bun", "run", "dist/index.js"]
+CMD ["bun", "run", "apps/api/dist/index.js"]

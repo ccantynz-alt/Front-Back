@@ -1,7 +1,7 @@
-# Crontech Web — Production Build (SolidStart + Vinxi)
+# Crontech Web — Production (SolidStart + Vinxi)
+FROM oven/bun:1
 
-# Stage 1: Build
-FROM oven/bun:1 AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . .
@@ -9,22 +9,11 @@ RUN bun install
 ENV SERVER_PRESET=node-server
 RUN bun run build --filter=@back-to-the-future/web
 
-# Stage 2: Run
-FROM oven/bun:1-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
-
-COPY --from=builder /app/apps/web/.output ./.output
-COPY --from=builder /app/apps/web/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:3000/ || exit 1
 
-CMD ["bun", "run", ".output/server/index.mjs"]
+CMD ["bun", "run", "apps/web/.output/server/index.mjs"]
