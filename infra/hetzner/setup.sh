@@ -68,6 +68,7 @@ cp "$SCRIPT_DIR/Caddyfile" /etc/caddy/Caddyfile
 cp "$SCRIPT_DIR/docker-compose.yml" /opt/crontech/docker-compose.yml
 cp "$SCRIPT_DIR/scripts/backup.sh" /opt/crontech/scripts/backup.sh
 cp "$SCRIPT_DIR/scripts/deploy-app.sh" /opt/crontech/scripts/deploy-app.sh
+cp "$SCRIPT_DIR/scripts/crontech-deploy.sh" /opt/crontech/scripts/crontech-deploy.sh
 chmod +x /opt/crontech/scripts/*.sh
 
 # Copy Dockerfiles as templates

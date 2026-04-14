@@ -152,6 +152,19 @@ app.get("/health", (c) => {
   });
 });
 
+// ── Deploy Version Probe ─────────────────────────────────────────────
+// The GitHub Actions deploy workflow polls this after `docker compose up`
+// to confirm the *new* image is serving traffic. GIT_SHA is baked in at
+// image build time via the Dockerfile ARG.
+app.get("/version", (c) => {
+  c.header("Cache-Control", "no-cache, no-store, must-revalidate");
+  return c.json({
+    sha: process.env.GIT_SHA ?? "unknown",
+    service: "crontech-api",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // ── Extended Health Check (all services) ─────────────────────────────
 app.get("/health/full", async (c) => {
   const [neon, qdrant] = await Promise.allSettled([

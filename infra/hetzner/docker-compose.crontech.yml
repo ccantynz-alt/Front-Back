@@ -12,9 +12,18 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.web
+      args:
+        # GIT_SHA is baked into the client bundle + exposed via /api/version
+        # for post-deploy smoke verification ("is the new build actually live?")
+        GIT_SHA: ${GIT_SHA:-unknown}
+        # Vite reads VITE_PUBLIC_API_URL at build time — runtime env would not
+        # reach the client bundle. Baked in here so prod clients call the prod
+        # API subdomain instead of localhost.
+        VITE_PUBLIC_API_URL: https://api.${CRONTECH_DOMAIN:-crontech.ai}
     environment:
       - PORT=3000
       - NODE_ENV=production
+      - GIT_SHA=${GIT_SHA:-unknown}
       - VITE_PUBLIC_API_URL=https://api.${CRONTECH_DOMAIN:-crontech.ai}
     networks:
       - crontech
@@ -34,9 +43,14 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.api
+      args:
+        # GIT_SHA is exposed via /api/version so the deploy smoke test can
+        # confirm the new build actually replaced the running container.
+        GIT_SHA: ${GIT_SHA:-unknown}
     environment:
       - API_PORT=3001
       - NODE_ENV=production
+      - GIT_SHA=${GIT_SHA:-unknown}
       - AUTO_MIGRATE=true
       - PUBLIC_URL=https://${CRONTECH_DOMAIN:-crontech.ai}
       - CORS_ORIGINS=https://${CRONTECH_DOMAIN:-crontech.ai},https://www.${CRONTECH_DOMAIN:-crontech.ai}

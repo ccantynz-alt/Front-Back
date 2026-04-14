@@ -1,12 +1,30 @@
 # Crontech Web — Production (SolidStart + Vinxi)
+#
+# Build-time args (pass via `docker build --build-arg` or compose `build.args`):
+#   GIT_SHA              — commit SHA of this build (for /api/version smoke)
+#   VITE_PUBLIC_API_URL  — baked into the client bundle at build time because
+#                          Vite's SSR module runner does NOT support dynamic
+#                          access on `import.meta.env`. Default targets the
+#                          prod API subdomain so accidental prod builds fail
+#                          closed toward crontech.ai rather than localhost.
 FROM oven/bun:1
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+ARG GIT_SHA=unknown
+ARG VITE_PUBLIC_API_URL=https://api.crontech.ai
+
 COPY . .
 RUN bun install
+
+# Expose build args to Vite (VITE_* prefix = client-visible, baked into bundle)
 ENV SERVER_PRESET=node-server
+ENV GIT_SHA=${GIT_SHA}
+ENV VITE_GIT_SHA=${GIT_SHA}
+ENV VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
+
 RUN bun run build --filter=@back-to-the-future/web
 
 ENV NODE_ENV=production

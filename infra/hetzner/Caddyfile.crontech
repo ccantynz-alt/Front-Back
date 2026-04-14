@@ -4,13 +4,43 @@
 # Services:
 #   crontech-web  → SolidStart SSR on port 3000
 #   crontech-api  → Hono + Bun API on port 3001
+#
+# Cache-Control strategy (the real "cache buster"):
+#   /_build/*, /assets/*  → content-hashed by vinxi, safe to cache forever
+#   /api/*                → dynamic, never cached by anything
+#   root statics (.ico)   → short TTL so a new build can replace them
+#   HTML (everything else)→ never cached anywhere, so new deploys go live
+#                           immediately without users hard-refreshing
 
 # === crontech.ai → Web App (SolidStart SSR) ===
 
 crontech.ai {
 	encode gzip zstd
 
-	# Security headers
+	# ── Matchers ─────────────────────────────────────────────────────
+	# Hashed immutable assets: content-addressed by vinxi.
+	@hashedAssets path /_build/* /assets/*
+	# API passthrough from SSR: dynamic responses.
+	@apiPaths path /api/*
+	# Root-level static files with short TTL.
+	@rootStatics path *.ico *.png *.jpg *.jpeg *.svg *.webp *.xml *.txt *.json *.webmanifest
+	# Everything else (HTML, SSR output) — must NEVER cache anywhere,
+	# otherwise new deploys don't show up immediately.
+	@htmlish {
+		not path /_build/* /assets/* /api/* *.ico *.png *.jpg *.jpeg *.svg *.webp *.xml *.txt *.json *.webmanifest
+	}
+
+	# ── Cache-Control ─────────────────────────────────────────────────
+	header @hashedAssets Cache-Control "public, max-age=31536000, immutable"
+	header @apiPaths Cache-Control "no-cache, no-store, must-revalidate"
+	header @rootStatics Cache-Control "public, max-age=3600, must-revalidate"
+	header @htmlish {
+		Cache-Control "no-cache, no-store, must-revalidate"
+		Pragma "no-cache"
+		Expires "0"
+	}
+
+	# ── Security headers (apply to every response) ────────────────────
 	header {
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "SAMEORIGIN"
@@ -33,7 +63,11 @@ www.crontech.ai {
 api.crontech.ai {
 	encode gzip zstd
 
+	# API responses are dynamic by definition — never cache anywhere.
 	header {
+		Cache-Control "no-cache, no-store, must-revalidate"
+		Pragma "no-cache"
+		Expires "0"
 		X-Content-Type-Options "nosniff"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	}
