@@ -193,9 +193,9 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
       name: string;
       description?: string | undefined;
       repoUrl?: string | undefined;
-      framework: string;
+      framework?: "solidstart" | "nextjs" | "remix" | "astro" | "hono" | "other" | undefined;
       buildCommand?: string | undefined;
-      runtime?: string | undefined;
+      runtime?: "bun" | "node" | "deno" | undefined;
       port?: number | undefined;
       customDomain?: string | undefined;
     }) => trpc.projects.create.mutate(input),
@@ -205,15 +205,16 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
     if (!validateStep(step())) return;
 
     const portNum = port().trim() ? Number.parseInt(port(), 10) : undefined;
+    const fw = framework() as "solidstart" | "nextjs" | "remix" | "astro" | "hono" | "other" | undefined;
     const input: Parameters<typeof createProject.mutate>[0] = {
       name: name().trim(),
-      framework: framework(),
+      framework: fw || undefined,
     };
 
     if (description().trim()) input.description = description().trim();
     if (repoUrl().trim()) input.repoUrl = repoUrl().trim();
     if (buildCommand().trim()) input.buildCommand = buildCommand().trim();
-    if (runtime()) input.runtime = runtime();
+    if (runtime()) input.runtime = runtime() as "bun" | "node" | "deno";
     if (portNum !== undefined && !Number.isNaN(portNum)) input.port = portNum;
     if (customDomain().trim()) input.customDomain = customDomain().trim();
 

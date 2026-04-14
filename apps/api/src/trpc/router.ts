@@ -22,6 +22,8 @@ import { uiRouter } from "./procedures/ui";
 import { storageRouter } from "./procedures/storage";
 import { reposRouter } from "./procedures/repos";
 import { projectsRouter } from "./procedures/projects";
+import { importRouter } from "./procedures/importProject";
+import { aiDeployRouter } from "./procedures/aiDeploy";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -56,6 +58,8 @@ export const appRouter = router({
   storage: storageRouter,
   repos: reposRouter,
   projects: projectsRouter,
+  import: importRouter,
+  aiDeploy: aiDeployRouter,
 });
 
 export type AppRouter = typeof appRouter;

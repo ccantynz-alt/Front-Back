@@ -137,7 +137,7 @@ const updateProjectInput = z.object({
   buildCommand: z.string().max(500).optional(),
   runtime: runtimeEnum.optional(),
   port: z.number().int().min(1).max(65535).optional(),
-  status: z.enum(["active", "paused", "archived"]).optional(),
+  status: z.enum(["creating", "active", "building", "deploying", "stopped", "error"]).optional(),
 });
 
 // ── Router ───────────────────────────────────────────────────────────
@@ -179,8 +179,8 @@ export const projectsRouter = router({
           id: projectDomains.id,
           domain: projectDomains.domain,
           isPrimary: projectDomains.isPrimary,
-          verified: projectDomains.verified,
-          verifiedAt: projectDomains.verifiedAt,
+          dnsVerified: projectDomains.dnsVerified,
+          dnsVerifiedAt: projectDomains.dnsVerifiedAt,
           createdAt: projectDomains.createdAt,
         })
         .from(projectDomains)
@@ -194,7 +194,7 @@ export const projectsRouter = router({
           branch: deployments.branch,
           status: deployments.status,
           url: deployments.url,
-          buildDuration: deployments.buildDuration,
+          duration: deployments.duration,
           createdAt: deployments.createdAt,
         })
         .from(deployments)
@@ -336,8 +336,8 @@ export const projectsRouter = router({
         projectId: input.projectId,
         domain: input.domain,
         isPrimary: input.isPrimary ?? false,
-        verified: false,
-        verifiedAt: null,
+        dnsVerified: false,
+        dnsVerifiedAt: null,
         createdAt: new Date(),
       };
 
@@ -346,7 +346,7 @@ export const projectsRouter = router({
       return {
         id,
         domain: input.domain,
-        verified: false,
+        dnsVerified: false,
       };
     }),
 
@@ -432,7 +432,7 @@ export const projectsRouter = router({
       if (verified) {
         await ctx.db
           .update(projectDomains)
-          .set({ verified: true, verifiedAt: new Date() })
+          .set({ dnsVerified: true, dnsVerifiedAt: new Date() })
           .where(eq(projectDomains.id, input.domainId));
       }
 
@@ -484,7 +484,7 @@ export const projectsRouter = router({
         // Update existing
         await ctx.db
           .update(projectEnvVars)
-          .set({ value: input.value, updatedAt: now })
+          .set({ encryptedValue: input.value, updatedAt: now })
           .where(eq(projectEnvVars.id, existingRow.id));
 
         return { id: existingRow.id, key: input.key, environment: env, action: "updated" as const };
@@ -496,7 +496,7 @@ export const projectsRouter = router({
         id,
         projectId: input.projectId,
         key: input.key,
-        value: input.value,
+        encryptedValue: input.value,
         environment: env,
         createdAt: now,
         updatedAt: now,
@@ -592,14 +592,14 @@ export const projectsRouter = router({
       const values: typeof deployments.$inferInsert = {
         id,
         projectId: input.projectId,
+        userId: ctx.userId,
         commitSha: input.commitSha ?? null,
         commitMessage: input.commitMessage ?? null,
         branch: input.branch ?? "main",
         status: "queued",
         url: null,
-        buildDuration: null,
+        duration: null,
         createdAt: now,
-        updatedAt: now,
       };
 
       await ctx.db.insert(deployments).values(values);

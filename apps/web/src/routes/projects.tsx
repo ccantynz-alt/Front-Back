@@ -10,18 +10,19 @@ import { useQuery } from "../lib/use-trpc";
 
 // ── Status Badge Mapping ────────────────────────────────────────────
 
-type ProjectStatus = "building" | "deploying" | "live" | "failed" | "stopped";
+type ProjectStatus = "creating" | "active" | "building" | "deploying" | "stopped" | "error";
 
 function statusVariant(
   status: ProjectStatus,
 ): "default" | "success" | "warning" | "error" | "info" {
   switch (status) {
-    case "live":
+    case "active":
       return "success";
+    case "creating":
     case "building":
     case "deploying":
       return "info";
-    case "failed":
+    case "error":
       return "error";
     case "stopped":
       return "warning";
@@ -30,14 +31,16 @@ function statusVariant(
 
 function statusLabel(status: ProjectStatus): string {
   switch (status) {
-    case "live":
-      return "Live";
+    case "creating":
+      return "Creating";
+    case "active":
+      return "Active";
     case "building":
       return "Building";
     case "deploying":
       return "Deploying";
-    case "failed":
-      return "Failed";
+    case "error":
+      return "Error";
     case "stopped":
       return "Stopped";
   }
@@ -81,9 +84,8 @@ interface ProjectCardProps {
   id: string;
   name: string;
   status: ProjectStatus;
-  framework: string;
-  domain: string | null;
-  lastDeployedAt: string | null;
+  framework: string | null;
+  updatedAt: string;
 }
 
 function ProjectCard(props: ProjectCardProps): JSX.Element {
@@ -104,7 +106,7 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
           <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
               <span class="text-xl shrink-0">
-                {frameworkIcon(props.framework)}
+                {frameworkIcon(props.framework ?? "")}
               </span>
               <h3 class="text-sm font-semibold text-white truncate">
                 {props.name}
@@ -124,26 +126,15 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
               <span class="text-[11px] font-medium uppercase tracking-wider text-gray-500">
                 Framework
               </span>
-              <span class="text-xs text-gray-300">{props.framework}</span>
+              <span class="text-xs text-gray-300">{props.framework ?? "Unknown"}</span>
             </div>
-
-            <Show when={props.domain}>
-              <div class="flex items-center gap-2">
-                <span class="text-[11px] font-medium uppercase tracking-wider text-gray-500">
-                  Domain
-                </span>
-                <span class="text-xs text-cyan-400 font-mono">
-                  {props.domain}
-                </span>
-              </div>
-            </Show>
 
             <div class="flex items-center gap-2">
               <span class="text-[11px] font-medium uppercase tracking-wider text-gray-500">
-                Last deploy
+                Updated
               </span>
               <span class="text-xs text-gray-400">
-                {relativeTime(props.lastDeployedAt)}
+                {relativeTime(props.updatedAt)}
               </span>
             </div>
           </div>
@@ -236,8 +227,7 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
                       name={project.name}
                       status={project.status}
                       framework={project.framework}
-                      domain={project.domain}
-                      lastDeployedAt={project.lastDeployedAt}
+                      updatedAt={project.updatedAt}
                     />
                   )}
                 </For>
