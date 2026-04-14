@@ -95,11 +95,14 @@ async function checkStripe(): Promise<ServiceCheck> {
 }
 
 async function checkEmail(): Promise<ServiceCheck> {
+  const hasAlecRae = !!(process.env["ALECRAE_API_URL"] && process.env["ALECRAE_API_KEY"]);
+  const hasResend = !!process.env.RESEND_API_KEY;
+  const provider = hasAlecRae ? "alecrae" : hasResend ? "resend" : "console";
   return {
     name: "email",
-    status: process.env.RESEND_API_KEY ? "ok" : "degraded",
+    status: hasAlecRae || hasResend ? "ok" : "degraded",
     latencyMs: 0,
-    detail: process.env.RESEND_API_KEY ? undefined : "no RESEND_API_KEY (console fallback)",
+    detail: provider === "console" ? "no email provider configured (console fallback)" : `provider: ${provider}`,
   };
 }
 

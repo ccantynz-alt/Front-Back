@@ -14,6 +14,16 @@ import { tenantRouter } from "./procedures/tenant";
 import { apiKeysRouter } from "./procedures/apiKeys";
 import { webhooksRouter } from "./procedures/webhooks";
 import { supportRouter } from "./procedures/support";
+import { aiRouter } from "./procedures/ai";
+import { chatRouter } from "./procedures/chat";
+import { productsRouter } from "./procedures/products";
+import { productTenantsRouter } from "./procedures/productTenants";
+import { uiRouter } from "./procedures/ui";
+import { storageRouter } from "./procedures/storage";
+import { reposRouter } from "./procedures/repos";
+import { projectsRouter } from "./procedures/projects";
+import { importRouter } from "./procedures/importProject";
+import { aiDeployRouter } from "./procedures/aiDeploy";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -40,6 +50,16 @@ export const appRouter = router({
   apiKeys: apiKeysRouter,
   webhooks: webhooksRouter,
   support: supportRouter,
+  ai: aiRouter,
+  chat: chatRouter,
+  products: productsRouter,
+  productTenants: productTenantsRouter,
+  ui: uiRouter,
+  storage: storageRouter,
+  repos: reposRouter,
+  projects: projectsRouter,
+  import: importRouter,
+  aiDeploy: aiDeployRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,0 +1,92 @@
+name: Claude CI Watchdog
+
+# Hourly scheduled watchdog. Checks CI + deploy workflows on main and
+# opens a fix PR for any red runs. Replaces the pattern of spinning up
+# GitHub Copilot cloud agents to fix broken workflows.
+#
+# Runs every hour (cheap — exits fast when nothing's red) and also
+# supports manual dispatch for immediate triage.
+#
+# Canonical copy: docs/claude-takeover/claude-ci-watchdog.yml
+# Promoted to: .github/workflows/claude-ci-watchdog.yml (after Craig's final review)
+
+on:
+  schedule:
+    # Every hour on the hour. The sentinel-level cadence (every 6h)
+    # would miss same-day red runs that block deploys.
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+
+concurrency:
+  # Only one watchdog running at a time — if the hourly run is still
+  # going when the next hour ticks, skip the new one.
+  group: claude-ci-watchdog
+  cancel-in-progress: false
+
+jobs:
+  fix-red-runs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Run Claude CI Watchdog
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are the Claude CI watchdog for Crontech. Your job is to
+            keep the main branch green by catching and fixing red
+            workflow runs before they block deploys.
+
+            Read CLAUDE.md first — it is binding doctrine.
+
+            Procedure:
+            1. Use `gh run list --branch main --status failure --limit 10`
+               to find any failed workflow runs in the last hour on main.
+            2. If nothing is red, log "all green, no action" and exit 0.
+            3. For each red run:
+               a. Pull the failing job logs: `gh run view <run-id> --log-failed`
+               b. Diagnose the root cause from the actual error, not
+                  from guesswork. If the logs are inconclusive, note
+                  that and skip — do not fabricate a fix.
+               c. Create a branch `claude/ci-fix-<timestamp>-<short-desc>`
+               d. Apply the minimal fix. §0.2 anti-scatter-gun rule:
+                  touch only the files strictly required.
+               e. Run the local checks to verify the fix: `bun run check`,
+                  `bun run build`, `bun run test`, `bun run check-links`,
+                  `bun run check-buttons`, `bunx biome check`.
+               f. Commit + push the branch.
+               g. Open a PR into main titled "fix(ci): <root cause>"
+                  with a body that includes:
+                  - Link to the failing run
+                  - Root cause diagnosis
+                  - What the fix changes
+                  - Verification evidence (check outputs)
+               h. Tag @ccantynz-alt for review.
+            4. Do NOT merge the PR yourself — Craig reviews and merges.
+            5. Do NOT touch `.github/workflows/` unless the failure is
+               in a workflow file itself (HARD GATE per §0.7). If a
+               workflow file needs changes, open an issue instead and
+               @mention Craig.
+
+            Doctrine guardrails:
+            - Never force-push.
+            - Never silence a failing gate with `continue-on-error`
+              (§0.4.1 rule #3).
+            - Never soften a tsconfig flag to make a type error go
+              away (§0.4.1 rule #5).
+            - Never add `@ts-ignore` / cast to `any` as a fix.
+            - If a fix requires any of the above, escalate via issue
+              instead and stop.
+          claude_args: "--max-turns 20 --model claude-opus-4-6"

@@ -57,7 +57,11 @@ export const generateComponentTool = createTool({
     error: z.string().nullable(),
     component: ComponentSchema.nullable(),
   }),
-  execute: async (input) => {
+  execute: async (input): Promise<{
+    success: boolean;
+    error: string | null;
+    component: z.infer<typeof ComponentSchema> | null;
+  }> => {
     const defaults = getComponentDefaults(input.componentName, input.description);
     const parsed = ComponentSchema.safeParse(defaults);
     if (!parsed.success) {

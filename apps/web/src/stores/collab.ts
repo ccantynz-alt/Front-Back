@@ -1,7 +1,7 @@
 // ── Collaboration Store ──────────────────────────────────────────────
 // SolidJS signal-based store for Yjs CRDT collaboration state.
 
-import { createSignal, createContext, useContext, onCleanup } from "solid-js";
+import { createSignal, createComponent, createContext, useContext, onCleanup } from "solid-js";
 import type { ParentComponent } from "solid-js";
 import {
   createCollabRoom,
@@ -146,5 +146,10 @@ export const CollabProvider: ParentComponent = (props) => {
 
   const store: CollabStore = [state, actions];
 
-  return CollabContext.Provider({ value: store, children: props.children });
+  return createComponent(CollabContext.Provider, {
+    value: store,
+    get children() {
+      return props.children;
+    },
+  });
 };

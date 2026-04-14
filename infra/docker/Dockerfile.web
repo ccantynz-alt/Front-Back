@@ -1,51 +1,19 @@
-# ── Back to the Future: Web Production Build ─────────────────────────
-# Multi-stage build for SolidStart (Vinxi) application.
+# Crontech Web — Production (SolidStart + Vinxi)
+FROM oven/bun:1
 
-# Stage 1: Install dependencies
-FROM oven/bun:1 AS deps
-
-WORKDIR /app
-
-# Copy workspace root files
-COPY package.json bun.lockb bunfig.toml ./
-COPY turbo.json ./
-
-# Copy all package.json files for workspace resolution
-COPY apps/web/package.json apps/web/
-COPY packages/schemas/package.json packages/schemas/
-COPY packages/db/package.json packages/db/
-COPY packages/ai-core/package.json packages/ai-core/
-COPY packages/ui/package.json packages/ui/
-COPY packages/config/package.json packages/config/
-
-RUN bun install --frozen-lockfile
-
-# Stage 2: Build
-FROM oven/bun:1 AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
+RUN bun install
+ENV SERVER_PRESET=node-server
 RUN bun run build --filter=@back-to-the-future/web
-
-# Stage 3: Production
-FROM oven/bun:1-slim AS runner
-
-WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
-
-# Copy the Vinxi output
-COPY --from=builder /app/apps/web/.output ./.output
-COPY --from=builder /app/apps/web/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:3000/ || exit 1
 
-CMD ["bun", "run", ".output/server/index.mjs"]
+CMD ["bun", "run", "apps/web/.output/server/index.mjs"]

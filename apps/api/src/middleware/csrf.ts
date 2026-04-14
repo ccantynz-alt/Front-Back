@@ -22,7 +22,9 @@ export function csrf(opts?: { allowedOrigins?: string[] }): MiddlewareHandler {
     if (origin) {
       const isAllowed =
         allowedOrigins.length === 0 ||
-        allowedOrigins.some((allowed) => origin.startsWith(allowed));
+        allowedOrigins.some((allowed) => origin.startsWith(allowed)) ||
+        // Allow Cloudflare Pages preview deployments
+        origin.endsWith(".pages.dev");
       if (!isAllowed) {
         return c.json({ error: "CSRF validation failed" }, 403);
       }

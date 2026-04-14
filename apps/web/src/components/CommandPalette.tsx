@@ -25,6 +25,8 @@ const PAGES: { id: string; title: string; subtitle: string; href: string }[] = [
   { id: "page-templates", title: "Templates", subtitle: "Pre-built starter projects", href: "/templates" },
   { id: "page-builder", title: "Builder", subtitle: "Visual website builder", href: "/builder" },
   { id: "page-ai", title: "AI Playground", subtitle: "Experiment with AI", href: "/ai-playground" },
+  { id: "page-chat", title: "Claude Chat", subtitle: "Anthropic API direct chat", href: "/chat" },
+  { id: "page-repos", title: "Repositories", subtitle: "GitHub repos, PRs, CI status", href: "/repos" },
   { id: "page-billing", title: "Billing", subtitle: "Plans and payment", href: "/billing" },
   { id: "page-settings", title: "Settings", subtitle: "Account and preferences", href: "/settings" },
 ];

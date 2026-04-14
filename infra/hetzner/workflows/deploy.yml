@@ -1,0 +1,39 @@
+# GitHub Actions workflow for auto-deploying to Hetzner
+# Copy this file to .github/workflows/deploy.yml in each app repo
+#
+# Required GitHub secrets:
+#   HETZNER_IP       - Server IPv4 address
+#   DEPLOY_SSH_KEY   - Private SSH key for the 'deploy' user
+#
+# Deploys on push to main branch
+
+name: Deploy to Crontech
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Hetzner
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HETZNER_IP }}
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            /opt/crontech/scripts/deploy-app.sh \
+              ${{ github.event.repository.name }} \
+              ${{ github.server_url }}/${{ github.repository }}.git \
+              ${{ github.ref_name }}

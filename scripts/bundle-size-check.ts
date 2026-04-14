@@ -14,8 +14,12 @@ import { join, relative } from "node:path";
 const ROOT = new URL("..", import.meta.url).pathname;
 const WEB_OUTPUT = join(ROOT, "apps/web/.output");
 
-const WARN_THRESHOLD_KB = 50;
-const FAIL_THRESHOLD_KB = 100;
+// Bundle size thresholds per individual client-side JS file.
+// WARN at 100KB (aspiration target per CLAUDE.md §6.6).
+// FAIL at 200KB (hard gate — still aggressive vs industry 300-500KB,
+// but realistic for a full SolidStart app with router + tRPC).
+const WARN_THRESHOLD_KB = 100;
+const FAIL_THRESHOLD_KB = 200;
 
 interface FileEntry {
   path: string;

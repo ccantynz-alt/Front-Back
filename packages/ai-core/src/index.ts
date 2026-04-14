@@ -76,8 +76,16 @@ export {
   getModelForTier,
   getFallbackModel,
   getDefaultModel,
+  getAnthropicModel,
+  getAnthropicModelFromEnv,
+  hasAnthropicProvider,
+  estimateCost,
+  routeAICall,
+  ANTHROPIC_MODELS,
   type AIProviderConfig,
+  type AnthropicProviderConfig,
   type AIProviderEnv,
+  type AnthropicModelId,
 } from "./providers";
 
 export {

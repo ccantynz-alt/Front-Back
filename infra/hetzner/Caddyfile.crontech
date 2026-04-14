@@ -1,0 +1,45 @@
+# Crontech Platform — Caddy Reverse Proxy (Phase 1: Crontech only)
+# Auto-TLS via Let's Encrypt. Zero config HTTPS.
+#
+# Services:
+#   crontech-web  → SolidStart SSR on port 3000
+#   crontech-api  → Hono + Bun API on port 3001
+
+# === crontech.ai → Web App (SolidStart SSR) ===
+
+crontech.ai {
+	encode gzip zstd
+
+	# Security headers
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+	}
+
+	reverse_proxy crontech-web:3000 {
+		health_uri /
+		health_interval 30s
+	}
+}
+
+www.crontech.ai {
+	redir https://crontech.ai{uri}
+}
+
+# === api.crontech.ai → API Server (Hono + Bun) ===
+
+api.crontech.ai {
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+
+	reverse_proxy crontech-api:3001 {
+		health_uri /api/health
+		health_interval 30s
+	}
+}

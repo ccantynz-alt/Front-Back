@@ -23,6 +23,8 @@ const PRIVATE_ROUTES = new Set([
   "billing",
   "database",
   "ai-playground",
+  "chat",
+  "repos",
   "builder",
   "video",
   "collab",

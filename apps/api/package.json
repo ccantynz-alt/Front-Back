@@ -14,9 +14,12 @@
     "format": "biome format . --write"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "3.0.69",
     "@ai-sdk/openai": "^3.0.0",
     "@back-to-the-future/ai-core": "workspace:*",
     "@back-to-the-future/db": "workspace:*",
+    "@back-to-the-future/queue": "workspace:*",
+    "@back-to-the-future/storage": "workspace:*",
     "@back-to-the-future/schemas": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/exporter-metrics-otlp-http": "0.214.0",

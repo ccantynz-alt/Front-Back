@@ -1,6 +1,7 @@
 import {
   type Accessor,
   type JSX,
+  createComponent,
   createContext,
   createSignal,
   onCleanup,
@@ -369,12 +370,12 @@ export function RealtimeProvider(props: { children: JSX.Element }): JSX.Element 
     onMessage,
   };
 
-  const Provider = RealtimeContext.Provider as (props: {
-    value: RealtimeState;
-    children: JSX.Element;
-  }) => JSX.Element;
-
-  return Provider({ value: state, children: props.children });
+  return createComponent(RealtimeContext.Provider, {
+    value: state,
+    get children() {
+      return props.children;
+    },
+  });
 }
 
 export function useRealtime(): RealtimeState {

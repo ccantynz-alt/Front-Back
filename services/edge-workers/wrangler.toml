@@ -27,9 +27,10 @@ name = "COLLAB_ROOM"
 class_name = "CollabRoom"
 
 # Migration registers the Durable Object classes on first deploy.
+# Uses new_sqlite_classes (required for Durable Objects on free plans).
 [[migrations]]
 tag = "v1"
-new_classes = ["RateLimiter", "CollabRoom"]
+new_sqlite_classes = ["RateLimiter", "CollabRoom"]
 
 # ── D1 Database (Edge SQLite) ────────────────────────────────────────
 # Uncomment + paste IDs after running:

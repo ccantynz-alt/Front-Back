@@ -1,0 +1,371 @@
+// ── Chat Procedures ──────────────────────────────────────────────────
+// tRPC procedures for the internal Anthropic-powered chat interface.
+// CRUD for conversations and messages, plus provider key management.
+// Streaming is handled by the Hono route (/api/chat/stream) since
+// tRPC is not ideal for long-lived SSE connections.
+
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { and, desc, eq, sql } from "drizzle-orm";
+import { router, protectedProcedure } from "../init";
+import {
+  conversations,
+  chatMessages,
+  userProviderKeys,
+} from "@back-to-the-future/db";
+import { ANTHROPIC_MODELS } from "@back-to-the-future/ai-core";
+
+// ── IDs ────────────────────────────────────────────────────────────────
+
+function newId(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// ── Encryption helpers ─────────────────────────────────────────────────
+// Simple XOR-based obfuscation with the session secret. This is NOT
+// cryptographic-grade encryption — it prevents plaintext storage and
+// casual exposure. For production, swap to AES-256-GCM with a KMS key.
+
+function getEncryptionKey(): string {
+  return process.env["SESSION_SECRET"] ?? "crontech-default-key-change-me";
+}
+
+function xorEncrypt(plaintext: string, key: string): string {
+  const result: number[] = [];
+  for (let i = 0; i < plaintext.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: index always valid
+    result.push(plaintext.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  }
+  return Buffer.from(result).toString("base64");
+}
+
+function xorDecrypt(encoded: string, key: string): string {
+  const buf = Buffer.from(encoded, "base64");
+  const result: number[] = [];
+  for (let i = 0; i < buf.length; i++) {
+    // biome-ignore lint/style/noNonNullAssertion: index always valid
+    result.push(buf[i]! ^ key.charCodeAt(i % key.length));
+  }
+  return String.fromCharCode(...result);
+}
+
+// ── Input Schemas ──────────────────────────────────────────────────────
+
+const CreateConversationInput = z.object({
+  title: z.string().min(1).max(200),
+  model: z.string().default("claude-sonnet-4-20250514"),
+  systemPrompt: z.string().max(10_000).optional(),
+});
+
+const UpdateConversationInput = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1).max(200).optional(),
+  model: z.string().optional(),
+  systemPrompt: z.string().max(10_000).optional(),
+  archived: z.boolean().optional(),
+});
+
+const SaveProviderKeyInput = z.object({
+  provider: z.enum(["anthropic", "openai", "github"]),
+  apiKey: z.string().min(10).max(500),
+});
+
+// ── Conversation Router ──────────────────────────────────────────────
+
+export const chatRouter = router({
+  /** Create a new conversation. */
+  createConversation: protectedProcedure
+    .input(CreateConversationInput)
+    .mutation(async ({ ctx, input }) => {
+      const id = newId("conv");
+      const now = new Date();
+      await ctx.db.insert(conversations).values({
+        id,
+        userId: ctx.userId,
+        title: input.title,
+        model: input.model,
+        systemPrompt: input.systemPrompt ?? null,
+        totalTokens: 0,
+        totalCost: 0,
+        archived: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+      return { id, title: input.title };
+    }),
+
+  /** List all conversations for the current user, newest first. */
+  listConversations: protectedProcedure
+    .input(
+      z.object({
+        includeArchived: z.boolean().default(false),
+      }).optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const conditions = [eq(conversations.userId, ctx.userId)];
+      if (!input?.includeArchived) {
+        conditions.push(eq(conversations.archived, false));
+      }
+      return ctx.db
+        .select()
+        .from(conversations)
+        .where(and(...conditions))
+        .orderBy(desc(conversations.updatedAt));
+    }),
+
+  /** Get a single conversation with its messages. */
+  getConversation: protectedProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.db
+        .select()
+        .from(conversations)
+        .where(
+          and(
+            eq(conversations.id, input.id),
+            eq(conversations.userId, ctx.userId),
+          ),
+        )
+        .limit(1);
+      const conv = rows[0];
+      if (!conv) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found." });
+      }
+
+      const msgs = await ctx.db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.conversationId, input.id))
+        .orderBy(chatMessages.createdAt);
+
+      return { conversation: conv, messages: msgs };
+    }),
+
+  /** Update conversation metadata (title, model, archive). */
+  updateConversation: protectedProcedure
+    .input(UpdateConversationInput)
+    .mutation(async ({ ctx, input }) => {
+      const rows = await ctx.db
+        .select()
+        .from(conversations)
+        .where(
+          and(
+            eq(conversations.id, input.id),
+            eq(conversations.userId, ctx.userId),
+          ),
+        )
+        .limit(1);
+      if (rows.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found." });
+      }
+
+      const updates: Record<string, unknown> = { updatedAt: new Date() };
+      if (input.title !== undefined) updates["title"] = input.title;
+      if (input.model !== undefined) updates["model"] = input.model;
+      if (input.systemPrompt !== undefined) updates["systemPrompt"] = input.systemPrompt;
+      if (input.archived !== undefined) updates["archived"] = input.archived;
+
+      await ctx.db
+        .update(conversations)
+        .set(updates)
+        .where(eq(conversations.id, input.id));
+
+      return { success: true };
+    }),
+
+  /** Delete a conversation and all its messages. */
+  deleteConversation: protectedProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const rows = await ctx.db
+        .select()
+        .from(conversations)
+        .where(
+          and(
+            eq(conversations.id, input.id),
+            eq(conversations.userId, ctx.userId),
+          ),
+        )
+        .limit(1);
+      if (rows.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found." });
+      }
+
+      await ctx.db.delete(conversations).where(eq(conversations.id, input.id));
+      return { success: true };
+    }),
+
+  /** Save a message to a conversation (called after streaming completes). */
+  saveMessage: protectedProcedure
+    .input(
+      z.object({
+        conversationId: z.string().min(1),
+        role: z.enum(["user", "assistant", "system"]),
+        content: z.string().min(1),
+        model: z.string().optional(),
+        inputTokens: z.number().int().optional(),
+        outputTokens: z.number().int().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify ownership
+      const convRows = await ctx.db
+        .select()
+        .from(conversations)
+        .where(
+          and(
+            eq(conversations.id, input.conversationId),
+            eq(conversations.userId, ctx.userId),
+          ),
+        )
+        .limit(1);
+      if (convRows.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conversation not found." });
+      }
+
+      const id = newId("msg");
+      await ctx.db.insert(chatMessages).values({
+        id,
+        conversationId: input.conversationId,
+        role: input.role,
+        content: input.content,
+        model: input.model ?? null,
+        inputTokens: input.inputTokens ?? null,
+        outputTokens: input.outputTokens ?? null,
+        createdAt: new Date(),
+      });
+
+      // Update conversation token totals
+      const tokenDelta = (input.inputTokens ?? 0) + (input.outputTokens ?? 0);
+      if (tokenDelta > 0) {
+        await ctx.db
+          .update(conversations)
+          .set({
+            totalTokens: sql`${conversations.totalTokens} + ${tokenDelta}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(conversations.id, input.conversationId));
+      } else {
+        await ctx.db
+          .update(conversations)
+          .set({ updatedAt: new Date() })
+          .where(eq(conversations.id, input.conversationId));
+      }
+
+      return { id };
+    }),
+
+  /** List available Anthropic models with pricing info. */
+  listModels: protectedProcedure.query(() => {
+    return Object.entries(ANTHROPIC_MODELS).map(([id, info]) => ({
+      id,
+      ...info,
+    }));
+  }),
+
+  // ── Provider Key Management ──────────────────────────────────────
+
+  /** Save or update an API provider key. */
+  saveProviderKey: protectedProcedure
+    .input(SaveProviderKeyInput)
+    .mutation(async ({ ctx, input }) => {
+      const key = getEncryptionKey();
+      const encrypted = xorEncrypt(input.apiKey, key);
+      const prefix = `${input.apiKey.slice(0, 7)}...${input.apiKey.slice(-4)}`;
+
+      // Deactivate existing keys for this provider
+      await ctx.db
+        .update(userProviderKeys)
+        .set({ isActive: false })
+        .where(
+          and(
+            eq(userProviderKeys.userId, ctx.userId),
+            eq(userProviderKeys.provider, input.provider),
+          ),
+        );
+
+      const id = newId("pk");
+      await ctx.db.insert(userProviderKeys).values({
+        id,
+        userId: ctx.userId,
+        provider: input.provider,
+        encryptedKey: encrypted,
+        keyPrefix: prefix,
+        isActive: true,
+        createdAt: new Date(),
+      });
+
+      return { id, prefix };
+    }),
+
+  /** Get the active provider key info (prefix only, never the full key). */
+  getProviderKey: protectedProcedure
+    .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.db
+        .select({
+          id: userProviderKeys.id,
+          prefix: userProviderKeys.keyPrefix,
+          isActive: userProviderKeys.isActive,
+          createdAt: userProviderKeys.createdAt,
+          lastUsedAt: userProviderKeys.lastUsedAt,
+        })
+        .from(userProviderKeys)
+        .where(
+          and(
+            eq(userProviderKeys.userId, ctx.userId),
+            eq(userProviderKeys.provider, input.provider),
+            eq(userProviderKeys.isActive, true),
+          ),
+        )
+        .limit(1);
+
+      return rows[0] ?? null;
+    }),
+
+  /** Delete a provider key. */
+  deleteProviderKey: protectedProcedure
+    .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .delete(userProviderKeys)
+        .where(
+          and(
+            eq(userProviderKeys.userId, ctx.userId),
+            eq(userProviderKeys.provider, input.provider),
+          ),
+        );
+      return { success: true };
+    }),
+
+  /** Internal: decrypt the user's provider key for use by the streaming endpoint. */
+  _getDecryptedKey: protectedProcedure
+    .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.db
+        .select()
+        .from(userProviderKeys)
+        .where(
+          and(
+            eq(userProviderKeys.userId, ctx.userId),
+            eq(userProviderKeys.provider, input.provider),
+            eq(userProviderKeys.isActive, true),
+          ),
+        )
+        .limit(1);
+
+      const row = rows[0];
+      if (!row) return null;
+
+      const key = getEncryptionKey();
+      const decrypted = xorDecrypt(row.encryptedKey, key);
+
+      // Update last used timestamp
+      await ctx.db
+        .update(userProviderKeys)
+        .set({ lastUsedAt: new Date() })
+        .where(eq(userProviderKeys.id, row.id));
+
+      return decrypted;
+    }),
+});
