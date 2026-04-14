@@ -1,11 +1,18 @@
 # Crontech API — Production (Hono + Bun)
 # Runs TypeScript source directly — Bun handles TS natively.
 # No bundling step = no native module resolution headaches.
+#
+# Build-time args (pass via `docker build --build-arg` or compose `build.args`):
+#   GIT_SHA — commit SHA of this build (exposed via /api/version for smoke)
 FROM oven/bun:1
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+ARG GIT_SHA=unknown
+ENV GIT_SHA=${GIT_SHA}
+
 COPY . .
 RUN bun install
 

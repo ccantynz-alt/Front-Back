@@ -1,27 +1,35 @@
 name: Deploy
 
+# ── Crontech Production Deploy ──────────────────────────────────────
+# Pushes to main build + smoke-test the monorepo, then SSH into the
+# Hetzner box and roll both crontech-web and crontech-api containers
+# with the new commit SHA baked in. The deploy script on the box
+# verifies /api/version reports the new SHA before reporting success,
+# which is the actual cache-buster contract.
+#
+# Required GitHub secrets:
+#   HETZNER_IP      — production server IPv4
+#   DEPLOY_SSH_KEY  — private key for the 'deploy' user on the box
+#   DEPLOY_SSH_KNOWN_HOSTS — output of `ssh-keyscan <HETZNER_IP>`
+#                             (pin host key, reject on change)
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      skip_tests:
-        description: "Skip type-check + test gates (use for first preview deploy)"
-        required: false
-        default: "true"
-        type: choice
-        options:
-          - "true"
-          - "false"
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  # One deploy at a time for main. cancel-in-progress: false because
+  # killing a mid-deploy SSH session can leave docker compose in a
+  # half-rolled state on the box.
+  group: deploy-main
   cancel-in-progress: false
 
 jobs:
   build:
-    name: Build All Packages
+    name: Build + Gate
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -32,183 +40,108 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Biome lint (non-blocking on first preview deploy)
-        run: bunx biome check .
-        continue-on-error: true
+      # Quality gates are GATES. Per CLAUDE.md §0.4.1 rule 3, none of
+      # these may be marked continue-on-error. If something goes red,
+      # we fix the code — not silence the alarm.
 
-      - name: Type check (non-blocking on first preview deploy)
+      - name: Biome lint
+        run: bunx biome check apps packages services
+
+      - name: Type check
         run: bun run check
-        continue-on-error: true
 
-      - name: Link checker (zero-broken-anything enforcement)
+      - name: Link checker
         run: bun run check-links
 
-      - name: Button checker (zero-broken-anything enforcement)
+      - name: Button checker
         run: bun run check-buttons
 
       - name: Build all packages
         run: bun run build
 
-      - name: Run tests (non-blocking on first preview deploy)
+      - name: Run tests
         run: bun run test
-        continue-on-error: true
 
-      - name: Upload web build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: apps/web/.output/
-          retention-days: 1
-
-      - name: Upload edge-workers source
-        uses: actions/upload-artifact@v4
-        with:
-          name: edge-workers
-          path: |
-            services/edge-workers/
-            infra/cloudflare/wrangler.toml
-          retention-days: 1
-
-  deploy-api-dry-run:
-    name: Deploy API (Dry Run)
-    runs-on: ubuntu-latest
-    needs: build
-    environment: staging
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Download edge-workers artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: edge-workers
-          path: .
-
-      - name: Dry-run deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: services/edge-workers
-          command: deploy --dry-run
-
-  deploy-api:
-    name: Deploy API to Cloudflare Workers
-    runs-on: ubuntu-latest
-    needs: deploy-api-dry-run
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Download edge-workers artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: edge-workers
-          path: .
-
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: services/edge-workers
-          command: deploy
-
-  deploy-web:
-    name: Deploy Web to Cloudflare Pages
+  deploy:
+    name: Deploy to Hetzner
     runs-on: ubuntu-latest
     needs: build
     environment: production
+    timeout-minutes: 20
+    concurrency:
+      # Serialize with any manual-triggered deploys for the same ref.
+      group: hetzner-deploy
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - name: Deploy via SSH
+        # Pinned action SHA would be stricter; appleboy/ssh-action@v1
+        # matches the template in infra/hetzner/workflows/deploy.yml
+        # and is already trusted for this repo's deploy path.
+        uses: appleboy/ssh-action@v1
         with:
-          bun-version: latest
+          host: ${{ secrets.HETZNER_IP }}
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # Optional host-key pin. If the secret isn't set, the action
+          # falls back to trust-on-first-use (still works, just no MITM
+          # protection). Populate via `ssh-keyscan <ip> | ssh-keygen -lf -`.
+          fingerprint: ${{ secrets.DEPLOY_SSH_FINGERPRINT }}
+          script_stop: true
+          command_timeout: 15m
+          # Bootstrap inline so the deploy works even if the box has
+          # never seen the current version of crontech-deploy.sh. The
+          # workflow clones/updates the repo to the target SHA, THEN
+          # runs the script from the freshly-checked-out copy.
+          script: |
+            set -euo pipefail
+            REPO_URL="${{ github.server_url }}/${{ github.repository }}.git"
+            TARGET_SHA="${{ github.sha }}"
+            BRANCH="${{ github.ref_name }}"
+            APP_DIR="/opt/crontech/apps/crontech"
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+            echo "[bootstrap] Syncing repo to $TARGET_SHA"
+            mkdir -p "$(dirname "$APP_DIR")"
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
+            cd "$APP_DIR"
+            git fetch --quiet origin "$BRANCH"
+            git reset --quiet --hard "$TARGET_SHA"
 
-      - name: Build web app (cloudflare-pages preset)
-        run: bun run build
-        working-directory: apps/web
-        env:
-          SERVER_PRESET: cloudflare-pages
-
-      - name: Verify build output exists
-        run: |
-          if [ ! -d "apps/web/dist" ]; then
-            echo "::error::Build output directory apps/web/dist does not exist"
-            ls -la apps/web/ || true
-            exit 1
-          fi
-          if [ ! -e "apps/web/dist/_worker.js" ]; then
-            echo "::error::apps/web/dist/_worker.js missing — cloudflare-pages preset did not emit a worker bundle"
-            ls -la apps/web/dist/ || true
-            exit 1
-          fi
-          echo "Build output verified."
-          du -sh apps/web/dist
-
-      - name: Ensure Cloudflare Pages project exists (idempotent)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          # Try to create the Pages project. If it already exists (HTTP 4xx), ignore.
-          npx -y wrangler@latest pages project create crontech-web --production-branch=main || \
-            echo "Project may already exist — proceeding with deploy."
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/dist --project-name=crontech-web --branch=main --commit-dirty=true
+            echo "[bootstrap] Handing off to in-repo deploy script"
+            bash ./infra/hetzner/scripts/crontech-deploy.sh \
+              "$REPO_URL" "$TARGET_SHA" "$BRANCH"
 
   post-deploy-smoke:
-    name: Post-Deploy Smoke Test
+    name: Post-Deploy Public Smoke
     runs-on: ubuntu-latest
-    needs: [deploy-api, deploy-web]
-    if: ${{ vars.API_URL != '' && vars.WEB_URL != '' }}
+    needs: deploy
+    timeout-minutes: 5
     steps:
-      - name: Health check API
+      # The deploy script already verifies /api/version on the box.
+      # This job re-verifies from outside Hetzner so we catch issues
+      # the box can't see: DNS propagation, Caddy TLS, CDN caches.
+      - name: Verify crontech.ai reports new SHA
         run: |
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.API_URL }}/health" 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "API health check passed"
-              exit 0
-            fi
-            echo "Attempt $i: status $STATUS, retrying..."
-            sleep 5
+          set -euo pipefail
+          TARGET="${{ github.sha }}"
+          for url in "https://api.crontech.ai/api/version" "https://crontech.ai/api/version"; do
+            echo "Probing $url for SHA $TARGET..."
+            for attempt in 1 2 3 4 5 6; do
+              body=$(curl -fsS --max-time 10 "$url" || echo '{}')
+              reported=$(echo "$body" | grep -o '"sha":"[^"]*"' | head -n1 | cut -d'"' -f4 || echo '')
+              if [ "$reported" = "$TARGET" ]; then
+                echo "  OK  $url -> $reported"
+                break
+              fi
+              echo "  ..  attempt $attempt reported='$reported'"
+              if [ "$attempt" = "6" ]; then
+                echo "FAIL: $url never reported $TARGET" >&2
+                exit 1
+              fi
+              sleep 10
+            done
           done
-          echo "API health check failed after 5 attempts"
-          exit 1
-
-      - name: Health check Web
-        run: |
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.WEB_URL }}" 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "Web health check passed"
-              exit 0
-            fi
-            echo "Attempt $i: status $STATUS, retrying..."
-            sleep 5
-          done
-          echo "Web health check failed after 5 attempts"
-          exit 1
+          echo "All public endpoints confirm $TARGET is live."
