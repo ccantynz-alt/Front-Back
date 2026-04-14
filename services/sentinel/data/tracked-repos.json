@@ -8,8 +8,8 @@
       "category": "framework",
       "description": "React framework for production. Primary competitor in full-stack web.",
       "defaultBranch": "canary",
-      "lastKnownRelease": "v16.2.1-canary.34",
-      "lastKnownReleaseAt": "2026-04-12T23:43:49Z",
+      "lastKnownRelease": "v16.2.1-canary.38",
+      "lastKnownReleaseAt": "2026-04-13T23:43:40Z",
       "lastCommitCheckAt": "2026-04-13T00:35:23.158Z",
       "baselineCommitsPerWeek": 100
     },
@@ -75,7 +75,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.12",
       "lastKnownReleaseAt": "2026-04-07T04:15:34Z",
-      "lastCommitCheckAt": "2026-04-13T00:35:23.413Z",
+      "lastCommitCheckAt": "2026-04-14T03:39:56.787Z",
       "baselineCommitsPerWeek": 9
     },
     {
@@ -88,7 +88,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v2.0.0-beta.0",
       "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
-      "lastCommitCheckAt": "2026-04-13T00:35:23.609Z",
+      "lastCommitCheckAt": "2026-04-14T03:39:57.266Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -112,10 +112,10 @@
       "category": "ai",
       "description": "AI SDK for streaming responses and generative UI. Core AI orchestration layer.",
       "defaultBranch": "main",
-      "lastKnownRelease": "@ai-sdk/google@3.0.62",
-      "lastKnownReleaseAt": "2026-04-11T16:23:09Z",
-      "lastCommitCheckAt": "2026-04-13T00:35:24.531Z",
-      "baselineCommitsPerWeek": 71
+      "lastKnownRelease": "ai@6.0.159",
+      "lastKnownReleaseAt": "2026-04-13T17:50:47Z",
+      "lastCommitCheckAt": "2026-04-14T03:39:58.765Z",
+      "baselineCommitsPerWeek": 75
     },
     {
       "owner": "langchain-ai",
@@ -166,7 +166,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v1.26.04",
       "lastKnownReleaseAt": "2026-04-09T14:38:08Z",
-      "lastCommitCheckAt": "2026-04-13T00:35:26.117Z",
+      "lastCommitCheckAt": "2026-04-14T03:40:00.756Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -177,10 +177,10 @@
       "category": "backend",
       "description": "Reactive backend competitor. Sync engine + TS functions.",
       "defaultBranch": "main",
-      "lastKnownRelease": "precompiled-2026-04-10-b6d35ea",
-      "lastKnownReleaseAt": "2026-04-10T22:08:52Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:16.992Z",
-      "baselineCommitsPerWeek": 97
+      "lastKnownRelease": "precompiled-2026-04-14-d34e278",
+      "lastKnownReleaseAt": "2026-04-14T01:10:34Z",
+      "lastCommitCheckAt": "2026-04-14T03:40:01.369Z",
+      "baselineCommitsPerWeek": 98
     },
     {
       "owner": "superfly",
@@ -313,6 +313,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-13T00:35:26.119Z",
+  "lastUpdated": "2026-04-14T03:40:01.369Z",
   "schemaVersion": 1
 }
