@@ -154,7 +154,14 @@ jobs:
         # catch the exact class of bugs (bunched nav, clipped badges,
         # unstyled CTAs, silent "I fixed it" lies) that slipped through
         # before BLK-007. ANTHROPIC_API_KEY powers the aiReview module.
-        run: npx gatetest@latest --suite full --sarif || true
+        #
+        # Install path: GateTest is not published to npm yet; we install
+        # directly from the ccantynz-alt/GateTest repo via npx's git
+        # support. No `|| true` — if the tool genuinely fails to execute
+        # we want to see the failure in the job log, not paper over it.
+        # The job-level `continue-on-error: true` above keeps this
+        # advisory during the BLK-007 observation sprint regardless.
+        run: npx --yes github:ccantynz-alt/GateTest --suite full --sarif
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
