@@ -30,9 +30,9 @@ const dead: Finding[] = [];
 for (const file of files) {
   const src = readFileSync(file, "utf8");
 
-  // Collect <A href=...>...</A> ranges — buttons inside are link buttons
+  // Collect <A href=...>...</A> and <a href=...>...</a> ranges — buttons inside are link buttons
   const linkRanges: Array<[number, number]> = [];
-  const linkRe = /<A\s+[^>]*href=[^>]*>([\s\S]*?)<\/A>/g;
+  const linkRe = /<(?:A|a)\s+[^>]*href=[^>]*>([\s\S]*?)<\/(?:A|a)>/g;
   let lm: RegExpExecArray | null;
   while ((lm = linkRe.exec(src))) {
     linkRanges.push([lm.index, lm.index + lm[0].length]);

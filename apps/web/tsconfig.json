@@ -4,6 +4,9 @@
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "types": ["bun", "@webgpu/types"],
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
     "paths": {
       "~/*": ["./src/*"]
     }

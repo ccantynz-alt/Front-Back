@@ -492,3 +492,110 @@ export const userProviderKeys = sqliteTable("user_provider_keys", {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+// ── Projects (Platform Hosting) ──────────────────────────────────
+// Each project is a deployable application on the Crontech platform.
+
+export const projects = sqliteTable("projects", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  repoUrl: text("repo_url"),
+  repoBranch: text("repo_branch").default("main"),
+  framework: text("framework", {
+    enum: ["solidstart", "nextjs", "remix", "astro", "hono", "static", "docker", "other"],
+  }),
+  buildCommand: text("build_command"),
+  outputDir: text("output_dir"),
+  installCommand: text("install_command").default("bun install"),
+  runtime: text("runtime", {
+    enum: ["bun", "node", "deno", "static"],
+  }).default("bun"),
+  port: integer("port").default(3000),
+  status: text("status", {
+    enum: ["creating", "active", "building", "deploying", "stopped", "error"],
+  })
+    .notNull()
+    .default("creating"),
+  lastDeployedAt: integer("last_deployed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Project Domains ──────────────────────────────────────────────
+
+export const projectDomains = sqliteTable("project_domains", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  domain: text("domain").notNull().unique(),
+  isPrimary: integer("is_primary", { mode: "boolean" }).notNull().default(false),
+  dnsVerified: integer("dns_verified", { mode: "boolean" }).notNull().default(false),
+  dnsVerifiedAt: integer("dns_verified_at", { mode: "timestamp" }),
+  tlsProvisioned: integer("tls_provisioned", { mode: "boolean" }).notNull().default(false),
+  tlsProvisionedAt: integer("tls_provisioned_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Project Environment Variables ────────────────────────────────
+
+export const projectEnvVars = sqliteTable("project_env_vars", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  key: text("key").notNull(),
+  encryptedValue: text("encrypted_value").notNull(),
+  environment: text("environment", {
+    enum: ["production", "preview", "development"],
+  })
+    .notNull()
+    .default("production"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Deployments ──────────────────────────────────────────────────
+
+export const deployments = sqliteTable("deployments", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  commitSha: text("commit_sha"),
+  commitMessage: text("commit_message"),
+  branch: text("branch").default("main"),
+  status: text("status", {
+    enum: ["queued", "building", "deploying", "live", "failed", "rolled_back"],
+  })
+    .notNull()
+    .default("queued"),
+  buildLog: text("build_log"),
+  containerId: text("container_id"),
+  containerImage: text("container_image"),
+  url: text("url"),
+  duration: integer("duration"),
+  isCurrent: integer("is_current", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  finishedAt: integer("finished_at", { mode: "timestamp" }),
+});
