@@ -5,66 +5,82 @@ import { Button } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 import { SEOHead } from "../components/SEOHead";
 
-// ── Data ──────────────────────────────────────────────────────────────
+// ── Palette ─────────────────────────────────────────────────────────
+// Restricted to three accent colors so the page reads as one brand,
+// not as a rainbow. Everything else uses white/gray tiers.
+//   - VIOLET  primary accent (brand, CTAs)
+//   - CYAN    secondary accent (platform/technical pillars)
+//   - EMERALD positive/live signals (status dots, "built-in" badges)
+const ACCENT = {
+  violet: "#8b5cf6",
+  cyan: "#06b6d4",
+  emerald: "#10b981",
+} as const;
+
+// ── Data ────────────────────────────────────────────────────────────
 
 interface Feature {
   icon: string;
   title: string;
   description: string;
   href: string;
-  gradient: string;
+  accent: string;
   badge?: string | undefined;
 }
 
+// Feature cards showcase PLATFORM LAYERS, not end-user products.
+// Per docs/POSITIONING.md: Crontech is a developer platform, not an
+// AI website builder for non-developers.
 const features: Feature[] = [
   {
     icon: "\u26A1",
-    title: "AI Website Builder",
+    title: "Edge Compute",
     description:
-      "Describe what you want in plain language. The AI composes validated component trees, wires data and auth, and ships a production site in minutes. Not templates \u2014 generation.",
-    href: "/builder",
-    gradient: "#8b5cf6",
+      "Cloudflare Workers at the edge. Sub-5ms cold starts across 330+ cities. No containers, no regions, no capacity planning. Your code lives next to your users.",
+    href: "/deployments",
+    accent: ACCENT.violet,
     badge: "Core",
   },
   {
-    icon: "\u{1F4AC}",
-    title: "Claude Chat",
+    icon: "\u{1F5C4}\uFE0F",
+    title: "Unified Data",
     description:
-      "Direct Anthropic API access. Bring your own key. Your data stays yours. No subscriptions, no middlemen, no vendor lock-in. Full streaming with SSE.",
-    href: "/chat",
-    gradient: "#f97316",
+      "Turso SQLite replicas at the edge for zero-latency reads. Neon Postgres when you need the full engine. Qdrant for vector search. All type-safe through Drizzle.",
+    href: "/database",
+    accent: ACCENT.cyan,
   },
   {
-    icon: "\u{1F4E6}",
-    title: "Project Management",
+    icon: "\u{1F517}",
+    title: "Type-Safe APIs",
     description:
-      "Repositories, branches, deployments, CI/CD status, and issue tracking. Your entire dev workflow in one command center.",
-    href: "/repos",
-    gradient: "#06b6d4",
+      "tRPC v11 end to end. Change a server type, see the client error instantly. No OpenAPI specs, no codegen step, no drift between backend and frontend. Ever.",
+    href: "/docs",
+    accent: ACCENT.violet,
   },
   {
     icon: "\u{1F310}",
-    title: "Real-Time Collaboration",
+    title: "Real-Time Layer",
     description:
-      "CRDT-powered multi-user editing with AI agents as first-class participants. Co-author with your team and AI simultaneously.",
+      "WebSockets, SSE, and Yjs CRDTs on every edge node. Multi-user editing with AI agents as first-class peers. Conflict-free by mathematics, not by lock.",
     href: "/collab",
-    gradient: "#10b981",
+    accent: ACCENT.cyan,
   },
   {
-    icon: "\u{1F6E0}\uFE0F",
-    title: "Admin Dashboard",
+    icon: "\u{1F9E0}",
+    title: "AI Runtime",
     description:
-      "Analytics, user management, role-based access control, system health monitoring, and audit logs. Full operational visibility.",
+      "Three-tier compute routes inference where it is cheapest: client GPU (free), edge (sub-5ms), or cloud H100s on demand. Generative UI and streaming native to the platform.",
+    href: "/ai-playground",
+    accent: ACCENT.violet,
+  },
+  {
+    icon: "\u{1F512}",
+    title: "Auth + Admin",
+    description:
+      "Passkeys, OAuth, 2FA. Role-based access control. Audit logs, analytics, and user management. A full admin dashboard ships with the platform, not as a separate product.",
     href: "/admin",
-    gradient: "#f43f5e",
-  },
-  {
-    icon: "\u{1F4D0}",
-    title: "Templates",
-    description:
-      "Battle-tested blueprints for SaaS apps, landing pages, dashboards, and more. Clone, customize, and deploy in under five minutes.",
-    href: "/templates",
-    gradient: "#f59e0b",
+    accent: ACCENT.emerald,
+    badge: "Built-in",
   },
 ];
 
@@ -72,33 +88,33 @@ interface Step {
   number: string;
   title: string;
   description: string;
-  gradient: string;
+  accent: string;
   icon: string;
 }
 
 const steps: Step[] = [
   {
     number: "01",
-    title: "Describe",
+    title: "Connect",
     description:
-      "Tell the AI what you want to build. A SaaS dashboard, a marketing site, an internal tool. Plain language. No boilerplate.",
-    gradient: "#8b5cf6",
-    icon: "\u{1F4DD}",
+      "Point your domain at Crontech. Your app moves to the edge. DNS propagation is the longest step in the whole process.",
+    accent: ACCENT.violet,
+    icon: "\u{1F50C}",
   },
   {
     number: "02",
-    title: "Build",
+    title: "Compose",
     description:
-      "The platform assembles your app from validated component trees, wires up the database, auth, and API layer automatically.",
-    gradient: "#06b6d4",
-    icon: "\u2699\uFE0F",
+      "Pick the layers you need — data, auth, AI, real-time, billing. One config line each, not one vendor contract each.",
+    accent: ACCENT.cyan,
+    icon: "\u{1F9F1}",
   },
   {
     number: "03",
     title: "Ship",
     description:
-      "One click to production. Deployed to the edge across 330+ cities worldwide. Sub-5ms cold starts. Zero config.",
-    gradient: "#10b981",
+      "Git push deploys. Type-safe end to end. Every layer observable. Global in seconds, with no infrastructure to manage.",
+    accent: ACCENT.emerald,
     icon: "\u{1F680}",
   },
 ];
@@ -110,10 +126,10 @@ interface Stat {
 }
 
 const stats: Stat[] = [
-  { value: "24+", label: "API Endpoints", color: "#8b5cf6" },
-  { value: "30+", label: "Database Tables", color: "#06b6d4" },
-  { value: "Real-time", label: "SSE Updates", color: "#10b981" },
-  { value: "RBAC", label: "Admin Built-in", color: "#f97316" },
+  { value: "\u003C 5ms", label: "Edge Cold Start", color: ACCENT.violet },
+  { value: "330+", label: "Cities Worldwide", color: ACCENT.cyan },
+  { value: "End-to-End", label: "Type Safety", color: ACCENT.violet },
+  { value: "Built-In", label: "Auth, RBAC, Audit", color: ACCENT.emerald },
 ];
 
 interface TechPillar {
@@ -130,7 +146,7 @@ const techPillars: TechPillar[] = [
     title: "Replace your entire stack",
     description:
       "Hosting, database, authentication, AI, real-time collaboration, payments, email, and storage. One product. One dashboard. One bill.",
-    color: "#8b5cf6",
+    color: ACCENT.violet,
     labelColor: "text-violet-400",
   },
   {
@@ -138,7 +154,7 @@ const techPillars: TechPillar[] = [
     title: "The fastest stack on the web",
     description:
       "Cloudflare Workers for sub-5ms cold starts. SolidJS for the fastest reactivity. Bun + Hono for the fastest runtime. Type-safe end to end.",
-    color: "#06b6d4",
+    color: ACCENT.cyan,
     labelColor: "text-cyan-400",
   },
   {
@@ -146,45 +162,33 @@ const techPillars: TechPillar[] = [
     title: "AI is the architecture, not an add-on",
     description:
       "AI agents, generative UI, three-tier compute routing, RAG pipelines, and real-time AI co-authoring. Native to the platform from the ground up.",
-    color: "#10b981",
+    color: ACCENT.emerald,
     labelColor: "text-emerald-400",
   },
 ];
 
-// ── Feature Card ─────────────────────────────────────────────────────
+// ── Feature Card ────────────────────────────────────────────────────
 
 function FeatureCard(props: Feature): JSX.Element {
   return (
     <A href={props.href} class="block group">
       <div
-        class="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6 transition-all duration-300 hover:border-white/[0.12] hover:shadow-xl hover:shadow-black/30 h-full"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
-        }}
+        class="relative h-full overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a] p-6 transition-all duration-300 hover:border-white/[0.14] hover:bg-[#0d0d0d]"
       >
-        {/* Glow accent */}
+        {/* Single subtle glow — only on hover, only in one corner */}
         <div
-          class="absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-10 blur-3xl transition-opacity duration-500 group-hover:opacity-30"
-          style={{ background: props.gradient }}
+          class="absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-[0.18]"
+          style={{ background: props.accent }}
         />
 
-        {/* Hover gradient overlay */}
-        <div
-          class="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-          style={{
-            background: `linear-gradient(135deg, ${props.gradient}08, transparent 70%)`,
-          }}
-        />
-
-        <div class="relative z-10 flex flex-col gap-4">
-          <div class="flex items-center justify-between">
+        <div class="relative z-10 flex h-full flex-col gap-4">
+          <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3">
               <div
-                class="flex h-11 w-11 items-center justify-center rounded-xl text-lg"
+                class="flex h-10 w-10 items-center justify-center rounded-lg text-base"
                 style={{
-                  background: `linear-gradient(135deg, ${props.gradient}22, ${props.gradient}44)`,
-                  color: props.gradient,
+                  background: `${props.accent}14`,
+                  color: props.accent,
                 }}
               >
                 {props.icon}
@@ -195,10 +199,10 @@ function FeatureCard(props: Feature): JSX.Element {
             </div>
             <Show when={props.badge}>
               <span
-                class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
                 style={{
-                  background: `${props.gradient}20`,
-                  color: props.gradient,
+                  background: `${props.accent}1a`,
+                  color: props.accent,
                 }}
               >
                 {props.badge}
@@ -208,46 +212,37 @@ function FeatureCard(props: Feature): JSX.Element {
           <p class="text-sm leading-relaxed text-gray-400">
             {props.description}
           </p>
-          <div class="flex items-center gap-1.5 text-xs font-medium transition-colors duration-200 group-hover:text-white" style={{ color: props.gradient }}>
-            <span>Explore</span>
+          <div
+            class="mt-auto flex items-center gap-1.5 pt-2 text-xs font-medium transition-colors duration-200 group-hover:text-white"
+            style={{ color: props.accent }}
+          >
+            <span>Learn more</span>
             <span class="transition-transform duration-200 group-hover:translate-x-1">&#8594;</span>
           </div>
         </div>
-
-        {/* Bottom shimmer line */}
-        <div
-          class="absolute bottom-0 left-0 h-[2px] w-full opacity-40 transition-opacity duration-300 group-hover:opacity-70"
-          style={{
-            background: `linear-gradient(90deg, transparent, ${props.gradient}, transparent)`,
-          }}
-        />
       </div>
     </A>
   );
 }
 
-// ── Step Card ─────────────────────────────────────────────────────────
+// ── Step Card ───────────────────────────────────────────────────────
 
 function StepCard(props: Step): JSX.Element {
   return (
     <div class="group relative flex flex-col items-center gap-5 text-center">
-      {/* Number + icon */}
       <div class="relative">
         <div
           class="flex h-20 w-20 items-center justify-center rounded-2xl text-2xl transition-all duration-300 group-hover:scale-105"
           style={{
-            background: `linear-gradient(135deg, ${props.gradient}15, ${props.gradient}30)`,
-            border: `1px solid ${props.gradient}30`,
+            background: `${props.accent}14`,
+            border: `1px solid ${props.accent}33`,
           }}
         >
-          <span style={{ color: props.gradient }}>{props.icon}</span>
+          <span style={{ color: props.accent }}>{props.icon}</span>
         </div>
         <div
-          class="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold"
-          style={{
-            background: `linear-gradient(135deg, ${props.gradient}, ${props.gradient}cc)`,
-            color: "#fff",
-          }}
+          class="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold text-white"
+          style={{ background: props.accent }}
         >
           {props.number}
         </div>
@@ -260,7 +255,7 @@ function StepCard(props: Step): JSX.Element {
   );
 }
 
-// ── Stat Block ────────────────────────────────────────────────────────
+// ── Stat Block ──────────────────────────────────────────────────────
 
 function StatBlock(props: Stat): JSX.Element {
   return (
@@ -278,43 +273,29 @@ function StatBlock(props: Stat): JSX.Element {
   );
 }
 
-// ── Tech Pillar Card ─────────────────────────────────────────────────
+// ── Tech Pillar Card ────────────────────────────────────────────────
 
 function TechPillarCard(props: TechPillar): JSX.Element {
   return (
-    <div
-      class="group relative overflow-hidden rounded-2xl border border-white/[0.06] p-8 transition-all duration-300 hover:border-white/[0.12]"
-      style={{
-        background:
-          "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
-      }}
-    >
+    <div class="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a] p-8 transition-all duration-300 hover:border-white/[0.14]">
       <div
-        class="absolute -top-12 -right-12 h-32 w-32 rounded-full opacity-10 blur-3xl transition-opacity duration-500 group-hover:opacity-25"
+        class="absolute -top-12 -right-12 h-32 w-32 rounded-full opacity-[0.08] blur-3xl transition-opacity duration-500 group-hover:opacity-20"
         style={{ background: props.color }}
       />
       <div class="relative z-10">
-        <span class={`mb-3 inline-block text-xs font-semibold uppercase tracking-widest ${props.labelColor}`}>
+        <span
+          class={`mb-3 inline-block text-xs font-semibold uppercase tracking-widest ${props.labelColor}`}
+        >
           {props.label}
         </span>
-        <h3 class="mb-3 text-xl font-bold text-white">
-          {props.title}
-        </h3>
-        <p class="text-sm leading-relaxed text-gray-400">
-          {props.description}
-        </p>
+        <h3 class="mb-3 text-xl font-bold text-white">{props.title}</h3>
+        <p class="text-sm leading-relaxed text-gray-400">{props.description}</p>
       </div>
-      <div
-        class="absolute bottom-0 left-0 h-[2px] w-full opacity-40"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${props.color}, transparent)`,
-        }}
-      />
     </div>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────
+// ── Page ────────────────────────────────────────────────────────────
 
 export default function Home(): JSX.Element {
   const auth = useAuth();
@@ -323,30 +304,27 @@ export default function Home(): JSX.Element {
     <>
       <SEOHead
         title="Crontech \u2014 The developer platform for the next decade"
-        description="One unified platform. Hosting, database, auth, AI, real-time collaboration, billing, and more. Built on the bleeding edge. Ship products with AI in minutes."
+        description="One unified platform. Backend and frontend, joined as one. Hosting, database, auth, AI, real-time, billing, storage \u2014 all in one product, type-safe end to end, built on the bleeding edge."
         path="/"
       />
 
-      <div class="min-h-screen bg-[#060606]">
-        {/* ── Hero ──────────────────────────────────────────────────── */}
+      {/* overflow-x-hidden on the outer wrapper prevents any stray
+          absolute element from creating horizontal scroll on narrow
+          viewports (which was clipping cards on tablets). */}
+      <div class="min-h-screen overflow-x-hidden bg-[#060606]">
+        {/* ── Hero ──────────────────────────────────────────────── */}
         <section class="relative overflow-hidden">
-          {/* Background gradient orbs */}
+          {/* Single restrained background orb — violet only, not a rainbow */}
           <div
-            class="absolute top-[-200px] left-1/2 h-[600px] w-[800px] -translate-x-1/2 rounded-full opacity-[0.07] blur-[120px]"
-            style={{ background: "linear-gradient(135deg, #8b5cf6, #06b6d4)" }}
-          />
-          <div
-            class="absolute top-[100px] right-[-200px] h-[400px] w-[400px] rounded-full opacity-[0.05] blur-[100px]"
-            style={{ background: "#10b981" }}
-          />
-          <div
-            class="absolute bottom-[-100px] left-[-150px] h-[350px] w-[350px] rounded-full opacity-[0.04] blur-[100px]"
-            style={{ background: "#f97316" }}
+            class="pointer-events-none absolute top-[-200px] left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full opacity-[0.08] blur-[120px]"
+            style={{
+              background: `linear-gradient(135deg, ${ACCENT.violet}, ${ACCENT.cyan})`,
+            }}
           />
 
-          {/* Grid pattern overlay */}
+          {/* Subtle grid pattern — kept very low opacity */}
           <div
-            class="absolute inset-0 opacity-[0.02]"
+            class="pointer-events-none absolute inset-0 opacity-[0.015]"
             style={{
               "background-image":
                 "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
@@ -364,26 +342,25 @@ export default function Home(): JSX.Element {
                 </span>
               </div>
 
-              {/* Headline */}
-              <h1 class="max-w-4xl text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-[4.5rem]">
-                Build products with AI.{" "}
-                <br class="hidden sm:block" />
+              {/* Doctrine headline — per docs/POSITIONING.md */}
+              <h1 class="max-w-4xl text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[4rem]">
+                The developer platform{" "}
                 <span
                   class="bg-clip-text text-transparent"
                   style={{
-                    "background-image":
-                      "linear-gradient(135deg, #8b5cf6, #06b6d4, #10b981)",
+                    "background-image": `linear-gradient(135deg, ${ACCENT.violet}, ${ACCENT.cyan})`,
                   }}
                 >
-                  Ship them in minutes.
+                  for the next decade.
                 </span>
               </h1>
 
-              {/* Subheadline */}
-              <p class="mt-6 max-w-2xl text-lg leading-relaxed text-gray-400 sm:text-xl">
-                One unified platform with hosting, database, auth, AI, real-time
-                collaboration, payments, and storage. Built on the bleeding edge
-                and ready to ship.
+              {/* Subhead — leads with backend+frontend unified, first-of-its-kind */}
+              <p class="mt-6 max-w-2xl text-base leading-relaxed text-gray-400 sm:text-lg">
+                Backend and frontend, joined as one product. Hosting, database,
+                auth, AI, real-time, and billing &mdash; every layer your app
+                needs, type-safe end to end, built on the bleeding edge and
+                ready the moment your team is.
               </p>
 
               {/* CTAs */}
@@ -435,7 +412,7 @@ export default function Home(): JSX.Element {
           </div>
         </section>
 
-        {/* ── Stats strip ───────────────────────────────────────────── */}
+        {/* ── Stats strip ───────────────────────────────────────── */}
         <section class="border-y border-white/[0.04]">
           <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
             <div class="grid grid-cols-2 divide-x divide-white/[0.06] sm:grid-cols-4">
@@ -452,22 +429,20 @@ export default function Home(): JSX.Element {
           </div>
         </section>
 
-        {/* ── Feature pillars ───────────────────────────────────────── */}
+        {/* ── Platform layers ───────────────────────────────────── */}
         <section class="relative overflow-hidden py-24 lg:py-32">
-          {/* Background glow */}
           <div
-            class="absolute left-[-200px] top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full opacity-[0.04] blur-[120px]"
-            style={{ background: "#8b5cf6" }}
+            class="pointer-events-none absolute left-[-200px] top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full opacity-[0.04] blur-[120px]"
+            style={{ background: ACCENT.violet }}
           />
 
           <div class="relative z-10 mx-auto max-w-[1200px] px-6 lg:px-8">
-            {/* Section header */}
             <div class="mb-16 flex flex-col items-center text-center">
               <span class="mb-4 text-xs font-semibold uppercase tracking-widest text-violet-400">
                 Platform
               </span>
               <h2 class="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                One platform, every layer your app needs
+                Every layer your app needs, in one product
               </h2>
               <p class="mt-4 max-w-xl text-base leading-relaxed text-gray-500">
                 Stop stitching together a dozen services. Crontech is one
@@ -475,7 +450,6 @@ export default function Home(): JSX.Element {
               </p>
             </div>
 
-            {/* Feature grid */}
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <For each={features}>
                 {(feature) => (
@@ -484,7 +458,7 @@ export default function Home(): JSX.Element {
                     title={feature.title}
                     description={feature.description}
                     href={feature.href}
-                    gradient={feature.gradient}
+                    accent={feature.accent}
                     badge={feature.badge}
                   />
                 )}
@@ -493,30 +467,27 @@ export default function Home(): JSX.Element {
           </div>
         </section>
 
-        {/* ── How it works ──────────────────────────────────────────── */}
-        <section class="relative border-y border-white/[0.04] py-24 lg:py-32">
-          {/* Background glow */}
+        {/* ── How it works ──────────────────────────────────────── */}
+        <section class="relative overflow-hidden border-y border-white/[0.04] py-24 lg:py-32">
           <div
-            class="absolute right-[-200px] top-1/3 h-[400px] w-[400px] rounded-full opacity-[0.04] blur-[100px]"
-            style={{ background: "#06b6d4" }}
+            class="pointer-events-none absolute right-[-200px] top-1/3 h-[400px] w-[400px] rounded-full opacity-[0.04] blur-[100px]"
+            style={{ background: ACCENT.cyan }}
           />
 
           <div class="relative z-10 mx-auto max-w-[1200px] px-6 lg:px-8">
-            {/* Section header */}
             <div class="mb-16 flex flex-col items-center text-center">
               <span class="mb-4 text-xs font-semibold uppercase tracking-widest text-cyan-400">
-                Workflow
+                Onboarding
               </span>
               <h2 class="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                From idea to production in three steps
+                Move your app to Crontech in three steps
               </h2>
               <p class="mt-4 max-w-xl text-base leading-relaxed text-gray-500">
-                No boilerplate. No config files. No infrastructure to manage.
-                Just describe, build, ship.
+                No rebuild. No long migration. Bring the code you already have,
+                layer Crontech underneath, ship.
               </p>
             </div>
 
-            {/* Steps */}
             <div class="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
               <For each={steps}>
                 {(step) => (
@@ -524,25 +495,16 @@ export default function Home(): JSX.Element {
                     number={step.number}
                     title={step.title}
                     description={step.description}
-                    gradient={step.gradient}
+                    accent={step.accent}
                     icon={step.icon}
                   />
                 )}
               </For>
             </div>
-
-            {/* Connector lines (desktop only) */}
-            <div
-              class="mt-[-180px] mb-0 hidden items-center justify-center gap-0 pointer-events-none sm:flex"
-              aria-hidden="true"
-            >
-              <div class="h-px w-[28%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
-              <div class="h-px w-[28%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
-            </div>
           </div>
         </section>
 
-        {/* ── Tech pillars ──────────────────────────────────────────── */}
+        {/* ── Tech pillars ──────────────────────────────────────── */}
         <section class="py-24 lg:py-32">
           <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -561,12 +523,13 @@ export default function Home(): JSX.Element {
           </div>
         </section>
 
-        {/* ── Bottom CTA ────────────────────────────────────────────── */}
-        <section class="relative border-t border-white/[0.04] py-24 lg:py-32">
-          {/* Background gradient */}
+        {/* ── Bottom CTA ────────────────────────────────────────── */}
+        <section class="relative overflow-hidden border-t border-white/[0.04] py-24 lg:py-32">
           <div
-            class="absolute bottom-0 left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full opacity-[0.06] blur-[120px]"
-            style={{ background: "linear-gradient(135deg, #8b5cf6, #06b6d4)" }}
+            class="pointer-events-none absolute bottom-0 left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full opacity-[0.06] blur-[120px]"
+            style={{
+              background: `linear-gradient(135deg, ${ACCENT.violet}, ${ACCENT.cyan})`,
+            }}
           />
 
           <div class="relative z-10 mx-auto max-w-[800px] px-6 text-center lg:px-8">
@@ -575,17 +538,15 @@ export default function Home(): JSX.Element {
               <span
                 class="bg-clip-text text-transparent"
                 style={{
-                  "background-image":
-                    "linear-gradient(135deg, #8b5cf6, #06b6d4)",
+                  "background-image": `linear-gradient(135deg, ${ACCENT.violet}, ${ACCENT.cyan})`,
                 }}
               >
                 for the next decade.
               </span>
             </h2>
             <p class="mt-5 text-base leading-relaxed text-gray-400 sm:text-lg">
-              Sub-5ms cold starts at the edge. Type-safe end to end. AI-native
-              at every layer. Built for builders who refuse to settle for
-              yesterday&#39;s tools.
+              One product. Every layer. Built for teams who refuse to settle
+              for yesterday&#39;s tools.
             </p>
             <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <A href="/register">
