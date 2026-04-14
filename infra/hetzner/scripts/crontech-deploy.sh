@@ -1,33 +1,32 @@
 #!/bin/bash
 set -euo pipefail
 
-# ── Crontech Monorepo Deploy ─────────────────────────────────────────
-# Single-repo deploy for crontech.ai (web + api together). Called over
-# SSH by .github/workflows/deploy.yml on every push to main. Replaces
-# the old per-app deploy-app.sh for the crontech vertical.
+# ── Crontech Monorepo Deploy (Hetzner, unattended) ───────────────────
+# Invoked over SSH by .github/workflows/deploy.yml after the workflow
+# has cloned/updated the repo at $APP_DIR. Does everything the deploy
+# user can do without sudo — teardown old stack, build new containers
+# with GIT_SHA baked in, hot-swap system Caddy via its admin API,
+# verify /api/version reports the new SHA end-to-end.
 #
 # Why this script exists:
-#   1. The old deploy-app.sh is per-app and uses /opt/crontech/docker-compose.yml,
-#      but crontech.ai is a monorepo that ships web + api as one unit.
+#   1. The website wasn't updating after PR merges because the deploy
+#      pipeline targeted Cloudflare but DNS pointed at Hetzner. This
+#      script is the new Hetzner-native path.
 #   2. We need GIT_SHA propagated into the Docker build so /api/version
-#      can confirm the *new* image is actually serving traffic — otherwise
-#      caches or stale containers can make a "green" deploy lie about state.
-#   3. We need a post-deploy smoke test that fails loudly if the container
-#      came up but is still the old SHA.
+#      proves the NEW image is actually serving traffic.
+#   3. Yesterday's setup.sh installed Caddy as a system service on 80/443
+#      — we USE that Caddy (via its admin API on localhost:2019) rather
+#      than fighting it for the ports. No sudo needed.
 #
 # Usage:
 #   crontech-deploy.sh <git-repo-url> <git-sha> [branch]
 #
-# Arguments:
-#   git-repo-url — HTTPS clone URL (e.g. https://github.com/ccantynz-alt/crontech.git)
-#   git-sha      — commit SHA to deploy (from ${{ github.sha }})
-#   branch       — git ref (default: main)
-#
-# Required files on host:
-#   /opt/crontech/.env — production secrets (NOT in git)
-#
-# Required binaries:
-#   git, docker (with compose plugin), curl
+# Required state on host:
+#   - Deploy user in `docker` group (from setup.sh)
+#   - /opt/crontech/.env with production secrets (NOT in git)
+#   - System Caddy installed + running on 80/443 (from setup.sh)
+#   - Repo already checked out at /opt/crontech/apps/crontech
+#     (the workflow SSH step clones + resets before calling this)
 
 if [ "$#" -lt 2 ]; then
     echo "Usage: crontech-deploy.sh <git-repo-url> <git-sha> [branch]" >&2
@@ -40,11 +39,10 @@ BRANCH="${3:-main}"
 
 APP_DIR="/opt/crontech/apps/crontech"
 ENV_FILE="/opt/crontech/.env"
+CADDY_CONFIG="/opt/crontech/Caddyfile"
 COMPOSE_FILE="infra/hetzner/docker-compose.crontech.yml"
+CADDY_SRC="infra/hetzner/Caddyfile.crontech"
 
-# Public probe URLs for post-deploy smoke. Use the in-container health
-# first (localhost through the caddy network isn't addressable from here),
-# then hit the public domain to verify Caddy + DNS are serving the new SHA.
 PUBLIC_API_VERSION_URL="https://api.crontech.ai/api/version"
 PUBLIC_WEB_VERSION_URL="https://crontech.ai/api/version"
 
@@ -57,36 +55,39 @@ echo ""
 
 # ── 1. Preflight ────────────────────────────────────────────────────
 if [ ! -f "$ENV_FILE" ]; then
-    echo "FAIL: $ENV_FILE not found. Run setup.sh and populate secrets." >&2
+    echo "FAIL: $ENV_FILE not found. Populate secrets and retry." >&2
+    exit 1
+fi
+if [ ! -d "$APP_DIR/.git" ]; then
+    echo "FAIL: $APP_DIR missing. The workflow SSH step should clone it before calling this." >&2
     exit 1
 fi
 
-# ── 2. Sync source tree to the requested SHA ────────────────────────
-echo "[1/5] Syncing repo to $GIT_SHA..."
-if [ -d "$APP_DIR/.git" ]; then
-    cd "$APP_DIR"
-    git fetch --quiet origin "$BRANCH"
-    git reset --quiet --hard "$GIT_SHA"
-else
-    mkdir -p "$(dirname "$APP_DIR")"
-    rm -rf "$APP_DIR"
-    git clone --quiet -b "$BRANCH" "$REPO_URL" "$APP_DIR"
-    cd "$APP_DIR"
-    git reset --quiet --hard "$GIT_SHA"
-fi
-
+cd "$APP_DIR"
 ACTUAL_SHA="$(git rev-parse HEAD)"
 if [ "$ACTUAL_SHA" != "$GIT_SHA" ]; then
     echo "FAIL: checked-out SHA $ACTUAL_SHA != requested $GIT_SHA" >&2
     exit 1
 fi
 
+# ── 2. Tear down yesterday's bootstrap compose if it's running ──────
+# setup.sh from yesterday placed a multi-app compose at /opt/crontech/
+# docker-compose.yml that tries to bind 80/443 (via a second Caddy) and
+# 25/587 (via emailed-mta). Its build contexts reference paths that
+# don't exist in this monorepo layout, so it can't have fully started
+# anyway — but `compose down` is safe and idempotent, and it frees any
+# ports that are pinned by half-started containers.
+if [ -f /opt/crontech/docker-compose.yml ]; then
+    echo "[1/6] Tearing down legacy multi-app compose stack (if running)..."
+    (cd /opt/crontech && docker compose down --remove-orphans 2>/dev/null || true)
+else
+    echo "[1/6] No legacy stack detected — skipping teardown."
+fi
+
 # ── 3. Build with GIT_SHA baked in ──────────────────────────────────
-echo "[2/5] Building images with GIT_SHA=$GIT_SHA..."
+cd "$APP_DIR"
+echo "[2/6] Building images with GIT_SHA=$GIT_SHA..."
 export GIT_SHA
-# --pull so we get base-image security updates on every deploy.
-# --no-cache on the app layers guarantees the new SHA's source is included
-# (caching can otherwise reuse a stale COPY layer if mtimes look unchanged).
 docker compose \
     -f "$COMPOSE_FILE" \
     --env-file "$ENV_FILE" \
@@ -97,16 +98,16 @@ docker compose \
     crontech-web crontech-api
 
 # ── 4. Roll containers ──────────────────────────────────────────────
-echo "[3/5] Rolling containers..."
+echo "[3/6] Rolling containers..."
 docker compose \
     -f "$COMPOSE_FILE" \
     --env-file "$ENV_FILE" \
     up -d --remove-orphans
 
-# ── 5. Wait for health ──────────────────────────────────────────────
-echo "[4/5] Waiting for containers to pass healthcheck..."
+# ── 5. Wait for container healthcheck ───────────────────────────────
+echo "[4/6] Waiting for containers to report 'healthy'..."
 HEALTHY_ATTEMPTS=0
-MAX_HEALTHY_ATTEMPTS=30   # 30 * 5s = 150s max wait
+MAX_HEALTHY_ATTEMPTS=30   # 30 * 5s = 150s
 while [ "$HEALTHY_ATTEMPTS" -lt "$MAX_HEALTHY_ATTEMPTS" ]; do
     WEB_STATUS="$(docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps --format json crontech-web 2>/dev/null | grep -o '"Health":"[^"]*"' | head -n1 | cut -d'"' -f4 || echo unknown)"
     API_STATUS="$(docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps --format json crontech-api 2>/dev/null | grep -o '"Health":"[^"]*"' | head -n1 | cut -d'"' -f4 || echo unknown)"
@@ -127,20 +128,43 @@ if [ "$HEALTHY_ATTEMPTS" -ge "$MAX_HEALTHY_ATTEMPTS" ]; then
     exit 1
 fi
 
-# ── 6. SHA smoke test (the cache-buster contract) ───────────────────
-# If Caddy is still serving an old worker or the wrong image is up, the
-# /api/version endpoints will return the wrong SHA. This is the real
-# post-deploy check — "is the NEW build actually live?"
-echo "[5/5] Verifying /api/version reports $GIT_SHA..."
+# ── 6. Hot-reload system Caddy with the repo's Caddyfile ────────────
+# Yesterday's setup.sh installed Caddy as a systemd service reading
+# /etc/caddy/Caddyfile — but that file is root-owned, so we can't write
+# to it without sudo. Instead, we copy Caddyfile.crontech into an area
+# the deploy user owns and tell the running Caddy to switch to it via
+# its admin API on localhost:2019 (no sudo required).
+#
+# Caveat: if Caddy restarts via systemd, it reverts to /etc/caddy/Caddyfile
+# (the stale config) until the next deploy reloads this one. The next
+# merge-to-main automatically fixes that — acceptable for now.
+echo "[5/6] Hot-reloading system Caddy..."
+cp "$CADDY_SRC" "$CADDY_CONFIG"
+
+if ! command -v caddy >/dev/null 2>&1; then
+    echo "FAIL: system caddy not found in PATH. Did setup.sh run successfully?" >&2
+    exit 1
+fi
+
+# `caddy reload` connects to the admin API (default localhost:2019) and
+# swaps the running config atomically. If the admin API isn't reachable
+# (e.g. Caddy not running), this fails fast with a clear error.
+if ! caddy reload --config "$CADDY_CONFIG" --adapter caddyfile; then
+    echo "FAIL: caddy reload failed. If system caddy isn't running, start it with:" >&2
+    echo "  sudo systemctl start caddy" >&2
+    exit 1
+fi
+
+# ── 7. End-to-end SHA smoke test (the cache-buster contract) ────────
+echo "[6/6] Verifying /api/version reports $GIT_SHA..."
 
 probe_sha() {
     local url="$1"
     local label="$2"
     local attempt=1
-    local max_attempts=12   # 12 * 5s = 60s for DNS/caddy warm-up
+    local max_attempts=12   # 12 * 5s = 60s for TLS/caddy warm-up
     while [ "$attempt" -le "$max_attempts" ]; do
-        # -k tolerates any TLS hiccup during a fresh Caddy cert rotation;
-        # the URL itself already enforces HTTPS via Caddy redirect.
+        # -k tolerates fresh-cert hiccups on first Caddy TLS rotation.
         local body
         body="$(curl -fsS -k --max-time 8 "$url" 2>/dev/null || echo '')"
         local reported_sha

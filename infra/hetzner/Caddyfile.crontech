@@ -48,7 +48,10 @@ crontech.ai {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 	}
 
-	reverse_proxy crontech-web:3000 {
+	# System Caddy (host-installed) proxies to the docker-compose
+	# containers via their host-loopback port bindings — see
+	# docker-compose.crontech.yml `ports: 127.0.0.1:3000:3000`.
+	reverse_proxy 127.0.0.1:3000 {
 		health_uri /
 		health_interval 30s
 	}
@@ -72,7 +75,7 @@ api.crontech.ai {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	}
 
-	reverse_proxy crontech-api:3001 {
+	reverse_proxy 127.0.0.1:3001 {
 		health_uri /api/health
 		health_interval 30s
 	}

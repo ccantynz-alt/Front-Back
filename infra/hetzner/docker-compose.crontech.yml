@@ -20,6 +20,12 @@ services:
         # reach the client bundle. Baked in here so prod clients call the prod
         # API subdomain instead of localhost.
         VITE_PUBLIC_API_URL: https://api.${CRONTECH_DOMAIN:-crontech.ai}
+    # Bind to host loopback so system Caddy (installed by setup.sh) can
+    # reverse-proxy without having to join the docker network. 127.0.0.1
+    # prefix means the port isn't exposed to the public internet — only
+    # Caddy on the same host can reach it.
+    ports:
+      - "127.0.0.1:3000:3000"
     environment:
       - PORT=3000
       - NODE_ENV=production
@@ -47,6 +53,9 @@ services:
         # GIT_SHA is exposed via /api/version so the deploy smoke test can
         # confirm the new build actually replaced the running container.
         GIT_SHA: ${GIT_SHA:-unknown}
+    # Host-loopback bind so system Caddy can proxy api.crontech.ai here.
+    ports:
+      - "127.0.0.1:3001:3001"
     environment:
       - API_PORT=3001
       - NODE_ENV=production
@@ -91,19 +100,25 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+    # Only depend on redis — postgres is optional because the primary
+    # DATABASE_URL typically points at an external managed Postgres
+    # (Neon, Supabase, etc.). If .env has POSTGRES_PASSWORD set the
+    # local postgres container still comes up alongside; if not, we
+    # still deploy successfully.
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
 
-  # === PostgreSQL ===
+  # === PostgreSQL (optional — only used if DATABASE_URL points here) ===
   postgres:
     image: postgres:16-alpine
     environment:
       - POSTGRES_DB=crontech
       - POSTGRES_USER=${POSTGRES_USER:-crontech}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # Default keeps the container bootable when .env doesn't set the
+      # variable (e.g. Craig uses Neon). The port is bound to 127.0.0.1
+      # only, so the default is never reachable from outside the host.
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-crontech-local-dev}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
@@ -150,26 +165,12 @@ services:
       timeout: 5s
       retries: 3
 
-  # === Caddy (Reverse Proxy + Auto-TLS) ===
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile.crontech:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    environment:
-      - CRONTECH_DOMAIN=${CRONTECH_DOMAIN:-crontech.ai}
-    networks:
-      - crontech
-    restart: unless-stopped
-    depends_on:
-      crontech-web:
-        condition: service_healthy
-      crontech-api:
-        condition: service_healthy
+  # NOTE: Caddy is NOT in this compose. The Hetzner box uses system Caddy
+  # (installed by infra/hetzner/setup.sh). The deploy script writes
+  # Caddyfile.crontech to /opt/crontech/Caddyfile and hot-swaps the
+  # running Caddy via its admin API on localhost:2019 — no sudo required.
+  # This also avoids a port 80/443 conflict with anything else bound to
+  # the box's public interfaces.
 
 networks:
   crontech:
@@ -179,5 +180,3 @@ volumes:
   postgres-data:
   redis-data:
   qdrant-data:
-  caddy-data:
-  caddy-config:

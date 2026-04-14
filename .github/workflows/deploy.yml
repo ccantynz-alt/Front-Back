@@ -84,16 +84,35 @@ jobs:
           host: ${{ secrets.HETZNER_IP }}
           username: deploy
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          # Reject connection if host key changed (MITM protection).
-          # Populate DEPLOY_SSH_KNOWN_HOSTS with `ssh-keyscan <ip>`.
+          # Optional host-key pin. If the secret isn't set, the action
+          # falls back to trust-on-first-use (still works, just no MITM
+          # protection). Populate via `ssh-keyscan <ip> | ssh-keygen -lf -`.
           fingerprint: ${{ secrets.DEPLOY_SSH_FINGERPRINT }}
           script_stop: true
           command_timeout: 15m
+          # Bootstrap inline so the deploy works even if the box has
+          # never seen the current version of crontech-deploy.sh. The
+          # workflow clones/updates the repo to the target SHA, THEN
+          # runs the script from the freshly-checked-out copy.
           script: |
-            /opt/crontech/scripts/crontech-deploy.sh \
-              "${{ github.server_url }}/${{ github.repository }}.git" \
-              "${{ github.sha }}" \
-              "${{ github.ref_name }}"
+            set -euo pipefail
+            REPO_URL="${{ github.server_url }}/${{ github.repository }}.git"
+            TARGET_SHA="${{ github.sha }}"
+            BRANCH="${{ github.ref_name }}"
+            APP_DIR="/opt/crontech/apps/crontech"
+
+            echo "[bootstrap] Syncing repo to $TARGET_SHA"
+            mkdir -p "$(dirname "$APP_DIR")"
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
+            cd "$APP_DIR"
+            git fetch --quiet origin "$BRANCH"
+            git reset --quiet --hard "$TARGET_SHA"
+
+            echo "[bootstrap] Handing off to in-repo deploy script"
+            bash ./infra/hetzner/scripts/crontech-deploy.sh \
+              "$REPO_URL" "$TARGET_SHA" "$BRANCH"
 
   post-deploy-smoke:
     name: Post-Deploy Public Smoke
