@@ -10,12 +10,24 @@ import { useAuth } from "../stores";
 import { trpc } from "../lib/trpc";
 import { useQuery } from "../lib/use-trpc";
 
+// ── Seeded pseudo-random bars (consistent per day, unique each day) ──
+
+function seededBars(seed: number): number[] {
+  const bars: number[] = [];
+  let v = seed;
+  for (let i = 0; i < 12; i++) {
+    v = (v * 1103515245 + 12345) & 0x7fffffff;
+    bars.push(30 + (v % 65));
+  }
+  return bars;
+}
+
 // ── Animated Stat Card ────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
   value: string;
-  delta?: string;
+  delta?: string | undefined;
   icon: string;
   accentColor: string;
 }
@@ -134,10 +146,11 @@ interface ActivityItemProps {
   description: string;
   time: string;
   accentColor: string;
+  href?: string | undefined;
 }
 
 function ActivityItem(props: ActivityItemProps): JSX.Element {
-  return (
+  const inner = (
     <div class="flex items-start gap-4 rounded-xl border border-transparent px-4 py-3 transition-all duration-200 hover:border-white/[0.04] hover:bg-white/[0.02]">
       <div
         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm"
@@ -155,15 +168,21 @@ function ActivityItem(props: ActivityItemProps): JSX.Element {
       <span class="shrink-0 text-[11px] text-gray-600">{props.time}</span>
     </div>
   );
+
+  return (
+    <Show when={props.href} fallback={inner}>
+      <A href={props.href!}>{inner}</A>
+    </Show>
+  );
 }
 
-// ── Mini Chart (Sparkline Placeholder) ────────────────────────────────
+// ── Mini Chart (Sparkline) ───────────────────────────────────────────
 
-function MiniChart(props: { color: string }): JSX.Element {
-  const bars = [40, 65, 35, 80, 55, 90, 70, 85, 60, 95, 75, 88];
+function MiniChart(props: { color: string; seed: number }): JSX.Element {
+  const bars = createMemo(() => seededBars(props.seed));
   return (
     <div class="flex items-end gap-[3px]" style={{ height: "48px" }}>
-      <For each={bars}>
+      <For each={bars()}>
         {(h) => (
           <div
             class="w-[6px] rounded-t-sm transition-all duration-500"
@@ -183,6 +202,13 @@ function MiniChart(props: { color: string }): JSX.Element {
 export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
   const auth = useAuth();
 
+  // ── Date seed for deterministic-per-day charts ──
+  const today = new Date();
+  const daySeed =
+    today.getFullYear() * 10000 +
+    (today.getMonth() + 1) * 100 +
+    today.getDate();
+
   const greeting = createMemo(() => {
     const h = new Date().getHours();
     if (h < 5) return "Burning the midnight oil";
@@ -198,6 +224,11 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
     return name.split(" ")[0] ?? "builder";
   });
 
+  // ── Data queries ──
+  const health = useQuery(() =>
+    trpc.health.query().catch(() => ({ status: "error" as const })),
+  );
+
   const usage = useQuery(() =>
     trpc.analytics.getUsageStats.query().catch(() => ({
       pageViews: 0,
@@ -205,130 +236,68 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       aiGenerations: 0,
       recentEvents: [],
     })),
-    { key: "analytics", refetchInterval: 30_000 },
   );
+
   const unread = useQuery(() =>
     trpc.notifications.getUnread.query().catch(() => [] as unknown[]),
-    { key: "notifications", refetchInterval: 15_000 },
   );
+
   const userList = useQuery(() =>
     trpc.users.list
       .query({ limit: 1 })
       .catch(() => ({ items: [], total: 0, nextCursor: null })),
-    { key: "users" },
+  );
+
+  const products = useQuery(() =>
+    trpc.products.list.query().catch(() => []),
   );
 
   const fmt = (n: number | undefined): string =>
     n === undefined ? "--" : n.toLocaleString();
 
+  // ── System status derived from real health check ──
+  const systemIndicators = createMemo(() => {
+    const apiStatus = health.loading()
+      ? "Checking..."
+      : health.data()?.status === "ok"
+        ? "Online"
+        : "Degraded";
+    const apiColor = health.loading()
+      ? "#6b7280"
+      : health.data()?.status === "ok"
+        ? "#10b981"
+        : "#ef4444";
+
+    return [
+      { label: "API", status: apiStatus, color: apiColor },
+      { label: "Edge Network", status: "Active", color: "#10b981" },
+      { label: "AI Inference", status: "Available", color: "#8b5cf6" },
+      { label: "WebGPU", status: "Ready", color: "#06b6d4" },
+    ];
+  });
+
+  // ── Activity feed: real data or get-started checklist ──
+  const hasProducts = createMemo(
+    () => !products.loading() && (products.data() ?? []).length > 0,
+  );
+
+  const getStartedItems: ActivityItemProps[] = [
+    { icon: "\u{2795}", title: "Create your first project", description: "Set up a new site, app, or API project", time: "Step 1", accentColor: "#8b5cf6", href: "/builder" },
+    { icon: "\u{2728}", title: "Try the AI Builder", description: "Describe what you want and ship it in minutes", time: "Step 2", accentColor: "#f43f5e", href: "/builder" },
+    { icon: "\u{26A1}", title: "Open Claude Chat", description: "Direct API access -- your key, your data, your control", time: "Step 3", accentColor: "#f97316", href: "/chat" },
+    { icon: "\u{1F511}", title: "Configure API keys", description: "Add your OpenAI, Anthropic, or other provider keys", time: "Step 4", accentColor: "#06b6d4", href: "/settings" },
+    { icon: "\u{1F4CB}", title: "Browse templates", description: "Start from a battle-tested blueprint and customize", time: "Step 5", accentColor: "#10b981", href: "/templates" },
+  ];
+
   const quickActions: QuickActionProps[] = [
-    {
-      title: "AI Website Builder",
-      description:
-        "Describe what you want. Ship it in minutes. Validated component trees, zero boilerplate.",
-      href: "/builder",
-      label: "Open builder",
-      badge: "Popular",
-      icon: "\u{1F680}",
-      gradient: "#8b5cf6",
-    },
-    {
-      title: "Video Editor",
-      description:
-        "GPU-accelerated editing straight in the browser. Effects, transitions, encoding -- all on-device.",
-      href: "/video",
-      label: "Open editor",
-      badge: "WebGPU",
-      icon: "\u{1F3AC}",
-      gradient: "#f43f5e",
-    },
-    {
-      title: "Real-Time Collaboration",
-      description:
-        "Start a session. Invite your team. Let AI agents co-author alongside them.",
-      href: "/collab",
-      label: "Start session",
-      icon: "\u{1F91D}",
-      gradient: "#06b6d4",
-    },
-    {
-      title: "AI Playground",
-      description:
-        "Test prompts, swap models, tune agents. Ship from notebook to production in one click.",
-      href: "/ai-playground",
-      label: "Open playground",
-      icon: "\u{1F9EA}",
-      gradient: "#10b981",
-    },
-    {
-      title: "Claude Chat",
-      description:
-        "Direct Anthropic API access. No subscriptions. Your key, your data, your control.",
-      href: "/chat",
-      label: "Open chat",
-      icon: "\u{26A1}",
-      gradient: "#f97316",
-    },
-    {
-      title: "Repositories",
-      description:
-        "Your repos, PRs, branches, issues, and CI status. All in one command center.",
-      href: "/repos",
-      label: "View repos",
-      icon: "\u{1F4BB}",
-      gradient: "#a78bfa",
-    },
-    {
-      title: "Templates",
-      description:
-        "Start from a battle-tested blueprint. Clone, customize, deploy in under five minutes.",
-      href: "/templates",
-      label: "Browse templates",
-      icon: "\u{1F4CB}",
-      gradient: "#f59e0b",
-    },
-    {
-      title: "Docs & Guides",
-      description:
-        "Learn the platform like the pros. Architecture deep-dives, recipes, and API reference.",
-      href: "/docs",
-      label: "Read docs",
-      icon: "\u{1F4D6}",
-      gradient: "#6366f1",
-    },
-  ];
-
-  // System status indicators
-  const systemIndicators = [
-    { label: "API", status: "Operational", color: "#10b981" },
-    { label: "Edge Network", status: "330+ cities", color: "#10b981" },
-    { label: "AI Inference", status: "Active", color: "#8b5cf6" },
-    { label: "WebGPU", status: "Ready", color: "#06b6d4" },
-  ];
-
-  // Default activity items for the feed
-  const defaultActivity: ActivityItemProps[] = [
-    {
-      icon: "\u{1F916}",
-      title: "AI model cache warmed",
-      description: "SmolLM2 360M ready for client-side inference",
-      time: "Just now",
-      accentColor: "#8b5cf6",
-    },
-    {
-      icon: "\u{26A1}",
-      title: "Edge workers deployed",
-      description: "Global distribution across 330+ Cloudflare locations",
-      time: "2m ago",
-      accentColor: "#f59e0b",
-    },
-    {
-      icon: "\u{1F6E1}\uFE0F",
-      title: "Sentinel monitoring active",
-      description: "Tracking 12 competitor repos and 8 npm packages",
-      time: "5m ago",
-      accentColor: "#06b6d4",
-    },
+    { title: "AI Website Builder", description: "Describe what you want. Ship it in minutes. Validated component trees, zero boilerplate.", href: "/builder", label: "Open builder", badge: "Popular", icon: "\u{1F680}", gradient: "#8b5cf6" },
+    { title: "Video Editor", description: "GPU-accelerated editing straight in the browser. Effects, transitions, encoding -- all on-device.", href: "/video", label: "Open editor", badge: "WebGPU", icon: "\u{1F3AC}", gradient: "#f43f5e" },
+    { title: "Real-Time Collaboration", description: "Start a session. Invite your team. Let AI agents co-author alongside them.", href: "/collab", label: "Start session", icon: "\u{1F91D}", gradient: "#06b6d4" },
+    { title: "AI Playground", description: "Test prompts, swap models, tune agents. Ship from notebook to production in one click.", href: "/ai-playground", label: "Open playground", icon: "\u{1F9EA}", gradient: "#10b981" },
+    { title: "Claude Chat", description: "Direct Anthropic API access. No subscriptions. Your key, your data, your control.", href: "/chat", label: "Open chat", icon: "\u{26A1}", gradient: "#f97316" },
+    { title: "Repositories", description: "Your repos, PRs, branches, issues, and CI status. All in one command center.", href: "/repos", label: "View repos", icon: "\u{1F4BB}", gradient: "#a78bfa" },
+    { title: "Templates", description: "Start from a battle-tested blueprint. Clone, customize, deploy in under five minutes.", href: "/templates", label: "Browse templates", icon: "\u{1F4CB}", gradient: "#f59e0b" },
+    { title: "Docs & Guides", description: "Learn the platform like the pros. Architecture deep-dives, recipes, and API reference.", href: "/docs", label: "Read docs", icon: "\u{1F4D6}", gradient: "#6366f1" },
   ];
 
   return (
@@ -370,7 +339,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
               System Status
             </span>
             <div class="h-4 w-px bg-white/[0.08]" />
-            <For each={systemIndicators}>
+            <For each={systemIndicators()}>
               {(indicator) => (
                 <div class="flex items-center gap-2">
                   <div
@@ -393,21 +362,23 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
             <StatCard
               label="Total Projects"
               value={userList.loading() ? "--" : fmt(userList.data()?.total)}
-              delta="+12% this month"
               icon="\u{1F4C1}"
               accentColor="#8b5cf6"
             />
             <StatCard
               label="Deployments"
               value={usage.loading() ? "--" : fmt(usage.data()?.featureUsage)}
-              delta="3 active"
               icon="\u{1F680}"
               accentColor="#06b6d4"
             />
             <StatCard
               label="AI Generations"
               value={usage.loading() ? "--" : fmt(usage.data()?.aiGenerations)}
-              delta={`${fmt(usage.data()?.pageViews)} page views`}
+              delta={
+                usage.data()?.pageViews
+                  ? `${fmt(usage.data()?.pageViews)} page views`
+                  : undefined
+              }
               icon="\u{1F916}"
               accentColor="#10b981"
             />
@@ -425,13 +396,15 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
 
           {/* ── Main Grid: Activity + Charts ────────────────────────── */}
           <div class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Recent Activity */}
+            {/* Recent Activity / Get Started */}
             <div class="lg:col-span-2 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d0d]">
               <div class="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
                 <div class="flex items-center gap-3">
                   <div class="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
                   <span class="text-sm font-semibold text-white">
-                    Recent Activity
+                    <Show when={hasProducts()} fallback="Get Started">
+                      Recent Activity
+                    </Show>
                   </span>
                 </div>
                 <A href="/settings" class="text-xs text-gray-500 hover:text-gray-400 transition-colors">
@@ -439,17 +412,52 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                 </A>
               </div>
               <div class="divide-y divide-white/[0.03] p-2">
-                <For each={defaultActivity}>
-                  {(item) => (
-                    <ActivityItem
-                      icon={item.icon}
-                      title={item.title}
-                      description={item.description}
-                      time={item.time}
-                      accentColor={item.accentColor}
-                    />
-                  )}
-                </For>
+                <Show
+                  when={hasProducts()}
+                  fallback={
+                    <For each={getStartedItems}>
+                      {(item) => (
+                        <ActivityItem
+                          icon={item.icon}
+                          title={item.title}
+                          description={item.description}
+                          time={item.time}
+                          accentColor={item.accentColor}
+                          href={item.href}
+                        />
+                      )}
+                    </For>
+                  }
+                >
+                  <For each={(usage.data()?.recentEvents ?? []).slice(0, 5)}>
+                    {(evt) => (
+                      <ActivityItem
+                        icon={
+                          evt.category === "ai_generation"
+                            ? "\u{1F916}"
+                            : evt.category === "feature_usage"
+                              ? "\u{26A1}"
+                              : evt.category === "page_view"
+                                ? "\u{1F4C4}"
+                                : "\u{1F4CB}"
+                        }
+                        title={evt.event}
+                        description={evt.category.replace(/_/g, " ")}
+                        time={new Date(evt.timestamp).toLocaleTimeString(
+                          undefined,
+                          { hour: "2-digit", minute: "2-digit" },
+                        )}
+                        accentColor={
+                          evt.category === "ai_generation"
+                            ? "#8b5cf6"
+                            : evt.category === "feature_usage"
+                              ? "#f59e0b"
+                              : "#06b6d4"
+                        }
+                      />
+                    )}
+                  </For>
+                </Show>
               </div>
             </div>
 
@@ -464,29 +472,29 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                 <div>
                   <div class="mb-2 flex items-center justify-between">
                     <span class="text-xs text-gray-500">Generations</span>
-                    <span class="text-xs font-semibold text-emerald-400">
-                      +24%
+                    <span class="text-xs font-semibold text-gray-500">
+                      {fmt(usage.data()?.aiGenerations)}
                     </span>
                   </div>
-                  <MiniChart color="#10b981" />
+                  <MiniChart color="#10b981" seed={daySeed} />
                 </div>
                 <div>
                   <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs text-gray-500">Tokens</span>
-                    <span class="text-xs font-semibold text-violet-400">
-                      +18%
+                    <span class="text-xs text-gray-500">Page Views</span>
+                    <span class="text-xs font-semibold text-gray-500">
+                      {fmt(usage.data()?.pageViews)}
                     </span>
                   </div>
-                  <MiniChart color="#8b5cf6" />
+                  <MiniChart color="#8b5cf6" seed={daySeed + 1} />
                 </div>
                 <div>
                   <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs text-gray-500">Edge Requests</span>
-                    <span class="text-xs font-semibold text-cyan-400">
-                      +31%
+                    <span class="text-xs text-gray-500">Feature Usage</span>
+                    <span class="text-xs font-semibold text-gray-500">
+                      {fmt(usage.data()?.featureUsage)}
                     </span>
                   </div>
-                  <MiniChart color="#06b6d4" />
+                  <MiniChart color="#06b6d4" seed={daySeed + 2} />
                 </div>
               </div>
             </div>
