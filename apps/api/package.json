@@ -21,6 +21,8 @@
     "@back-to-the-future/queue": "workspace:*",
     "@back-to-the-future/storage": "workspace:*",
     "@back-to-the-future/schemas": "workspace:*",
+    "@back-to-the-future/theatre": "workspace:*",
+    "@back-to-the-future/flywheel": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/exporter-metrics-otlp-http": "0.214.0",
     "@opentelemetry/exporter-trace-otlp-http": "0.214.0",

@@ -692,3 +692,80 @@ export const flywheelVoiceCommands = sqliteTable("flywheel_voice_commands", {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+// =============================================================================
+// BLK-019 — Build Theatre (the Vercel-style "what is actually happening"
+// pane). Every long-running op in the platform (deploys, ingests, migrations,
+// CI gates, voice-dispatched AI agents) emits into these three tables so the
+// human operator has a single pane of glass to watch, inspect, and cancel.
+// =============================================================================
+export const buildRuns = sqliteTable("build_runs", {
+  id: text("id").primaryKey(),
+  kind: text("kind", {
+    enum: [
+      "deploy",
+      "ingest",
+      "migration",
+      "gate",
+      "voice",
+      "agent",
+      "sentinel",
+      "other",
+    ],
+  }).notNull(),
+  title: text("title").notNull(),
+  status: text("status", {
+    enum: ["queued", "running", "succeeded", "failed", "cancelled"],
+  })
+    .notNull()
+    .default("queued"),
+  actorUserId: text("actor_user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  actorLabel: text("actor_label"), // "claude-session-xyz", "sentinel", "cron"
+  gitBranch: text("git_branch"),
+  gitSha: text("git_sha"),
+  metadata: text("metadata"), // arbitrary JSON (deploy URL, PR #, etc.)
+  error: text("error"), // top-level error summary when status=failed
+  cancelRequestedAt: integer("cancel_requested_at", { mode: "timestamp" }),
+  startedAt: integer("started_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  endedAt: integer("ended_at", { mode: "timestamp" }),
+});
+
+export const buildSteps = sqliteTable("build_steps", {
+  id: text("id").primaryKey(),
+  runId: text("run_id")
+    .notNull()
+    .references(() => buildRuns.id, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  name: text("name").notNull(),
+  status: text("status", {
+    enum: ["queued", "running", "succeeded", "failed", "skipped"],
+  })
+    .notNull()
+    .default("queued"),
+  exitCode: integer("exit_code"),
+  error: text("error"),
+  startedAt: integer("started_at", { mode: "timestamp" }),
+  endedAt: integer("ended_at", { mode: "timestamp" }),
+});
+
+export const buildLogs = sqliteTable("build_logs", {
+  id: text("id").primaryKey(),
+  runId: text("run_id")
+    .notNull()
+    .references(() => buildRuns.id, { onDelete: "cascade" }),
+  stepId: text("step_id").references(() => buildSteps.id, {
+    onDelete: "cascade",
+  }),
+  seq: integer("seq").notNull(),
+  stream: text("stream", { enum: ["stdout", "stderr", "event"] })
+    .notNull()
+    .default("stdout"),
+  line: text("line").notNull(),
+  timestamp: integer("timestamp", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
