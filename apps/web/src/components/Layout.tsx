@@ -15,7 +15,7 @@ interface SidebarNavItem {
 
 const sidebarNavItems: readonly SidebarNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "\u25A0" },
-  { href: "/builder", label: "AI Builder", icon: "\u26A1" },
+  { href: "/builder", label: "Composer", icon: "\u26A1" },
   { href: "/chat", label: "Chat", icon: "\u{1F4AC}" },
   { href: "/projects", label: "Projects", icon: "\u{1F4C1}" },
   { href: "/templates", label: "Templates", icon: "\u{1F4CB}" },
@@ -360,7 +360,7 @@ export function Layout(props: LayoutProps): JSX.Element {
               <NavLink href="/" label="Home" />
               <Show when={auth.isAuthenticated()}>
                 <NavLink href="/dashboard" label="Dashboard" />
-                <NavLink href="/builder" label="Builder" />
+                <NavLink href="/builder" label="Composer" />
                 <NavLink href="/chat" label="Chat" />
                 <NavLink href="/projects" label="Projects" />
               </Show>
