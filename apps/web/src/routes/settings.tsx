@@ -1,7 +1,8 @@
 import { Title } from "@solidjs/meta";
-import { createSignal, For, Show, Switch, Match } from "solid-js";
+import { createSignal, createMemo, For, Show, Switch, Match } from "solid-js";
 import type { JSX } from "solid-js";
 import { invalidateQueries } from "../lib/use-trpc";
+import { useAuth } from "../stores";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -815,15 +816,19 @@ function AIProvidersTab(): JSX.Element {
 
 export default function SettingsPage(): JSX.Element {
   const [activeTab, setActiveTab] = createSignal<SettingsTab>("profile");
+  const auth = useAuth();
+  const isAdmin = createMemo((): boolean => auth.currentUser()?.role === "admin");
 
-  const tabs: { id: SettingsTab; label: string; icon: string }[] = [
+  const allTabs: { id: SettingsTab; label: string; icon: string; adminOnly?: boolean }[] = [
     { id: "profile", label: "Profile", icon: "&#128100;" },
     { id: "account", label: "Account", icon: "&#128274;" },
     { id: "api-keys", label: "API Keys", icon: "&#128273;" },
-    { id: "ai-providers", label: "AI Providers", icon: "&#9889;" },
+    { id: "ai-providers", label: "AI Providers", icon: "&#9889;", adminOnly: true },
     { id: "notifications", label: "Notifications", icon: "&#128276;" },
     { id: "appearance", label: "Appearance", icon: "&#127912;" },
   ];
+
+  const tabs = createMemo(() => allTabs.filter((t) => !t.adminOnly || isAdmin()));
 
   return (
     <div class="min-h-screen bg-[#060606]">
@@ -838,7 +843,7 @@ export default function SettingsPage(): JSX.Element {
 
         {/* Tab Navigation */}
         <div class="mb-8 flex flex-wrap gap-1 rounded-2xl border border-white/[0.04] bg-white/[0.02] p-1.5">
-          <For each={tabs}>
+          <For each={tabs()}>
             {(tab) => (
               <TabButton
                 label={tab.label}
@@ -861,7 +866,7 @@ export default function SettingsPage(): JSX.Element {
           <Match when={activeTab() === "api-keys"}>
             <ApiKeysTab />
           </Match>
-          <Match when={activeTab() === "ai-providers"}>
+          <Match when={activeTab() === "ai-providers" && isAdmin()}>
             <AIProvidersTab />
           </Match>
           <Match when={activeTab() === "notifications"}>

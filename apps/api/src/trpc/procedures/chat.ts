@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { router, protectedProcedure } from "../init";
+import { router, protectedProcedure, adminProcedure } from "../init";
 import {
   conversations,
   chatMessages,
@@ -265,10 +265,10 @@ export const chatRouter = router({
     }));
   }),
 
-  // ── Provider Key Management ──────────────────────────────────────
+  // ── Provider Key Management (Admin Only) ─────────────────────────
 
-  /** Save or update an API provider key. */
-  saveProviderKey: protectedProcedure
+  /** Save or update an API provider key. Admin only. */
+  saveProviderKey: adminProcedure
     .input(SaveProviderKeyInput)
     .mutation(async ({ ctx, input }) => {
       const key = getEncryptionKey();
@@ -301,8 +301,8 @@ export const chatRouter = router({
       return { id, prefix };
     }),
 
-  /** Get the active provider key info (prefix only, never the full key). */
-  getProviderKey: protectedProcedure
+  /** Get the active provider key info (prefix only, never the full key). Admin only. */
+  getProviderKey: adminProcedure
     .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .query(async ({ ctx, input }) => {
       const rows = await ctx.db
@@ -326,8 +326,8 @@ export const chatRouter = router({
       return rows[0] ?? null;
     }),
 
-  /** Delete a provider key. */
-  deleteProviderKey: protectedProcedure
+  /** Delete a provider key. Admin only. */
+  deleteProviderKey: adminProcedure
     .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db
