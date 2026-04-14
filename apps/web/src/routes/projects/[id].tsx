@@ -336,6 +336,7 @@ function EnvVarsTab(props: { projectId: string }): JSX.Element {
 
   const envVarsQuery = useQuery(
     () => trpc.projects.listEnvVars.query({ projectId: props.projectId }),
+    { key: "projects" },
   );
 
   return (
@@ -704,6 +705,7 @@ export default function ProjectDetailPage(): JSX.Element {
   const projectQuery = useQuery(
     () =>
       trpc.projects.getById.query({ projectId: params.id }) as Promise<ProjectData>,
+    { key: ["projects", "deployments"], refetchInterval: 15_000 },
   );
 
   const projectData = createMemo((): ProjectData | undefined => projectQuery.data());

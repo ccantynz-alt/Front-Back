@@ -199,6 +199,7 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
       port?: number | undefined;
       customDomain?: string | undefined;
     }) => trpc.projects.create.mutate(input),
+    { invalidates: ["projects"] },
   );
 
   async function handleCreate(): Promise<void> {

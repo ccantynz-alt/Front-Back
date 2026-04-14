@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { createMemo, createResource, createSignal, For, Show, onCleanup, type JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { Button, Stack, Text, Badge } from "@back-to-the-future/ui";
-import { ProtectedRoute } from "../../components/ProtectedRoute";
+import { AdminRoute } from "../../components/AdminRoute";
 import { useAuth } from "../../stores";
 import {
   parseProgressTracker,
@@ -96,7 +96,7 @@ function AdminGuard(props: { children: JSX.Element }): JSX.Element {
   const isAdmin = (): boolean => auth.currentUser()?.role === "admin";
 
   return (
-    <ProtectedRoute>
+    <AdminRoute>
       <Show
         when={isAdmin()}
         fallback={
@@ -115,7 +115,7 @@ function AdminGuard(props: { children: JSX.Element }): JSX.Element {
       >
         {props.children}
       </Show>
-    </ProtectedRoute>
+    </AdminRoute>
   );
 }
 

@@ -176,6 +176,7 @@ function EmptyState(): JSX.Element {
 export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
   const projects = useQuery(() =>
     trpc.projects.list.query().catch(() => []),
+    { key: "projects", refetchInterval: 30_000 },
   );
 
   return (

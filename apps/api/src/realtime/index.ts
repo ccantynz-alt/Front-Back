@@ -1,5 +1,6 @@
 export { wsApp, websocket } from "./websocket";
 export { sseApp } from "./sse";
+export { liveUpdatesApp, emitDataChange, getLiveUpdateSubscriberCount } from "./live-updates";
 export { yjsWsApp, yjsWebsocket, yjsRoomManager } from "./yjs-server";
 export { roomManager, RoomManager } from "./rooms";
 export type {

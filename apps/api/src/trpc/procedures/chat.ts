@@ -7,13 +7,14 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { router, protectedProcedure } from "../init";
+import { router, protectedProcedure, adminProcedure } from "../init";
 import {
   conversations,
   chatMessages,
   userProviderKeys,
 } from "@back-to-the-future/db";
 import { ANTHROPIC_MODELS } from "@back-to-the-future/ai-core";
+import { emitDataChange } from "../../realtime/live-updates";
 
 // ── IDs ────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ export const chatRouter = router({
         createdAt: now,
         updatedAt: now,
       });
+      emitDataChange("conversations", "conversation created");
       return { id, title: input.title };
     }),
 
@@ -263,10 +265,10 @@ export const chatRouter = router({
     }));
   }),
 
-  // ── Provider Key Management ──────────────────────────────────────
+  // ── Provider Key Management (Admin Only) ─────────────────────────
 
-  /** Save or update an API provider key. */
-  saveProviderKey: protectedProcedure
+  /** Save or update an API provider key. Admin only. */
+  saveProviderKey: adminProcedure
     .input(SaveProviderKeyInput)
     .mutation(async ({ ctx, input }) => {
       const key = getEncryptionKey();
@@ -295,11 +297,12 @@ export const chatRouter = router({
         createdAt: new Date(),
       });
 
+      emitDataChange("provider-keys", `${input.provider} key saved`);
       return { id, prefix };
     }),
 
-  /** Get the active provider key info (prefix only, never the full key). */
-  getProviderKey: protectedProcedure
+  /** Get the active provider key info (prefix only, never the full key). Admin only. */
+  getProviderKey: adminProcedure
     .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .query(async ({ ctx, input }) => {
       const rows = await ctx.db
@@ -323,8 +326,8 @@ export const chatRouter = router({
       return rows[0] ?? null;
     }),
 
-  /** Delete a provider key. */
-  deleteProviderKey: protectedProcedure
+  /** Delete a provider key. Admin only. */
+  deleteProviderKey: adminProcedure
     .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db
@@ -335,6 +338,7 @@ export const chatRouter = router({
             eq(userProviderKeys.provider, input.provider),
           ),
         );
+      emitDataChange("provider-keys", `${input.provider} key deleted`);
       return { success: true };
     }),
 

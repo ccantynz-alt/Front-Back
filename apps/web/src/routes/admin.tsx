@@ -1,6 +1,7 @@
 import { Title } from "@solidjs/meta";
 import { createSignal, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
+import { AdminRoute } from "../components/AdminRoute";
 
 // ── Mock Data ────────────────────────────────────────────────────────
 
@@ -254,6 +255,7 @@ export default function AdminPage(): JSX.Element {
   };
 
   return (
+    <AdminRoute>
     <div class="min-h-screen bg-[#060606]">
       <Title>Admin Panel - Crontech</Title>
 
@@ -550,5 +552,6 @@ export default function AdminPage(): JSX.Element {
         </div>
       </Show>
     </div>
+    </AdminRoute>
   );
 }

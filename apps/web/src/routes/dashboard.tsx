@@ -205,14 +205,17 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       aiGenerations: 0,
       recentEvents: [],
     })),
+    { key: "analytics", refetchInterval: 30_000 },
   );
   const unread = useQuery(() =>
     trpc.notifications.getUnread.query().catch(() => [] as unknown[]),
+    { key: "notifications", refetchInterval: 15_000 },
   );
   const userList = useQuery(() =>
     trpc.users.list
       .query({ limit: 1 })
       .catch(() => ({ items: [], total: 0, nextCursor: null })),
+    { key: "users" },
   );
 
   const fmt = (n: number | undefined): string =>

@@ -13,6 +13,7 @@ import {
   projectEnvVars,
   deployments,
 } from "@back-to-the-future/db";
+import { emitDataChange } from "../../realtime/live-updates";
 import type { TRPCContext } from "../context";
 
 // ── Constants ────────────────────────────────────────────────────────
@@ -246,6 +247,7 @@ export const projectsRouter = router({
 
       await ctx.db.insert(projects).values(values);
 
+      emitDataChange("projects", "project created");
       return {
         id,
         slug,
@@ -281,6 +283,7 @@ export const projectsRouter = router({
         .set(updates)
         .where(eq(projects.id, input.projectId));
 
+      emitDataChange("projects", "project updated");
       return { success: true, projectId: input.projectId };
     }),
 
@@ -294,6 +297,7 @@ export const projectsRouter = router({
         .delete(projects)
         .where(eq(projects.id, input.projectId));
 
+      emitDataChange("projects", "project deleted");
       return { success: true, projectId: input.projectId };
     }),
 
@@ -604,6 +608,7 @@ export const projectsRouter = router({
 
       await ctx.db.insert(deployments).values(values);
 
+      emitDataChange(["projects", "deployments"], "deployment triggered");
       return {
         id,
         projectId: input.projectId,

@@ -9,7 +9,7 @@ import {
   Badge,
   Spinner,
 } from "@back-to-the-future/ui";
-import { ProtectedRoute } from "../../components/ProtectedRoute";
+import { AdminRoute } from "../../components/AdminRoute";
 import { useAuth } from "../../stores";
 import { trpc } from "../../lib/trpc";
 import { showToast } from "../../components/Toast";
@@ -41,7 +41,7 @@ function AdminGuard(props: { children: JSX.Element }): JSX.Element {
   const isAdmin = (): boolean => auth.currentUser()?.role === "admin";
 
   return (
-    <ProtectedRoute>
+    <AdminRoute>
       <Show
         when={isAdmin()}
         fallback={
@@ -58,7 +58,7 @@ function AdminGuard(props: { children: JSX.Element }): JSX.Element {
       >
         {props.children}
       </Show>
-    </ProtectedRoute>
+    </AdminRoute>
   );
 }
 
