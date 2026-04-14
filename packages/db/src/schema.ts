@@ -599,3 +599,96 @@ export const deployments = sqliteTable("deployments", {
     .$defaultFn(() => new Date()),
   finishedAt: integer("finished_at", { mode: "timestamp" }),
 });
+
+// ── Flywheel Memory (BLK-017) ────────────────────────────────────────
+// Every Claude Code session that touches this repo gets persisted here
+// so future sessions can retrieve what was already learned. Source of
+// truth is ~/.claude/projects/**/*.jsonl — packages/flywheel ingests
+// those transcripts on every session-start and upserts into these
+// tables. Content is redacted for secrets before insert.
+
+export const flywheelSessions = sqliteTable("flywheel_sessions", {
+  id: text("id").primaryKey(), // sessionId from the JSONL transcript
+  cwd: text("cwd"),
+  gitBranch: text("git_branch"),
+  entrypoint: text("entrypoint"), // remote_mobile | cli | vscode | etc.
+  version: text("version"),
+  firstUserMessage: text("first_user_message"), // intent signal
+  turnCount: integer("turn_count").notNull().default(0),
+  compactCount: integer("compact_count").notNull().default(0),
+  startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+  endedAt: integer("ended_at", { mode: "timestamp" }),
+  summary: text("summary"), // distilled by nightly summarizer (follow-on)
+  ingestedAt: integer("ingested_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const flywheelTurns = sqliteTable("flywheel_turns", {
+  id: text("id").primaryKey(), // uuid from the transcript
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => flywheelSessions.id, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(), // order within session
+  role: text("role", {
+    enum: ["user", "assistant", "system", "tool_use", "tool_result"],
+  }).notNull(),
+  content: text("content").notNull(), // redacted text (no secrets)
+  toolName: text("tool_name"),
+  parentUuid: text("parent_uuid"),
+  timestamp: integer("timestamp", { mode: "timestamp" }).notNull(),
+});
+
+export const flywheelLessons = sqliteTable("flywheel_lessons", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id").references(() => flywheelSessions.id, {
+    onDelete: "set null",
+  }),
+  category: text("category", {
+    enum: ["architecture", "doctrine", "bug_fix", "antipattern", "discovery", "decision"],
+  }).notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  tags: text("tags"), // JSON array
+  sourceRefs: text("source_refs"), // JSON array of turn IDs
+  confidence: integer("confidence").notNull().default(50), // 0..100
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// Keystroke logger — opt-in, lean. Populated by editor wrappers and
+// future CLI hooks. Keeps raw content small (char-level deltas, not
+// full file bodies) and leaves large payloads to R2/blob if ever needed.
+export const flywheelKeystrokes = sqliteTable("flywheel_keystrokes", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  sessionId: text("session_id"), // free-form (Claude session OR editor session)
+  filePath: text("file_path"),
+  eventType: text("event_type", {
+    enum: ["keydown", "save", "open", "diff", "cursor", "selection"],
+  }).notNull(),
+  contentDelta: text("content_delta"),
+  metadata: text("metadata"), // JSON
+  timestamp: integer("timestamp", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// Voice dispatch log (BLK-018) — every voice command the user issues
+// lands here so we can replay, audit, and later fine-tune intent parsing.
+export const flywheelVoiceCommands = sqliteTable("flywheel_voice_commands", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  transcript: text("transcript").notNull(),
+  intent: text("intent"), // parsed intent (JSON)
+  action: text("action"), // resolved action (JSON)
+  response: text("response"), // agent's text reply
+  confidence: integer("confidence"), // 0..100
+  status: text("status", {
+    enum: ["parsed", "dispatched", "rejected", "failed"],
+  }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
