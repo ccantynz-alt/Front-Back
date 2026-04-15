@@ -1,0 +1,75 @@
+name: Hetzner Recon (read-only)
+
+# ── Diagnostic workflow for the P0 403 on crontech.ai ──────────────
+# Runs a fixed set of read-only diagnostic commands on the Hetzner box
+# and dumps the output to the job log. Makes NO mutations — no
+# restarts, no config changes, no file edits. Triggered manually via
+# workflow_dispatch. Author: session on claude/admin-custom-ai-api-pDjEV.
+#
+# Required secrets (already configured for deploy.yml):
+#   HETZNER_IP       — production server IPv4
+#   DEPLOY_SSH_KEY   — private key for the 'deploy' user on the box
+
+on:
+  workflow_dispatch:
+
+jobs:
+  recon:
+    name: SSH Recon
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: SSH recon bundle
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HETZNER_IP }}
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 4m
+          script: |
+            set +e  # continue past individual failures so we see all sections
+
+            echo "=== 1. Listeners on :80 and :443 ==="
+            sudo ss -tlnp 2>/dev/null | grep -E ":80 |:443 " || ss -tln | grep -E ":80 |:443 " || echo "(no listeners detected)"
+            echo ""
+
+            echo "=== 2. Docker containers ==="
+            docker ps --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}" || echo "(docker unavailable)"
+            echo ""
+
+            echo "=== 3. systemctl status caddy ==="
+            systemctl status caddy --no-pager -l 2>&1 | head -30 || echo "(no caddy unit)"
+            echo ""
+
+            echo "=== 4. /etc/caddy/Caddyfile ==="
+            cat /etc/caddy/Caddyfile 2>/dev/null || echo "(no /etc/caddy/Caddyfile)"
+            echo ""
+
+            echo "=== 5. Caddy journal (last 1h, last 80 lines) ==="
+            sudo journalctl -u caddy --since "1 hour ago" --no-pager 2>/dev/null | tail -80 || journalctl -u caddy --since "1 hour ago" --no-pager --user 2>/dev/null | tail -80 || echo "(journal unavailable)"
+            echo ""
+
+            echo "=== 6. grep host_not_allowed across /etc /opt /var/log ==="
+            sudo grep -rI "host_not_allowed" /etc /opt /var/log 2>/dev/null | head -20 || echo "(no match or no sudo)"
+            echo ""
+
+            echo "=== 7. /opt/crontech and /opt tree ==="
+            ls -la /opt/crontech/ 2>/dev/null || echo "(no /opt/crontech)"
+            echo "--"
+            ls -la /opt/ 2>/dev/null | head -20
+            echo ""
+
+            echo "=== 8. docker-compose ps for crontech stack ==="
+            docker compose -f /opt/crontech/infra/hetzner/docker-compose.crontech.yml ps 2>/dev/null || echo "(compose file not at expected path)"
+            echo ""
+
+            echo "=== 9. Local curl from inside the box (Host: crontech.ai) ==="
+            curl -skI -H "Host: crontech.ai" https://localhost 2>&1 | head -10
+            echo ""
+
+            echo "=== 10. Local curl without Host header ==="
+            curl -skI https://localhost 2>&1 | head -10
+            echo ""
+
+            echo "=== recon complete ==="
