@@ -8,6 +8,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { AppErrorBoundary } from "./components/ErrorBoundary";
 import { ToastContainer } from "./components/Toast";
 import { VoiceGlobal } from "./components/VoiceGlobal";
+import { BuildTrack } from "./components/BuildTrack";
 import { initAnalytics, stopAnalytics, trackPageView } from "./lib/analytics";
 import { connectLiveUpdates, disconnectLiveUpdates } from "./lib/live-updates";
 import "./app.css";
@@ -47,6 +48,7 @@ export default function App() {
                   <CommandPalette />
                   <ToastContainer />
                   <VoiceGlobal />
+                  <BuildTrack />
                   <Layout>
                     <Suspense>{props.children}</Suspense>
                   </Layout>
