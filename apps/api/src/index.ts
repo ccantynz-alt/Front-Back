@@ -5,7 +5,7 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
 import { chatStreamRoutes } from "./ai/chat-stream";
-import { wsApp, websocket, sseApp, yjsWsApp } from "./realtime";
+import { wsApp, websocket, sseApp, theatreSseApp, yjsWsApp, liveUpdatesApp } from "./realtime";
 import { terminalApp } from "./terminal/handler";
 import { initTelemetry, httpRequestCount, httpRequestDuration, recordRequest, getMetrics } from "./telemetry";
 import { getAllFlags, isFeatureEnabled } from "./feature-flags";
@@ -38,6 +38,7 @@ import {
 import { getQueueStatus } from "./automation/retry-queue";
 
 import { securityHeaders } from "./middleware/security-headers";
+import { cacheControl } from "./middleware/cache-control";
 import { createRateLimiter, type KvNamespaceLike } from "./middleware/rate-limiter";
 import { csrf } from "./middleware/csrf";
 import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
@@ -80,6 +81,8 @@ app.use(
 
 // ── Security Middleware ──────────────────────────────────────────────
 app.use("*", securityHeaders());
+// ── Cache-Control (prevent stale dynamic content) ───────────────────
+app.use("*", cacheControl());
 app.use("*", csrf({
   allowedOrigins: [
     "http://localhost:3000",
@@ -145,6 +148,19 @@ app.use("*", async (c, next) => {
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ── Deploy Version Probe ─────────────────────────────────────────────
+// The GitHub Actions deploy workflow polls this after `docker compose up`
+// to confirm the *new* image is serving traffic. GIT_SHA is baked in at
+// image build time via the Dockerfile ARG.
+app.get("/version", (c) => {
+  c.header("Cache-Control", "no-cache, no-store, must-revalidate");
+  return c.json({
+    sha: process.env.GIT_SHA ?? "unknown",
+    service: "crontech-api",
     timestamp: new Date().toISOString(),
   });
 });
@@ -342,6 +358,12 @@ app.route("/", yjsWsApp);
 
 // Real-Time: SSE + REST endpoints
 app.route("/", sseApp);
+
+// Build Theatre: SSE live log stream for /ops
+app.route("/", theatreSseApp);
+
+// Live Updates: SSE push notifications for data changes
+app.route("/", liveUpdatesApp);
 
 // Terminal: WebSocket PTY at /api/terminal/:projectId
 app.route("/", terminalApp);

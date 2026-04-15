@@ -1,18 +1,35 @@
 name: Deploy
 
+# ── Crontech Production Deploy ──────────────────────────────────────
+# Pushes to main build + smoke-test the monorepo, then SSH into the
+# Hetzner box and roll both crontech-web and crontech-api containers
+# with the new commit SHA baked in. The deploy script on the box
+# verifies /api/version reports the new SHA before reporting success,
+# which is the actual cache-buster contract.
+#
+# Required GitHub secrets:
+#   HETZNER_IP      — production server IPv4
+#   DEPLOY_SSH_KEY  — private key for the 'deploy' user on the box
+#   DEPLOY_SSH_KNOWN_HOSTS — output of `ssh-keyscan <HETZNER_IP>`
+#                             (pin host key, reject on change)
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  # One deploy at a time for main. cancel-in-progress: false because
+  # killing a mid-deploy SSH session can leave docker compose in a
+  # half-rolled state on the box.
+  group: deploy-main
   cancel-in-progress: false
 
 jobs:
   build-and-test:
     name: Build & Quality Gates
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 

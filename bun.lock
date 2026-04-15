@@ -18,9 +18,11 @@
         "@ai-sdk/openai": "^3.0.0",
         "@back-to-the-future/ai-core": "workspace:*",
         "@back-to-the-future/db": "workspace:*",
+        "@back-to-the-future/flywheel": "workspace:*",
         "@back-to-the-future/queue": "workspace:*",
         "@back-to-the-future/schemas": "workspace:*",
         "@back-to-the-future/storage": "workspace:*",
+        "@back-to-the-future/theatre": "workspace:*",
         "@opentelemetry/api": "1.9.1",
         "@opentelemetry/exporter-metrics-otlp-http": "0.214.0",
         "@opentelemetry/exporter-trace-otlp-http": "0.214.0",
@@ -106,18 +108,6 @@
         "typescript": "^5",
       },
     },
-    "packages/cfo-engine": {
-      "name": "@back-to-the-future/cfo-engine",
-      "version": "0.0.1",
-      "dependencies": {
-        "@crontech/audit-log": "workspace:*",
-        "zod": "^4.3.6",
-      },
-      "devDependencies": {
-        "@types/bun": "^1.2.0",
-        "typescript": "^5",
-      },
-    },
     "packages/config": {
       "name": "@back-to-the-future/config",
       "version": "0.0.1",
@@ -137,6 +127,20 @@
         "@types/bun": "^1.2.0",
         "drizzle-kit": "^0.31",
         "typescript": "^6",
+      },
+    },
+    "packages/flywheel": {
+      "name": "@back-to-the-future/flywheel",
+      "version": "0.0.1",
+      "dependencies": {
+        "@back-to-the-future/db": "workspace:*",
+        "@back-to-the-future/theatre": "workspace:*",
+        "drizzle-orm": "^0.45",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^5",
       },
     },
     "packages/queue": {
@@ -175,6 +179,19 @@
       "devDependencies": {
         "@types/bun": "1.3.12",
         "typescript": "^6",
+      },
+    },
+    "packages/theatre": {
+      "name": "@back-to-the-future/theatre",
+      "version": "0.0.1",
+      "dependencies": {
+        "@back-to-the-future/db": "workspace:*",
+        "drizzle-orm": "^0.45",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^5",
       },
     },
     "packages/ui": {
@@ -385,13 +402,13 @@
 
     "@back-to-the-future/api": ["@back-to-the-future/api@workspace:apps/api"],
 
-    "@back-to-the-future/cfo-engine": ["@back-to-the-future/cfo-engine@workspace:packages/cfo-engine"],
-
     "@back-to-the-future/config": ["@back-to-the-future/config@workspace:packages/config"],
 
     "@back-to-the-future/db": ["@back-to-the-future/db@workspace:packages/db"],
 
     "@back-to-the-future/edge-workers": ["@back-to-the-future/edge-workers@workspace:services/edge-workers"],
+
+    "@back-to-the-future/flywheel": ["@back-to-the-future/flywheel@workspace:packages/flywheel"],
 
     "@back-to-the-future/gpu-workers": ["@back-to-the-future/gpu-workers@workspace:services/gpu-workers"],
 
@@ -404,6 +421,8 @@
     "@back-to-the-future/sentinel": ["@back-to-the-future/sentinel@workspace:services/sentinel"],
 
     "@back-to-the-future/storage": ["@back-to-the-future/storage@workspace:packages/storage"],
+
+    "@back-to-the-future/theatre": ["@back-to-the-future/theatre@workspace:packages/theatre"],
 
     "@back-to-the-future/ui": ["@back-to-the-future/ui@workspace:packages/ui"],
 
@@ -2409,8 +2428,6 @@
 
     "@back-to-the-future/api/typescript": ["typescript@6.0.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ=="],
 
-    "@back-to-the-future/cfo-engine/@types/bun": ["@types/bun@1.3.11", "", { "dependencies": { "bun-types": "1.3.11" } }, "sha512-5vPne5QvtpjGpsGYXiFyycfpDF2ECyPcTSsFBMa0fraoxiQyMJ3SmuQIGhzPg2WJuWxVBoxWJ2kClYTcw/4fAg=="],
-
     "@back-to-the-future/config/@types/bun": ["@types/bun@1.3.11", "", { "dependencies": { "bun-types": "1.3.11" } }, "sha512-5vPne5QvtpjGpsGYXiFyycfpDF2ECyPcTSsFBMa0fraoxiQyMJ3SmuQIGhzPg2WJuWxVBoxWJ2kClYTcw/4fAg=="],
 
     "@back-to-the-future/db/typescript": ["typescript@6.0.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ=="],
@@ -2668,8 +2685,6 @@
     "@aws-crypto/util/@smithy/util-utf8/@smithy/util-buffer-from": ["@smithy/util-buffer-from@2.2.0", "", { "dependencies": { "@smithy/is-array-buffer": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-IJdWBbTcMQ6DA0gdNhh/BwrLkDR+ADW5Kr1aZmd4k3DIF6ezMV4R2NIAmT08wQJ3yUK82thHWmC/TnK/wpMMIA=="],
 
     "@babel/helper-compilation-targets/lru-cache/yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
-
-    "@back-to-the-future/cfo-engine/@types/bun/bun-types": ["bun-types@1.3.11", "", { "dependencies": { "@types/node": "*" } }, "sha512-1KGPpoxQWl9f6wcZh57LvrPIInQMn2TQ7jsgxqpRzg+l0QPOFvJVH7HmvHo/AiPgwXy+/Thf6Ov3EdVn1vOabg=="],
 
     "@back-to-the-future/config/@types/bun/bun-types": ["bun-types@1.3.11", "", { "dependencies": { "@types/node": "*" } }, "sha512-1KGPpoxQWl9f6wcZh57LvrPIInQMn2TQ7jsgxqpRzg+l0QPOFvJVH7HmvHo/AiPgwXy+/Thf6Ov3EdVn1vOabg=="],
 
@@ -3007,8 +3022,6 @@
 
     "@aws-crypto/util/@smithy/util-utf8/@smithy/util-buffer-from/@smithy/is-array-buffer": ["@smithy/is-array-buffer@2.2.0", "", { "dependencies": { "tslib": "^2.6.2" } }, "sha512-GGP3O9QFD24uGeAXYUjwSTXARoqpZykHadOmA8G5vfJPK0/DC67qa//0qvqrJzL1xc8WQWX7/yc7fwudjPHPhA=="],
 
-    "@back-to-the-future/cfo-engine/@types/bun/bun-types/@types/node": ["@types/node@22.19.15", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg=="],
-
     "@back-to-the-future/config/@types/bun/bun-types/@types/node": ["@types/node@22.19.15", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg=="],
 
     "@back-to-the-future/edge-workers/@types/bun/bun-types/@types/node": ["@types/node@22.19.15", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg=="],
@@ -3044,8 +3057,6 @@
     "nitropack/serve-static/send/fresh": ["fresh@2.0.0", "", {}, "sha512-Rx/WycZ60HOaqLKAi6cHRKKI7zxWbJ31MhntmtwMoaTeF7XFH9hhBp8vITaMidfljRQ6eYWCKkaTK+ykVJHP2A=="],
 
     "readdir-glob/minimatch/brace-expansion/balanced-match": ["balanced-match@1.0.2", "", {}, "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw=="],
-
-    "@back-to-the-future/cfo-engine/@types/bun/bun-types/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
     "@back-to-the-future/config/@types/bun/bun-types/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 

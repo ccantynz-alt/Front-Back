@@ -31,7 +31,7 @@ const PAGE_HINTS: Record<string, PageHints> = {
     suggestions: ["Create my first website", "Invite a teammate", "Where do I edit videos?"],
   },
   "/builder": {
-    title: "Website Builder",
+    title: "Composer",
     suggestions: ["How do I create a landing page?", "Can I change colors?", "How do I publish?"],
   },
   "/video": {

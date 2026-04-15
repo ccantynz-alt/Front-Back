@@ -129,6 +129,24 @@ if [ -f "package.json" ]; then
   echo "[hook] Btn check:  $BUTTON_RESULT"
 fi
 
+# ── 6. Flywheel brief: prior-session context ────────────────────────
+# BLK-017 — every new session arrives knowing what recent sessions
+# shipped, on which branches. Institutional memory from day one.
+# Best-effort: if the flywheel DB isn't populated or the command fails,
+# we continue silently rather than blocking the session start.
+echo ""
+echo "[hook] Flywheel brief (recent sessions on this repo):"
+if command -v bun >/dev/null 2>&1; then
+  # Ingest any new transcripts since last session, then print the brief.
+  # Both steps cap at 60s each via `timeout` so the hook stays fast.
+  timeout 60 bun run --filter=@back-to-the-future/flywheel ingest 2>&1 | tail -3 || true
+  timeout 15 bun run --filter=@back-to-the-future/flywheel brief 2>&1 || {
+    echo "[hook] (flywheel brief unavailable — skipping)"
+  }
+else
+  echo "[hook] (bun unavailable — skipping flywheel brief)"
+fi
+
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
 echo "   DOCTRINE REMINDERS (read CLAUDE.md before acting):"

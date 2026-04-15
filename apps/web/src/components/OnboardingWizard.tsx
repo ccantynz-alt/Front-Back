@@ -301,8 +301,8 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
               <Stack direction="vertical" gap="md">
                 <Text variant="h4" weight="semibold">Choose your first action</Text>
                 <OptionButton
-                  label="Open AI Builder"
-                  description="Start building a website with AI assistance."
+                  label="Open Composer"
+                  description="Generate SolidJS component trees from a prompt using the three-tier compute router."
                   selected={firstAction() === "builder"}
                   onClick={() => setFirstAction("builder")}
                 />

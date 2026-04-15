@@ -16,13 +16,18 @@ describe("Smoke: Route files export default components", () => {
   for (const routeFile of routeFiles) {
     const relativePath = routeFile.replace(ROUTES_DIR, "");
 
-    test(`${relativePath} exports a default export`, () => {
+    test(`${relativePath} exports a valid route shape`, () => {
       const content = readFileSync(routeFile, "utf-8");
-      // SolidStart route files must have a default export (function or component)
+      // SolidStart page routes need a default export (the component to render).
+      // SolidStart API routes (inside routes/api/**) export HTTP method handlers
+      // (GET, POST, PUT, DELETE, PATCH) instead — no default export exists.
       const hasDefaultExport =
         content.includes("export default") ||
         content.includes("export { default }");
-      expect(hasDefaultExport).toBe(true);
+      const hasHttpMethodExport = /export\s+(?:async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b/.test(
+        content,
+      );
+      expect(hasDefaultExport || hasHttpMethodExport).toBe(true);
     });
   }
 });

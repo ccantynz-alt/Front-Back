@@ -1,78 +1,301 @@
 import { A } from "@solidjs/router";
 import { For, Show } from "solid-js";
 import type { JSX } from "solid-js";
-import { Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
+import { Button } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 import { SEOHead } from "../components/SEOHead";
 
-// ── Data ──────────────────────────────────────────────────────────────
+// ── Palette ─────────────────────────────────────────────────────────
+// Restricted to three accent colors so the page reads as one brand,
+// not as a rainbow. Everything else uses white/gray tiers.
+//   - VIOLET  primary accent (brand, CTAs)
+//   - CYAN    secondary accent (platform/technical pillars)
+//   - EMERALD positive/live signals (status dots, "built-in" badges)
+const ACCENT = {
+  violet: "#8b5cf6",
+  cyan: "#06b6d4",
+  emerald: "#10b981",
+} as const;
 
-interface Pillar {
-  badge: string;
+// ── Data ────────────────────────────────────────────────────────────
+
+interface Feature {
+  icon: string;
   title: string;
   description: string;
+  href: string;
+  accent: string;
+  badge?: string | undefined;
 }
 
-// Compliance-native pillars. Derived from docs/strategy/WEDGE.md §4.
-const pillars: Pillar[] = [
+// Feature cards showcase PLATFORM LAYERS, not end-user products.
+// Per docs/POSITIONING.md: Crontech is a developer platform, not an
+// AI website builder for non-developers.
+const features: Feature[] = [
   {
-    badge: "SOC 2-ready",
-    title: "SOC 2 primitives on day one",
+    icon: "\u26A1",
+    title: "Edge Compute",
     description:
-      "Immutable audit trails, least-privilege access, zero-trust networking, and evidence export — built into every tier, not sold as an add-on.",
+      "Cloudflare Workers at the edge. Sub-5ms cold starts across 330+ cities. No containers, no regions, no capacity planning. Your code lives next to your users.",
+    href: "/deployments",
+    accent: ACCENT.violet,
+    badge: "Core",
   },
   {
-    badge: "Encrypted",
-    title: "Encrypted-at-rest Postgres",
+    icon: "\u{1F5C4}\uFE0F",
+    title: "Unified Data",
     description:
-      "AES-256-GCM at rest, TLS 1.3 in transit, envelope encryption with rotating KMS keys. The default posture, not a premium upsell.",
+      "Turso SQLite replicas at the edge for zero-latency reads. Neon Postgres when you need the full engine. Qdrant for vector search. All type-safe through Drizzle.",
+    href: "/database",
+    accent: ACCENT.cyan,
   },
   {
-    badge: "Tamper-evident",
-    title: "Hash-chained audit logs",
+    icon: "\u{1F517}",
+    title: "Type-Safe APIs",
     description:
-      "Every event signed, every entry chained to the previous hash. Cryptographic integrity your next audit can actually verify.",
+      "tRPC v11 end to end. Change a server type, see the client error instantly. No OpenAPI specs, no codegen step, no drift between backend and frontend. Ever.",
+    href: "/docs",
+    accent: ACCENT.violet,
   },
   {
-    badge: "Polyglot",
-    title: "TypeScript, Python, Rust — one runtime",
+    icon: "\u{1F310}",
+    title: "Real-Time Layer",
     description:
-      "A polyglot runtime host from day one. Ship your Python AI service and your TypeScript web app on a single compliance-native substrate.",
+      "WebSockets, SSE, and Yjs CRDTs on every edge node. Multi-user editing with AI agents as first-class peers. Conflict-free by mathematics, not by lock.",
+    href: "/collab",
+    accent: ACCENT.cyan,
   },
   {
-    badge: "One bill",
-    title: "One platform instead of seven",
+    icon: "\u{1F9E0}",
+    title: "AI Runtime",
     description:
-      "Hosting, database, auth, audit logging, observability, secrets, evidence storage — unified. One dashboard. One bill. One vendor on your audit questionnaire.",
+      "Three-tier compute routes inference where it is cheapest: client GPU (free), edge (sub-5ms), or cloud H100s on demand. Generative UI and streaming native to the platform.",
+    href: "/ai-playground",
+    accent: ACCENT.violet,
   },
   {
-    badge: "Sovereign",
-    title: "Your data, your audit trail",
+    icon: "\u{1F512}",
+    title: "Auth + Admin",
     description:
-      "Configurable data residency, WORM-compliant evidence storage, and exports you own. Sovereign infrastructure for teams that cannot afford ambiguity.",
+      "Passkeys, OAuth, 2FA. Role-based access control. Audit logs, analytics, and user management. A full admin dashboard ships with the platform, not as a separate product.",
+    href: "/admin",
+    accent: ACCENT.emerald,
+    badge: "Built-in",
   },
 ];
 
-// ── Dogfood proof strip ───────────────────────────────────────────────
-// Real migration status from docs/strategy/MIGRATION-PLAN.md.
-// Nothing is claimed as "running on Crontech" until it actually is — status
-// labels reflect the current state honestly.
-
-interface ProofPoint {
-  name: string;
-  role: string;
-  status: "coming-soon" | "in-migration";
+interface Step {
+  number: string;
+  title: string;
+  description: string;
+  accent: string;
+  icon: string;
 }
 
-const proofPoints: ProofPoint[] = [
-  { name: "Crontech",                    role: "Crontech runs Crontech — self-hosted substrate",       status: "in-migration" },
-  { name: "MarcoReid.com",               role: "Dress rehearsal migration",                             status: "coming-soon" },
-  { name: "emailed",                     role: "Stack-identical dogfood",                               status: "coming-soon" },
-  { name: "Astra (ledger.ai)",           role: "Polyglot Python + real banking + Stripe",               status: "coming-soon" },
-  { name: "AI-Immigration-Compliance",   role: "§5A primitives under real compliance load",             status: "coming-soon" },
-  { name: "GateTest",                    role: "Revenue-bearing SaaS on Crontech",                      status: "coming-soon" },
-  { name: "Zoobicon.com",                role: "The AI website builder, running on Crontech",           status: "coming-soon" },
+const steps: Step[] = [
+  {
+    number: "01",
+    title: "Connect",
+    description:
+      "Point your domain at Crontech. Your app moves to the edge. DNS propagation is the longest step in the whole process.",
+    accent: ACCENT.violet,
+    icon: "\u{1F50C}",
+  },
+  {
+    number: "02",
+    title: "Compose",
+    description:
+      "Pick the layers you need — data, auth, AI, real-time, billing. One config line each, not one vendor contract each.",
+    accent: ACCENT.cyan,
+    icon: "\u{1F9F1}",
+  },
+  {
+    number: "03",
+    title: "Ship",
+    description:
+      "Git push deploys. Type-safe end to end. Every layer observable. Global in seconds, with no infrastructure to manage.",
+    accent: ACCENT.emerald,
+    icon: "\u{1F680}",
+  },
 ];
+
+interface Stat {
+  value: string;
+  label: string;
+  color: string;
+}
+
+const stats: Stat[] = [
+  { value: "\u003C 5ms", label: "Edge Cold Start", color: ACCENT.violet },
+  { value: "330+", label: "Cities Worldwide", color: ACCENT.cyan },
+  { value: "End-to-End", label: "Type Safety", color: ACCENT.violet },
+  { value: "Built-In", label: "Auth, RBAC, Audit", color: ACCENT.emerald },
+];
+
+interface TechPillar {
+  label: string;
+  title: string;
+  description: string;
+  color: string;
+  labelColor: string;
+}
+
+const techPillars: TechPillar[] = [
+  {
+    label: "One platform, every layer",
+    title: "Replace your entire stack",
+    description:
+      "Hosting, database, authentication, AI, real-time collaboration, payments, email, and storage. One product. One dashboard. One bill.",
+    color: ACCENT.violet,
+    labelColor: "text-violet-400",
+  },
+  {
+    label: "Built on the bleeding edge",
+    title: "The fastest stack on the web",
+    description:
+      "Cloudflare Workers for sub-5ms cold starts. SolidJS for the fastest reactivity. Bun + Hono for the fastest runtime. Type-safe end to end.",
+    color: ACCENT.cyan,
+    labelColor: "text-cyan-400",
+  },
+  {
+    label: "AI-native at every layer",
+    title: "AI is the architecture, not an add-on",
+    description:
+      "AI agents, generative UI, three-tier compute routing, RAG pipelines, and real-time AI co-authoring. Native to the platform from the ground up.",
+    color: ACCENT.emerald,
+    labelColor: "text-emerald-400",
+  },
+];
+
+// ── Feature Card ────────────────────────────────────────────────────
+
+function FeatureCard(props: Feature): JSX.Element {
+  return (
+    <A href={props.href} class="block group">
+      <div
+        class="relative h-full overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a] p-6 transition-all duration-300 hover:border-white/[0.14] hover:bg-[#0d0d0d]"
+      >
+        {/* Single subtle glow — only on hover, only in one corner */}
+        <div
+          class="absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-[0.18]"
+          style={{ background: props.accent }}
+        />
+
+        <div class="relative z-10 flex h-full flex-col gap-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-lg text-base"
+                style={{
+                  background: `${props.accent}14`,
+                  color: props.accent,
+                }}
+              >
+                {props.icon}
+              </div>
+              <span class="text-base font-semibold text-white">
+                {props.title}
+              </span>
+            </div>
+            <Show when={props.badge}>
+              <span
+                class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                style={{
+                  background: `${props.accent}1a`,
+                  color: props.accent,
+                }}
+              >
+                {props.badge}
+              </span>
+            </Show>
+          </div>
+          <p class="text-sm leading-relaxed text-gray-400">
+            {props.description}
+          </p>
+          <div
+            class="mt-auto flex items-center gap-1.5 pt-2 text-xs font-medium transition-colors duration-200 group-hover:text-white"
+            style={{ color: props.accent }}
+          >
+            <span>Learn more</span>
+            <span class="transition-transform duration-200 group-hover:translate-x-1">&#8594;</span>
+          </div>
+        </div>
+      </div>
+    </A>
+  );
+}
+
+// ── Step Card ───────────────────────────────────────────────────────
+
+function StepCard(props: Step): JSX.Element {
+  return (
+    <div class="group relative flex flex-col items-center gap-5 text-center">
+      <div class="relative">
+        <div
+          class="flex h-20 w-20 items-center justify-center rounded-2xl text-2xl transition-all duration-300 group-hover:scale-105"
+          style={{
+            background: `${props.accent}14`,
+            border: `1px solid ${props.accent}33`,
+          }}
+        >
+          <span style={{ color: props.accent }}>{props.icon}</span>
+        </div>
+        <div
+          class="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold text-white"
+          style={{ background: props.accent }}
+        >
+          {props.number}
+        </div>
+      </div>
+      <h3 class="text-xl font-bold text-white">{props.title}</h3>
+      <p class="max-w-xs text-sm leading-relaxed text-gray-400">
+        {props.description}
+      </p>
+    </div>
+  );
+}
+
+// ── Stat Block ──────────────────────────────────────────────────────
+
+function StatBlock(props: Stat): JSX.Element {
+  return (
+    <div class="flex flex-col items-center gap-1 px-6 py-5">
+      <span
+        class="text-2xl font-bold tracking-tight sm:text-3xl"
+        style={{ color: props.color }}
+      >
+        {props.value}
+      </span>
+      <span class="text-[11px] font-medium uppercase tracking-widest text-gray-500">
+        {props.label}
+      </span>
+    </div>
+  );
+}
+
+// ── Tech Pillar Card ────────────────────────────────────────────────
+
+function TechPillarCard(props: TechPillar): JSX.Element {
+  return (
+    <div class="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a] p-8 transition-all duration-300 hover:border-white/[0.14]">
+      <div
+        class="absolute -top-12 -right-12 h-32 w-32 rounded-full opacity-[0.08] blur-3xl transition-opacity duration-500 group-hover:opacity-20"
+        style={{ background: props.color }}
+      />
+      <div class="relative z-10">
+        <span
+          class={`mb-3 inline-block text-xs font-semibold uppercase tracking-widest ${props.labelColor}`}
+        >
+          {props.label}
+        </span>
+        <h3 class="mb-3 text-xl font-bold text-white">{props.title}</h3>
+        <p class="text-sm leading-relaxed text-gray-400">{props.description}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Page ────────────────────────────────────────────────────────────
 
 export default function Home(): JSX.Element {
   const auth = useAuth();
@@ -80,118 +303,266 @@ export default function Home(): JSX.Element {
   return (
     <>
       <SEOHead
-        title="Crontech — The compliance-native developer platform for AI SaaS"
-        description="SOC 2 primitives, encrypted-at-rest Postgres, hash-chained audit logs, polyglot runtime. Built in. Day one. The compliance-native developer platform for AI SaaS."
+        title="Crontech \u2014 The developer platform for the next decade"
+        description="One unified platform. Backend and frontend, joined as one. Hosting, database, auth, AI, real-time, billing, storage \u2014 all in one product, type-safe end to end, built on the bleeding edge."
         path="/"
       />
-      <Stack direction="vertical" gap="xl" class="page-padded">
-        {/* Hero */}
-        <Stack direction="vertical" align="center" justify="center" gap="md" class="hero">
-          <Badge variant="info" size="sm">Founding Member cohort open — first 100 only</Badge>
-          <Text variant="h1" weight="bold" align="center" class="heading hero-gradient">
-            The compliance-native developer platform for AI SaaS.
-          </Text>
-          <Text variant="body" align="center" class="tagline">
-            SOC 2 primitives, encrypted-at-rest Postgres, hash-chained audit logs, polyglot runtime. Built in. Day one.
-          </Text>
-          <Text variant="body" align="center" class="description">
-            Every AI SaaS hits the SOC 2 wall. Most founders scramble to stitch together seven vendors just to reach the starting line of an audit.
-            Crontech is the other option: one platform where every layer is compliance-native from the first deploy.
-          </Text>
-          <Stack direction="horizontal" gap="md" justify="center">
-            <A href="/founding">
-              <Button variant="primary" size="lg">Claim Founding Member — first 100 only</Button>
-            </A>
-            <Show
-              when={auth.isAuthenticated()}
-              fallback={
-                <A href="/docs">
-                  <Button variant="outline" size="lg">See the primitives</Button>
+
+      {/* overflow-x-hidden on the outer wrapper prevents any stray
+          absolute element from creating horizontal scroll on narrow
+          viewports (which was clipping cards on tablets). */}
+      <div class="min-h-screen overflow-x-hidden bg-[#060606]">
+        {/* ── Hero ──────────────────────────────────────────────── */}
+        <section class="relative overflow-hidden">
+          {/* Single restrained background orb — violet only, not a rainbow */}
+          <div
+            class="pointer-events-none absolute top-[-200px] left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full opacity-[0.08] blur-[120px]"
+            style={{
+              background: `linear-gradient(135deg, ${ACCENT.violet}, ${ACCENT.cyan})`,
+            }}
+          />
+
+          {/* Subtle grid pattern — kept very low opacity */}
+          <div
+            class="pointer-events-none absolute inset-0 opacity-[0.015]"
+            style={{
+              "background-image":
+                "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+              "background-size": "64px 64px",
+            }}
+          />
+
+          <div class="relative z-10 mx-auto max-w-[1200px] px-6 pt-24 pb-20 lg:px-8 lg:pt-36 lg:pb-28">
+            <div class="flex flex-col items-center text-center">
+              {/* Announcement badge */}
+              <div class="mb-8 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 backdrop-blur-sm">
+                <div class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span class="text-xs font-medium text-gray-400">
+                  Now in early access
+                </span>
+              </div>
+
+              {/* Doctrine headline — per docs/POSITIONING.md */}
+              <h1 class="max-w-4xl text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[4rem]">
+                The developer platform{" "}
+                <span
+                  class="bg-clip-text text-transparent"
+                  style={{
+                    "background-image": `linear-gradient(135deg, ${ACCENT.violet}, ${ACCENT.cyan})`,
+                  }}
+                >
+                  for the next decade.
+                </span>
+              </h1>
+
+              {/* Subhead — leads with backend+frontend unified, first-of-its-kind */}
+              <p class="mt-6 max-w-2xl text-base leading-relaxed text-gray-400 sm:text-lg">
+                Backend and frontend, joined as one product. Hosting, database,
+                auth, AI, real-time, and billing &mdash; every layer your app
+                needs, type-safe end to end, built on the bleeding edge and
+                ready the moment your team is.
+              </p>
+
+              {/* CTAs */}
+              <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+                <A href="/register">
+                  <Button variant="primary" size="lg">
+                    Start building &#8594;
+                  </Button>
                 </A>
-              }
-            >
-              <A href="/dashboard">
-                <Button variant="outline" size="lg">Open dashboard</Button>
-              </A>
-            </Show>
-          </Stack>
-        </Stack>
+                <Show
+                  when={auth.isAuthenticated()}
+                  fallback={
+                    <A href="/docs">
+                      <Button variant="outline" size="lg">
+                        See the docs
+                      </Button>
+                    </A>
+                  }
+                >
+                  <A href="/dashboard">
+                    <Button variant="outline" size="lg">
+                      Open dashboard
+                    </Button>
+                  </A>
+                </Show>
+              </div>
 
-        {/* Proof strip — real migrations, real status */}
-        <Stack direction="vertical" gap="md">
-          <Stack direction="vertical" gap="xs" align="center">
-            <Text variant="h2" weight="bold" align="center">
-              Proved on production workloads.
-            </Text>
-            <Text variant="body" class="text-muted" align="center">
-              Crontech launches with real apps already running on it — not slideware.
-              Each migration forces a compliance-native primitive into existence.
-            </Text>
-          </Stack>
-          <div class="grid-3">
-            <For each={proofPoints}>
-              {(p) => (
-                <Card padding="lg">
-                  <Stack direction="vertical" gap="sm">
-                    <Badge variant="info" size="sm">
-                      {p.status === "in-migration" ? "In migration" : "Coming soon"}
-                    </Badge>
-                    <Text variant="h4" weight="semibold">{p.name}</Text>
-                    <Text variant="body" class="text-muted">{p.role}</Text>
-                  </Stack>
-                </Card>
-              )}
-            </For>
+              {/* Tech stack strip */}
+              <div class="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+                <For
+                  each={[
+                    "SolidJS",
+                    "Bun",
+                    "Hono",
+                    "tRPC",
+                    "Cloudflare Workers",
+                    "Turso",
+                    "WebGPU",
+                  ]}
+                >
+                  {(tech) => (
+                    <span class="text-xs font-medium uppercase tracking-widest text-gray-600 transition-colors duration-200 hover:text-gray-400">
+                      {tech}
+                    </span>
+                  )}
+                </For>
+              </div>
+            </div>
           </div>
-        </Stack>
+        </section>
 
-        {/* Pillars Grid */}
-        <Stack direction="vertical" gap="md">
-          <Stack direction="vertical" gap="xs" align="center">
-            <Text variant="h2" weight="bold" align="center">
-              Compliance-native at every layer.
-            </Text>
-            <Text variant="body" class="text-muted" align="center">
-              Not a checklist. Not a premium tier. The default posture of the platform.
-            </Text>
-          </Stack>
-          <div class="grid-3">
-            <For each={pillars}>
-              {(pillar) => (
-                <Card padding="lg">
-                  <Stack direction="vertical" gap="sm">
-                    <Badge variant="info" size="sm">{pillar.badge}</Badge>
-                    <Text variant="h4" weight="semibold">{pillar.title}</Text>
-                    <Text variant="body" class="text-muted">{pillar.description}</Text>
-                  </Stack>
-                </Card>
-              )}
-            </For>
+        {/* ── Stats strip ───────────────────────────────────────── */}
+        <section class="border-y border-white/[0.04]">
+          <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
+            <div class="grid grid-cols-2 divide-x divide-white/[0.06] sm:grid-cols-4">
+              <For each={stats}>
+                {(stat) => (
+                  <StatBlock
+                    value={stat.value}
+                    label={stat.label}
+                    color={stat.color}
+                  />
+                )}
+              </For>
+            </div>
           </div>
-        </Stack>
+        </section>
 
-        {/* Closing CTA */}
-        <Card padding="lg">
-          <Stack direction="vertical" gap="md" align="center">
-            <Text variant="h3" weight="semibold" align="center">
-              Your audit log should run on a platform that could pass its own audit.
-            </Text>
-            <Text variant="body" class="text-muted" align="center">
-              Founding Members get the compliance-native primitives, the polyglot runtime, and a direct line to the team building it. First 100 seats only.
-            </Text>
-            <Stack direction="horizontal" gap="sm" justify="center">
-              <A href="/founding">
-                <Button variant="primary" size="lg">Claim Founding Member — first 100 only</Button>
-              </A>
-              <A href="/docs">
-                <Button variant="outline" size="lg">
-                  Read the docs
+        {/* ── Platform layers ───────────────────────────────────── */}
+        <section class="relative overflow-hidden py-24 lg:py-32">
+          <div
+            class="pointer-events-none absolute left-[-200px] top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full opacity-[0.04] blur-[120px]"
+            style={{ background: ACCENT.violet }}
+          />
+
+          <div class="relative z-10 mx-auto max-w-[1200px] px-6 lg:px-8">
+            <div class="mb-16 flex flex-col items-center text-center">
+              <span class="mb-4 text-xs font-semibold uppercase tracking-widest text-violet-400">
+                Platform
+              </span>
+              <h2 class="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Every layer your app needs, in one product
+              </h2>
+              <p class="mt-4 max-w-xl text-base leading-relaxed text-gray-500">
+                Stop stitching together a dozen services. Crontech is one
+                product with one dashboard and one bill.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <For each={features}>
+                {(feature) => (
+                  <FeatureCard
+                    icon={feature.icon}
+                    title={feature.title}
+                    description={feature.description}
+                    href={feature.href}
+                    accent={feature.accent}
+                    badge={feature.badge}
+                  />
+                )}
+              </For>
+            </div>
+          </div>
+        </section>
+
+        {/* ── How it works ──────────────────────────────────────── */}
+        <section class="relative overflow-hidden border-y border-white/[0.04] py-24 lg:py-32">
+          <div
+            class="pointer-events-none absolute right-[-200px] top-1/3 h-[400px] w-[400px] rounded-full opacity-[0.04] blur-[100px]"
+            style={{ background: ACCENT.cyan }}
+          />
+
+          <div class="relative z-10 mx-auto max-w-[1200px] px-6 lg:px-8">
+            <div class="mb-16 flex flex-col items-center text-center">
+              <span class="mb-4 text-xs font-semibold uppercase tracking-widest text-cyan-400">
+                Onboarding
+              </span>
+              <h2 class="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Move your app to Crontech in three steps
+              </h2>
+              <p class="mt-4 max-w-xl text-base leading-relaxed text-gray-500">
+                No rebuild. No long migration. Bring the code you already have,
+                layer Crontech underneath, ship.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
+              <For each={steps}>
+                {(step) => (
+                  <StepCard
+                    number={step.number}
+                    title={step.title}
+                    description={step.description}
+                    accent={step.accent}
+                    icon={step.icon}
+                  />
+                )}
+              </For>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Tech pillars ──────────────────────────────────────── */}
+        <section class="py-24 lg:py-32">
+          <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <For each={techPillars}>
+                {(pillar) => (
+                  <TechPillarCard
+                    label={pillar.label}
+                    title={pillar.title}
+                    description={pillar.description}
+                    color={pillar.color}
+                    labelColor={pillar.labelColor}
+                  />
+                )}
+              </For>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Bottom CTA ────────────────────────────────────────── */}
+        <section class="relative overflow-hidden border-t border-white/[0.04] py-24 lg:py-32">
+          <div
+            class="pointer-events-none absolute bottom-0 left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full opacity-[0.06] blur-[120px]"
+            style={{
+              background: `linear-gradient(135deg, ${ACCENT.violet}, ${ACCENT.cyan})`,
+            }}
+          />
+
+          <div class="relative z-10 mx-auto max-w-[800px] px-6 text-center lg:px-8">
+            <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+              The developer platform{" "}
+              <span
+                class="bg-clip-text text-transparent"
+                style={{
+                  "background-image": `linear-gradient(135deg, ${ACCENT.violet}, ${ACCENT.cyan})`,
+                }}
+              >
+                for the next decade.
+              </span>
+            </h2>
+            <p class="mt-5 text-base leading-relaxed text-gray-400 sm:text-lg">
+              One product. Every layer. Built for teams who refuse to settle
+              for yesterday&#39;s tools.
+            </p>
+            <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <A href="/register">
+                <Button variant="primary" size="lg">
+                  Start building &#8594;
                 </Button>
               </A>
-            </Stack>
-          </Stack>
-        </Card>
-      </Stack>
+              <A href="/dashboard">
+                <Button variant="outline" size="lg">
+                  Explore the platform
+                </Button>
+              </A>
+            </div>
+          </div>
+        </section>
+      </div>
     </>
   );
 }

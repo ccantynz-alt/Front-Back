@@ -69,6 +69,9 @@ cp "$SCRIPT_DIR/docker-compose.yml" /opt/crontech/docker-compose.yml
 cp "$SCRIPT_DIR/scripts/backup.sh" /opt/crontech/scripts/backup.sh
 cp "$SCRIPT_DIR/scripts/deploy-app.sh" /opt/crontech/scripts/deploy-app.sh
 chmod +x /opt/crontech/scripts/*.sh
+# NOTE: crontech-deploy.sh is NOT copied here — the GitHub Actions workflow
+# runs it from the repo checkout at /opt/crontech/apps/crontech so that
+# script changes auto-propagate on every deploy without re-running setup.sh.
 
 # Copy Dockerfiles as templates
 cp "$SCRIPT_DIR/dockerfiles/Dockerfile.nextjs" /opt/crontech/apps/zoobicon/Dockerfile

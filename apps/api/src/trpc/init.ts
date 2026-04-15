@@ -1,6 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
 import type { TRPCContext } from "./context";
 import { validateSession } from "../auth/session";
+import { users } from "@back-to-the-future/db";
 
 import type * as _schema from "@back-to-the-future/db";
 
@@ -44,3 +46,36 @@ const enforceAuth = middleware(async ({ ctx, next }) => {
 });
 
 export const protectedProcedure = t.procedure.use(enforceAuth);
+
+/**
+ * Middleware that enforces admin role on every call.
+ * Must be chained after enforceAuth (protectedProcedure).
+ */
+const enforceAdmin = middleware(async ({ ctx, next }) => {
+  if (!ctx.userId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Authentication required.",
+    });
+  }
+
+  const userId: string = ctx.userId;
+
+  const result = await ctx.db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  const user = result[0];
+  if (!user || user.role !== "admin") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Admin role required.",
+    });
+  }
+
+  return next({ ctx: { ...ctx, userId } });
+});
+
+export const adminProcedure = protectedProcedure.use(enforceAdmin);

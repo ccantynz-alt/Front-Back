@@ -23,8 +23,8 @@ export const DASHBOARD_TOUR: ReadonlyArray<TourStep> = [
   },
   {
     target: "[data-tour='nav-builder']",
-    title: "Website Builder",
-    content: "Design websites by chatting. No coding required.",
+    title: "Composer",
+    content: "Generate SolidJS component trees from a prompt. Runs on the three-tier compute router.",
     placement: "bottom",
   },
   {

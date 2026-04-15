@@ -309,16 +309,16 @@ This dashboard includes stat cards, badges, and an activity feed. I can add char
 **Note:** Running in demo mode. Set OPENAI_API_KEY for full AI-powered generation.`;
   }
 
-  return `I am the AI Website Builder. I can help you create website layouts using our component catalog.
+  return `I am the Component Composer. I generate validated SolidJS component trees from your prompt, routing through the three-tier compute model (client GPU → edge → cloud) and reporting the tier and cost on every generation.
 
 **Available components:** Button, Input, Card, Stack, Text, Modal, Badge, Alert, Avatar, Tabs, Select, Textarea, Spinner, Tooltip, Separator.
 
 Try asking me to:
-- "Build a landing page with a hero section and features"
-- "Create a contact form with name, email, and message"
-- "Design a dashboard with stats cards"
+- "Compose a hero section with announcement badge, H1, CTAs, and tech strip"
+- "Generate a contact form with name, email, and message fields"
+- "Compose a stats dashboard with four metric cards"
 
-I will compose validated component trees that render directly in the preview panel.
+Output is a validated component tree that renders directly in the preview panel.
 
 **Note:** Running in demo mode. Set OPENAI_API_KEY environment variable for full AI-powered generation with streaming responses.`;
 }

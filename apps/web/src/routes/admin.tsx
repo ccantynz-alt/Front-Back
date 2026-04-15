@@ -1,34 +1,17 @@
 import { Title } from "@solidjs/meta";
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, createResource, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
-
-// ── Mock Data ────────────────────────────────────────────────────────
-
-const MOCK_USERS = [
-  { id: "1", name: "Elena Vasquez", email: "elena@acme.dev", plan: "Enterprise", status: "active" as const, avatar: "EV" },
-  { id: "2", name: "Marcus Chen", email: "marcus@streamline.io", plan: "Pro", status: "active" as const, avatar: "MC" },
-  { id: "3", name: "Sarah Kim", email: "sarah.kim@buildfast.co", plan: "Pro", status: "active" as const, avatar: "SK" },
-  { id: "4", name: "Raj Patel", email: "raj@devstack.com", plan: "Free", status: "inactive" as const, avatar: "RP" },
-  { id: "5", name: "Anya Novak", email: "anya.novak@cloudship.dev", plan: "Enterprise", status: "active" as const, avatar: "AN" },
-  { id: "6", name: "James Wright", email: "james@pixelcraft.io", plan: "Pro", status: "suspended" as const, avatar: "JW" },
-  { id: "7", name: "Li Wei", email: "liwei@tensorlab.ai", plan: "Enterprise", status: "active" as const, avatar: "LW" },
-];
-
-const SYSTEM_HEALTH = [
-  { label: "API Gateway", status: "operational" as const, latency: "12ms", uptime: "99.99%" },
-  { label: "Edge Network", status: "operational" as const, latency: "4ms", uptime: "99.98%" },
-  { label: "Database Cluster", status: "operational" as const, latency: "8ms", uptime: "100%" },
-  { label: "AI Inference", status: "degraded" as const, latency: "142ms", uptime: "99.91%" },
-  { label: "WebSocket Layer", status: "operational" as const, latency: "3ms", uptime: "99.97%" },
-  { label: "Sentinel Monitor", status: "operational" as const, latency: "28ms", uptime: "99.95%" },
-];
+import { useNavigate } from "@solidjs/router";
+import { AdminRoute } from "../components/AdminRoute";
+import { trpc } from "../lib/trpc";
+import { showToast } from "../components/Toast";
 
 // ── Stat Card ────────────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
   value: string;
-  delta: string;
+  sublabel: string;
   icon: string;
   accentColor: string;
 }
@@ -53,7 +36,7 @@ function StatCard(props: StatCardProps): JSX.Element {
           <span class="text-3xl font-bold tracking-tight text-white">
             {props.value}
           </span>
-          <span class="mt-1 text-xs font-medium text-emerald-400">{props.delta}</span>
+          <span class="mt-1 text-xs font-medium text-gray-400">{props.sublabel}</span>
         </div>
         <div
           class="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
@@ -75,10 +58,12 @@ function StatCard(props: StatCardProps): JSX.Element {
 
 // ── Health Row ────────────────────────────────────────────────────────
 
-function HealthRow(props: { label: string; status: "operational" | "degraded" | "down"; latency: string; uptime: string }): JSX.Element {
+type HealthStatus = "ok" | "error" | "active" | "inactive";
+
+function HealthRow(props: { label: string; status: HealthStatus; detail?: string }): JSX.Element {
   const statusColor = (): string => {
-    if (props.status === "operational") return "#10b981";
-    if (props.status === "degraded") return "#f59e0b";
+    if (props.status === "ok" || props.status === "active") return "#10b981";
+    if (props.status === "inactive") return "#6b7280";
     return "#ef4444";
   };
 
@@ -91,9 +76,10 @@ function HealthRow(props: { label: string; status: "operational" | "degraded" | 
         />
         <span class="text-sm font-medium text-gray-200">{props.label}</span>
       </div>
-      <div class="flex items-center gap-6">
-        <span class="text-xs text-gray-500">{props.latency}</span>
-        <span class="text-xs font-medium text-gray-400">{props.uptime}</span>
+      <div class="flex items-center gap-3">
+        <Show when={props.detail}>
+          <span class="text-xs text-gray-500">{props.detail}</span>
+        </Show>
         <span
           class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
           style={{ background: `${statusColor()}18`, color: statusColor() }}
@@ -107,24 +93,32 @@ function HealthRow(props: { label: string; status: "operational" | "degraded" | 
 
 // ── User Row ─────────────────────────────────────────────────────────
 
-function UserRow(props: {
-  name: string;
-  email: string;
-  plan: string;
-  status: "active" | "inactive" | "suspended";
-  avatar: string;
-  onEdit: () => void;
-  onSuspend: () => void;
-}): JSX.Element {
-  const statusColor = (): string => {
-    if (props.status === "active") return "#10b981";
-    if (props.status === "inactive") return "#6b7280";
-    return "#ef4444";
-  };
+type UserRole = "admin" | "editor" | "viewer";
 
-  const planColor = (): string => {
-    if (props.plan === "Enterprise") return "#a78bfa";
-    if (props.plan === "Pro") return "#3b82f6";
+interface AdminUser {
+  id: string;
+  email: string;
+  displayName: string | null;
+  role: UserRole;
+  createdAt: Date | string;
+}
+
+function initialsFor(user: AdminUser): string {
+  const source = user.displayName ?? user.email;
+  const parts = source.split(/[\s@.]+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? "?";
+  const second = parts[1]?.[0] ?? "";
+  return (first + second).toUpperCase();
+}
+
+function UserRow(props: {
+  user: AdminUser;
+  onChangeRole: (role: UserRole) => void;
+  pending: boolean;
+}): JSX.Element {
+  const roleColor = (): string => {
+    if (props.user.role === "admin") return "#a78bfa";
+    if (props.user.role === "editor") return "#3b82f6";
     return "#6b7280";
   };
 
@@ -132,43 +126,29 @@ function UserRow(props: {
     <div class="flex items-center gap-4 rounded-xl border border-white/[0.04] bg-white/[0.015] px-4 py-3.5 transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.03]">
       <div
         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-        style={{ background: `linear-gradient(135deg, ${planColor()}60, ${planColor()})` }}
+        style={{ background: `linear-gradient(135deg, ${roleColor()}60, ${roleColor()})` }}
       >
-        {props.avatar}
+        {initialsFor(props.user)}
       </div>
       <div class="flex min-w-0 flex-1 flex-col">
-        <span class="text-sm font-medium text-gray-100">{props.name}</span>
-        <span class="text-xs text-gray-500">{props.email}</span>
+        <span class="text-sm font-medium text-gray-100">
+          {props.user.displayName ?? props.user.email}
+        </span>
+        <span class="text-xs text-gray-500">{props.user.email}</span>
       </div>
-      <span
-        class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-        style={{ background: `${planColor()}18`, color: planColor() }}
+      <select
+        value={props.user.role}
+        disabled={props.pending}
+        onChange={(e) => props.onChangeRole(e.currentTarget.value as UserRole)}
+        class="w-24 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-1.5 text-xs text-gray-200 outline-none transition-colors duration-200 focus:border-blue-500/50 disabled:opacity-50"
       >
-        {props.plan}
+        <option value="admin">admin</option>
+        <option value="editor">editor</option>
+        <option value="viewer">viewer</option>
+      </select>
+      <span class="w-32 text-right text-xs text-gray-500">
+        {new Date(props.user.createdAt).toLocaleDateString()}
       </span>
-      <div class="flex items-center gap-2">
-        <div
-          class="h-2 w-2 rounded-full"
-          style={{ background: statusColor(), "box-shadow": `0 0 6px ${statusColor()}60` }}
-        />
-        <span class="text-xs capitalize text-gray-400">{props.status}</span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={props.onEdit}
-          class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.06] hover:text-white"
-        >
-          Edit
-        </button>
-        <button
-          type="button"
-          onClick={props.onSuspend}
-          class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all duration-200 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
-        >
-          Suspend
-        </button>
-      </div>
     </div>
   );
 }
@@ -176,81 +156,90 @@ function UserRow(props: {
 // ── Admin Dashboard Page ─────────────────────────────────────────────
 
 export default function AdminPage(): JSX.Element {
-  const [searchQuery, setSearchQuery] = createSignal("");
-  const [filterPlan, setFilterPlan] = createSignal<string>("all");
-  const [showInviteModal, setShowInviteModal] = createSignal(false);
-  const [inviteEmail, setInviteEmail] = createSignal("");
-  const [inviteSent, setInviteSent] = createSignal(false);
-  const [editingUserId, setEditingUserId] = createSignal<string | null>(null);
-  const [showSuspendConfirm, setShowSuspendConfirm] = createSignal<string | null>(null);
-  const [users, setUsers] = createSignal(MOCK_USERS);
+  return (
+    <AdminRoute>
+      <AdminPageContent />
+    </AdminRoute>
+  );
+}
 
-  const handleInviteUser = (): void => {
-    setShowInviteModal(true);
-    setInviteEmail("");
-    setInviteSent(false);
+function AdminPageContent(): JSX.Element {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = createSignal("");
+  const [filterRole, setFilterRole] = createSignal<string>("all");
+  const [pendingUserId, setPendingUserId] = createSignal<string | null>(null);
+
+  const [stats, { refetch: refetchStats }] = createResource(async () =>
+    trpc.admin.getStats.query(),
+  );
+  const [users, { refetch: refetchUsers }] = createResource(async () =>
+    (await trpc.admin.getRecentUsers.query()) as AdminUser[],
+  );
+  const [health, { refetch: refetchHealth }] = createResource(async () =>
+    trpc.admin.getSystemHealth.query(),
+  );
+
+  const refreshAll = (): void => {
+    refetchStats();
+    refetchUsers();
+    refetchHealth();
   };
 
-  const submitInvite = (): void => {
-    if (inviteEmail().trim() !== "") {
-      setInviteSent(true);
-      setTimeout(() => {
-        setShowInviteModal(false);
-        setInviteSent(false);
-      }, 2000);
+  const handleChangeRole = async (userId: string, role: UserRole): Promise<void> => {
+    setPendingUserId(userId);
+    try {
+      await trpc.admin.setUserRole.mutate({ userId, role });
+      showToast(`Role updated to ${role}`, "success");
+      await refetchUsers();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update role";
+      showToast(msg, "error");
+    } finally {
+      setPendingUserId(null);
     }
   };
 
-  const handleExportData = (): void => {
-    const header = "ID,Name,Email,Plan,Status";
-    const rows = users().map((u) => `${u.id},${u.name},${u.email},${u.plan},${u.status}`);
+  const handleExportUsers = (): void => {
+    const list = users() ?? [];
+    if (list.length === 0) {
+      showToast("No users to export yet", "info");
+      return;
+    }
+    const header = "ID,Email,Display Name,Role,Created At";
+    const rows = list.map((u) => {
+      const name = (u.displayName ?? "").replace(/"/g, '""');
+      return `${u.id},"${u.email}","${name}",${u.role},${new Date(u.createdAt).toISOString()}`;
+    });
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "crontech-users-export.csv";
+    a.download = `crontech-users-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    showToast(`Exported ${list.length} users`, "success");
   };
 
-  const handleViewLogs = (): void => {
-    window.location.href = "/admin/logs";
-  };
-
-  const handleSystemConfig = (): void => {
-    window.location.href = "/admin/config";
-  };
-
-  const handleEditUser = (userId: string): void => {
-    setEditingUserId(editingUserId() === userId ? null : userId);
-  };
-
-  const handleSuspendUser = (userId: string): void => {
-    if (showSuspendConfirm() === userId) {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === userId
-            ? { ...u, status: (u.status === "suspended" ? "active" : "suspended") as "active" | "inactive" | "suspended" }
-            : u
-        )
-      );
-      setShowSuspendConfirm(null);
-    } else {
-      setShowSuspendConfirm(userId);
-    }
-  };
-
-  const filteredUsers = (): typeof MOCK_USERS => {
-    return users().filter((u) => {
+  const filteredUsers = (): AdminUser[] => {
+    const list = users() ?? [];
+    return list.filter((u) => {
+      const q = searchQuery().toLowerCase();
+      const name = (u.displayName ?? "").toLowerCase();
       const matchesSearch =
-        u.name.toLowerCase().includes(searchQuery().toLowerCase()) ||
-        u.email.toLowerCase().includes(searchQuery().toLowerCase());
-      const matchesPlan = filterPlan() === "all" || u.plan === filterPlan();
-      return matchesSearch && matchesPlan;
+        q === "" || u.email.toLowerCase().includes(q) || name.includes(q);
+      const matchesRole = filterRole() === "all" || u.role === filterRole();
+      return matchesSearch && matchesRole;
     });
+  };
+
+  const fmtCurrency = (cents: number): string => {
+    return `$${(cents / 100).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   return (
@@ -263,47 +252,80 @@ export default function AdminPage(): JSX.Element {
           <div>
             <h1 class="text-3xl font-bold tracking-tight text-white">Admin Panel</h1>
             <p class="mt-1 text-sm text-gray-500">
-              Platform administration and system oversight
+              Live platform data. All numbers below come from the database — nothing is mocked.
             </p>
           </div>
           <div class="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleViewLogs}
+              onClick={refreshAll}
               class="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
             >
-              <span class="text-base">&#128203;</span>
-              View Logs
+              <span class="text-base">&#8635;</span>
+              Refresh
             </button>
             <button
               type="button"
-              onClick={handleExportData}
+              onClick={handleExportUsers}
               class="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
             >
               <span class="text-base">&#128229;</span>
-              Export Data
+              Export Users
             </button>
             <button
               type="button"
-              onClick={handleInviteUser}
+              onClick={() => navigate("/admin/support")}
               class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110"
             >
-              <span class="text-base">+</span>
-              Invite User
+              <span class="text-base">&#128231;</span>
+              Support Queue
             </button>
           </div>
         </div>
 
         {/* Stats Row */}
         <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Total Users" value="12,847" delta="+342 this week" icon="&#128101;" accentColor="#3b82f6" />
-          <StatCard label="Active Projects" value="3,291" delta="+89 this week" icon="&#128640;" accentColor="#8b5cf6" />
-          <StatCard label="API Calls Today" value="1.48M" delta="+12.4% vs yesterday" icon="&#9889;" accentColor="#10b981" />
-          <StatCard label="Revenue (MTD)" value="$284,750" delta="+18.2% vs last month" icon="&#128176;" accentColor="#f59e0b" />
+          <Show
+            when={stats()}
+            fallback={<StatSkeleton count={4} />}
+          >
+            {(s) => (
+              <>
+                <StatCard
+                  label="Total Users"
+                  value={s().totalUsers.toLocaleString()}
+                  sublabel="Registered accounts"
+                  icon="&#128101;"
+                  accentColor="#3b82f6"
+                />
+                <StatCard
+                  label="Active Subscriptions"
+                  value={s().activeSubscriptions.toLocaleString()}
+                  sublabel="Currently paying"
+                  icon="&#128179;"
+                  accentColor="#8b5cf6"
+                />
+                <StatCard
+                  label="Revenue (lifetime)"
+                  value={fmtCurrency(s().totalRevenue)}
+                  sublabel="Succeeded payments"
+                  icon="&#128176;"
+                  accentColor="#10b981"
+                />
+                <StatCard
+                  label="AI Generations"
+                  value={s().aiGenerations.toLocaleString()}
+                  sublabel="Total events logged"
+                  icon="&#9889;"
+                  accentColor="#f59e0b"
+                />
+              </>
+            )}
+          </Show>
         </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* User Management - takes 2 cols */}
+          {/* Recent Users - takes 2 cols */}
           <div class="lg:col-span-2">
             <div
               class="rounded-2xl border border-white/[0.06] p-6"
@@ -311,22 +333,24 @@ export default function AdminPage(): JSX.Element {
             >
               <div class="mb-5 flex items-center justify-between">
                 <div>
-                  <h2 class="text-lg font-semibold text-white">User Management</h2>
-                  <p class="text-xs text-gray-500">{users().length} total users</p>
+                  <h2 class="text-lg font-semibold text-white">Recent Users</h2>
+                  <p class="text-xs text-gray-500">
+                    <Show when={users()} fallback={<span>Loading…</span>}>
+                      {(list) => <span>{list().length} shown (latest 20)</span>}
+                    </Show>
+                  </p>
                 </div>
                 <div class="flex items-center gap-3">
-                  {/* Plan Filter */}
                   <select
-                    value={filterPlan()}
-                    onChange={(e) => setFilterPlan(e.currentTarget.value)}
+                    value={filterRole()}
+                    onChange={(e) => setFilterRole(e.currentTarget.value)}
                     class="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-300 outline-none transition-colors duration-200 focus:border-blue-500/50"
                   >
-                    <option value="all">All Plans</option>
-                    <option value="Free">Free</option>
-                    <option value="Pro">Pro</option>
-                    <option value="Enterprise">Enterprise</option>
+                    <option value="all">All Roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="editor">Editor</option>
+                    <option value="viewer">Viewer</option>
                   </select>
-                  {/* Search */}
                   <div class="relative">
                     <input
                       type="text"
@@ -340,82 +364,48 @@ export default function AdminPage(): JSX.Element {
                 </div>
               </div>
 
-              {/* Table Header */}
               <div class="mb-2 flex items-center gap-4 px-4 py-2">
                 <div class="w-9 shrink-0" />
                 <span class="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">User</span>
-                <span class="w-24 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Plan</span>
-                <span class="w-24 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Status</span>
-                <span class="w-36 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Actions</span>
+                <span class="w-24 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Role</span>
+                <span class="w-32 text-right text-[10px] font-semibold uppercase tracking-widest text-gray-600">Joined</span>
               </div>
 
-              {/* User Rows */}
-              <div class="flex flex-col gap-2">
-                <For each={filteredUsers()}>
-                  {(user) => (
-                    <div>
+              <Show
+                when={users()}
+                fallback={
+                  <div class="flex flex-col items-center gap-2 py-12">
+                    <div class="loading-spinner" />
+                    <span class="text-sm text-gray-500">Loading users…</span>
+                  </div>
+                }
+              >
+                <div class="flex flex-col gap-2">
+                  <For each={filteredUsers()}>
+                    {(user) => (
                       <UserRow
-                        name={user.name}
-                        email={user.email}
-                        plan={user.plan}
-                        status={user.status}
-                        avatar={user.avatar}
-                        onEdit={() => handleEditUser(user.id)}
-                        onSuspend={() => handleSuspendUser(user.id)}
+                        user={user}
+                        pending={pendingUserId() === user.id}
+                        onChangeRole={(role) => {
+                          void handleChangeRole(user.id, role);
+                        }}
                       />
-                      <Show when={editingUserId() === user.id}>
-                        <div class="mt-1 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
-                          <div class="flex items-center gap-3">
-                            <span class="text-xs text-gray-400">Editing {user.name}</span>
-                            <span class="text-xs text-gray-600">|</span>
-                            <span class="text-xs text-gray-500">{user.email}</span>
-                            <span class="text-xs text-gray-600">|</span>
-                            <span class="text-xs text-gray-500">{user.plan}</span>
-                            <div class="flex-1" />
-                            <button
-                              type="button"
-                              onClick={() => setEditingUserId(null)}
-                              class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-[10px] font-medium text-gray-400 transition-all hover:text-white"
-                            >
-                              Close
-                            </button>
-                          </div>
-                        </div>
-                      </Show>
-                      <Show when={showSuspendConfirm() === user.id}>
-                        <div class="mt-1 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
-                          <div class="flex items-center gap-3">
-                            <span class="text-xs text-red-400">
-                              {user.status === "suspended" ? `Reactivate ${user.name}?` : `Suspend ${user.name}?`}
-                            </span>
-                            <div class="flex-1" />
-                            <button
-                              type="button"
-                              onClick={() => setShowSuspendConfirm(null)}
-                              class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-[10px] font-medium text-gray-400 transition-all hover:text-white"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSuspendUser(user.id)}
-                              class="rounded-lg bg-red-600 px-3 py-1 text-[10px] font-semibold text-white transition-all hover:bg-red-500"
-                            >
-                              {user.status === "suspended" ? "Reactivate" : "Confirm Suspend"}
-                            </button>
-                          </div>
-                        </div>
-                      </Show>
-                    </div>
-                  )}
-                </For>
-              </div>
-
-              <Show when={filteredUsers().length === 0}>
-                <div class="flex flex-col items-center gap-2 py-12">
-                  <span class="text-2xl text-gray-600">&#128269;</span>
-                  <span class="text-sm text-gray-500">No users match your filters</span>
+                    )}
+                  </For>
                 </div>
+                <Show when={filteredUsers().length === 0}>
+                  <div class="flex flex-col items-center gap-2 py-12">
+                    <span class="text-2xl text-gray-600">&#128269;</span>
+                    <span class="text-sm text-gray-500">
+                      <Show
+                        when={(users() ?? []).length > 0}
+                        fallback={<>No users in the database yet</>}
+                      >
+                        No users match your filters
+                      </Show>
+                    </span>
+                  </div>
+                </Show>
               </Show>
             </div>
           </div>
@@ -428,23 +418,45 @@ export default function AdminPage(): JSX.Element {
             >
               <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-white">System Health</h2>
-                <div class="flex items-center gap-2">
-                  <div class="h-2 w-2 rounded-full bg-emerald-400" style={{ "box-shadow": "0 0 8px #10b98180" }} />
-                  <span class="text-xs font-medium text-emerald-400">All Systems Operational</span>
-                </div>
-              </div>
-              <div class="flex flex-col gap-2">
-                <For each={SYSTEM_HEALTH}>
-                  {(item) => (
-                    <HealthRow
-                      label={item.label}
-                      status={item.status}
-                      latency={item.latency}
-                      uptime={item.uptime}
-                    />
+                <Show when={health()}>
+                  {(h) => (
+                    <Show when={h().database === "ok" && h().api === "ok"}>
+                      <div class="flex items-center gap-2">
+                        <div
+                          class="h-2 w-2 rounded-full bg-emerald-400"
+                          style={{ "box-shadow": "0 0 8px #10b98180" }}
+                        />
+                        <span class="text-xs font-medium text-emerald-400">Operational</span>
+                      </div>
+                    </Show>
                   )}
-                </For>
+                </Show>
               </div>
+              <Show
+                when={health()}
+                fallback={
+                  <div class="flex flex-col items-center gap-2 py-6">
+                    <div class="loading-spinner" />
+                    <span class="text-xs text-gray-500">Checking services…</span>
+                  </div>
+                }
+              >
+                {(h) => (
+                  <div class="flex flex-col gap-2">
+                    <HealthRow label="API Gateway" status={h().api} />
+                    <HealthRow label="Database" status={h().database} />
+                    <HealthRow
+                      label="Sentinel Monitor"
+                      status={h().sentinel}
+                      detail={`${h().flagsLoaded} flags`}
+                    />
+                    <HealthRow label="WebSocket" status={h().websocket} />
+                    <div class="mt-2 text-[10px] text-gray-600">
+                      Last checked {new Date(h().timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
+              </Show>
             </div>
 
             {/* Quick Actions */}
@@ -456,46 +468,46 @@ export default function AdminPage(): JSX.Element {
               <div class="flex flex-col gap-2">
                 <button
                   type="button"
-                  onClick={handleInviteUser}
+                  onClick={() => navigate("/admin/support")}
                   class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
                 >
-                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#3b82f618", color: "#3b82f6" }}>&#128101;</span>
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#3b82f618", color: "#3b82f6" }}>&#128231;</span>
                   <div>
-                    <span class="text-sm font-medium text-gray-200">Invite User</span>
-                    <p class="text-[11px] text-gray-500">Send invitation to join the platform</p>
+                    <span class="text-sm font-medium text-gray-200">Support Queue</span>
+                    <p class="text-[11px] text-gray-500">Review AI draft replies before they go out</p>
                   </div>
                 </button>
                 <button
                   type="button"
-                  onClick={handleExportData}
+                  onClick={() => navigate("/admin/progress")}
                   class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
                 >
-                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#10b98118", color: "#10b981" }}>&#128229;</span>
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#10b98118", color: "#10b981" }}>&#128203;</span>
                   <div>
-                    <span class="text-sm font-medium text-gray-200">Export Data</span>
-                    <p class="text-[11px] text-gray-500">Download CSV of all user data</p>
+                    <span class="text-sm font-medium text-gray-200">Progress Board</span>
+                    <p class="text-[11px] text-gray-500">Track block status across the platform</p>
                   </div>
                 </button>
                 <button
                   type="button"
-                  onClick={handleViewLogs}
+                  onClick={handleExportUsers}
                   class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
                 >
-                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#f59e0b18", color: "#f59e0b" }}>&#128203;</span>
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#f59e0b18", color: "#f59e0b" }}>&#128229;</span>
                   <div>
-                    <span class="text-sm font-medium text-gray-200">View Logs</span>
-                    <p class="text-[11px] text-gray-500">Browse system and audit logs</p>
+                    <span class="text-sm font-medium text-gray-200">Export Users</span>
+                    <p class="text-[11px] text-gray-500">Download CSV of real users from the DB</p>
                   </div>
                 </button>
                 <button
                   type="button"
-                  onClick={handleSystemConfig}
+                  onClick={() => navigate("/status")}
                   class="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3 text-left transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.04]"
                 >
-                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#a78bfa18", color: "#a78bfa" }}>&#9881;</span>
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#a78bfa18", color: "#a78bfa" }}>&#128200;</span>
                   <div>
-                    <span class="text-sm font-medium text-gray-200">System Config</span>
-                    <p class="text-[11px] text-gray-500">Feature flags and environment settings</p>
+                    <span class="text-sm font-medium text-gray-200">Status Page</span>
+                    <p class="text-[11px] text-gray-500">Public uptime and incidents</p>
                   </div>
                 </button>
               </div>
@@ -503,52 +515,29 @@ export default function AdminPage(): JSX.Element {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Invite User Modal */}
-      <Show when={showInviteModal()}>
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div
-            class="mx-4 w-full max-w-md rounded-2xl border border-white/[0.08] p-6 shadow-2xl"
-            style={{ background: "linear-gradient(135deg, rgba(20,20,20,0.98) 0%, rgba(12,12,12,0.99) 100%)" }}
-          >
-            <h3 class="mb-1 text-lg font-bold text-white">Invite User</h3>
-            <p class="mb-5 text-xs text-gray-500">Send an invitation email to join the platform</p>
-            <Show
-              when={!inviteSent()}
-              fallback={
-                <div class="flex flex-col items-center gap-2 py-6">
-                  <span class="text-3xl text-emerald-400">&#10003;</span>
-                  <span class="text-sm font-medium text-emerald-400">Invitation sent to {inviteEmail()}</span>
-                </div>
-              }
-            >
-              <input
-                type="email"
-                placeholder="user@example.com"
-                value={inviteEmail()}
-                onInput={(e) => setInviteEmail(e.currentTarget.value)}
-                class="mb-4 w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50"
-              />
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowInviteModal(false)}
-                  class="flex-1 rounded-lg border border-white/[0.06] bg-white/[0.03] py-2.5 text-xs font-medium text-gray-400 transition-all hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={submitInvite}
-                  class="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 py-2.5 text-xs font-semibold text-white transition-all hover:brightness-110"
-                >
-                  Send Invitation
-                </button>
-              </div>
-            </Show>
+// ── Stat Skeleton ─────────────────────────────────────────────────────
+
+function StatSkeleton(props: { count: number }): JSX.Element {
+  return (
+    <For each={Array.from({ length: props.count })}>
+      {() => (
+        <div
+          class="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6"
+          style={{
+            background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
+          }}
+        >
+          <div class="flex flex-col gap-2">
+            <div class="h-3 w-24 animate-pulse rounded bg-white/[0.05]" />
+            <div class="h-8 w-32 animate-pulse rounded bg-white/[0.08]" />
+            <div class="h-3 w-20 animate-pulse rounded bg-white/[0.04]" />
           </div>
         </div>
-      </Show>
-    </div>
+      )}
+    </For>
   );
 }

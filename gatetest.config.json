@@ -1,0 +1,80 @@
+{
+  "$comment": "GateTest configuration for Crontech. BLK-007 observation sprint. See docs/BUILD_BIBLE.md BLK-007.",
+  "project": {
+    "name": "crontech",
+    "root": ".",
+    "packageManager": "bun",
+    "frameworks": ["solidstart", "hono", "trpc", "tailwind"]
+  },
+  "output": {
+    "console": true,
+    "json": "gatetest-report.json",
+    "sarif": "gatetest.sarif",
+    "html": "gatetest-report.html",
+    "junit": "gatetest-junit.xml"
+  },
+  "modules": {
+    "syntax":           { "enabled": true },
+    "lint":             { "enabled": true },
+    "secrets":          { "enabled": true },
+    "codeQuality":      { "enabled": true },
+    "unitTests":        { "enabled": false, "reason": "native bun run test already runs as a separate CI job" },
+    "integrationTests": { "enabled": false, "reason": "covered by native test job" },
+    "e2e":              { "enabled": false, "reason": "BLK-007 observation sprint — enable once live preview URL is available in CI" },
+    "visual":           { "enabled": true, "severity": "warn",  "reason": "visual regressions — the exact class of bug (bunched nav, clipped CORE badge, broken glyphs) that slipped through before BLK-007" },
+    "accessibility":    { "enabled": true, "severity": "error", "wcag": "2.2-AA" },
+    "performance":      { "enabled": true, "severity": "warn",  "budgets": { "fcp": 1000, "lcp": 1500, "inp": 100 } },
+    "security":         { "enabled": true, "severity": "error" },
+    "seo":              { "enabled": true, "severity": "warn" },
+    "links":            { "enabled": false, "reason": "native bun run check-links already runs as a CI step" },
+    "compatibility":    { "enabled": true, "severity": "warn",  "targets": ["chrome>=122", "firefox>=124", "safari>=17"] },
+    "dataIntegrity":    { "enabled": true, "severity": "warn" },
+    "documentation":    { "enabled": false, "reason": "BLK-007 observation sprint — re-enable once internal docs are stable" },
+    "liveCrawler":      { "enabled": false, "reason": "BLK-007 observation sprint — enable once a PR preview URL is served in CI (requires BLK-009)" },
+    "explorer":         { "enabled": false, "reason": "redundant with liveCrawler once enabled" },
+    "chaos":            { "enabled": false, "reason": "reserved for BLK-011 CRDT collab production hardening" },
+    "mutation":         { "enabled": false, "reason": "too slow for every-PR gating; run manually on major refactors" },
+    "aiReview":         { "enabled": true, "severity": "warn",  "model": "claude-opus-4-6", "reason": "Claude reviews the diff for logic / design / positioning drift. Requires ANTHROPIC_API_KEY." },
+    "fakeFixDetector":  { "enabled": true, "severity": "error", "reason": "catches 'Claude claimed to fix it but didn't' — the exact failure mode from the 14 April 2026 iPad screenshot incident" }
+  },
+  "severity": {
+    "blocking": ["error"],
+    "advisory": ["warn", "info"]
+  },
+  "gating": {
+    "mode": "report-only",
+    "reason": "BLK-007 observation sprint. Flip to 'strict' in the PR that adds GateTest to main branch protection's required-checks list.",
+    "flipTo": "strict"
+  },
+  "ignore": {
+    "paths": [
+      "node_modules/**",
+      ".turbo/**",
+      "apps/*/dist/**",
+      "apps/*/.output/**",
+      "apps/*/.vinxi/**",
+      "packages/*/dist/**",
+      "services/*/dist/**",
+      "**/*.min.js",
+      "**/*.map",
+      "coverage/**",
+      "docs/**/*.md",
+      "HANDOFF.md"
+    ],
+    "rules": {
+      "seo.socialMeta": "covered by SEOHead component",
+      "documentation.apiDocs": "tRPC types serve as the API spec"
+    }
+  },
+  "artifacts": {
+    "uploadOnFailure": true,
+    "uploadOnSuccess": true,
+    "retentionDays": 14
+  },
+  "doctrine": {
+    "claudeMd": "CLAUDE.md",
+    "positioningDoc": "docs/POSITIONING.md",
+    "buildBible": "docs/BUILD_BIBLE.md",
+    "reason": "aiReview module cross-references these when grading a diff to detect locked-block violations."
+  }
+}
