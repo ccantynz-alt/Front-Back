@@ -15,7 +15,7 @@
     "@back-to-the-future/api": "workspace:*",
     "@back-to-the-future/schemas": "workspace:*",
     "@back-to-the-future/ui": "workspace:*",
-    "@huggingface/transformers": "^3.4.0",
+    "@huggingface/transformers": "^4.0.1",
     "@json-render/core": "0.16.0",
     "@json-render/solid": "0.16.0",
     "@mlc-ai/web-llm": "^0.2.78",
