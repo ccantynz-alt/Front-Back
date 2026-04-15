@@ -6,14 +6,14 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { router, protectedProcedure, adminProcedure } from "../init";
 import {
   conversations,
   chatMessages,
   userProviderKeys,
 } from "@back-to-the-future/db";
-import { ANTHROPIC_MODELS } from "@back-to-the-future/ai-core";
+import { ANTHROPIC_MODELS, estimateCost } from "@back-to-the-future/ai-core";
 import { emitDataChange } from "../../realtime/live-updates";
 
 // ── IDs ────────────────────────────────────────────────────────────────
@@ -237,13 +237,24 @@ export const chatRouter = router({
         createdAt: new Date(),
       });
 
-      // Update conversation token totals
+      // Update conversation token + cost totals.
+      // Cost is stored in microdollars (1/1,000,000 of a dollar) for
+      // precision — matches the estimateCost() return contract.
       const tokenDelta = (input.inputTokens ?? 0) + (input.outputTokens ?? 0);
-      if (tokenDelta > 0) {
+      const costDelta = input.model
+        ? estimateCost(
+            input.model,
+            input.inputTokens ?? 0,
+            input.outputTokens ?? 0,
+          )
+        : 0;
+
+      if (tokenDelta > 0 || costDelta > 0) {
         await ctx.db
           .update(conversations)
           .set({
             totalTokens: sql`${conversations.totalTokens} + ${tokenDelta}`,
+            totalCost: sql`${conversations.totalCost} + ${costDelta}`,
             updatedAt: new Date(),
           })
           .where(eq(conversations.id, input.conversationId));
@@ -263,6 +274,80 @@ export const chatRouter = router({
       id,
       ...info,
     }));
+  }),
+
+  /**
+   * Returns current-month usage stats for the caller: total
+   * conversations, total tokens, and cost in microdollars. The
+   * "month" is the calendar month in UTC (first day 00:00).
+   */
+  getUsageStats: protectedProcedure.query(async ({ ctx }) => {
+    const now = new Date();
+    const monthStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0),
+    );
+
+    // All conversations for this user
+    const allConvs = await ctx.db
+      .select({
+        id: conversations.id,
+        updatedAt: conversations.updatedAt,
+        totalTokens: conversations.totalTokens,
+        totalCost: conversations.totalCost,
+      })
+      .from(conversations)
+      .where(eq(conversations.userId, ctx.userId));
+
+    // Month-bucketed: messages are the source of truth for "what
+    // was spent this month" — conversations.totalCost is lifetime.
+    // Sum cost of messages created in the current calendar month
+    // that belong to this user's conversations.
+    const monthlyRows = await ctx.db
+      .select({
+        conversationId: chatMessages.conversationId,
+        model: chatMessages.model,
+        inputTokens: chatMessages.inputTokens,
+        outputTokens: chatMessages.outputTokens,
+      })
+      .from(chatMessages)
+      .innerJoin(conversations, eq(chatMessages.conversationId, conversations.id))
+      .where(
+        and(
+          eq(conversations.userId, ctx.userId),
+          gte(chatMessages.createdAt, monthStart),
+        ),
+      );
+
+    let monthTokens = 0;
+    let monthCostMicro = 0;
+    for (const row of monthlyRows) {
+      const input = row.inputTokens ?? 0;
+      const output = row.outputTokens ?? 0;
+      monthTokens += input + output;
+      if (row.model) {
+        monthCostMicro += estimateCost(row.model, input, output);
+      }
+    }
+
+    const lifetimeCostMicro = allConvs.reduce(
+      (acc, c) => acc + (c.totalCost ?? 0),
+      0,
+    );
+    const lifetimeTokens = allConvs.reduce(
+      (acc, c) => acc + (c.totalTokens ?? 0),
+      0,
+    );
+
+    return {
+      conversationCount: allConvs.length,
+      lifetimeTokens,
+      lifetimeCostMicro,
+      lifetimeCostDollars: lifetimeCostMicro / 1_000_000,
+      monthTokens,
+      monthCostMicro,
+      monthCostDollars: monthCostMicro / 1_000_000,
+      monthStart: monthStart.toISOString(),
+    };
   }),
 
   // ── Provider Key Management (Admin Only) ─────────────────────────

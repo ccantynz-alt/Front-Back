@@ -387,6 +387,87 @@ Gluecron API surface to exist first.
 
 ---
 
+### BLK-020 — Admin Claude Console (BYOK builder interface) 🟡 BUILDING
+
+**Scope.** An admin-only Claude-native chat console at
+`/admin/claude` that lets Craig paste his own Anthropic API key
+and build websites / projects directly from the admin backend.
+Purpose: retire the $1,996/mo Craig pays for four rotating Claude
+Pro/Max seats (needed only to bypass rolling usage windows) and
+replace them with metered API usage (~$150–$400/mo for the same
+workload).
+
+**Build on.** Most of this already exists from a prior session:
+- `apps/api/src/trpc/procedures/chat.ts` — CRUD for conversations,
+  messages, and encrypted provider keys (XOR-obfuscated, keyed to
+  `SESSION_SECRET` — flagged as NOT cryptographic-grade; see
+  Follow-up below).
+- `apps/api/src/ai/chat-stream.ts` — Hono `POST /api/chat/stream`
+  that streams Anthropic responses via `streamText()`, resolving
+  the key from `userProviderKeys` → `ANTHROPIC_API_KEY` env.
+- `packages/ai-core/src/providers.ts` — `getAnthropicModel()`,
+  `ANTHROPIC_MODELS` catalog, `estimateCost()` in microdollars.
+- `packages/db/src/schema.ts` — `conversations`, `chatMessages`,
+  `userProviderKeys` tables.
+
+**This block adds.**
+1. Admin-gated route `/admin/claude` — Claude-native chat UI
+   wrapped in `AdminRoute`, with admin chrome (breadcrumb back to
+   `/admin`, monthly-spend indicator, link to
+   `/admin/claude/settings`). Reuses the same tRPC
+   `chatRouter` + `POST /api/chat/stream` as `/chat`.
+2. Admin-gated route `/admin/claude/settings` — paste/rotate
+   Anthropic API key (masked after save), default model picker
+   (Haiku / Sonnet / Opus), system prompt preset.
+3. tRPC `chat.getUsageStats` — returns current-month token + cost
+   totals for the caller, plus conversation count.
+4. `saveMessage` populates `conversations.totalCost` via
+   `estimateCost()` (currently only writes `totalTokens`). Fixes
+   the pre-existing bug where totalCost is always 0.
+5. Quick-action tile on `/admin` linking to `/admin/claude`.
+
+**Non-scope (v1).**
+- Hard monthly spend cap with enforcement (visibility only in v1 —
+  Craig can self-regulate from the spend counter).
+- Multi-user BYOK for non-admin users (admin-only for now; there
+  is an existing public `/chat` route already serving that case).
+- Tool use / function calling (text streaming only in v1).
+- File / image upload into the chat.
+- Prompt caching control UI (Anthropic SDK applies caching
+  automatically; no explicit control exposed yet).
+
+**Exit criteria.**
+1. `/admin/claude` renders, is admin-only, and streams real Claude
+   responses using the user's stored Anthropic API key.
+2. `/admin/claude/settings` successfully saves, masks, and deletes
+   an Anthropic key via `chat.saveProviderKey` /
+   `chat.deleteProviderKey`.
+3. Monthly spend (in dollars) is visible in the console header
+   and on `/admin` as a new stat tile.
+4. `saveMessage` writes `totalCost` — verified by existing
+   `chat.ts` tests + a new unit test.
+5. `bun run build`, `bun run check`, `bun run test`,
+   `bun run check-links`, `bun run check-buttons`, and
+   `bunx biome check` all pass.
+
+**Follow-up (separate blocks).**
+- Replace XOR obfuscation in `chat.ts` with AES-256-GCM backed by
+  a rotating KMS key (flagged by the file's own comment).
+- Hard monthly cap enforcement in `chat-stream.ts` (block stream
+  start if current-month cost ≥ cap).
+- Prompt-caching metrics surfaced in the spend counter.
+- Tool use / MCP tool approval flow so Claude can read repo
+  files when building in the console.
+
+**Lock clause.** This block is 🟡 BUILDING on
+`claude/admin-custom-ai-api-pDjEV`. Craig's explicit in-chat
+authorization on 2026-04-15 scopes it ("Absolutely let's build").
+Flipping it to ✅ SHIPPED and locking the non-scope list
+requires a normal BUILD_BIBLE amendment per the "Amending this
+file" section below.
+
+---
+
 ## Amending this file
 
 The Build Bible changes **only** with Craig's explicit in-chat

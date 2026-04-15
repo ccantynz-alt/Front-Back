@@ -51,6 +51,51 @@ echo "  Repo:   $REPO_URL"
 echo "  Branch: $BRANCH"
 echo "  SHA:    $GIT_SHA"
 echo "  Dir:    $APP_DIR"
+echo "  User:   $(whoami)"
+echo "  Host:   $(hostname)"
+echo "  Time:   $(date -u +%FT%TZ)"
+echo ""
+
+# ── 0. Host health snapshot ─────────────────────────────────────────
+# Dumped up-front so every failed deploy leaves a machine-readable
+# breadcrumb in the Actions log. If a later step fails, this block
+# usually tells us why (out of disk, Caddy dead, docker socket gone)
+# without anyone SSHing to the box.
+echo "=== Host health snapshot ==="
+echo "-- disk /:"
+df -h / | awk 'NR<=2'
+echo "-- disk /var/lib/docker:"
+df -h /var/lib/docker 2>/dev/null | awk 'NR<=2' || echo "  (not a separate mount)"
+echo "-- memory:"
+free -h | head -n 2
+echo "-- docker:"
+docker --version || { echo "FAIL: docker not installed or deploy user not in docker group" >&2; exit 1; }
+docker compose version || { echo "FAIL: docker compose plugin missing" >&2; exit 1; }
+echo "-- caddy:"
+if command -v caddy >/dev/null 2>&1; then
+    caddy version
+    if curl -fsS --max-time 2 http://localhost:2019/config/ >/dev/null 2>&1; then
+        echo "  admin API: reachable on localhost:2019"
+    else
+        echo "  admin API: NOT reachable on localhost:2019 (caddy may be down)"
+    fi
+else
+    echo "  caddy NOT in PATH"
+fi
+echo "-- env file ($ENV_FILE):"
+if [ -f "$ENV_FILE" ]; then
+    ENV_LINES=$(wc -l < "$ENV_FILE")
+    ENV_VARS=$(grep -cE '^[A-Z][A-Z0-9_]*=' "$ENV_FILE" || echo 0)
+    echo "  exists, $ENV_LINES lines, $ENV_VARS variables set"
+    # Print which REQUIRED vars are missing (names only, never values)
+    for var in DATABASE_URL SESSION_SECRET JWT_SECRET; do
+        if ! grep -qE "^${var}=" "$ENV_FILE"; then
+            echo "  WARNING: required var $var not set in env file"
+        fi
+    done
+else
+    echo "  MISSING"
+fi
 echo ""
 
 # ── 1. Preflight ────────────────────────────────────────────────────
@@ -69,6 +114,16 @@ if [ "$ACTUAL_SHA" != "$GIT_SHA" ]; then
     echo "FAIL: checked-out SHA $ACTUAL_SHA != requested $GIT_SHA" >&2
     exit 1
 fi
+
+# Confirm the compose + Caddyfile we're about to use actually exist
+# in the checkout — a rename or path typo otherwise looks like a
+# cryptic 'file not found' mid-build.
+for required in "$COMPOSE_FILE" "$CADDY_SRC" "infra/docker/Dockerfile.web" "infra/docker/Dockerfile.api"; do
+    if [ ! -f "$required" ]; then
+        echo "FAIL: required file missing from checkout: $required" >&2
+        exit 1
+    fi
+done
 
 # ── 2. Tear down yesterday's bootstrap compose if it's running ──────
 # setup.sh from yesterday placed a multi-app compose at /opt/crontech/
