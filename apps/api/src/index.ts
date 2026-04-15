@@ -438,11 +438,14 @@ if (typeof Bun !== "undefined") {
 }
 
 // ── Cloudflare Workers entry point ─────────────────────────────────
-// `default export = app` stays for compatibility with existing importers
-// (bun scripts, tests). The `workerHandler` export below is the shape
-// Workers expects for `fetch` + `scheduled` cron triggers. Wire
-// `wrangler.toml` `[triggers] crons = ["*/1 * * * *"]` to the
-// `workerHandler.scheduled` path.
+// The default export is the ModuleWorker shape Cloudflare expects for
+// both `fetch` AND `scheduled` cron triggers. `wrangler.toml`'s
+// `[triggers] crons = ["*/1 * * * *"]` routes the webhook dispatcher
+// through `workerHandler.scheduled`. The raw Hono `app` is still
+// exported as a named export so existing tests that call
+// `app.request(...)` keep working unchanged.
+export { app };
+
 export const workerHandler = {
   fetch: app.fetch,
   async scheduled(
@@ -464,4 +467,4 @@ export const workerHandler = {
   },
 };
 
-export default app;
+export default workerHandler;
