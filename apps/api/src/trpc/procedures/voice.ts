@@ -6,6 +6,12 @@
 //
 // Every dispatch is logged to the theatre so operators can watch voice
 // traffic live on /ops alongside deploys and ingests.
+//
+// TODO(BLK-020 Phase B): still uses Vercel `ai`'s `generateObject` for
+// schema-validated structured output. Porting to raw
+// `@anthropic-ai/sdk` requires wiring Anthropic's tool-use API
+// (single-tool-with-required-schema pattern) plus Zod → JSON-Schema
+// conversion and result validation. Deferred to Phase B.
 
 import { z } from "zod";
 import { generateObject } from "ai";

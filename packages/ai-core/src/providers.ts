@@ -2,6 +2,14 @@
 // Creates AI providers based on compute tier and environment config.
 // Supports OpenAI-compatible endpoints AND Anthropic natively.
 
+// TODO(BLK-020 Phase B): this module still imports `@ai-sdk/openai`,
+// `@ai-sdk/anthropic`, and `ai`'s `LanguageModel` type because the
+// returned value is consumed by `streamText`, `generateObject`,
+// tool-calling agents, and the site-builder generative-UI pipeline —
+// all of which require a `LanguageModel`. Porting this factory to
+// native vendor SDKs means reimplementing tool-call loops, multi-step
+// agents, and schema-validated object generation. That is Phase B
+// scope, tracked separately so Phase A can ship now.
 import { createOpenAI, type OpenAIProviderSettings } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { LanguageModel } from "ai";

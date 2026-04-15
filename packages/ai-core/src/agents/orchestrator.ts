@@ -2,6 +2,12 @@
 // LangGraph-style stateful multi-agent orchestration.
 // Agents plan, execute, observe, and adapt — not single-shot LLM calls.
 // Sustained autonomous workflows with memory and branching logic.
+//
+// TODO(BLK-020 Phase B): still depends on Vercel `ai`'s `streamText` +
+// `ModelMessage` + the tool-calling loop (via `allTools`). Porting this
+// to raw `@anthropic-ai/sdk` / `openai` requires reimplementing the
+// multi-step tool-call loop (parse tool call → execute → feed result
+// back → resume generation). Deferred to Phase B so Phase A can ship.
 
 import { streamText, type ModelMessage } from "ai";
 import { getModelForTier, getDefaultModel, type AIProviderEnv } from "../providers";

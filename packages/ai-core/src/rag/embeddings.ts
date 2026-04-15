@@ -1,7 +1,16 @@
 // ── Embedding Utilities ──────────────────────────────────────────────
 // Provides embedding functions for the RAG pipeline.
-// Uses AI SDK embed() when an API key is available,
-// falls back to deterministic hash-based embeddings otherwise.
+// Uses the native OpenAI SDK when an API key is available, falls back
+// to deterministic hash-based embeddings otherwise.
+//
+// BLK-020: dropped the Vercel AI SDK (`embed` + `@ai-sdk/openai`) here
+// because this call site is a trivial direct embedding request — no
+// tool calling, no schema validation, nothing that benefits from the
+// wrapper. Direct OpenAI SDK gives us smaller bundles and no
+// Vercel-owned abstraction between us and the vendor.
+//
+// Runtime compatibility: the `openai` package targets both Node/Bun
+// and Cloudflare Workers (fetch-based transport, no Node-only APIs).
 
 import type { EmbedFunction } from "./pipeline";
 
@@ -56,8 +65,9 @@ export function hashEmbedding(text: string, dimensions: number = 1536): number[]
 }
 
 /**
- * Creates an embed function that uses the AI SDK when an API key is available,
- * falling back to hash-based embeddings for demo/development mode.
+ * Creates an embed function that uses the native OpenAI SDK when an API
+ * key is available, falling back to hash-based embeddings for
+ * demo/development mode.
  */
 export function createEmbedFunction(options?: {
   apiKey?: string;
@@ -67,29 +77,34 @@ export function createEmbedFunction(options?: {
 }): EmbedFunction {
   const apiKey = options?.apiKey ?? getEnvVar("OPENAI_API_KEY");
   const dimensions = options?.dimensions ?? 1536;
+  const model = options?.model ?? "text-embedding-3-small";
 
   if (apiKey) {
-    // Use AI SDK embed() with real embeddings
+    // Use native OpenAI SDK with real embeddings
     return async (text: string): Promise<number[]> => {
       try {
-        const { embed } = await import("ai");
-        const { createOpenAI } = await import("@ai-sdk/openai");
+        const { default: OpenAI } = await import("openai");
 
-        const provider = createOpenAI({
-          apiKey,
-          ...(options?.baseURL ? { baseURL: options.baseURL } : {}),
+        const clientOptions: { apiKey: string; baseURL?: string } = { apiKey };
+        if (options?.baseURL !== undefined) {
+          clientOptions.baseURL = options.baseURL;
+        }
+        const client = new OpenAI(clientOptions);
+
+        const response = await client.embeddings.create({
+          model,
+          input: text,
         });
 
-        const result = await embed({
-          model: provider.embedding(options?.model ?? "text-embedding-3-small"),
-          value: text,
-        });
-
-        return result.embedding;
+        const vector = response.data[0]?.embedding;
+        if (!vector) {
+          throw new Error("OpenAI returned no embedding");
+        }
+        return vector;
       } catch (error) {
         // If the API call fails, fall back to hash embeddings
         const message = error instanceof Error ? error.message : String(error);
-        console.warn(`[embeddings] AI SDK embed() failed, using hash fallback: ${message}`);
+        console.warn(`[embeddings] OpenAI embed failed, using hash fallback: ${message}`);
         return hashEmbedding(text, dimensions);
       }
     };
