@@ -126,8 +126,11 @@ Crontech must be **80% to 100% ahead of every competitor at all times.** This is
 | Link checker | `bun run check-links` | 0 dead links |
 | Button checker | `bun run check-buttons` | 0 dead buttons |
 | Lint | `bunx biome check apps packages services` | exit 0 |
+| GateTest | `npx gatetest --suite full` (CI) | exit 0 (report-only during BLK-007 observation sprint, then required) |
 
 CI enforces these. The session-start hook reports them. **The agent enforces them voluntarily.** A session that pushes broken work to origin is a session that violated doctrine.
+
+**GateTest status (BLK-007).** GateTest currently runs in report-only mode (`continue-on-error: true`). Once BLK-007's observation sprint completes — two PRs with clean GateTest reports — the flag flips to `continue-on-error: false` and GateTest is added to `main` branch protection's required-checks list. From that point forward, a red GateTest blocks merge, full stop. See `docs/BUILD_BIBLE.md` → BLK-007 for the exact progression.
 
 ### 0.4.1 The Clean Green Ecosystem Rules (BINDING)
 
@@ -271,6 +274,55 @@ Every parallel agent MUST be briefed with:
 #### Why This Rule Exists
 
 Crontech is racing against companies with hundreds of engineers. We have agents. Our agents must move at agent speed, not human speed. **Every minute spent building serially when parallel was possible is a minute Vercel/Cloudflare/Supabase gained on us.** That is unacceptable.
+
+### 0.9 The New-Agent Onboarding Protocol (READ-AND-CONFIRM)
+
+**Authorized by Craig on 14 April 2026.** Every session in the Crontech repo must complete this protocol before touching a single file. No exceptions. No "I'll skip it just this once." The session-start hook already runs automatically; this protocol is what the agent must do with what the hook produces.
+
+#### The three mandatory reads
+
+Before calling any tool that writes, edits, or runs code, the agent MUST read — in full, not skim — the three doctrine files:
+
+1. **`CLAUDE.md`** (this file). Iron rules, session protocol, Craig authorization gate, build-quality gate, parallel-agent mandate.
+2. **`docs/POSITIONING.md`**. Locked brand doctrine — audience, tone, headline. Any marketing-copy change is gated by this file.
+3. **`docs/BUILD_BIBLE.md`**. Locked block list — `BLK-001..BLK-N`. Every feature, every refactor, every bug fix belongs to a block. Locked blocks cannot be modified without Craig's explicit in-chat authorization.
+
+If `HANDOFF.md` exists at the repo root, it is also mandatory reading. The handoff file may override normal workflow with session-specific context from the previous session.
+
+#### The mandatory confirmation line
+
+In the agent's **first message to Craig after the mandatory reads are complete**, the agent must post a single confirmation line, structured exactly like this:
+
+> **Doctrine confirmed.** Read: `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md`. Locked blocks: `BLK-001`…`BLK-NNN` (SET or SHIPPED). I will not modify any locked block without Craig's in-chat authorization. Current block in motion: `BLK-XXX — <name>`.
+
+Variations in phrasing are acceptable, but all four elements are mandatory:
+1. Acknowledgement of the three doctrine files.
+2. Explicit enumeration of locked block IDs.
+3. Statement of the no-modification-without-auth rule.
+4. Statement of which block this session is advancing (or "none — research only").
+
+Silent execution without the confirmation line is a doctrine breach. The next session will see the missing confirmation in the git log / chat history and treat the work as untrusted.
+
+#### The mandatory session log
+
+At session end — before the user closes the session or after the last commit / push is verified — the agent must append a `SESSION_LOG` entry to `HANDOFF.md`. The entry records:
+
+- Date and branch.
+- Block(s) advanced, with their new status (unchanged / advanced / shipped).
+- Files touched (apps-path list is enough; no need to copy diffs).
+- Any locked-block authorization Craig granted during the session, quoted verbatim.
+- Any open GateTest failures or unmerged PRs for the next agent to pick up.
+- A single-line handoff: "Next agent should start by ___."
+
+If `HANDOFF.md` does not exist, create it with this single entry. If it exists, append to the top (newest first).
+
+After the next session's first action, per §0.0 above, the old handoff is deleted.
+
+#### Why this protocol exists
+
+Craig has lost hours to session-drift: one agent shipping a locked-block rewrite that the previous agent had just corrected, a second agent silently reverting positioning copy, a third agent rebranding a locked route. Every one of those breaches cost trust and production time.
+
+The read-and-confirm protocol makes drift impossible to hide: if an agent writes to a locked block without citing Craig's authorization in its first message, the violation is visible in the chat history before any code runs. If the session ends without a `SESSION_LOG` entry, the next agent starts the next session knowing the prior agent broke protocol. Drift stops being silent, so drift stops being worth attempting.
 
 ---
 

@@ -1,175 +1,142 @@
 import { Title } from "@solidjs/meta";
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
+import { trpc } from "../lib/trpc";
+import { useQuery, useMutation, friendlyError } from "../lib/use-trpc";
 
-// ── Types ────────────────────────────────────────────────────────────
+// ── Billing (honest preview, real Stripe backend) ────────────────────
+//
+// What's REAL on this page:
+//   - Current subscription state from trpc.billing.getSubscription
+//   - Available plans from trpc.billing.getPlans (DB-backed, falls back
+//     to hardcoded tier list if the plans table is empty)
+//   - "Upgrade" launches trpc.billing.createCheckoutSession (hosted
+//     Stripe Checkout) and redirects the browser to Stripe
+//   - "Manage subscription" launches trpc.billing.createPortalSession
+//     (hosted Stripe Billing Portal) where Stripe handles invoices,
+//     cards, billing address, tax ID, plan changes, and cancellation
+//
+// What USED TO live here and didn't work:
+//   - Usage meters with invented 847,293 API calls / 12.4M tokens —
+//     no usage metering pipeline exists yet (BLK-011).
+//   - Hardcoded invoice list with five $29 invoices — Stripe's portal
+//     already provides the real ledger; we were duplicating it badly.
+//   - Fake "Visa ending 1234" card and "Update Payment Method" form
+//     that did nothing — Stripe's portal owns the real card vault.
+//   - Fake billing address that saved to a client signal — no address
+//     column in schema; Stripe's portal owns it.
+//   - In-app "Cancel Plan" button that set a local boolean and never
+//     told Stripe anything — the subscription kept billing.
+//
+// All of those surfaces now live where they belong: inside the Stripe
+// portal, one click away, with real state and real cancellation.
 
-interface UsageMeter {
-  label: string;
-  current: number;
-  limit: number;
-  unit: string;
-  accentColor: string;
-  icon: string;
+function formatMoney(cents: number | null | undefined): string {
+  if (cents === null || cents === undefined) return "—";
+  if (cents === 0) return "$0";
+  return `$${(cents / 100).toFixed(2)}`;
 }
 
-interface Invoice {
-  id: string;
-  date: string;
-  amount: string;
-  status: "paid" | "pending" | "failed";
-  period: string;
+function parseFeatures(raw: string | null | undefined): ReadonlyArray<string> {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter((v): v is string => typeof v === "string");
+  } catch {
+    // raw wasn't JSON — treat as a single line
+    return [raw];
+  }
+  return [];
 }
 
-// ── Mock Data ────────────────────────────────────────────────────────
+function formatRenewalDate(value: string | number | Date | null | undefined): string | null {
+  if (value === null || value === undefined || value === "" || value === 0) return null;
+  // tRPC serializes Date as ISO string over the wire but types it as Date/number.
+  // Unix-seconds (small numbers) are scaled; everything else is passed to Date().
+  let d: Date;
+  if (value instanceof Date) {
+    d = value;
+  } else if (typeof value === "number") {
+    const ms = value > 10_000_000_000 ? value : value * 1000;
+    d = new Date(ms);
+  } else {
+    d = new Date(value);
+  }
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+}
 
-const USAGE_METERS: UsageMeter[] = [
-  { label: "API Calls", current: 847_293, limit: 1_000_000, unit: "calls", accentColor: "#3b82f6", icon: "&#9889;" },
-  { label: "AI Tokens", current: 12_400_000, limit: 50_000_000, unit: "tokens", accentColor: "#8b5cf6", icon: "&#129302;" },
-  { label: "Storage", current: 28.4, limit: 50, unit: "GB", accentColor: "#10b981", icon: "&#128451;" },
-  { label: "Collaborators", current: 8, limit: 25, unit: "seats", accentColor: "#f59e0b", icon: "&#128101;" },
-];
-
-const INVOICES: Invoice[] = [
-  { id: "INV-2026-004", date: "Apr 1, 2026", amount: "$29.00", status: "pending", period: "Apr 2026" },
-  { id: "INV-2026-003", date: "Mar 1, 2026", amount: "$29.00", status: "paid", period: "Mar 2026" },
-  { id: "INV-2026-002", date: "Feb 1, 2026", amount: "$29.00", status: "paid", period: "Feb 2026" },
-  { id: "INV-2026-001", date: "Jan 1, 2026", amount: "$29.00", status: "paid", period: "Jan 2026" },
-  { id: "INV-2025-012", date: "Dec 1, 2025", amount: "$29.00", status: "paid", period: "Dec 2025" },
-];
-
-// ── Usage Meter Component ────────────────────────────────────────────
-
-function UsageMeterCard(props: { meter: UsageMeter }): JSX.Element {
-  const percentage = (): number => Math.min((props.meter.current / props.meter.limit) * 100, 100);
-  const isNearLimit = (): boolean => percentage() > 80;
-
-  const formatValue = (val: number): string => {
-    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-    if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
-    return val.toString();
-  };
-
-  return (
-    <div
-      class="group relative overflow-hidden rounded-2xl border border-white/[0.06] p-5 transition-all duration-300 hover:border-white/[0.12]"
-      style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
-    >
-      <div
-        class="absolute -top-10 -right-10 h-24 w-24 rounded-full opacity-15 blur-3xl transition-opacity duration-500 group-hover:opacity-30"
-        style={{ background: props.meter.accentColor }}
-      />
-
-      <div class="relative z-10">
-        <div class="mb-3 flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <span
-              class="flex h-8 w-8 items-center justify-center rounded-lg text-sm"
-              style={{
-                background: `${props.meter.accentColor}18`,
-                color: props.meter.accentColor,
-              }}
-              innerHTML={props.meter.icon}
-            />
-            <span class="text-sm font-medium text-gray-300">{props.meter.label}</span>
-          </div>
-          <Show when={isNearLimit()}>
-            <span class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-amber-400">Near Limit</span>
-          </Show>
-        </div>
-
-        <div class="mb-2 flex items-baseline justify-between">
-          <span class="text-2xl font-bold text-white">
-            {typeof props.meter.current === "number" && props.meter.current >= 1000
-              ? formatValue(props.meter.current)
-              : props.meter.current}
-          </span>
-          <span class="text-xs text-gray-600">
-            of {typeof props.meter.limit === "number" && props.meter.limit >= 1000
-              ? formatValue(props.meter.limit)
-              : props.meter.limit} {props.meter.unit}
-          </span>
-        </div>
-
-        {/* Progress Bar */}
-        <div class="h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
-          <div
-            class="h-full rounded-full transition-all duration-700"
-            style={{
-              width: `${percentage()}%`,
-              background: isNearLimit()
-                ? "linear-gradient(90deg, #f59e0b, #ef4444)"
-                : `linear-gradient(90deg, ${props.meter.accentColor}80, ${props.meter.accentColor})`,
-              "box-shadow": `0 0 12px ${props.meter.accentColor}40`,
-            }}
-          />
-        </div>
-
-        <div class="mt-2 text-right text-[11px] text-gray-600">{percentage().toFixed(1)}% used</div>
-      </div>
-    </div>
+export default function BillingPage(): JSX.Element {
+  const subscription = useQuery(
+    () =>
+      trpc.billing.getSubscription.query().catch(() => ({
+        status: "free" as const,
+        plan: "Free",
+        userId: "",
+        stripeSubscriptionId: null as string | null,
+        stripeCustomerId: null as string | null,
+        currentPeriodEnd: null as number | null,
+        cancelAtPeriodEnd: false,
+      })),
+    { key: "subscription" },
   );
-}
 
-// ── Invoice Status Badge ─────────────────────────────────────────────
+  const plans = useQuery(
+    () => trpc.billing.getPlans.query().catch(() => [] as Awaited<ReturnType<typeof trpc.billing.getPlans.query>>),
+    { key: "plans" },
+  );
 
-function InvoiceStatus(props: { status: "paid" | "pending" | "failed" }): JSX.Element {
-  const config = (): { color: string; label: string } => {
-    switch (props.status) {
-      case "paid":
-        return { color: "#10b981", label: "Paid" };
-      case "pending":
-        return { color: "#f59e0b", label: "Pending" };
-      case "failed":
-        return { color: "#ef4444", label: "Failed" };
+  const checkout = useMutation(
+    (input: { priceId: string }) => trpc.billing.createCheckoutSession.mutate(input),
+  );
+  const portal = useMutation(
+    (input: { customerId: string }) => trpc.billing.createPortalSession.mutate(input),
+  );
+
+  const [error, setError] = createSignal<string | null>(null);
+
+  const currentPlanName = createMemo((): string => subscription.data()?.plan ?? "Free");
+  const isPaid = createMemo((): boolean => {
+    const s = subscription.data();
+    return !!s && s.status !== "free" && !!s.stripeCustomerId;
+  });
+  const renewalDate = createMemo(() => formatRenewalDate(subscription.data()?.currentPeriodEnd));
+
+  const handleUpgrade = async (priceId: string): Promise<void> => {
+    if (!priceId) {
+      setError("This plan isn't available for self-service checkout yet — contact sales.");
+      return;
+    }
+    setError(null);
+    try {
+      const result = await checkout.mutate({ priceId });
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        setError("Stripe didn't return a checkout URL. Try again in a moment.");
+      }
+    } catch (err) {
+      setError(friendlyError(err));
     }
   };
 
-  return (
-    <span
-      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-      style={{ background: `${config().color}15`, color: config().color }}
-    >
-      <span class="h-1.5 w-1.5 rounded-full" style={{ background: config().color }} />
-      {config().label}
-    </span>
-  );
-}
-
-// ── Billing Page ─────────────────────────────────────────────────────
-
-export default function BillingPage(): JSX.Element {
-  const [showCancelConfirm, setShowCancelConfirm] = createSignal(false);
-  const [cancelledPlan, setCancelledPlan] = createSignal(false);
-  const [showPaymentEdit, setShowPaymentEdit] = createSignal(false);
-  const [showAddressEdit, setShowAddressEdit] = createSignal(false);
-
-  const generateInvoiceCsv = (invoice: Invoice): void => {
-    const csv = `Invoice ID,Date,Amount,Status,Period\n${invoice.id},${invoice.date},${invoice.amount},${invoice.status},${invoice.period}`;
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${invoice.id}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadAllInvoices = (): void => {
-    const header = "Invoice ID,Date,Amount,Status,Period";
-    const rows = INVOICES.map((inv) => `${inv.id},${inv.date},${inv.amount},${inv.status},${inv.period}`);
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "crontech-invoices.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handlePortal = async (): Promise<void> => {
+    const customerId = subscription.data()?.stripeCustomerId;
+    if (!customerId) {
+      setError("No Stripe customer on file yet — upgrade to a paid plan first.");
+      return;
+    }
+    setError(null);
+    try {
+      const result = await portal.mutate({ customerId });
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        setError("Stripe didn't return a portal URL. Try again in a moment.");
+      }
+    } catch (err) {
+      setError(friendlyError(err));
+    }
   };
 
   return (
@@ -180,15 +147,29 @@ export default function BillingPage(): JSX.Element {
         {/* Header */}
         <div class="mb-8">
           <h1 class="text-3xl font-bold tracking-tight text-white">Billing</h1>
-          <p class="mt-1 text-sm text-gray-500">Manage your subscription, usage, and payment methods</p>
+          <p class="mt-1 text-sm text-gray-500">
+            Your plan, billed through Stripe. Invoices, cards, tax details,
+            and cancellation all live in the Stripe portal linked below.
+          </p>
         </div>
+
+        <Show when={error()}>
+          {(msg) => (
+            <div class="mb-6 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-medium text-red-400">
+              {msg()}
+            </div>
+          )}
+        </Show>
 
         {/* Current Plan */}
         <div
           class="relative mb-8 overflow-hidden rounded-2xl border border-white/[0.06] p-6"
           style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
         >
-          <div class="absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-15 blur-3xl" style={{ background: "#3b82f6" }} />
+          <div
+            class="absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-15 blur-3xl"
+            style={{ background: "#3b82f6" }}
+          />
 
           <div class="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-5">
@@ -200,47 +181,60 @@ export default function BillingPage(): JSX.Element {
               </div>
               <div>
                 <div class="flex items-center gap-3">
-                  <h2 class="text-xl font-bold text-white">Pro Plan</h2>
-                  <span class="rounded-full bg-blue-500/15 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-400">Active</span>
+                  <h2 class="text-xl font-bold text-white">
+                    <Show when={!subscription.loading()} fallback="Loading…">
+                      {currentPlanName()} Plan
+                    </Show>
+                  </h2>
+                  <Show when={subscription.data()?.status}>
+                    {(status) => (
+                      <span
+                        class="rounded-full px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                        style={{
+                          background: status() === "active" ? "#10b98118" : status() === "free" ? "#6b728018" : "#f59e0b18",
+                          color: status() === "active" ? "#10b981" : status() === "free" ? "#9ca3af" : "#f59e0b",
+                        }}
+                      >
+                        {status()}
+                      </span>
+                    )}
+                  </Show>
+                  <Show when={subscription.data()?.cancelAtPeriodEnd}>
+                    <span class="rounded-full bg-amber-500/15 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+                      Cancels at period end
+                    </span>
+                  </Show>
                 </div>
-                <p class="mt-0.5 text-sm text-gray-500">$29/month, billed monthly. Renews Apr 30, 2026</p>
+                <p class="mt-0.5 text-sm text-gray-500">
+                  <Show
+                    when={isPaid() && renewalDate()}
+                    fallback={
+                      <Show
+                        when={isPaid()}
+                        fallback="Free tier — upgrade below to unlock paid features."
+                      >
+                        Active paid subscription. Use the portal to view details.
+                      </Show>
+                    }
+                  >
+                    {subscription.data()?.cancelAtPeriodEnd
+                      ? `Ends ${renewalDate()}`
+                      : `Renews ${renewalDate()}`}
+                  </Show>
+                </p>
               </div>
             </div>
             <div class="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => { window.location.href = "/pricing?upgrade=enterprise"; }}
-                class="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110"
-              >
-                Upgrade to Enterprise
-              </button>
-              <button
-                type="button"
-                onClick={() => { window.location.href = "/pricing"; }}
-                class="rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:text-white"
-              >
-                Manage Plan
-              </button>
-            </div>
-          </div>
-
-          {/* Plan Stats Row */}
-          <div class="relative z-10 mt-6 grid grid-cols-2 gap-4 rounded-xl border border-white/[0.04] bg-white/[0.02] p-4 sm:grid-cols-4">
-            <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] font-medium uppercase tracking-widest text-gray-600">Monthly Cost</span>
-              <span class="text-lg font-bold text-white">$29.00</span>
-            </div>
-            <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] font-medium uppercase tracking-widest text-gray-600">Next Payment</span>
-              <span class="text-lg font-bold text-white">Apr 30</span>
-            </div>
-            <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] font-medium uppercase tracking-widest text-gray-600">Member Since</span>
-              <span class="text-lg font-bold text-white">Jan 2026</span>
-            </div>
-            <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] font-medium uppercase tracking-widest text-gray-600">Billing Cycle</span>
-              <span class="text-lg font-bold text-white">Monthly</span>
+              <Show when={isPaid()}>
+                <button
+                  type="button"
+                  disabled={portal.loading()}
+                  onClick={() => void handlePortal()}
+                  class="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110 disabled:opacity-50"
+                >
+                  {portal.loading() ? "Opening…" : "Manage subscription"}
+                </button>
+              </Show>
             </div>
           </div>
 
@@ -250,185 +244,125 @@ export default function BillingPage(): JSX.Element {
           />
         </div>
 
-        {/* Usage Meters */}
+        {/* Plan list */}
         <div class="mb-8">
-          <h2 class="mb-4 text-lg font-semibold text-white">Usage This Period</h2>
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <For each={USAGE_METERS}>
-              {(meter) => <UsageMeterCard meter={meter} />}
-            </For>
-          </div>
+          <h2 class="mb-4 text-lg font-semibold text-white">Available plans</h2>
+          <Show
+            when={!plans.loading() && (plans.data() ?? []).length > 0}
+            fallback={
+              <div class="rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.01] px-6 py-10 text-center text-sm text-gray-500">
+                <Show when={plans.loading()} fallback="No plans configured.">
+                  Loading plans…
+                </Show>
+              </div>
+            }
+          >
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <For each={plans.data() ?? []}>
+                {(plan) => {
+                  const features = createMemo(() => parseFeatures(plan.features));
+                  const isCurrent = createMemo(
+                    (): boolean => currentPlanName().toLowerCase() === plan.name.toLowerCase(),
+                  );
+                  const isFree = plan.price === 0;
+                  return (
+                    <div
+                      class={`rounded-2xl border p-6 transition-all duration-200 ${
+                        isCurrent() ? "border-blue-500/40 bg-blue-500/5" : "border-white/[0.06] bg-[#0d0d0d] hover:border-white/[0.12]"
+                      }`}
+                    >
+                      <div class="mb-4 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-white">{plan.name}</h3>
+                        <Show when={isCurrent()}>
+                          <span class="rounded-full bg-blue-500/15 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                            Current
+                          </span>
+                        </Show>
+                      </div>
+                      <div class="mb-4">
+                        <span class="text-3xl font-bold text-white">{formatMoney(plan.price)}</span>
+                        <Show when={!isFree}>
+                          <span class="text-sm text-gray-500">/{plan.interval ?? "month"}</span>
+                        </Show>
+                      </div>
+                      <Show when={plan.description}>
+                        <p class="mb-4 text-xs text-gray-500">{plan.description}</p>
+                      </Show>
+                      <ul class="mb-5 flex flex-col gap-2">
+                        <For each={features()}>
+                          {(feature) => (
+                            <li class="flex items-start gap-2 text-xs text-gray-400">
+                              <span class="mt-0.5 text-emerald-400">&#10003;</span>
+                              <span>{feature}</span>
+                            </li>
+                          )}
+                        </For>
+                      </ul>
+                      <Show
+                        when={!isCurrent() && !isFree}
+                        fallback={
+                          <button
+                            type="button"
+                            disabled
+                            class="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] py-2.5 text-xs font-medium text-gray-500"
+                          >
+                            {isCurrent() ? "Your current plan" : "Free tier"}
+                          </button>
+                        }
+                      >
+                        <button
+                          type="button"
+                          disabled={checkout.loading() || !plan.stripePriceId}
+                          onClick={() => void handleUpgrade(plan.stripePriceId)}
+                          class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+                        >
+                          {checkout.loading() ? "Opening Stripe…" : plan.stripePriceId ? `Upgrade to ${plan.name}` : "Contact sales"}
+                        </button>
+                      </Show>
+                    </div>
+                  );
+                }}
+              </For>
+            </div>
+          </Show>
         </div>
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Invoice History - 2 cols */}
-          <div class="lg:col-span-2">
-            <div
-              class="rounded-2xl border border-white/[0.06] p-6"
-              style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
+        {/* Billing portal explainer */}
+        <div
+          class="rounded-2xl border border-white/[0.06] p-6"
+          style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
+        >
+          <h2 class="text-lg font-semibold text-white">Everything else lives in Stripe</h2>
+          <p class="mt-2 text-sm text-gray-400">
+            Invoices, payment methods, billing address, tax IDs, and
+            cancellation all live inside Stripe's billing portal. One click
+            from here, real state, real receipts, real PCI compliance — no
+            duplicate forms, no drifted data.
+          </p>
+          <div class="mt-5 flex flex-wrap gap-3">
+            <Show
+              when={isPaid()}
+              fallback={
+                <span class="text-xs text-gray-600">
+                  The portal becomes available after your first paid subscription.
+                </span>
+              }
             >
-              <div class="mb-5 flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-white">Invoice History</h2>
-                <button type="button" onClick={downloadAllInvoices} class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all hover:text-white">
-                  Download All
-                </button>
-              </div>
-
-              {/* Table Header */}
-              <div class="mb-2 grid grid-cols-5 gap-4 px-4 py-2">
-                <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Invoice</span>
-                <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Date</span>
-                <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Amount</span>
-                <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Status</span>
-                <span class="text-right text-[10px] font-semibold uppercase tracking-widest text-gray-600">Action</span>
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <For each={INVOICES}>
-                  {(invoice) => (
-                    <div class="grid grid-cols-5 items-center gap-4 rounded-xl border border-white/[0.04] bg-white/[0.015] px-4 py-3 transition-all duration-200 hover:border-white/[0.08] hover:bg-white/[0.03]">
-                      <span class="text-xs font-medium text-gray-300">{invoice.id}</span>
-                      <span class="text-xs text-gray-500">{invoice.date}</span>
-                      <span class="text-xs font-semibold text-white">{invoice.amount}</span>
-                      <InvoiceStatus status={invoice.status} />
-                      <div class="text-right">
-                        <button type="button" onClick={() => generateInvoiceCsv(invoice)} class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1 text-[10px] font-medium text-gray-400 transition-all hover:text-white">
-                          Download
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </For>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Method - right col */}
-          <div class="flex flex-col gap-6">
-            <div
-              class="rounded-2xl border border-white/[0.06] p-6"
-              style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
-            >
-              <h2 class="mb-5 text-lg font-semibold text-white">Payment Method</h2>
-              <div class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
-                <div class="flex items-center gap-4">
-                  <div class="flex h-12 w-18 items-center justify-center rounded-lg bg-gradient-to-r from-blue-700 to-blue-900 px-3 text-xs font-bold text-white">
-                    VISA
-                  </div>
-                  <div class="flex flex-1 flex-col">
-                    <span class="text-sm font-medium text-gray-200">Visa ending in 1234</span>
-                    <span class="text-xs text-gray-500">Expires 08/2028</span>
-                  </div>
-                </div>
-              </div>
               <button
                 type="button"
-                onClick={() => setShowPaymentEdit(!showPaymentEdit())}
-                class="mt-3 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] py-2.5 text-xs font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:text-white"
+                disabled={portal.loading()}
+                onClick={() => void handlePortal()}
+                class="rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
               >
-                {showPaymentEdit() ? "Cancel" : "Update Payment Method"}
+                {portal.loading() ? "Opening…" : "Open Stripe portal"}
               </button>
-              <Show when={showPaymentEdit()}>
-                <div class="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
-                  <div class="flex flex-col gap-3">
-                    <input type="text" placeholder="Card number" class="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50" />
-                    <div class="flex gap-3">
-                      <input type="text" placeholder="MM/YY" class="w-1/2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50" />
-                      <input type="text" placeholder="CVC" class="w-1/2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50" />
-                    </div>
-                    <button type="button" onClick={() => setShowPaymentEdit(false)} class="w-full rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 py-2 text-xs font-semibold text-white transition-all hover:brightness-110">
-                      Save Payment Method
-                    </button>
-                  </div>
-                </div>
-              </Show>
-            </div>
-
-            {/* Billing Address */}
-            <div
-              class="rounded-2xl border border-white/[0.06] p-6"
-              style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
-            >
-              <h2 class="mb-4 text-lg font-semibold text-white">Billing Address</h2>
-              <Show
-                when={!showAddressEdit()}
-                fallback={
-                  <div class="flex flex-col gap-3">
-                    <input type="text" placeholder="Full name" value="Craig Robertson" class="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50" />
-                    <input type="text" placeholder="Company" value="Crontech Inc." class="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50" />
-                    <input type="text" placeholder="Address" value="123 Innovation Drive" class="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50" />
-                    <input type="text" placeholder="City, State ZIP" value="San Francisco, CA 94105" class="w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-blue-500/50" />
-                    <div class="flex gap-3">
-                      <button type="button" onClick={() => setShowAddressEdit(false)} class="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 py-2 text-xs font-semibold text-white transition-all hover:brightness-110">Save</button>
-                      <button type="button" onClick={() => setShowAddressEdit(false)} class="flex-1 rounded-lg border border-white/[0.06] bg-white/[0.03] py-2 text-xs font-medium text-gray-400 transition-all hover:text-white">Cancel</button>
-                    </div>
-                  </div>
-                }
-              >
-                <div class="flex flex-col gap-1 text-sm text-gray-400">
-                  <span>Craig Robertson</span>
-                  <span>Crontech Inc.</span>
-                  <span>123 Innovation Drive</span>
-                  <span>San Francisco, CA 94105</span>
-                  <span>United States</span>
-                </div>
-              </Show>
-              <Show when={!showAddressEdit()}>
-                <button
-                  type="button"
-                  onClick={() => setShowAddressEdit(true)}
-                  class="mt-3 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all hover:text-white"
-                >
-                  Edit Address
-                </button>
-              </Show>
-            </div>
-
-            {/* Cancel Plan */}
-            <Show when={cancelledPlan()}>
-              <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
-                <p class="text-sm text-amber-400">
-                  Your plan has been cancelled. It will remain active until Apr 30, 2026, after which you will be moved to the Free plan.
-                </p>
-              </div>
-            </Show>
-            <Show when={!cancelledPlan()}>
-              <Show
-                when={!showCancelConfirm()}
-                fallback={
-                  <div class="rounded-2xl border border-red-500/20 bg-red-500/5 p-5">
-                    <p class="mb-3 text-sm text-red-400">
-                      Your plan will remain active until the end of the current billing period (Apr 30, 2026). After that, you will be moved to the Free plan.
-                    </p>
-                    <div class="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setShowCancelConfirm(false)}
-                        class="rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-xs font-medium text-gray-300 transition-all hover:text-white"
-                      >
-                        Keep Plan
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setCancelledPlan(true); setShowCancelConfirm(false); }}
-                        class="rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-red-500"
-                      >
-                        Confirm Cancellation
-                      </button>
-                    </div>
-                  </div>
-                }
-              >
-                <button
-                  type="button"
-                  onClick={() => setShowCancelConfirm(true)}
-                  class="text-center text-xs text-gray-600 transition-colors duration-200 hover:text-gray-400"
-                >
-                  Cancel Plan
-                </button>
-              </Show>
             </Show>
           </div>
+          <p class="mt-4 text-[11px] leading-relaxed text-gray-600">
+            Usage-based charts (API calls, AI tokens, storage, seats) arrive
+            with the usage-metering block (BLK-011). Until that pipeline is
+            live, this page shows only things we can verify against Stripe.
+          </p>
         </div>
       </div>
     </div>

@@ -483,7 +483,7 @@ export default function TemplatesPage(): JSX.Element {
                     "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
                 }}
               >
-                Open AI Builder
+                Open Composer
               </button>
             </A>
           </div>

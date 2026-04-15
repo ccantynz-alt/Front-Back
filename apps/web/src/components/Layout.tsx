@@ -20,6 +20,8 @@ const sidebarNavItems: readonly SidebarNavItem[] = [
   { href: "/projects", label: "Projects", icon: "\u{1F4C1}" },
   { href: "/templates", label: "Templates", icon: "\u{1F4CB}" },
   { href: "/repos", label: "Repos", icon: "\u{1F5C2}" },
+  { href: "/ops", label: "Ops Theatre", icon: "\u25B6" },
+  { href: "/flywheel", label: "Flywheel", icon: "\u27F3" },
   { href: "/settings", label: "Settings", icon: "\u2699" },
   { href: "/admin", label: "Admin", icon: "\u{1F512}" },
 ] as const;

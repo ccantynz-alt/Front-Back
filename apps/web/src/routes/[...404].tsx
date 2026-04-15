@@ -6,7 +6,7 @@ import { Button, Card, Stack, Text } from "@back-to-the-future/ui";
 const suggestions = [
   { href: "/", label: "Home" },
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/builder", label: "AI Builder" },
+  { href: "/builder", label: "Composer" },
   { href: "/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
   { href: "/about", label: "About" },

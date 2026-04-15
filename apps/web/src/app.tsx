@@ -7,6 +7,7 @@ import { Layout } from "./components/Layout";
 import { CommandPalette } from "./components/CommandPalette";
 import { AppErrorBoundary } from "./components/ErrorBoundary";
 import { ToastContainer } from "./components/Toast";
+import { VoiceGlobal } from "./components/VoiceGlobal";
 import { initAnalytics, stopAnalytics, trackPageView } from "./lib/analytics";
 import { connectLiveUpdates, disconnectLiveUpdates } from "./lib/live-updates";
 import "./app.css";
@@ -45,6 +46,7 @@ export default function App() {
                   <AnalyticsTracker />
                   <CommandPalette />
                   <ToastContainer />
+                  <VoiceGlobal />
                   <Layout>
                     <Suspense>{props.children}</Suspense>
                   </Layout>

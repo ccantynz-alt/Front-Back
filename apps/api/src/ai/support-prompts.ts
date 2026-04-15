@@ -85,11 +85,11 @@ export const PAGE_CONTEXT: Record<string, PageContext> = {
   },
   "/builder": {
     path: "/builder",
-    title: "Website Builder",
+    title: "Composer",
     suggestions: [
-      "How do I create a landing page?",
-      "Can I change the colors?",
-      "How do I publish my site?",
+      "How do I generate a component tree from a prompt?",
+      "Which compute tier will my request route to?",
+      "How do I export the generated components?",
     ],
   },
   "/video": {
