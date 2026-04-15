@@ -41,7 +41,11 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    # Default branch on this repo is `Main` (capital M), not `main`.
+    # GitHub ref matching is case-sensitive, so we need the exact name
+    # here or auto-deploy on merge never fires. Listing both is a
+    # belt-and-braces in case the default is ever renamed to lowercase.
+    branches: [Main, main]
   workflow_dispatch:
 
 concurrency:
