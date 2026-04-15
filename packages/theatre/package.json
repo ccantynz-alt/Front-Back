@@ -1,5 +1,5 @@
 {
-  "name": "@back-to-the-future/cfo-engine",
+  "name": "@back-to-the-future/theatre",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -7,13 +7,13 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "description": "Double-entry ledger with audit-log integration. Powers the Astra accounting vertical.",
   "scripts": {
     "check": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
-    "@crontech/audit-log": "workspace:*",
+    "@back-to-the-future/db": "workspace:*",
+    "drizzle-orm": "^0.45",
     "zod": "^4.3.6"
   },
   "devDependencies": {

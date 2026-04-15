@@ -10,18 +10,6 @@ import { useAuth } from "../stores";
 import { trpc } from "../lib/trpc";
 import { useQuery } from "../lib/use-trpc";
 
-// ── Seeded pseudo-random bars (consistent per day, unique each day) ──
-
-function seededBars(seed: number): number[] {
-  const bars: number[] = [];
-  let v = seed;
-  for (let i = 0; i < 12; i++) {
-    v = (v * 1103515245 + 12345) & 0x7fffffff;
-    bars.push(30 + (v % 65));
-  }
-  return bars;
-}
-
 // ── Animated Stat Card ────────────────────────────────────────────────
 
 interface StatCardProps {
@@ -176,23 +164,19 @@ function ActivityItem(props: ActivityItemProps): JSX.Element {
   );
 }
 
-// ── Mini Chart (Sparkline) ───────────────────────────────────────────
+// ── Usage Metric Row ──────────────────────────────────────────────────
 
-function MiniChart(props: { color: string; seed: number }): JSX.Element {
-  const bars = createMemo(() => seededBars(props.seed));
+function UsageMetric(props: { label: string; value: string; color: string }): JSX.Element {
   return (
-    <div class="flex items-end gap-[3px]" style={{ height: "48px" }}>
-      <For each={bars()}>
-        {(h) => (
-          <div
-            class="w-[6px] rounded-t-sm transition-all duration-500"
-            style={{
-              height: `${h}%`,
-              background: `linear-gradient(to top, ${props.color}40, ${props.color})`,
-            }}
-          />
-        )}
-      </For>
+    <div class="flex items-center justify-between rounded-lg border border-white/[0.04] bg-white/[0.015] px-4 py-3">
+      <div class="flex items-center gap-3">
+        <span
+          class="h-2.5 w-2.5 rounded-full"
+          style={{ background: props.color }}
+        />
+        <span class="text-xs text-gray-500">{props.label}</span>
+      </div>
+      <span class="font-mono text-sm font-semibold text-gray-200">{props.value}</span>
     </div>
   );
 }
@@ -201,13 +185,6 @@ function MiniChart(props: { color: string; seed: number }): JSX.Element {
 
 export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
   const auth = useAuth();
-
-  // ── Date seed for deterministic-per-day charts ──
-  const today = new Date();
-  const daySeed =
-    today.getFullYear() * 10000 +
-    (today.getMonth() + 1) * 100 +
-    today.getDate();
 
   const greeting = createMemo(() => {
     const h = new Date().getHours();
@@ -256,24 +233,15 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
     n === undefined ? "--" : n.toLocaleString();
 
   // ── System status derived from real health check ──
-  const systemIndicators = createMemo(() => {
-    const apiStatus = health.loading()
-      ? "Checking..."
-      : health.data()?.status === "ok"
-        ? "Online"
-        : "Degraded";
-    const apiColor = health.loading()
-      ? "#6b7280"
-      : health.data()?.status === "ok"
-        ? "#10b981"
-        : "#ef4444";
-
-    return [
-      { label: "API", status: apiStatus, color: apiColor },
-      { label: "Edge Network", status: "Active", color: "#10b981" },
-      { label: "AI Inference", status: "Available", color: "#8b5cf6" },
-      { label: "WebGPU", status: "Ready", color: "#06b6d4" },
-    ];
+  //
+  // We only show the API row here — it's the one chip we can verify from
+  // a single tRPC call. The full service fan-out (database, qdrant, stripe,
+  // email, sentinel) lives on /status, which reads the /health/monitor
+  // endpoint directly. No more fabricated "always green" indicators.
+  const apiIndicator = createMemo(() => {
+    if (health.loading()) return { status: "Checking…", color: "#6b7280" };
+    if (health.data()?.status === "ok") return { status: "Online", color: "#10b981" };
+    return { status: "Degraded", color: "#ef4444" };
   });
 
   // ── Activity feed: real data or get-started checklist ──
@@ -283,14 +251,14 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
 
   const getStartedItems: ActivityItemProps[] = [
     { icon: "\u{2795}", title: "Create your first project", description: "Set up a new site, app, or API project", time: "Step 1", accentColor: "#8b5cf6", href: "/builder" },
-    { icon: "\u{2728}", title: "Try the AI Builder", description: "Describe what you want and ship it in minutes", time: "Step 2", accentColor: "#f43f5e", href: "/builder" },
+    { icon: "\u{2728}", title: "Try the Composer", description: "Generate a component tree from a prompt. Routes through client GPU, edge, or cloud.", time: "Step 2", accentColor: "#f43f5e", href: "/builder" },
     { icon: "\u{26A1}", title: "Open Claude Chat", description: "Direct API access -- your key, your data, your control", time: "Step 3", accentColor: "#f97316", href: "/chat" },
     { icon: "\u{1F511}", title: "Configure API keys", description: "Add your OpenAI, Anthropic, or other provider keys", time: "Step 4", accentColor: "#06b6d4", href: "/settings" },
     { icon: "\u{1F4CB}", title: "Browse templates", description: "Start from a battle-tested blueprint and customize", time: "Step 5", accentColor: "#10b981", href: "/templates" },
   ];
 
   const quickActions: QuickActionProps[] = [
-    { title: "AI Website Builder", description: "Describe what you want. Ship it in minutes. Validated component trees, zero boilerplate.", href: "/builder", label: "Open builder", badge: "Popular", icon: "\u{1F680}", gradient: "#8b5cf6" },
+    { title: "Component Composer", description: "Generate validated SolidJS component trees from a prompt. Three-tier routing, zero boilerplate.", href: "/builder", label: "Open Composer", badge: "Popular", icon: "\u{1F680}", gradient: "#8b5cf6" },
     { title: "Video Editor", description: "GPU-accelerated editing straight in the browser. Effects, transitions, encoding -- all on-device.", href: "/video", label: "Open editor", badge: "WebGPU", icon: "\u{1F3AC}", gradient: "#f43f5e" },
     { title: "Real-Time Collaboration", description: "Start a session. Invite your team. Let AI agents co-author alongside them.", href: "/collab", label: "Start session", icon: "\u{1F91D}", gradient: "#06b6d4" },
     { title: "AI Playground", description: "Test prompts, swap models, tune agents. Ship from notebook to production in one click.", href: "/ai-playground", label: "Open playground", icon: "\u{1F9EA}", gradient: "#10b981" },
@@ -339,22 +307,24 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
               System Status
             </span>
             <div class="h-4 w-px bg-white/[0.08]" />
-            <For each={systemIndicators()}>
-              {(indicator) => (
-                <div class="flex items-center gap-2">
-                  <div
-                    class="h-1.5 w-1.5 rounded-full"
-                    style={{ background: indicator.color }}
-                  />
-                  <span class="text-xs text-gray-400">
-                    {indicator.label}:{" "}
-                    <span class="font-medium text-gray-300">
-                      {indicator.status}
-                    </span>
-                  </span>
-                </div>
-              )}
-            </For>
+            <div class="flex items-center gap-2">
+              <div
+                class="h-1.5 w-1.5 rounded-full"
+                style={{ background: apiIndicator().color }}
+              />
+              <span class="text-xs text-gray-400">
+                API:{" "}
+                <span class="font-medium text-gray-300">
+                  {apiIndicator().status}
+                </span>
+              </span>
+            </div>
+            <A
+              href="/status"
+              class="ml-auto text-xs text-violet-400 transition-colors hover:text-violet-300"
+            >
+              Full service status →
+            </A>
           </div>
 
           {/* ── Stats Grid ──────────────────────────────────────────── */}
@@ -461,41 +431,35 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
               </div>
             </div>
 
-            {/* Performance Charts Area */}
+            {/* Usage summary — real numbers from analytics, no faked charts */}
             <div class="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d0d]">
-              <div class="border-b border-white/[0.06] px-6 py-4">
-                <span class="text-sm font-semibold text-white">
-                  AI Usage (7d)
+              <div class="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+                <span class="text-sm font-semibold text-white">Usage summary</span>
+                <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-600">
+                  all-time
                 </span>
               </div>
-              <div class="flex flex-col gap-6 p-6">
-                <div>
-                  <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs text-gray-500">Generations</span>
-                    <span class="text-xs font-semibold text-gray-500">
-                      {fmt(usage.data()?.aiGenerations)}
-                    </span>
-                  </div>
-                  <MiniChart color="#10b981" seed={daySeed} />
-                </div>
-                <div>
-                  <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs text-gray-500">Page Views</span>
-                    <span class="text-xs font-semibold text-gray-500">
-                      {fmt(usage.data()?.pageViews)}
-                    </span>
-                  </div>
-                  <MiniChart color="#8b5cf6" seed={daySeed + 1} />
-                </div>
-                <div>
-                  <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs text-gray-500">Feature Usage</span>
-                    <span class="text-xs font-semibold text-gray-500">
-                      {fmt(usage.data()?.featureUsage)}
-                    </span>
-                  </div>
-                  <MiniChart color="#06b6d4" seed={daySeed + 2} />
-                </div>
+              <div class="flex flex-col gap-3 p-6">
+                <UsageMetric
+                  label="AI generations"
+                  value={usage.loading() ? "…" : fmt(usage.data()?.aiGenerations)}
+                  color="#10b981"
+                />
+                <UsageMetric
+                  label="Page views"
+                  value={usage.loading() ? "…" : fmt(usage.data()?.pageViews)}
+                  color="#8b5cf6"
+                />
+                <UsageMetric
+                  label="Feature events"
+                  value={usage.loading() ? "…" : fmt(usage.data()?.featureUsage)}
+                  color="#06b6d4"
+                />
+                <p class="mt-2 text-[11px] leading-relaxed text-gray-600">
+                  Time-series charts arrive with the analytics rollup service
+                  (BLK-011). Until then, these are the aggregate counts from
+                  your analytics events.
+                </p>
               </div>
             </div>
           </div>

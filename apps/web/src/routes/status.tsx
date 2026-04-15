@@ -1,94 +1,102 @@
-import { createSignal, For, onMount, onCleanup } from "solid-js";
+import { createResource, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { SEOHead } from "../components/SEOHead";
 
-// ── Types ───────────────────────────────────────────────────────────
+// ── Status page (honest edition) ────────────────────────────────────────
+//
+// This page reflects the live output of the API's /health/monitor endpoint.
+// No hardcoded uptime numbers. No Math.random() uptime bars. No claimed
+// response times. If the monitor hasn't published a snapshot yet, we say so.
+// If the API is unreachable, we say so. Uptime percentages and latency
+// averages are computed from the retained health history window.
 
-interface ServiceStatus {
-  name: string;
-  description: string;
-  status: "operational" | "degraded" | "outage" | "maintenance";
-  responseTime: number;
-  uptime: number;
-  icon: string;
+type RawStatus = "ok" | "degraded" | "down" | "unknown";
+
+interface ServiceCheck {
+  readonly name: string;
+  readonly status: RawStatus;
+  readonly latencyMs: number;
+  readonly detail?: string;
 }
 
-// ── Service Data ────────────────────────────────────────────────────
+interface HealthSnapshot {
+  readonly timestamp: string;
+  readonly overall: RawStatus;
+  readonly services: ReadonlyArray<ServiceCheck>;
+  readonly memoryMb: number;
+  readonly uptimeSec: number;
+}
 
-const SERVICES: ServiceStatus[] = [
-  {
-    name: "API",
-    description: "Core tRPC and REST API endpoints",
-    status: "operational",
-    responseTime: 12,
-    uptime: 99.99,
-    icon: "\u2699\uFE0F",
-  },
-  {
-    name: "Database (Turso)",
+interface HealthMonitorResponse {
+  readonly current: HealthSnapshot | null;
+  readonly history: ReadonlyArray<HealthSnapshot>;
+}
+
+const SERVICE_META: Record<string, { label: string; description: string; icon: string }> = {
+  database: {
+    label: "Database (Turso)",
     description: "Edge SQLite with embedded replicas",
-    status: "operational",
-    responseTime: 3,
-    uptime: 99.99,
     icon: "\uD83D\uDDC4\uFE0F",
   },
-  {
-    name: "Database (Neon)",
-    description: "Serverless PostgreSQL",
-    status: "operational",
-    responseTime: 18,
-    uptime: 99.98,
-    icon: "\uD83D\uDC18",
-  },
-  {
-    name: "Vector DB (Qdrant)",
+  qdrant: {
+    label: "Vector DB (Qdrant)",
     description: "Embeddings and semantic search",
-    status: "operational",
-    responseTime: 8,
-    uptime: 99.97,
     icon: "\uD83E\uDDE0",
   },
-  {
-    name: "AI Engine",
-    description: "Three-tier compute: client GPU, edge, cloud",
-    status: "operational",
-    responseTime: 45,
-    uptime: 99.95,
-    icon: "\u26A1",
+  stripe: {
+    label: "Billing (Stripe)",
+    description: "Payment processing and subscriptions",
+    icon: "\uD83D\uDCB3",
   },
-  {
-    name: "Edge Network",
-    description: "Cloudflare Workers across 330+ cities",
-    status: "operational",
-    responseTime: 4,
-    uptime: 99.99,
-    icon: "\uD83C\uDF10",
+  email: {
+    label: "Email",
+    description: "Transactional delivery (Resend / AlecRae)",
+    icon: "\u2709\uFE0F",
   },
-  {
-    name: "Collaboration",
-    description: "Real-time CRDTs, WebSocket, and presence",
-    status: "operational",
-    responseTime: 7,
-    uptime: 99.98,
-    icon: "\uD83D\uDC65",
+  sentinel: {
+    label: "Sentinel",
+    description: "24/7 competitive intelligence collectors",
+    icon: "\uD83D\uDEF0\uFE0F",
   },
-  {
-    name: "Authentication",
-    description: "Passkeys, OAuth, and session management",
-    status: "operational",
-    responseTime: 15,
-    uptime: 99.99,
-    icon: "\uD83D\uDD12",
-  },
-];
+};
 
-// ── Helpers ─────────────────────────────────────────────────────────
+// ── API URL resolution (mirrors lib/trpc.ts) ────────────────────────────
 
-function statusConfig(
-  status: string,
-): { label: string; color: string; bgColor: string; dotColor: string } {
+function getApiUrl(): string {
+  const meta = import.meta as unknown as Record<string, Record<string, string> | undefined>;
+  const envUrl = meta.env?.VITE_PUBLIC_API_URL;
+  if (envUrl) return envUrl;
+
+  if (typeof window !== "undefined") {
+    const { protocol, hostname } = window.location;
+    if (hostname === "crontech.ai" || hostname === "www.crontech.ai") {
+      return "https://api.crontech.ai";
+    }
+    if (hostname.endsWith(".pages.dev")) {
+      return `${protocol}//${hostname}`;
+    }
+  }
+  return "http://localhost:3001";
+}
+
+async function fetchHealth(): Promise<HealthMonitorResponse> {
+  const res = await fetch(`${getApiUrl()}/health/monitor`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`health endpoint returned ${res.status}`);
+  return (await res.json()) as HealthMonitorResponse;
+}
+
+// ── Status styling helpers ──────────────────────────────────────────────
+
+interface StatusStyle {
+  readonly label: string;
+  readonly color: string;
+  readonly bgColor: string;
+  readonly dotColor: string;
+}
+
+function statusConfig(status: RawStatus | "unreachable"): StatusStyle {
   switch (status) {
-    case "operational":
+    case "ok":
       return {
         label: "Operational",
         color: "rgb(52,211,153)",
@@ -97,24 +105,24 @@ function statusConfig(
       };
     case "degraded":
       return {
-        label: "Degraded Performance",
+        label: "Degraded",
         color: "rgb(251,191,36)",
         bgColor: "rgba(251,191,36,0.1)",
         dotColor: "rgb(251,191,36)",
       };
-    case "outage":
+    case "down":
       return {
-        label: "Major Outage",
+        label: "Outage",
         color: "rgb(248,113,113)",
         bgColor: "rgba(248,113,113,0.1)",
         dotColor: "rgb(248,113,113)",
       };
-    case "maintenance":
+    case "unreachable":
       return {
-        label: "Under Maintenance",
-        color: "rgb(147,197,253)",
-        bgColor: "rgba(147,197,253,0.1)",
-        dotColor: "rgb(147,197,253)",
+        label: "Monitor unreachable",
+        color: "rgb(248,113,113)",
+        bgColor: "rgba(248,113,113,0.1)",
+        dotColor: "rgb(248,113,113)",
       };
     default:
       return {
@@ -126,72 +134,212 @@ function statusConfig(
   }
 }
 
-function overallStatus(
-  services: ServiceStatus[],
-): "operational" | "degraded" | "outage" {
-  if (services.some((s) => s.status === "outage")) return "outage";
-  if (services.some((s) => s.status === "degraded")) return "degraded";
-  return "operational";
+function serviceMeta(name: string): { label: string; description: string; icon: string } {
+  return SERVICE_META[name] ?? { label: name, description: "Platform service", icon: "\u2699\uFE0F" };
 }
 
-// ── Uptime Bar Component ────────────────────────────────────────────
+// ── History math (no lies) ──────────────────────────────────────────────
 
-function UptimeBar(): JSX.Element {
-  // Simulate 90 days of uptime data
-  const days = Array.from({ length: 90 }, (_, i) => ({
-    day: i,
-    status: Math.random() > 0.02 ? "operational" : "degraded",
-  }));
+function uptimePercent(history: ReadonlyArray<HealthSnapshot>): number | null {
+  if (history.length === 0) return null;
+  const ok = history.filter((s) => s.overall === "ok").length;
+  return (ok / history.length) * 100;
+}
 
+function avgLatency(current: HealthSnapshot | null): number | null {
+  if (!current || current.services.length === 0) return null;
+  // Skip services with zero-latency synthetic checks (e.g. email config probe).
+  const measured = current.services.filter((s) => s.latencyMs > 0);
+  if (measured.length === 0) return null;
+  const sum = measured.reduce((a, s) => a + s.latencyMs, 0);
+  return Math.round(sum / measured.length);
+}
+
+function p99Latency(history: ReadonlyArray<HealthSnapshot>): number | null {
+  const all: number[] = [];
+  for (const snap of history) {
+    for (const svc of snap.services) {
+      if (svc.latencyMs > 0) all.push(svc.latencyMs);
+    }
+  }
+  if (all.length === 0) return null;
+  all.sort((a, b) => a - b);
+  const idx = Math.min(all.length - 1, Math.floor(all.length * 0.99));
+  return all[idx] ?? null;
+}
+
+function formatUptime(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3_600) return `${Math.floor(sec / 60)}m`;
+  if (sec < 86_400) {
+    const h = Math.floor(sec / 3_600);
+    const m = Math.floor((sec % 3_600) / 60);
+    return `${h}h ${m}m`;
+  }
+  const d = Math.floor(sec / 86_400);
+  const h = Math.floor((sec % 86_400) / 3_600);
+  return `${d}d ${h}h`;
+}
+
+function formatWindow(history: ReadonlyArray<HealthSnapshot>): string {
+  if (history.length < 2) return "insufficient history";
+  const first = history[0];
+  const last = history[history.length - 1];
+  if (!first || !last) return "insufficient history";
+  const spanMs = new Date(last.timestamp).getTime() - new Date(first.timestamp).getTime();
+  const spanSec = Math.max(1, Math.floor(spanMs / 1000));
+  return formatUptime(spanSec);
+}
+
+// ── Recent history bar (real data, not Math.random) ─────────────────────
+
+function HistoryBar(props: { history: ReadonlyArray<HealthSnapshot> }): JSX.Element {
   return (
-    <div class="flex gap-[2px] items-end h-8">
-      <For each={days}>
-        {(day) => (
-          <div
-            class="flex-1 min-w-[2px] h-full rounded-sm transition-opacity duration-200 hover:opacity-80"
-            style={{
-              background:
-                day.status === "operational"
-                  ? "rgb(52,211,153)"
-                  : "rgb(251,191,36)",
-              opacity: "0.6",
-            }}
-            title={`Day ${90 - day.day}: ${day.status === "operational" ? "Operational" : "Degraded"}`}
-          />
-        )}
-      </For>
-    </div>
+    <Show
+      when={props.history.length > 0}
+      fallback={
+        <div class="flex h-8 items-center justify-center rounded-md border border-white/[0.04] bg-white/[0.02] text-xs text-white/30">
+          No health snapshots retained yet.
+        </div>
+      }
+    >
+      <div class="flex h-8 items-end gap-[2px]">
+        <For each={[...props.history]}>
+          {(snap) => {
+            const cfg = statusConfig(snap.overall);
+            const whenLabel = new Date(snap.timestamp).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            return (
+              <div
+                class="h-full min-w-[2px] flex-1 rounded-sm transition-opacity duration-200 hover:opacity-80"
+                style={{ background: cfg.dotColor, opacity: "0.7" }}
+                title={`${whenLabel} — ${cfg.label}`}
+              />
+            );
+          }}
+        </For>
+      </div>
+    </Show>
   );
 }
 
-// ── Main Page ───────────────────────────────────────────────────────
+// ── Incident derivation (from real history) ─────────────────────────────
+
+interface IncidentSummary {
+  readonly start: string;
+  readonly end: string;
+  readonly worst: RawStatus;
+  readonly affected: ReadonlyArray<string>;
+}
+
+function deriveIncidents(history: ReadonlyArray<HealthSnapshot>): ReadonlyArray<IncidentSummary> {
+  const incidents: IncidentSummary[] = [];
+  let open: { start: string; end: string; worst: RawStatus; affected: Set<string> } | null = null;
+
+  for (const snap of history) {
+    const isIncident = snap.overall === "degraded" || snap.overall === "down";
+    if (isIncident) {
+      const affected = snap.services
+        .filter((s) => s.status === "degraded" || s.status === "down")
+        .map((s) => s.name);
+      if (!open) {
+        open = {
+          start: snap.timestamp,
+          end: snap.timestamp,
+          worst: snap.overall,
+          affected: new Set(affected),
+        };
+      } else {
+        open.end = snap.timestamp;
+        if (snap.overall === "down") open.worst = "down";
+        for (const a of affected) open.affected.add(a);
+      }
+    } else if (open) {
+      incidents.push({
+        start: open.start,
+        end: open.end,
+        worst: open.worst,
+        affected: [...open.affected],
+      });
+      open = null;
+    }
+  }
+  if (open) {
+    incidents.push({
+      start: open.start,
+      end: open.end,
+      worst: open.worst,
+      affected: [...open.affected],
+    });
+  }
+  return incidents.reverse(); // Newest first
+}
+
+// ── Main page ───────────────────────────────────────────────────────────
 
 export default function StatusPage(): JSX.Element {
-  const [currentTime, setCurrentTime] = createSignal(new Date());
-  const [subscribeEmail, setSubscribeEmail] = createSignal("");
-  const [subscribed, setSubscribed] = createSignal(false);
+  const [data, { refetch }] = createResource(fetchHealth);
+  const [now, setNow] = createSignal(new Date());
 
-  let timer: ReturnType<typeof setInterval> | undefined;
+  let pollTimer: ReturnType<typeof setInterval> | undefined;
+  let clockTimer: ReturnType<typeof setInterval> | undefined;
   onMount(() => {
-    timer = setInterval(() => setCurrentTime(new Date()), 60_000);
+    pollTimer = setInterval(() => {
+      void refetch();
+    }, 30_000);
+    clockTimer = setInterval(() => setNow(new Date()), 1_000);
   });
   onCleanup(() => {
-    if (timer) clearInterval(timer);
+    if (pollTimer) clearInterval(pollTimer);
+    if (clockTimer) clearInterval(clockTimer);
   });
 
-  const overall = (): ReturnType<typeof statusConfig> =>
-    statusConfig(overallStatus(SERVICES));
+  const current = (): HealthSnapshot | null => data()?.current ?? null;
+  const history = (): ReadonlyArray<HealthSnapshot> => data()?.history ?? [];
+
+  const overall = (): StatusStyle => {
+    if (data.error) return statusConfig("unreachable");
+    const c = current();
+    if (!c) return statusConfig("unknown");
+    return statusConfig(c.overall);
+  };
+
+  const overallHeadline = (): string => {
+    if (data.error) return "Status monitor unreachable";
+    const c = current();
+    if (!c) return "Waiting for first health snapshot";
+    if (c.overall === "ok") return "All systems operational";
+    if (c.overall === "degraded") return "Degraded performance";
+    if (c.overall === "down") return "Major outage";
+    return "Status unknown";
+  };
+
+  const lastUpdatedLabel = (): string => {
+    const c = current();
+    if (!c) return now().toLocaleString();
+    return new Date(c.timestamp).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZoneName: "short",
+    });
+  };
 
   return (
     <>
       <SEOHead
         title="System Status"
-        description="Real-time operational status for all Crontech platform services. API, databases, AI engine, edge network, and more."
+        description="Live operational status for Crontech. Numbers are computed from real health snapshots, not marketing claims."
         path="/status"
       />
 
       <div class="min-h-screen" style={{ background: "#0a0a0a" }}>
-        {/* ── Hero / Overall Status Banner ────────────────────────── */}
+        {/* Hero */}
         <div class="relative overflow-hidden">
           <div
             class="absolute inset-0 opacity-20"
@@ -200,7 +348,6 @@ export default function StatusPage(): JSX.Element {
                 "radial-gradient(ellipse at 50% 0%, rgba(52,211,153,0.15) 0%, transparent 60%)",
             }}
           />
-
           <div class="relative mx-auto max-w-4xl px-6 pt-20 pb-12">
             <div class="flex flex-col items-center text-center">
               <h1
@@ -215,19 +362,10 @@ export default function StatusPage(): JSX.Element {
               >
                 System Status
               </h1>
-              <p class="mt-3 text-white/40 text-sm">
-                Last updated:{" "}
-                {currentTime().toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  timeZoneName: "short",
-                })}
+              <p class="mt-3 text-sm text-white/40">
+                Last snapshot: {lastUpdatedLabel()}
               </p>
 
-              {/* Overall status card */}
               <div
                 class="mt-8 w-full max-w-lg rounded-2xl border p-6"
                 style={{
@@ -236,122 +374,127 @@ export default function StatusPage(): JSX.Element {
                 }}
               >
                 <div class="flex items-center justify-center gap-3">
-                  {/* Animated pulse dot */}
                   <div class="relative">
                     <div
                       class="h-3 w-3 rounded-full"
                       style={{ background: overall().dotColor }}
                     />
                     <div
-                      class="absolute inset-0 h-3 w-3 rounded-full animate-ping opacity-50"
+                      class="absolute inset-0 h-3 w-3 animate-ping rounded-full opacity-50"
                       style={{ background: overall().dotColor }}
                     />
                   </div>
-                  <span
-                    class="text-xl font-semibold"
-                    style={{ color: overall().color }}
-                  >
-                    {overall().label === "Operational"
-                      ? "All Systems Operational"
-                      : overall().label}
+                  <span class="text-xl font-semibold" style={{ color: overall().color }}>
+                    {overallHeadline()}
                   </span>
                 </div>
+                <Show when={data.error}>
+                  <p class="mt-2 text-xs text-white/40">
+                    Could not reach the monitor endpoint. The API may be restarting or
+                    the browser may be offline. Retrying every 30s.
+                  </p>
+                </Show>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Services List ───────────────────────────────────────── */}
+        {/* Services */}
         <div class="mx-auto max-w-4xl px-6 pb-8">
           <div class="mb-6 flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-white/80">
-              Service Status
-            </h2>
-            <span class="text-xs text-white/25 font-mono">
-              {SERVICES.length} services monitored
+            <h2 class="text-lg font-semibold text-white/80">Service Status</h2>
+            <span class="font-mono text-xs text-white/25">
+              {current()?.services.length ?? 0} services monitored
             </span>
           </div>
 
-          <div
-            class="rounded-2xl border border-white/[0.06] overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(145deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%)",
-              "backdrop-filter": "blur(12px)",
-            }}
+          <Show
+            when={current()}
+            fallback={
+              <div
+                class="rounded-2xl border border-white/[0.06] p-10 text-center"
+                style={{ background: "rgba(255,255,255,0.02)" }}
+              >
+                <Show when={data.loading}>
+                  <p class="text-sm text-white/40">Loading health data…</p>
+                </Show>
+                <Show when={data.error}>
+                  <p class="text-sm text-white/60">
+                    Monitor endpoint unreachable. No live service data to display.
+                  </p>
+                </Show>
+                <Show when={!data.loading && !data.error && !current()}>
+                  <p class="text-sm text-white/50">
+                    Monitor is running but has not published a snapshot yet. Check back in a minute.
+                  </p>
+                </Show>
+              </div>
+            }
           >
-            <For each={SERVICES}>
-              {(service, index) => {
-                const config = statusConfig(service.status);
-                return (
-                  <div
-                    class="flex items-center gap-4 px-6 py-4 transition-colors duration-200 hover:bg-white/[0.02]"
-                    style={{
-                      "border-bottom":
-                        index() < SERVICES.length - 1
-                          ? "1px solid rgba(255,255,255,0.04)"
-                          : "none",
-                    }}
-                  >
-                    {/* Icon + name */}
-                    <span class="text-lg shrink-0 w-8 text-center">
-                      {service.icon}
-                    </span>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-2">
-                        <span class="text-sm font-medium text-white/80">
-                          {service.name}
-                        </span>
-                      </div>
-                      <span class="text-xs text-white/30">
-                        {service.description}
-                      </span>
-                    </div>
-
-                    {/* Metrics */}
-                    <div class="hidden sm:flex items-center gap-6 shrink-0">
-                      <div class="text-right">
-                        <span class="block text-xs text-white/25">
-                          Response
-                        </span>
-                        <span class="text-sm font-mono text-white/60">
-                          {service.responseTime}ms
-                        </span>
-                      </div>
-                      <div class="text-right">
-                        <span class="block text-xs text-white/25">
-                          Uptime
-                        </span>
-                        <span class="text-sm font-mono text-emerald-400/80">
-                          {service.uptime}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Status indicator */}
-                    <div
-                      class="flex items-center gap-2 shrink-0 rounded-full px-3 py-1"
-                      style={{ background: config.bgColor }}
-                    >
+            {(snap) => (
+              <div
+                class="overflow-hidden rounded-2xl border border-white/[0.06]"
+                style={{
+                  background:
+                    "linear-gradient(145deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%)",
+                  "backdrop-filter": "blur(12px)",
+                }}
+              >
+                <For each={snap().services}>
+                  {(service, index) => {
+                    const cfg = statusConfig(service.status);
+                    const meta = serviceMeta(service.name);
+                    return (
                       <div
-                        class="h-2 w-2 rounded-full"
-                        style={{ background: config.dotColor }}
-                      />
-                      <span
-                        class="text-xs font-medium"
-                        style={{ color: config.color }}
+                        class="flex items-center gap-4 px-6 py-4 transition-colors duration-200 hover:bg-white/[0.02]"
+                        style={{
+                          "border-bottom":
+                            index() < snap().services.length - 1
+                              ? "1px solid rgba(255,255,255,0.04)"
+                              : "none",
+                        }}
                       >
-                        {config.label}
-                      </span>
-                    </div>
-                  </div>
-                );
-              }}
-            </For>
-          </div>
+                        <span class="w-8 shrink-0 text-center text-lg">{meta.icon}</span>
+                        <div class="min-w-0 flex-1">
+                          <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-white/80">{meta.label}</span>
+                          </div>
+                          <span class="text-xs text-white/30">
+                            {service.detail ?? meta.description}
+                          </span>
+                        </div>
+
+                        <div class="hidden shrink-0 items-center gap-6 sm:flex">
+                          <div class="text-right">
+                            <span class="block text-xs text-white/25">Latency</span>
+                            <span class="font-mono text-sm text-white/60">
+                              {service.latencyMs > 0 ? `${service.latencyMs}ms` : "—"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div
+                          class="flex shrink-0 items-center gap-2 rounded-full px-3 py-1"
+                          style={{ background: cfg.bgColor }}
+                        >
+                          <div
+                            class="h-2 w-2 rounded-full"
+                            style={{ background: cfg.dotColor }}
+                          />
+                          <span class="text-xs font-medium" style={{ color: cfg.color }}>
+                            {cfg.label}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                </For>
+              </div>
+            )}
+          </Show>
         </div>
 
-        {/* ── 90-Day Uptime ───────────────────────────────────────── */}
+        {/* Recent history bar */}
         <div class="mx-auto max-w-4xl px-6 pb-8">
           <div
             class="rounded-2xl border border-white/[0.06] p-6"
@@ -360,130 +503,167 @@ export default function StatusPage(): JSX.Element {
               "backdrop-filter": "blur(12px)",
             }}
           >
-            <div class="flex items-center justify-between mb-4">
+            <div class="mb-4 flex items-center justify-between">
               <h3 class="text-sm font-semibold text-white/60">
-                90-Day Uptime
+                Recent Uptime
+                <span class="ml-2 font-normal text-white/30">
+                  (window: {formatWindow(history())}, {history().length} snapshots)
+                </span>
               </h3>
               <div class="flex items-center gap-4 text-xs text-white/30">
                 <span class="flex items-center gap-1.5">
                   <span
                     class="inline-block h-2 w-2 rounded-sm"
-                    style={{
-                      background: "rgb(52,211,153)",
-                      opacity: "0.6",
-                    }}
+                    style={{ background: "rgb(52,211,153)", opacity: "0.7" }}
                   />
                   Operational
                 </span>
                 <span class="flex items-center gap-1.5">
                   <span
                     class="inline-block h-2 w-2 rounded-sm"
-                    style={{
-                      background: "rgb(251,191,36)",
-                      opacity: "0.6",
-                    }}
+                    style={{ background: "rgb(251,191,36)", opacity: "0.7" }}
                   />
                   Degraded
                 </span>
+                <span class="flex items-center gap-1.5">
+                  <span
+                    class="inline-block h-2 w-2 rounded-sm"
+                    style={{ background: "rgb(248,113,113)", opacity: "0.7" }}
+                  />
+                  Outage
+                </span>
               </div>
             </div>
-            <UptimeBar />
-            <div class="mt-2 flex justify-between text-xs text-white/20">
-              <span>90 days ago</span>
-              <span>Today</span>
-            </div>
+            <HistoryBar history={history()} />
+            <p class="mt-3 text-xs text-white/25">
+              The API retains the last 1,000 health checks (one per minute). Longer
+              history requires a dedicated time-series store — tracked under BLK-011.
+            </p>
           </div>
         </div>
 
-        {/* ── Incident History ────────────────────────────────────── */}
-        <div class="mx-auto max-w-4xl px-6 pb-20">
-          <h2 class="text-lg font-semibold text-white/80 mb-6">
-            Incident History
-          </h2>
-
-          <div
-            class="rounded-2xl border border-white/[0.06] p-8 text-center"
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              "backdrop-filter": "blur(12px)",
-            }}
-          >
-            <div class="text-3xl mb-3 opacity-30">{"\u2705"}</div>
-            <p class="text-white/50 font-medium">
-              No incidents in the last 30 days
-            </p>
-            <p class="text-white/25 text-sm mt-1">
-              All systems have been operating normally
-            </p>
+        {/* Real metrics grid */}
+        <div class="mx-auto max-w-4xl px-6 pb-8">
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {(() => {
+              const c = current();
+              const h = history();
+              const pct = uptimePercent(h);
+              const avg = avgLatency(c);
+              const p99 = p99Latency(h);
+              const stats: ReadonlyArray<{ label: string; value: string; sub: string }> = [
+                {
+                  label: "Avg latency",
+                  value: avg !== null ? `${avg}ms` : "—",
+                  sub: "current snapshot",
+                },
+                {
+                  label: "Uptime (window)",
+                  value: pct !== null ? `${pct.toFixed(2)}%` : "—",
+                  sub: `across ${h.length} snapshots`,
+                },
+                {
+                  label: "P99 latency",
+                  value: p99 !== null ? `${p99}ms` : "—",
+                  sub: "retained window",
+                },
+                {
+                  label: "API uptime",
+                  value: c ? formatUptime(c.uptimeSec) : "—",
+                  sub: c ? `heap: ${c.memoryMb} MB` : "awaiting snapshot",
+                },
+              ];
+              return (
+                <For each={stats}>
+                  {(stat) => (
+                    <div
+                      class="rounded-xl border border-white/[0.06] p-4 text-center"
+                      style={{ background: "rgba(255,255,255,0.02)" }}
+                    >
+                      <div class="text-xl font-bold text-white/80">{stat.value}</div>
+                      <div class="mt-1 text-xs text-white/40">{stat.label}</div>
+                      <div class="mt-0.5 text-xs text-white/20">{stat.sub}</div>
+                    </div>
+                  )}
+                </For>
+              );
+            })()}
           </div>
+        </div>
 
-          {/* ── Subscribe Section ─────────────────────────────────── */}
-          <div
-            class="mt-8 rounded-2xl border border-white/[0.06] p-6"
-            style={{
-              background:
-                "linear-gradient(145deg, rgba(99,102,241,0.04) 0%, rgba(139,92,246,0.02) 100%)",
-              "backdrop-filter": "blur(12px)",
-            }}
-          >
-            <div class="flex flex-col sm:flex-row items-center gap-4">
-              <div class="flex-1 text-center sm:text-left">
-                <h3 class="text-sm font-semibold text-white/70">
-                  Subscribe to status updates
-                </h3>
-                <p class="text-xs text-white/30 mt-1">
-                  Get notified via email when a service status changes
-                </p>
-              </div>
-              <div class="flex gap-2 w-full sm:w-auto">
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={subscribeEmail()}
-                  onInput={(e) => setSubscribeEmail(e.currentTarget.value)}
-                  class="flex-1 sm:w-64 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-violet-500/40 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const email = subscribeEmail().trim();
-                    if (!email || !email.includes("@")) return;
-                    setSubscribed(true);
-                    setSubscribeEmail("");
-                    setTimeout(() => setSubscribed(false), 4000);
-                  }}
-                  class="shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-105"
+        {/* Incident history — derived from real snapshots */}
+        <div class="mx-auto max-w-4xl px-6 pb-20">
+          <h2 class="mb-6 text-lg font-semibold text-white/80">
+            Incidents in retained window
+          </h2>
+          {(() => {
+            const incidents = deriveIncidents(history());
+            if (incidents.length === 0) {
+              return (
+                <div
+                  class="rounded-2xl border border-white/[0.06] p-8 text-center"
                   style={{
-                    background:
-                      "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                    background: "rgba(255,255,255,0.02)",
+                    "backdrop-filter": "blur(12px)",
                   }}
                 >
-                  {subscribed() ? "Subscribed!" : "Subscribe"}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Response Time Summary ─────────────────────────────── */}
-          <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { label: "Avg Response", value: "14ms", sub: "across all services" },
-              { label: "Uptime (30d)", value: "99.98%", sub: "platform average" },
-              { label: "Edge Nodes", value: "330+", sub: "cities worldwide" },
-              { label: "P99 Latency", value: "48ms", sub: "99th percentile" },
-            ].map((stat) => (
-              <div
-                class="rounded-xl border border-white/[0.06] p-4 text-center"
-                style={{ background: "rgba(255,255,255,0.02)" }}
-              >
-                <div class="text-xl font-bold text-white/80">
-                  {stat.value}
+                  <div class="mb-3 text-3xl opacity-30">{"\u2705"}</div>
+                  <p class="font-medium text-white/50">
+                    No incidents in the retained history window
+                  </p>
+                  <p class="mt-1 text-sm text-white/25">
+                    {history().length === 0
+                      ? "(no snapshots yet)"
+                      : `All ${history().length} snapshots reported healthy.`}
+                  </p>
                 </div>
-                <div class="text-xs text-white/40 mt-1">{stat.label}</div>
-                <div class="text-xs text-white/20 mt-0.5">{stat.sub}</div>
+              );
+            }
+            return (
+              <div class="space-y-3">
+                <For each={incidents}>
+                  {(incident) => {
+                    const cfg = statusConfig(incident.worst);
+                    const start = new Date(incident.start);
+                    const end = new Date(incident.end);
+                    const durationMs = end.getTime() - start.getTime();
+                    const durationSec = Math.max(60, Math.floor(durationMs / 1000));
+                    return (
+                      <div
+                        class="rounded-2xl border border-white/[0.06] p-5"
+                        style={{
+                          background: "rgba(255,255,255,0.02)",
+                          "backdrop-filter": "blur(12px)",
+                        }}
+                      >
+                        <div class="flex items-start justify-between gap-4">
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <span
+                                class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                                style={{ background: cfg.bgColor, color: cfg.color }}
+                              >
+                                {cfg.label}
+                              </span>
+                              <span class="text-sm text-white/70">
+                                {start.toLocaleString()} — {end.toLocaleString()}
+                              </span>
+                            </div>
+                            <p class="mt-2 text-xs text-white/40">
+                              Duration: {formatUptime(durationSec)} · Affected:{" "}
+                              {incident.affected.length > 0
+                                ? incident.affected.join(", ")
+                                : "overall platform"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }}
+                </For>
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
       </div>
     </>

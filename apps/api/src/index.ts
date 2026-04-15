@@ -5,7 +5,7 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
 import { chatStreamRoutes } from "./ai/chat-stream";
-import { wsApp, websocket, sseApp, yjsWsApp, liveUpdatesApp } from "./realtime";
+import { wsApp, websocket, sseApp, theatreSseApp, yjsWsApp, liveUpdatesApp } from "./realtime";
 import { terminalApp } from "./terminal/handler";
 import { initTelemetry, httpRequestCount, httpRequestDuration, recordRequest, getMetrics } from "./telemetry";
 import { getAllFlags, isFeatureEnabled } from "./feature-flags";
@@ -358,6 +358,9 @@ app.route("/", yjsWsApp);
 
 // Real-Time: SSE + REST endpoints
 app.route("/", sseApp);
+
+// Build Theatre: SSE live log stream for /ops
+app.route("/", theatreSseApp);
 
 // Live Updates: SSE push notifications for data changes
 app.route("/", liveUpdatesApp);
