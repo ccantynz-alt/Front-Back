@@ -248,19 +248,6 @@
       "baselineCommitsPerWeek": 0
     },
     {
-      "owner": "codeclimate",
-      "repo": "codeclimate",
-      "displayName": "Code Climate CLI",
-      "priority": "medium",
-      "category": "api",
-      "description": "Code quality / maintainability scanner. GateTest competitor.",
-      "defaultBranch": "master",
-      "lastKnownRelease": "v0.619.0",
-      "lastKnownReleaseAt": "2026-04-09T21:18:22Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
-    },
-    {
       "owner": "codacy",
       "repo": "codacy-analysis-cli-action",
       "displayName": "Codacy Analysis Action",
