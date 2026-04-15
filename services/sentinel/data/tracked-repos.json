@@ -10,7 +10,7 @@
       "defaultBranch": "canary",
       "lastKnownRelease": "v16.2.1-canary.43",
       "lastKnownReleaseAt": "2026-04-15T14:10:33Z",
-      "lastCommitCheckAt": "2026-04-15T23:07:11.740Z",
+      "lastCommitCheckAt": "2026-04-15T23:08:57.739Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -75,7 +75,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.14",
       "lastKnownReleaseAt": "2026-04-15T06:15:10Z",
-      "lastCommitCheckAt": "2026-04-15T23:07:11.927Z",
+      "lastCommitCheckAt": "2026-04-15T23:08:57.904Z",
       "baselineCommitsPerWeek": 6
     },
     {
@@ -88,7 +88,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v2.0.0-beta.0",
       "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
-      "lastCommitCheckAt": "2026-04-15T23:07:12.060Z",
+      "lastCommitCheckAt": "2026-04-15T23:08:58.022Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -101,7 +101,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v11.16.0",
       "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
-      "lastCommitCheckAt": "2026-04-15T23:07:12.207Z",
+      "lastCommitCheckAt": "2026-04-15T23:08:58.193Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -114,8 +114,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "ai@6.0.162",
       "lastKnownReleaseAt": "2026-04-15T17:47:43Z",
-      "lastCommitCheckAt": "2026-04-15T23:07:12.481Z",
-      "baselineCommitsPerWeek": 86
+      "lastCommitCheckAt": "2026-04-15T23:08:58.442Z",
+      "baselineCommitsPerWeek": 87
     },
     {
       "owner": "langchain-ai",
@@ -270,7 +270,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v4.4.7",
       "lastKnownReleaseAt": "2025-07-17T14:30:19Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:21.212Z",
+      "lastCommitCheckAt": "2026-04-15T23:08:59.422Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -313,6 +313,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-15T23:07:16.301Z",
+  "lastUpdated": "2026-04-15T23:08:59.423Z",
   "schemaVersion": 1
 }
