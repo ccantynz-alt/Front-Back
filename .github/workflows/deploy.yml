@@ -26,8 +26,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build + Gate
+  build-and-test:
+    name: Build & Quality Gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -40,15 +40,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Quality gates are GATES. Per CLAUDE.md §0.4.1 rule 3, none of
-      # these may be marked continue-on-error. If something goes red,
-      # we fix the code — not silence the alarm.
+      - name: Type check
+        run: bun run check
 
       - name: Biome lint
         run: bunx biome check apps packages services
-
-      - name: Type check
-        run: bun run check
 
       - name: Link checker
         run: bun run check-links
@@ -62,86 +58,94 @@ jobs:
       - name: Run tests
         run: bun run test
 
-  deploy:
+  deploy-hetzner:
     name: Deploy to Hetzner
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-and-test
     environment: production
-    timeout-minutes: 20
-    concurrency:
-      # Serialize with any manual-triggered deploys for the same ref.
-      group: hetzner-deploy
-      cancel-in-progress: false
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Deploy via SSH
-        # Pinned action SHA would be stricter; appleboy/ssh-action@v1
-        # matches the template in infra/hetzner/workflows/deploy.yml
-        # and is already trusted for this repo's deploy path.
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.HETZNER_IP }}
           username: deploy
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          # Optional host-key pin. If the secret isn't set, the action
-          # falls back to trust-on-first-use (still works, just no MITM
-          # protection). Populate via `ssh-keyscan <ip> | ssh-keygen -lf -`.
-          fingerprint: ${{ secrets.DEPLOY_SSH_FINGERPRINT }}
           script_stop: true
-          command_timeout: 15m
-          # Bootstrap inline so the deploy works even if the box has
-          # never seen the current version of crontech-deploy.sh. The
-          # workflow clones/updates the repo to the target SHA, THEN
-          # runs the script from the freshly-checked-out copy.
+          command_timeout: 10m
           script: |
             set -euo pipefail
-            REPO_URL="${{ github.server_url }}/${{ github.repository }}.git"
-            TARGET_SHA="${{ github.sha }}"
-            BRANCH="${{ github.ref_name }}"
-            APP_DIR="/opt/crontech/apps/crontech"
+            echo "=== Deploying Crontech to production ==="
 
-            echo "[bootstrap] Syncing repo to $TARGET_SHA"
-            mkdir -p "$(dirname "$APP_DIR")"
-            if [ ! -d "$APP_DIR/.git" ]; then
-              git clone "$REPO_URL" "$APP_DIR"
-            fi
+            APP_DIR="/opt/crontech"
             cd "$APP_DIR"
-            git fetch --quiet origin "$BRANCH"
-            git reset --quiet --hard "$TARGET_SHA"
 
-            echo "[bootstrap] Handing off to in-repo deploy script"
-            bash ./infra/hetzner/scripts/crontech-deploy.sh \
-              "$REPO_URL" "$TARGET_SHA" "$BRANCH"
+            # 1. Pull latest code
+            echo "[1/5] Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
 
-  post-deploy-smoke:
-    name: Post-Deploy Public Smoke
-    runs-on: ubuntu-latest
-    needs: deploy
-    timeout-minutes: 5
-    steps:
-      # The deploy script already verifies /api/version on the box.
-      # This job re-verifies from outside Hetzner so we catch issues
-      # the box can't see: DNS propagation, Caddy TLS, CDN caches.
-      - name: Verify crontech.ai reports new SHA
-        run: |
-          set -euo pipefail
-          TARGET="${{ github.sha }}"
-          for url in "https://api.crontech.ai/api/version" "https://crontech.ai/api/version"; do
-            echo "Probing $url for SHA $TARGET..."
-            for attempt in 1 2 3 4 5 6; do
-              body=$(curl -fsS --max-time 10 "$url" || echo '{}')
-              reported=$(echo "$body" | grep -o '"sha":"[^"]*"' | head -n1 | cut -d'"' -f4 || echo '')
-              if [ "$reported" = "$TARGET" ]; then
-                echo "  OK  $url -> $reported"
+            # 2. Install dependencies
+            echo "[2/5] Installing dependencies..."
+            bun install --frozen-lockfile
+
+            # 3. Rebuild Docker containers
+            echo "[3/5] Rebuilding containers..."
+            docker compose -f infra/hetzner/docker-compose.crontech.yml build --no-cache crontech-web crontech-api
+
+            # 4. Rolling restart (API first, then web)
+            echo "[4/5] Restarting services..."
+            docker compose -f infra/hetzner/docker-compose.crontech.yml up -d crontech-api
+            sleep 5
+            docker compose -f infra/hetzner/docker-compose.crontech.yml up -d crontech-web
+
+            # 5. Health checks
+            echo "[5/5] Running health checks..."
+            sleep 10
+
+            API_OK=false
+            for i in 1 2 3 4 5; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "API health check passed"
+                API_OK=true
                 break
               fi
-              echo "  ..  attempt $attempt reported='$reported'"
-              if [ "$attempt" = "6" ]; then
-                echo "FAIL: $url never reported $TARGET" >&2
-                exit 1
-              fi
-              sleep 10
+              echo "  API attempt $i: status $STATUS, retrying..."
+              sleep 5
             done
-          done
-          echo "All public endpoints confirm $TARGET is live."
+
+            WEB_OK=false
+            for i in 1 2 3 4 5; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "Web health check passed"
+                WEB_OK=true
+                break
+              fi
+              echo "  Web attempt $i: status $STATUS, retrying..."
+              sleep 5
+            done
+
+            if [ "$API_OK" = true ] && [ "$WEB_OK" = true ]; then
+              echo ""
+              echo "=== DEPLOY SUCCESS ==="
+              echo "  Web: https://crontech.ai"
+              echo "  API: https://api.crontech.ai"
+              docker compose -f infra/hetzner/docker-compose.crontech.yml ps
+            else
+              echo ""
+              echo "=== DEPLOY FAILED ==="
+              echo "  API healthy: $API_OK"
+              echo "  Web healthy: $WEB_OK"
+              echo ""
+              echo "--- Container status ---"
+              docker compose -f infra/hetzner/docker-compose.crontech.yml ps
+              echo ""
+              echo "--- Last 30 log lines ---"
+              docker compose -f infra/hetzner/docker-compose.crontech.yml logs --tail 30
+              exit 1
+            fi

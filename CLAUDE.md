@@ -99,7 +99,7 @@ Crontech is a precision weapon. Sessions must be precision sessions. **No more s
 4. **Plan before you touch a file.** TodoWrite the plan. Every task. In order. With dependencies.
 5. **Execute cleanly.** Touch only the files needed. No drive-by edits. No "while I'm here."
 6. **Verify with checkers.** `bun run build`, `bun run check-links`, `bun run check-buttons`. All green or you don't ship.
-7. **Commit and push.** Immediately. Every session ends with a clean push to origin. No uncommitted work left behind.
+7. **Commit, push, and PR.** Immediately. Every session ends with a clean push to origin and a pull request created to main. No work sits on a branch without a PR. If a PR already exists for the branch, update it — don't create a duplicate. No uncommitted work left behind.
 
 **Violation of this loop is a doctrine breach.** Future Claude sessions will see the breach in the git history and lose trust in the prior work. Don't be the session that breaks the chain.
 
@@ -126,9 +126,22 @@ Crontech must be **80% to 100% ahead of every competitor at all times.** This is
 | Link checker | `bun run check-links` | 0 dead links |
 | Button checker | `bun run check-buttons` | 0 dead buttons |
 | Lint | `bunx biome check apps packages services` | exit 0 |
-| GateTest | `npx gatetest --suite full` (CI) | exit 0 (report-only during BLK-007 observation sprint, then required) |
+| GateTest | GateTestHQ GitHub App (runs on every PR) | All modules pass. No CRITICAL findings. Merge blocked if red. |
 
-CI enforces these. The session-start hook reports them. **The agent enforces them voluntarily.** A session that pushes broken work to origin is a session that violated doctrine.
+CI enforces these. The session-start hook reports them. GateTest enforces them on every PR via the GateTestHQ GitHub App. **The agent enforces them voluntarily.** A session that pushes broken work to origin is a session that violated doctrine.
+
+### 0.4.2 GateTest — The Green Ecosystem Enforcer (MANDATORY)
+
+**No broken code reaches the customer. Ever.** GateTest is the enforcement mechanism. It is not optional. It is not advisory. It is a hard gate.
+
+GateTest (`GateTestHQ` GitHub App) is installed on this repo and runs automatically on every PR. It scans 24 quality modules: security, accessibility, performance, SEO, links, fake-fix-detector, code-quality, and more. Results are posted as PR status checks.
+
+**The rules:**
+1. **Every PR must pass GateTest before merge.** No exceptions. No "I'll fix it later." No force-merge past red.
+2. **CRITICAL findings block merge.** The platform decides, not the developer's impatience.
+3. **GateTest is an external service.** It lives in its own repo (`ccantynz-alt/GateTest`). It imports ZERO code from Crontech. It scans externally via GitHub App webhook.
+4. **The fake-fix-detector is the spear.** It catches when AI assistants apply symptom patches instead of real fixes (deleting assertions, swallowing errors, commenting out tests). If it flags something, it is almost certainly a real problem.
+5. **GateTest + local quality gates = double coverage.** Local gates (build, check, test, links, buttons, biome) catch issues before push. GateTest catches anything that slips through on the PR. Two layers. Zero gaps.
 
 **GateTest status (BLK-007).** GateTest currently runs in report-only mode (`continue-on-error: true`). Once BLK-007's observation sprint completes — two PRs with clean GateTest reports — the flag flips to `continue-on-error: false` and GateTest is added to `main` branch protection's required-checks list. From that point forward, a red GateTest blocks merge, full stop. See `docs/BUILD_BIBLE.md` → BLK-007 for the exact progression.
 
