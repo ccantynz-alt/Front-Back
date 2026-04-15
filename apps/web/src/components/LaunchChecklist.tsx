@@ -36,6 +36,7 @@ import {
 } from "solid-js";
 import type { JSX } from "solid-js";
 import { useAuth } from "../stores";
+import { trpc } from "../lib/trpc";
 
 // ── Data model ──────────────────────────────────────────────────────
 
@@ -44,7 +45,35 @@ export interface ChecklistItem {
   readonly label: string;
   readonly note?: string;
   readonly autoProbe?: boolean; // if true, /api/version probe sets this true
+  /**
+   * Name of a secret key on the `launch.status` response's `secrets` map.
+   * When the admin probe returns `secrets[<name>] === true`, this item
+   * is shown as done (but not persisted to localStorage — see below).
+   */
+  readonly autoProbeSecret?: LaunchSecretKey;
+  /**
+   * Name of a probe on the `launch.status` response's `probes` map.
+   * When `probes[<name>] === true`, this item is shown as done.
+   */
+  readonly autoProbeId?: LaunchProbeKey;
 }
+
+// Keep in lockstep with apps/api/src/trpc/procedures/launch.ts SECRET_KEYS.
+export type LaunchSecretKey =
+  | "DATABASE_URL"
+  | "DATABASE_AUTH_TOKEN"
+  | "SESSION_SECRET"
+  | "JWT_SECRET"
+  | "GOOGLE_CLIENT_ID"
+  | "GOOGLE_CLIENT_SECRET"
+  | "STRIPE_SECRET_KEY"
+  | "STRIPE_WEBHOOK_SECRET"
+  | "STRIPE_PRO_PRICE_ID"
+  | "STRIPE_ENTERPRISE_PRICE_ID"
+  | "OPENAI_API_KEY"
+  | "ANTHROPIC_API_KEY";
+
+export type LaunchProbeKey = "api_version" | "db_connected";
 
 export interface ChecklistPhase {
   readonly id: string;
@@ -84,18 +113,37 @@ export const LAUNCH_PHASES: readonly ChecklistPhase[] = [
     title: "Phase B",
     subtitle: "Runtime secrets",
     items: [
-      { id: "B1", label: "DATABASE_URL", note: "libsql://…turso.io" },
-      { id: "B2", label: "DATABASE_AUTH_TOKEN" },
-      { id: "B3", label: "SESSION_SECRET", note: "48-byte base64" },
-      { id: "B4", label: "JWT_SECRET", note: "48-byte base64" },
-      { id: "B5", label: "GOOGLE_CLIENT_ID" },
-      { id: "B6", label: "GOOGLE_CLIENT_SECRET" },
-      { id: "B7", label: "STRIPE_SECRET_KEY" },
-      { id: "B8", label: "STRIPE_WEBHOOK_SECRET" },
-      { id: "B9", label: "STRIPE_PRO_PRICE_ID" },
-      { id: "B10", label: "STRIPE_ENTERPRISE_PRICE_ID" },
-      { id: "B11", label: "OPENAI_API_KEY" },
-      { id: "B12", label: "ANTHROPIC_API_KEY" },
+      {
+        id: "B1",
+        label: "DATABASE_URL",
+        note: "libsql://…turso.io",
+        autoProbeSecret: "DATABASE_URL",
+      },
+      {
+        id: "B2",
+        label: "DATABASE_AUTH_TOKEN",
+        autoProbeSecret: "DATABASE_AUTH_TOKEN",
+      },
+      {
+        id: "B3",
+        label: "SESSION_SECRET",
+        note: "48-byte base64",
+        autoProbeSecret: "SESSION_SECRET",
+      },
+      {
+        id: "B4",
+        label: "JWT_SECRET",
+        note: "48-byte base64",
+        autoProbeSecret: "JWT_SECRET",
+      },
+      { id: "B5", label: "GOOGLE_CLIENT_ID", autoProbeSecret: "GOOGLE_CLIENT_ID" },
+      { id: "B6", label: "GOOGLE_CLIENT_SECRET", autoProbeSecret: "GOOGLE_CLIENT_SECRET" },
+      { id: "B7", label: "STRIPE_SECRET_KEY", autoProbeSecret: "STRIPE_SECRET_KEY" },
+      { id: "B8", label: "STRIPE_WEBHOOK_SECRET", autoProbeSecret: "STRIPE_WEBHOOK_SECRET" },
+      { id: "B9", label: "STRIPE_PRO_PRICE_ID", autoProbeSecret: "STRIPE_PRO_PRICE_ID" },
+      { id: "B10", label: "STRIPE_ENTERPRISE_PRICE_ID", autoProbeSecret: "STRIPE_ENTERPRISE_PRICE_ID" },
+      { id: "B11", label: "OPENAI_API_KEY", autoProbeSecret: "OPENAI_API_KEY" },
+      { id: "B12", label: "ANTHROPIC_API_KEY", autoProbeSecret: "ANTHROPIC_API_KEY" },
     ],
   },
   {
@@ -118,6 +166,7 @@ export const LAUNCH_PHASES: readonly ChecklistPhase[] = [
         id: "D1",
         label: "/api/version responds with SHA",
         autoProbe: true,
+        autoProbeId: "api_version",
       },
       { id: "D2", label: "Landing page loads" },
       { id: "D3", label: "Google OAuth sign-in works" },
@@ -221,6 +270,48 @@ async function probeVersion(): Promise<string | null> {
   }
 }
 
+// ── Launch-status probe (admin-only tRPC) ───────────────────────────
+// Returns a Set of item ids that should render as done based on the
+// admin `launch.status` endpoint — secret presence + smoke probes.
+// NEVER persisted to localStorage: if the secret is rotated off the
+// Worker, the next poll drops it back to pending automatically.
+
+export interface LaunchStatusResponse {
+  readonly secrets: Record<LaunchSecretKey, boolean>;
+  readonly probes: Record<LaunchProbeKey, boolean>;
+}
+
+export function deriveAutoDone(
+  phases: readonly ChecklistPhase[],
+  status: LaunchStatusResponse | null,
+): Set<string> {
+  const out = new Set<string>();
+  if (!status) return out;
+  for (const p of phases) {
+    for (const it of p.items) {
+      if (it.autoProbeSecret && status.secrets[it.autoProbeSecret] === true) {
+        out.add(it.id);
+      }
+      if (it.autoProbeId && status.probes[it.autoProbeId] === true) {
+        out.add(it.id);
+      }
+    }
+  }
+  return out;
+}
+
+async function probeLaunchStatus(): Promise<LaunchStatusResponse | null> {
+  try {
+    const res = await trpc.launch.status.query();
+    return res as LaunchStatusResponse;
+  } catch {
+    // Non-admins get FORBIDDEN; any transport error also lands here.
+    // In both cases the HUD just skips auto-probing — the manual clicks
+    // still work.
+    return null;
+  }
+}
+
 // ── Counts helper (exported for unit test) ──────────────────────────
 
 export function computeCounts(
@@ -244,6 +335,7 @@ export function computeCounts(
 export function LaunchChecklist(): JSX.Element {
   const auth = useAuth();
   const [done, setDone] = createSignal<Set<string>>(readDone());
+  const [autoDone, setAutoDone] = createSignal<Set<string>>(new Set());
   const [collapsed, setCollapsed] = createSignal<boolean>(readCollapsed());
   const [forced, setForced] = createSignal<boolean>(false);
 
@@ -251,35 +343,59 @@ export function LaunchChecklist(): JSX.Element {
     setForced(readForce());
   });
 
-  // Live probe: /api/version → auto-tick D1 if reachable.
-  let pollHandle: ReturnType<typeof setInterval> | null = null;
+  // Live probes:
+  //   1. /api/version → auto-tick any `autoProbe: true` item (legacy D1).
+  //   2. tRPC launch.status (admin) → auto-tick Phase B secrets + D1/db.
+  // Both are read-only; results never touch localStorage. A user can
+  // still click to toggle the manual `done` set; the auto-probed state
+  // is tracked separately so the two do not race.
+  let versionPollHandle: ReturnType<typeof setInterval> | null = null;
+  let statusPollHandle: ReturnType<typeof setInterval> | null = null;
 
-  async function runProbe(): Promise<void> {
+  async function runVersionProbe(): Promise<void> {
     const sha = await probeVersion();
     if (!sha) return;
-    const next = new Set(done());
+    // D1 is also covered by launch.status's `api_version` probe, but we
+    // keep this as a no-auth fallback for non-admin "forced" views so
+    // the D1 tick still works when the tRPC call would be forbidden.
+    const next = new Set(autoDone());
+    let changed = false;
     for (const p of LAUNCH_PHASES) {
       for (const it of p.items) {
         if (it.autoProbe === true && !next.has(it.id)) {
           next.add(it.id);
+          changed = true;
         }
       }
     }
-    if (next.size !== done().size) {
-      setDone(next);
-      writeDone(next);
-    }
+    if (changed) setAutoDone(next);
+  }
+
+  async function runStatusProbe(): Promise<void> {
+    const status = await probeLaunchStatus();
+    const derived = deriveAutoDone(LAUNCH_PHASES, status);
+    // Preserve any ids already auto-ticked by the legacy version probe
+    // so a flaky tRPC call never un-greens a previously-green item
+    // within the same session.
+    const merged = new Set<string>(autoDone());
+    for (const id of derived) merged.add(id);
+    setAutoDone(merged);
   }
 
   onMount(() => {
-    void runProbe();
-    pollHandle = setInterval(() => {
-      void runProbe();
+    void runVersionProbe();
+    void runStatusProbe();
+    versionPollHandle = setInterval(() => {
+      void runVersionProbe();
     }, 60_000);
+    statusPollHandle = setInterval(() => {
+      void runStatusProbe();
+    }, 30_000);
   });
 
   onCleanup(() => {
-    if (pollHandle !== null) clearInterval(pollHandle);
+    if (versionPollHandle !== null) clearInterval(versionPollHandle);
+    if (statusPollHandle !== null) clearInterval(statusPollHandle);
   });
 
   const visible = createMemo<boolean>(() => {
@@ -288,7 +404,16 @@ export function LaunchChecklist(): JSX.Element {
     return forced();
   });
 
-  const counts = createMemo(() => computeCounts(LAUNCH_PHASES, done()));
+  // Union manual + auto-probed for display/count purposes. Manual and
+  // auto-probed items are tracked separately so auto-probes never
+  // pollute localStorage, but for "% live" the user sees both.
+  const combinedDone = createMemo<Set<string>>(() => {
+    const u = new Set<string>(done());
+    for (const id of autoDone()) u.add(id);
+    return u;
+  });
+
+  const counts = createMemo(() => computeCounts(LAUNCH_PHASES, combinedDone()));
 
   const isLive = createMemo<boolean>(() => counts().pct === 100);
 
@@ -460,8 +585,9 @@ export function LaunchChecklist(): JSX.Element {
               <For each={LAUNCH_PHASES}>
                 {(phase) => {
                   const phaseCounts = createMemo(() => {
+                    const c = combinedDone();
                     let d = 0;
-                    for (const it of phase.items) if (done().has(it.id)) d += 1;
+                    for (const it of phase.items) if (c.has(it.id)) d += 1;
                     return { done: d, total: phase.items.length };
                   });
                   const phaseComplete = createMemo(
@@ -518,7 +644,9 @@ export function LaunchChecklist(): JSX.Element {
                       </div>
                       <For each={phase.items}>
                         {(item) => {
-                          const isDone = createMemo(() => done().has(item.id));
+                          const isDone = createMemo(() =>
+                            combinedDone().has(item.id),
+                          );
                           return (
                             <button
                               type="button"

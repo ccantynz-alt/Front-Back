@@ -8,7 +8,9 @@ import { describe, expect, test } from "bun:test";
 import {
   LAUNCH_PHASES,
   computeCounts,
+  deriveAutoDone,
   type ChecklistPhase,
+  type LaunchStatusResponse,
 } from "./LaunchChecklist";
 
 describe("computeCounts", () => {
@@ -59,5 +61,60 @@ describe("computeCounts", () => {
     const phaseA = LAUNCH_PHASES.find((p) => p.id === "A");
     expect(phaseA).toBeDefined();
     expect(phaseA?.items.length).toBe(6);
+  });
+});
+
+describe("deriveAutoDone", () => {
+  test("returns empty set when status is null", () => {
+    const out = deriveAutoDone(LAUNCH_PHASES, null);
+    expect(out.size).toBe(0);
+  });
+
+  test("adds Phase B item ids for secrets that are true", () => {
+    const status: LaunchStatusResponse = {
+      secrets: {
+        DATABASE_URL: true,
+        DATABASE_AUTH_TOKEN: true,
+        SESSION_SECRET: false,
+        JWT_SECRET: false,
+        GOOGLE_CLIENT_ID: false,
+        GOOGLE_CLIENT_SECRET: false,
+        STRIPE_SECRET_KEY: false,
+        STRIPE_WEBHOOK_SECRET: false,
+        STRIPE_PRO_PRICE_ID: false,
+        STRIPE_ENTERPRISE_PRICE_ID: false,
+        OPENAI_API_KEY: true,
+        ANTHROPIC_API_KEY: false,
+      },
+      probes: { api_version: false, db_connected: false },
+    };
+    const out = deriveAutoDone(LAUNCH_PHASES, status);
+    expect(out.has("B1")).toBe(true); // DATABASE_URL
+    expect(out.has("B2")).toBe(true); // DATABASE_AUTH_TOKEN
+    expect(out.has("B11")).toBe(true); // OPENAI_API_KEY
+    expect(out.has("B3")).toBe(false); // SESSION_SECRET=false
+    expect(out.has("B12")).toBe(false); // ANTHROPIC_API_KEY=false
+  });
+
+  test("adds D1 when api_version probe is true", () => {
+    const status: LaunchStatusResponse = {
+      secrets: {
+        DATABASE_URL: false,
+        DATABASE_AUTH_TOKEN: false,
+        SESSION_SECRET: false,
+        JWT_SECRET: false,
+        GOOGLE_CLIENT_ID: false,
+        GOOGLE_CLIENT_SECRET: false,
+        STRIPE_SECRET_KEY: false,
+        STRIPE_WEBHOOK_SECRET: false,
+        STRIPE_PRO_PRICE_ID: false,
+        STRIPE_ENTERPRISE_PRICE_ID: false,
+        OPENAI_API_KEY: false,
+        ANTHROPIC_API_KEY: false,
+      },
+      probes: { api_version: true, db_connected: true },
+    };
+    const out = deriveAutoDone(LAUNCH_PHASES, status);
+    expect(out.has("D1")).toBe(true);
   });
 });
