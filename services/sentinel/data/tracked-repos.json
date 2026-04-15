@@ -8,9 +8,9 @@
       "category": "framework",
       "description": "React framework for production. Primary competitor in full-stack web.",
       "defaultBranch": "canary",
-      "lastKnownRelease": "v16.2.1-canary.42",
-      "lastKnownReleaseAt": "2026-04-15T01:28:21Z",
-      "lastCommitCheckAt": "2026-04-15T11:08:18.090Z",
+      "lastKnownRelease": "v16.2.1-canary.43",
+      "lastKnownReleaseAt": "2026-04-15T14:10:33Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:11.740Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -23,7 +23,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "static-middleware@0.4.5",
       "lastKnownReleaseAt": "2026-03-25T23:06:25Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:00.608Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:13.772Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -36,8 +36,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "@sveltejs/kit@2.57.1",
       "lastKnownReleaseAt": "2026-04-09T21:45:47Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:00.940Z",
-      "baselineCommitsPerWeek": 20
+      "lastCommitCheckAt": "2026-04-15T23:07:13.972Z",
+      "baselineCommitsPerWeek": 15
     },
     {
       "owner": "QwikDev",
@@ -49,7 +49,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "eslint-plugin-qwik@2.0.0-beta.32",
       "lastKnownReleaseAt": "2026-04-13T21:55:28Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:19.691Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:15.594Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -60,9 +60,9 @@
       "category": "framework",
       "description": "Content-focused web framework. Islands architecture for partial hydration.",
       "defaultBranch": "main",
-      "lastKnownRelease": "astro@6.1.6",
-      "lastKnownReleaseAt": "2026-04-13T17:22:43Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:17.932Z",
+      "lastKnownRelease": "astro@6.1.7",
+      "lastKnownReleaseAt": "2026-04-15T18:07:56Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:14.149Z",
       "baselineCommitsPerWeek": 25
     },
     {
@@ -75,7 +75,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.14",
       "lastKnownReleaseAt": "2026-04-15T06:15:10Z",
-      "lastCommitCheckAt": "2026-04-15T11:08:18.238Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:11.927Z",
       "baselineCommitsPerWeek": 6
     },
     {
@@ -88,7 +88,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v2.0.0-beta.0",
       "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
-      "lastCommitCheckAt": "2026-04-15T11:08:18.355Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:12.060Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -101,7 +101,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v11.16.0",
       "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
-      "lastCommitCheckAt": "2026-04-15T11:08:18.549Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:12.207Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -112,10 +112,10 @@
       "category": "ai",
       "description": "AI SDK for streaming responses and generative UI. Core AI orchestration layer.",
       "defaultBranch": "main",
-      "lastKnownRelease": "ai@6.0.161",
-      "lastKnownReleaseAt": "2026-04-15T01:31:01Z",
-      "lastCommitCheckAt": "2026-04-15T11:08:19.741Z",
-      "baselineCommitsPerWeek": 76
+      "lastKnownRelease": "ai@6.0.162",
+      "lastKnownReleaseAt": "2026-04-15T17:47:43Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:12.481Z",
+      "baselineCommitsPerWeek": 86
     },
     {
       "owner": "langchain-ai",
@@ -127,8 +127,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "langchain@1.3.3",
       "lastKnownReleaseAt": "2026-04-15T00:22:14Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:01.269Z",
-      "baselineCommitsPerWeek": 13
+      "lastCommitCheckAt": "2026-04-15T23:07:14.345Z",
+      "baselineCommitsPerWeek": 16
     },
     {
       "owner": "cloudflare",
@@ -140,8 +140,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "wrangler@4.83.0",
       "lastKnownReleaseAt": "2026-04-15T09:28:42Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:00.243Z",
-      "baselineCommitsPerWeek": 35
+      "lastCommitCheckAt": "2026-04-15T23:07:12.780Z",
+      "baselineCommitsPerWeek": 57
     },
     {
       "owner": "cloudflare",
@@ -153,7 +153,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v1.5.0",
       "lastKnownReleaseAt": "2023-05-23T17:46:18Z",
-      "lastCommitCheckAt": "2026-04-14T07:10:47.629Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:14.523Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -166,7 +166,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v1.26.04",
       "lastKnownReleaseAt": "2026-04-09T14:38:08Z",
-      "lastCommitCheckAt": "2026-04-14T03:40:00.756Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:13.111Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -177,10 +177,10 @@
       "category": "backend",
       "description": "Reactive backend competitor. Sync engine + TS functions.",
       "defaultBranch": "main",
-      "lastKnownRelease": "precompiled-2026-04-14-d34e278",
-      "lastKnownReleaseAt": "2026-04-14T01:10:34Z",
-      "lastCommitCheckAt": "2026-04-14T03:40:01.369Z",
-      "baselineCommitsPerWeek": 98
+      "lastKnownRelease": "precompiled-2026-04-15-8b4751a",
+      "lastKnownReleaseAt": "2026-04-15T19:18:00Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:13.378Z",
+      "baselineCommitsPerWeek": 99
     },
     {
       "owner": "superfly",
@@ -190,10 +190,10 @@
       "category": "backend",
       "description": "Firecracker microVM platform. Long-lived process competitor.",
       "defaultBranch": "master",
-      "lastKnownRelease": "v0.4.34",
-      "lastKnownReleaseAt": "2026-04-13T19:35:15Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:01.585Z",
-      "baselineCommitsPerWeek": 19
+      "lastKnownRelease": "v0.4.35",
+      "lastKnownReleaseAt": "2026-04-14T19:35:30Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:14.718Z",
+      "baselineCommitsPerWeek": 18
     },
     {
       "owner": "renovatebot",
@@ -203,9 +203,9 @@
       "category": "backend",
       "description": "We use Renovate; track feature evolution for self-evolution pipeline.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T21:20:20.237Z",
+      "lastKnownRelease": "43.123.4",
+      "lastKnownReleaseAt": "2026-04-15T21:12:08Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:15.890Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -216,9 +216,9 @@
       "category": "backend",
       "description": "Railway PaaS competitor for deploy/runtime story.",
       "defaultBranch": "master",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-14T07:10:48.729Z",
+      "lastKnownRelease": "v4.37.3",
+      "lastKnownReleaseAt": "2026-04-15T00:28:12Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:16.109Z",
       "baselineCommitsPerWeek": 6
     },
     {
@@ -229,10 +229,10 @@
       "category": "backend",
       "description": "Netlify deploy/edge competitor.",
       "defaultBranch": "main",
-      "lastKnownRelease": "v24.11.1",
-      "lastKnownReleaseAt": "2026-04-09T19:00:22Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:19.143Z",
-      "baselineCommitsPerWeek": 8
+      "lastKnownRelease": "v24.11.3",
+      "lastKnownReleaseAt": "2026-04-15T11:17:11Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:14.888Z",
+      "baselineCommitsPerWeek": 10
     },
     {
       "owner": "XeroAPI",
@@ -242,9 +242,9 @@
       "category": "api",
       "description": "Xero accounting API client. Astra/ledger.ai integration & competitive surface.",
       "defaultBranch": "master",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-14T07:15:02.375Z",
+      "lastKnownRelease": "15.0.0",
+      "lastKnownReleaseAt": "2026-04-02T01:26:35Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:16.301Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -283,8 +283,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v1.1304.0",
       "lastKnownReleaseAt": "2026-04-09T11:40:07Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:01.980Z",
-      "baselineCommitsPerWeek": 27
+      "lastCommitCheckAt": "2026-04-15T23:07:15.207Z",
+      "baselineCommitsPerWeek": 26
     },
     {
       "owner": "openai",
@@ -296,8 +296,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v20250625",
       "lastKnownReleaseAt": "2025-06-26T01:06:09Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:19.472Z",
-      "baselineCommitsPerWeek": 0
+      "lastCommitCheckAt": "2026-04-15T23:07:15.415Z",
+      "baselineCommitsPerWeek": 1
     },
     {
       "owner": "stackblitz",
@@ -309,10 +309,10 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-14T07:15:00.477Z",
+      "lastCommitCheckAt": "2026-04-15T23:07:13.615Z",
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-15T11:08:19.742Z",
+  "lastUpdated": "2026-04-15T23:07:16.301Z",
   "schemaVersion": 1
 }
