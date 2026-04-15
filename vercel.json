@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "bun install",
-  "buildCommand": "SERVER_PRESET=vercel npx vinxi build",
+  "buildCommand": "turbo build --filter=@back-to-the-future/web",
+  "outputDirectory": "apps/web/.output",
   "framework": null
 }
