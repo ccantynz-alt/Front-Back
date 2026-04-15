@@ -12,26 +12,41 @@
 # REQUIRED SECRETS — run before first deploy (per env)
 # -----------------------------------------------------------------------------
 # Secrets MUST be set via `wrangler secret put`. They are NEVER stored in
-# this file. Cross-references §5D (Environment Variables Roadmap) in
-# CLAUDE.md. Run each command twice — once with `--env production`, once
-# with `--env staging`:
+# this file. The variable names below are what the API code actually
+# reads (see packages/db/src/client.ts + apps/api/src/**). If you rename
+# any of these, grep the code first or you will ship a dead worker.
 #
+# Run each command twice — once with `--env production`, once with
+# `--env staging`:
+#
+#   # --- Database (Turso libsql) ----------------------------------------
+#   wrangler secret put DATABASE_URL            --env production   # libsql://<db>.turso.io
+#   wrangler secret put DATABASE_AUTH_TOKEN     --env production
+#
+#   # --- Auth -----------------------------------------------------------
 #   wrangler secret put GOOGLE_CLIENT_ID        --env production
 #   wrangler secret put GOOGLE_CLIENT_SECRET    --env production
-#   wrangler secret put SESSION_SECRET          --env production
-#   wrangler secret put JWT_SECRET              --env production
-#   wrangler secret put TURSO_AUTH_TOKEN        --env production
-#   wrangler secret put NEON_DATABASE_URL       --env production
+#   wrangler secret put SESSION_SECRET          --env production   # openssl rand -base64 48
+#   wrangler secret put JWT_SECRET              --env production   # openssl rand -base64 48
+#
+#   # --- Stripe ---------------------------------------------------------
 #   wrangler secret put STRIPE_SECRET_KEY       --env production
 #   wrangler secret put STRIPE_WEBHOOK_SECRET   --env production
+#   wrangler secret put STRIPE_PRO_PRICE_ID     --env production
+#   wrangler secret put STRIPE_ENTERPRISE_PRICE_ID --env production
+#
+#   # --- AI providers ---------------------------------------------------
 #   wrangler secret put OPENAI_API_KEY          --env production
 #   wrangler secret put ANTHROPIC_API_KEY       --env production
 #
-# Optional but recommended (see §5D):
-#   wrangler secret put QDRANT_API_KEY          --env production
-#   wrangler secret put STRIPE_PUBLISHABLE_KEY  --env production   # non-secret but env-scoped
-#   wrangler secret put CLOUDFLARE_ACCOUNT_ID   --env production
-#   wrangler secret put CLOUDFLARE_API_TOKEN    --env production
+# Optional / later (see §5D):
+#   wrangler secret put NEON_DATABASE_URL       --env production   # if Neon comes online
+#   wrangler secret put QDRANT_API_KEY          --env production   # if Qdrant comes online
+#   wrangler secret put STRIPE_PUBLISHABLE_KEY  --env production   # public, but easier to keep env-scoped
+#
+# NOTE: CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID are NOT Worker
+# secrets. They live in GitHub Actions repo secrets (so deploy.yml can
+# call wrangler-action) — setting them on the Worker itself has no effect.
 #
 # Repeat every command with `--env staging` for the staging worker.
 #
