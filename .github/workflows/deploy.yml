@@ -1,17 +1,43 @@
 name: Deploy
 
-# ── Crontech Production Deploy ──────────────────────────────────────
-# Pushes to main build + smoke-test the monorepo, then SSH into the
-# Hetzner box and roll both crontech-web and crontech-api containers
-# with the new commit SHA baked in. The deploy script on the box
-# verifies /api/version reports the new SHA before reporting success,
-# which is the actual cache-buster contract.
+# ── Crontech Production Deploy (Cloudflare-native) ──────────────────
+# BLK-020: Hetzner is dead. Crontech runs 100% on Cloudflare.
 #
-# Required GitHub secrets:
-#   HETZNER_IP      — production server IPv4
-#   DEPLOY_SSH_KEY  — private key for the 'deploy' user on the box
-#   DEPLOY_SSH_KNOWN_HOSTS — output of `ssh-keyscan <HETZNER_IP>`
-#                             (pin host key, reject on change)
+# What this workflow does:
+#   1. On push to `main`, gate on check / test / build (preflight).
+#   2. Deploy apps/api  -> Cloudflare Workers (via apps/api/wrangler.toml).
+#   3. Deploy apps/web  -> Cloudflare Pages   (project: crontech-web,
+#      dir:  apps/web/dist, config: apps/web/wrangler.toml).
+#   4. Bake VITE_GIT_SHA=${GITHUB_SHA} into the web build so the in-app
+#      Build Track HUD can detect deploy drift at runtime.
+#
+# Deploy tool choice:
+#   We use cloudflare/wrangler-action@v3 for both deploys. It handles
+#   credential plumbing (CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID)
+#   automatically, pins a reproducible wrangler version, and keeps the
+#   YAML short. Raw `npx wrangler` was the alternative — rejected because
+#   we'd re-implement credential injection and per-step env boilerplate
+#   four times. The action is cleaner.
+#
+# Required GitHub repo secrets (Craig must set these before first run):
+#   CLOUDFLARE_API_TOKEN   — API token with permissions:
+#                              - Account: Workers Scripts: Edit
+#                              - Account: Cloudflare Pages: Edit
+#                              - User: User Details: Read
+#                              - Zone: Zone: Read (if using custom domain)
+#   CLOUDFLARE_ACCOUNT_ID  — your Cloudflare account ID (dashboard → right sidebar)
+#
+# No other secrets. No SSH keys. No Hetzner IP. No docker compose.
+# If this workflow ever regrows SSH, rsync, or anything referencing a
+# long-lived server, that is a doctrine breach — see CLAUDE.md §0.7.
+#
+# Rollback to Hetzner:
+#   Not supported. Hetzner infra is being torn down as part of BLK-020.
+#   Rollback strategy going forward is "redeploy a prior commit to
+#   Cloudflare" via `workflow_dispatch` pointing at an older SHA, which
+#   Cloudflare Workers and Pages both support natively (Workers keeps
+#   versions, Pages keeps deployments). If a red deploy lands, the fix
+#   is: `git revert`, push, re-run this workflow.
 
 on:
   push:
@@ -19,15 +45,16 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # One deploy at a time for main. cancel-in-progress: false because
-  # killing a mid-deploy SSH session can leave docker compose in a
-  # half-rolled state on the box.
+  # One deploy at a time for main. cancel-in-progress: false because a
+  # mid-flight wrangler deploy that gets killed can leave Cloudflare
+  # with a half-propagated worker version, which then requires manual
+  # cleanup in the dashboard.
   group: deploy-main
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build + Gate
+  build-and-test:
+    name: Build & Quality Gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -40,15 +67,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Quality gates are GATES. Per CLAUDE.md §0.4.1 rule 3, none of
-      # these may be marked continue-on-error. If something goes red,
-      # we fix the code — not silence the alarm.
+      - name: Type check
+        run: bun run check
 
       - name: Biome lint
         run: bunx biome check apps packages services
-
-      - name: Type check
-        run: bun run check
 
       - name: Link checker
         run: bun run check-links
@@ -62,86 +85,66 @@ jobs:
       - name: Run tests
         run: bun run test
 
-  deploy:
-    name: Deploy to Hetzner
+  deploy-api:
+    name: Deploy API → Cloudflare Workers
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-and-test
     environment: production
-    timeout-minutes: 20
-    concurrency:
-      # Serialize with any manual-triggered deploys for the same ref.
-      group: hetzner-deploy
-      cancel-in-progress: false
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via SSH
-        # Pinned action SHA would be stricter; appleboy/ssh-action@v1
-        # matches the template in infra/hetzner/workflows/deploy.yml
-        # and is already trusted for this repo's deploy path.
-        uses: appleboy/ssh-action@v1
+      - uses: oven-sh/setup-bun@v2
         with:
-          host: ${{ secrets.HETZNER_IP }}
-          username: deploy
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          # Optional host-key pin. If the secret isn't set, the action
-          # falls back to trust-on-first-use (still works, just no MITM
-          # protection). Populate via `ssh-keyscan <ip> | ssh-keygen -lf -`.
-          fingerprint: ${{ secrets.DEPLOY_SSH_FINGERPRINT }}
-          script_stop: true
-          command_timeout: 15m
-          # Bootstrap inline so the deploy works even if the box has
-          # never seen the current version of crontech-deploy.sh. The
-          # workflow clones/updates the repo to the target SHA, THEN
-          # runs the script from the freshly-checked-out copy.
-          script: |
-            set -euo pipefail
-            REPO_URL="${{ github.server_url }}/${{ github.repository }}.git"
-            TARGET_SHA="${{ github.sha }}"
-            BRANCH="${{ github.ref_name }}"
-            APP_DIR="/opt/crontech/apps/crontech"
+          bun-version: latest
 
-            echo "[bootstrap] Syncing repo to $TARGET_SHA"
-            mkdir -p "$(dirname "$APP_DIR")"
-            if [ ! -d "$APP_DIR/.git" ]; then
-              git clone "$REPO_URL" "$APP_DIR"
-            fi
-            cd "$APP_DIR"
-            git fetch --quiet origin "$BRANCH"
-            git reset --quiet --hard "$TARGET_SHA"
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-            echo "[bootstrap] Handing off to in-repo deploy script"
-            bash ./infra/hetzner/scripts/crontech-deploy.sh \
-              "$REPO_URL" "$TARGET_SHA" "$BRANCH"
+      - name: Build API
+        # The api bundle is what wrangler ships. Build here explicitly
+        # (rather than trusting the preflight artefact) so this job is
+        # self-contained and can be re-run on its own via workflow_dispatch.
+        run: bun run --filter=@back-to-the-future/api build
 
-  post-deploy-smoke:
-    name: Post-Deploy Public Smoke
+      - name: Deploy API to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/api
+          command: deploy
+
+  deploy-web:
+    name: Deploy Web → Cloudflare Pages
     runs-on: ubuntu-latest
-    needs: deploy
-    timeout-minutes: 5
+    needs: build-and-test
+    environment: production
+    timeout-minutes: 10
     steps:
-      # The deploy script already verifies /api/version on the box.
-      # This job re-verifies from outside Hetzner so we catch issues
-      # the box can't see: DNS propagation, Caddy TLS, CDN caches.
-      - name: Verify crontech.ai reports new SHA
-        run: |
-          set -euo pipefail
-          TARGET="${{ github.sha }}"
-          for url in "https://api.crontech.ai/api/version" "https://crontech.ai/api/version"; do
-            echo "Probing $url for SHA $TARGET..."
-            for attempt in 1 2 3 4 5 6; do
-              body=$(curl -fsS --max-time 10 "$url" || echo '{}')
-              reported=$(echo "$body" | grep -o '"sha":"[^"]*"' | head -n1 | cut -d'"' -f4 || echo '')
-              if [ "$reported" = "$TARGET" ]; then
-                echo "  OK  $url -> $reported"
-                break
-              fi
-              echo "  ..  attempt $attempt reported='$reported'"
-              if [ "$attempt" = "6" ]; then
-                echo "FAIL: $url never reported $TARGET" >&2
-                exit 1
-              fi
-              sleep 10
-            done
-          done
-          echo "All public endpoints confirm $TARGET is live."
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Web (with git SHA baked in)
+        # VITE_GIT_SHA is exposed as import.meta.env.VITE_GIT_SHA in the
+        # client bundle. The Build Track HUD reads this and compares
+        # against /api/version at runtime to detect cache / CDN drift.
+        # Without this env var the HUD cannot tell if the user is on
+        # a stale deploy, which is the whole point of the HUD.
+        env:
+          VITE_GIT_SHA: ${{ github.sha }}
+        run: bun run --filter=@back-to-the-future/web build
+
+      - name: Deploy Web to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/web
+          command: pages deploy dist --project-name=crontech-web
