@@ -357,8 +357,10 @@ export function Layout(props: LayoutProps): JSX.Element {
               </span>
             </A>
 
-            {/* Navigation links */}
-            <nav class="hidden md:flex items-center gap-0.5">
+            {/* Navigation links — gap-2 so "Home" and "Pricing" aren't
+                visually jammed together (issue #2). Previously gap-0.5
+                rendered them as one blob: "HomePricing". */}
+            <nav class="hidden md:flex items-center gap-2">
               <NavLink href="/" label="Home" />
               <Show when={auth.isAuthenticated()}>
                 <NavLink href="/dashboard" label="Dashboard" />

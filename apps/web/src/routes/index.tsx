@@ -172,20 +172,28 @@ const techPillars: TechPillar[] = [
 function FeatureCard(props: Feature): JSX.Element {
   return (
     <A href={props.href} class="block group">
+      {/*
+        Outer card is NOT overflow-hidden — that was clipping the "L" of
+        "Learn more" on the bottom row (issue #1). Instead we isolate the
+        glow inside its own overflow-hidden layer, and give the card
+        generous padding so its content has breathing room (issue #7).
+      */}
       <div
-        class="relative h-full overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a0a0a] p-6 transition-all duration-300 hover:border-white/[0.14] hover:bg-[#0d0d0d]"
+        class="relative h-full rounded-2xl border border-white/[0.06] bg-[#0a0a0a] p-8 transition-all duration-300 hover:border-white/[0.14] hover:bg-[#0d0d0d]"
       >
-        {/* Single subtle glow — only on hover, only in one corner */}
-        <div
-          class="absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-[0.18]"
-          style={{ background: props.accent }}
-        />
+        {/* Glow confined to its own clipped layer so it can't affect text */}
+        <div class="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+          <div
+            class="absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-[0.18]"
+            style={{ background: props.accent }}
+          />
+        </div>
 
-        <div class="relative z-10 flex h-full flex-col gap-4">
+        <div class="relative z-10 flex h-full flex-col gap-5">
           <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3.5">
               <div
-                class="flex h-10 w-10 items-center justify-center rounded-lg text-base"
+                class="flex h-11 w-11 items-center justify-center rounded-lg text-lg"
                 style={{
                   background: `${props.accent}14`,
                   color: props.accent,
@@ -209,11 +217,11 @@ function FeatureCard(props: Feature): JSX.Element {
               </span>
             </Show>
           </div>
-          <p class="text-sm leading-relaxed text-gray-400">
+          <p class="text-sm leading-[1.7] text-gray-400">
             {props.description}
           </p>
           <div
-            class="mt-auto flex items-center gap-1.5 pt-2 text-xs font-medium transition-colors duration-200 group-hover:text-white"
+            class="mt-auto flex items-center gap-2 pt-3 text-xs font-medium transition-colors duration-200 group-hover:text-white"
             style={{ color: props.accent }}
           >
             <span>Learn more</span>
@@ -259,17 +267,47 @@ function StepCard(props: Step): JSX.Element {
 
 function StatBlock(props: Stat): JSX.Element {
   return (
-    <div class="flex flex-col items-center gap-1 px-6 py-5">
+    <div class="flex flex-col items-center justify-center gap-3 bg-white/[0.02] px-6 py-10 transition-colors duration-300 hover:bg-white/[0.035] sm:py-12">
       <span
-        class="text-2xl font-bold tracking-tight sm:text-3xl"
+        class="text-3xl font-bold tracking-tight sm:text-4xl"
         style={{ color: props.color }}
       >
         {props.value}
       </span>
-      <span class="text-[11px] font-medium uppercase tracking-widest text-gray-500">
+      <span class="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">
         {props.label}
       </span>
     </div>
+  );
+}
+
+// ── Section Eyebrow Pill ────────────────────────────────────────────
+// Shared pill used for small section labels like "PLATFORM" and
+// "ONBOARDING". Previously these floated mid-page as bare violet text —
+// now they render as proper bordered pill badges so they look
+// intentional (issues #3 and #4).
+
+interface EyebrowPillProps {
+  label: string;
+  color: string;
+}
+
+function EyebrowPill(props: EyebrowPillProps): JSX.Element {
+  return (
+    <span
+      class="mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]"
+      style={{
+        "border-color": `${props.color}40`,
+        background: `${props.color}12`,
+        color: props.color,
+      }}
+    >
+      <span
+        class="h-1.5 w-1.5 rounded-full"
+        style={{ background: props.color }}
+      />
+      {props.label}
+    </span>
   );
 }
 
@@ -332,10 +370,10 @@ export default function Home(): JSX.Element {
             }}
           />
 
-          <div class="relative z-10 mx-auto max-w-[1200px] px-6 pt-24 pb-20 lg:px-8 lg:pt-36 lg:pb-28">
+          <div class="relative z-10 mx-auto max-w-[1200px] px-6 pt-32 pb-28 lg:px-8 lg:pt-44 lg:pb-36">
             <div class="flex flex-col items-center text-center">
               {/* Announcement badge */}
-              <div class="mb-8 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 backdrop-blur-sm">
+              <div class="mb-10 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 backdrop-blur-sm">
                 <div class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span class="text-xs font-medium text-gray-400">
                   Now in early access
@@ -388,8 +426,10 @@ export default function Home(): JSX.Element {
                 </Show>
               </div>
 
-              {/* Tech stack strip */}
-              <div class="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+              {/* Tech stack strip — pill-shaped chips with subtle borders
+                  and breathing room between labels (issue #5). Kept as
+                  text; a later agent will swap in real logos. */}
+              <div class="mt-20 flex flex-wrap items-center justify-center gap-2.5">
                 <For
                   each={[
                     "SolidJS",
@@ -402,7 +442,8 @@ export default function Home(): JSX.Element {
                   ]}
                 >
                   {(tech) => (
-                    <span class="text-xs font-medium uppercase tracking-widest text-gray-600 transition-colors duration-200 hover:text-gray-400">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.15em] text-gray-500 transition-colors duration-200 hover:border-white/[0.12] hover:text-gray-300">
+                      <span class="h-1 w-1 rounded-full bg-gray-600" />
                       {tech}
                     </span>
                   )}
@@ -413,9 +454,9 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Stats strip ───────────────────────────────────────── */}
-        <section class="border-y border-white/[0.04]">
+        <section class="border-y border-white/[0.04] bg-white/[0.015]">
           <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <div class="grid grid-cols-2 divide-x divide-white/[0.06] sm:grid-cols-4">
+            <div class="grid grid-cols-2 divide-x divide-y divide-white/[0.06] sm:grid-cols-4 sm:divide-y-0">
               <For each={stats}>
                 {(stat) => (
                   <StatBlock
@@ -430,27 +471,25 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Platform layers ───────────────────────────────────── */}
-        <section class="relative overflow-hidden py-24 lg:py-32">
+        <section class="relative overflow-hidden py-32 lg:py-40">
           <div
             class="pointer-events-none absolute left-[-200px] top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full opacity-[0.04] blur-[120px]"
             style={{ background: ACCENT.violet }}
           />
 
           <div class="relative z-10 mx-auto max-w-[1200px] px-6 lg:px-8">
-            <div class="mb-16 flex flex-col items-center text-center">
-              <span class="mb-4 text-xs font-semibold uppercase tracking-widest text-violet-400">
-                Platform
-              </span>
+            <div class="mb-20 flex flex-col items-center text-center">
+              <EyebrowPill label="Platform" color={ACCENT.violet} />
               <h2 class="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 Every layer your app needs, in one product
               </h2>
-              <p class="mt-4 max-w-xl text-base leading-relaxed text-gray-500">
+              <p class="mt-5 max-w-xl text-base leading-relaxed text-gray-500">
                 Stop stitching together a dozen services. Crontech is one
                 product with one dashboard and one bill.
               </p>
             </div>
 
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <For each={features}>
                 {(feature) => (
                   <FeatureCard
@@ -468,21 +507,19 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── How it works ──────────────────────────────────────── */}
-        <section class="relative overflow-hidden border-y border-white/[0.04] py-24 lg:py-32">
+        <section class="relative overflow-hidden border-y border-white/[0.04] py-32 lg:py-40">
           <div
             class="pointer-events-none absolute right-[-200px] top-1/3 h-[400px] w-[400px] rounded-full opacity-[0.04] blur-[100px]"
             style={{ background: ACCENT.cyan }}
           />
 
           <div class="relative z-10 mx-auto max-w-[1200px] px-6 lg:px-8">
-            <div class="mb-16 flex flex-col items-center text-center">
-              <span class="mb-4 text-xs font-semibold uppercase tracking-widest text-cyan-400">
-                Onboarding
-              </span>
+            <div class="mb-20 flex flex-col items-center text-center">
+              <EyebrowPill label="Onboarding" color={ACCENT.cyan} />
               <h2 class="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 Move your app to Crontech in three steps
               </h2>
-              <p class="mt-4 max-w-xl text-base leading-relaxed text-gray-500">
+              <p class="mt-5 max-w-xl text-base leading-relaxed text-gray-500">
                 No rebuild. No long migration. Bring the code you already have,
                 layer Crontech underneath, ship.
               </p>
@@ -505,7 +542,7 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Tech pillars ──────────────────────────────────────── */}
-        <section class="py-24 lg:py-32">
+        <section class="py-32 lg:py-40">
           <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <For each={techPillars}>
@@ -524,7 +561,7 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Bottom CTA ────────────────────────────────────────── */}
-        <section class="relative overflow-hidden border-t border-white/[0.04] py-24 lg:py-32">
+        <section class="relative overflow-hidden border-t border-white/[0.04] py-32 lg:py-40">
           <div
             class="pointer-events-none absolute bottom-0 left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full opacity-[0.06] blur-[120px]"
             style={{
