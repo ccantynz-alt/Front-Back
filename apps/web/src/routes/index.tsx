@@ -4,6 +4,7 @@ import type { JSX } from "solid-js";
 import { Button } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 import { SEOHead } from "../components/SEOHead";
+import { Icon, type IconName } from "../components/Icon";
 
 // ── Palette ─────────────────────────────────────────────────────────
 // Restricted to three accent colors so the page reads as one brand,
@@ -20,7 +21,7 @@ const ACCENT = {
 // ── Data ────────────────────────────────────────────────────────────
 
 interface Feature {
-  icon: string;
+  icon: IconName;
   title: string;
   description: string;
   href: string;
@@ -31,9 +32,13 @@ interface Feature {
 // Feature cards showcase PLATFORM LAYERS, not end-user products.
 // Per docs/POSITIONING.md: Crontech is a developer platform, not an
 // AI website builder for non-developers.
+//
+// Icons are stroke-style (1.5px) Feather/Lucide-family glyphs, rendered
+// via the shared <Icon /> component. Each card inherits the card's
+// accent colour through inline `color: accent`.
 const features: Feature[] = [
   {
-    icon: "\u26A1",
+    icon: "zap",
     title: "Edge Compute",
     description:
       "Cloudflare Workers at the edge. Sub-5ms cold starts across 330+ cities. No containers, no regions, no capacity planning. Your code lives next to your users.",
@@ -42,7 +47,7 @@ const features: Feature[] = [
     badge: "Core",
   },
   {
-    icon: "\u{1F5C4}\uFE0F",
+    icon: "database",
     title: "Unified Data",
     description:
       "Turso SQLite replicas at the edge for zero-latency reads. Neon Postgres when you need the full engine. Qdrant for vector search. All type-safe through Drizzle.",
@@ -50,7 +55,7 @@ const features: Feature[] = [
     accent: ACCENT.cyan,
   },
   {
-    icon: "\u{1F517}",
+    icon: "link-2",
     title: "Type-Safe APIs",
     description:
       "tRPC v11 end to end. Change a server type, see the client error instantly. No OpenAPI specs, no codegen step, no drift between backend and frontend. Ever.",
@@ -58,7 +63,7 @@ const features: Feature[] = [
     accent: ACCENT.violet,
   },
   {
-    icon: "\u{1F310}",
+    icon: "radio",
     title: "Real-Time Layer",
     description:
       "WebSockets, SSE, and Yjs CRDTs on every edge node. Multi-user editing with AI agents as first-class peers. Conflict-free by mathematics, not by lock.",
@@ -66,7 +71,7 @@ const features: Feature[] = [
     accent: ACCENT.cyan,
   },
   {
-    icon: "\u{1F9E0}",
+    icon: "brain",
     title: "AI Runtime",
     description:
       "Three-tier compute routes inference where it is cheapest: client GPU (free), edge (sub-5ms), or cloud H100s on demand. Generative UI and streaming native to the platform.",
@@ -74,7 +79,7 @@ const features: Feature[] = [
     accent: ACCENT.violet,
   },
   {
-    icon: "\u{1F512}",
+    icon: "lock",
     title: "Auth + Admin",
     description:
       "Passkeys, OAuth, 2FA. Role-based access control. Audit logs, analytics, and user management. A full admin dashboard ships with the platform, not as a separate product.",
@@ -185,13 +190,13 @@ function FeatureCard(props: Feature): JSX.Element {
           <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3">
               <div
-                class="flex h-10 w-10 items-center justify-center rounded-lg text-base"
+                class="flex h-10 w-10 items-center justify-center rounded-lg"
                 style={{
                   background: `${props.accent}14`,
                   color: props.accent,
                 }}
               >
-                {props.icon}
+                <Icon name={props.icon} size={20} />
               </div>
               <span class="text-base font-semibold text-white">
                 {props.title}
