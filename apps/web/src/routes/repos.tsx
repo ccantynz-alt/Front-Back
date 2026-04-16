@@ -138,7 +138,7 @@ function LanguageBadge(props: { language: string | null }): JSX.Element {
   return (
     <Show when={props.language}>
       {(lang) => (
-        <span class="inline-flex items-center gap-1.5 text-[11px] text-gray-400">
+        <span class="inline-flex items-center gap-1.5 text-[11px]" style={{ color: "var(--color-text-muted)" }}>
           <span
             class="h-2.5 w-2.5 rounded-full"
             style={{ background: LANG_COLORS[lang()] ?? "#8b5cf6" }}
@@ -170,7 +170,7 @@ function VisibilityBadge(props: { isPrivate: boolean }): JSX.Element {
 
 function StatPill(props: { icon: string; value: number; label: string }): JSX.Element {
   return (
-    <span class="inline-flex items-center gap-1 text-[11px] text-gray-500" title={props.label}>
+    <span class="inline-flex items-center gap-1 text-[11px]" title={props.label} style={{ color: "var(--color-text-secondary)" }}>
       <span class="text-[10px]">{props.icon}</span>
       {props.value.toLocaleString()}
     </span>
@@ -188,11 +188,11 @@ function RepoCard(props: {
     <button
       type="button"
       onClick={props.onClick}
-      class={`group flex w-full flex-col gap-2.5 rounded-2xl border p-5 text-left transition-all duration-200 ${
-        props.isSelected
-          ? "border-blue-500/30 bg-blue-500/5 shadow-lg shadow-blue-500/5"
-          : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-      }`}
+      class="group flex w-full flex-col gap-2.5 rounded-2xl p-5 text-left transition-all duration-200"
+      style={{
+        background: props.isSelected ? "var(--color-bg-inset)" : "var(--color-bg-elevated)",
+        border: props.isSelected ? "1px solid var(--color-primary-light)" : "1px solid var(--color-border)",
+      }}
     >
       {/* Header row */}
       <div class="flex items-start justify-between gap-3">
@@ -205,17 +205,17 @@ function RepoCard(props: {
           />
           <div class="flex min-w-0 flex-col">
             <div class="flex items-center gap-2">
-              <span class="truncate text-sm font-semibold text-white group-hover:text-blue-400 transition-colors">
+              <span class="truncate text-sm font-semibold transition-colors" style={{ color: "var(--color-text)" }}>
                 {props.repo.name}
               </span>
               <Show when={props.repo.fork}>
-                <span class="text-[9px] text-gray-600">fork</span>
+                <span class="text-[9px]" style={{ color: "var(--color-text-faint)" }}>fork</span>
               </Show>
               <Show when={props.repo.archived}>
-                <span class="rounded-full bg-gray-700/50 px-1.5 py-0.5 text-[9px] text-gray-500">archived</span>
+                <span class="rounded-full px-1.5 py-0.5 text-[9px]" style={{ background: "var(--color-bg-muted)", color: "var(--color-text-secondary)" }}>archived</span>
               </Show>
             </div>
-            <span class="text-[10px] text-gray-600">{props.repo.owner.login}</span>
+            <span class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>{props.repo.owner.login}</span>
           </div>
         </div>
         <VisibilityBadge isPrivate={props.repo.private} />
@@ -223,7 +223,7 @@ function RepoCard(props: {
 
       {/* Description */}
       <Show when={props.repo.description}>
-        <p class="text-xs leading-relaxed text-gray-500 line-clamp-2">{props.repo.description}</p>
+        <p class="text-xs leading-relaxed line-clamp-2" style={{ color: "var(--color-text-secondary)" }}>{props.repo.description}</p>
       </Show>
 
       {/* Footer stats */}

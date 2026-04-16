@@ -432,7 +432,8 @@ export default function TemplatesPage(): JSX.Element {
                 </p>
                 <button
                   type="button"
-                  class="mt-4 rounded-lg bg-white/[0.06] px-4 py-2 text-sm text-white/60 hover:bg-white/[0.1] transition-colors"
+                  class="mt-4 rounded-lg px-4 py-2 text-sm transition-colors"
+                  style={{ background: "var(--color-bg-subtle)", color: "var(--color-text-secondary)" }}
                   onClick={() => {
                     setSearch("");
                     setActiveFilter("all");
@@ -457,17 +458,16 @@ export default function TemplatesPage(): JSX.Element {
 
           {/* ── CTA Section ───────────────────────────────────────── */}
           <div
-            class="mt-20 rounded-2xl border border-white/[0.06] p-10 text-center"
+            class="mt-20 rounded-2xl p-10 text-center"
             style={{
-              background:
-                "linear-gradient(145deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 50%, rgba(236,72,153,0.06) 100%)",
-              "backdrop-filter": "blur(12px)",
+              background: "var(--color-bg-elevated)",
+              border: "1px solid var(--color-border)",
             }}
           >
-            <h2 class="text-2xl font-bold text-white/90 mb-3">
+            <h2 class="text-2xl font-bold mb-3" style={{ color: "var(--color-text)" }}>
               Need something custom?
             </h2>
-            <p class="text-white/40 max-w-lg mx-auto mb-6">
+            <p class="max-w-lg mx-auto mb-6" style={{ color: "var(--color-text-muted)" }}>
               Describe what you want in plain English and our AI builder
               will generate a fully functional project from scratch.
               No template required.
@@ -475,10 +475,10 @@ export default function TemplatesPage(): JSX.Element {
             <A href="/builder">
               <button
                 type="button"
-                class="rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-105"
+                class="rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200 hover:scale-105"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                  background: "var(--color-primary)",
+                  color: "var(--color-primary-text)",
                 }}
               >
                 Open Composer
