@@ -166,11 +166,10 @@ function TemplateCard(props: {
 }): JSX.Element {
   return (
     <div
-      class="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] transition-all duration-300 hover:scale-[1.02] hover:border-white/[0.12]"
+      class="group relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02]"
       style={{
-        background:
-          "linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)",
-        "backdrop-filter": "blur(12px)",
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border)",
       }}
     >
       {/* Preview gradient area */}
@@ -189,14 +188,14 @@ function TemplateCard(props: {
         />
         {/* Template name overlay */}
         <div class="absolute inset-0 flex items-center justify-center">
-          <span class="text-lg font-bold text-white/90 drop-shadow-lg text-center px-4">
+          <span class="text-lg font-bold text-center px-4" style={{ color: "var(--color-text)" }}>
             {props.template.name}
           </span>
         </div>
         {/* Featured badge */}
         <Show when={props.template.featured}>
           <div class="absolute top-3 right-3">
-            <span class="rounded-full bg-white/20 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-white">
+            <span class="rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: "var(--color-bg-muted)", color: "var(--color-text)" }}>
               Featured
             </span>
           </div>
@@ -205,7 +204,8 @@ function TemplateCard(props: {
         <div class="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-300 group-hover:bg-black/40 group-hover:opacity-100">
           <button
             type="button"
-            class="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-xl transition-transform duration-200 hover:scale-105"
+            class="rounded-xl px-5 py-2.5 text-sm font-semibold shadow-xl transition-transform duration-200 hover:scale-105"
+            style={{ background: "var(--color-primary)", color: "var(--color-primary-text)" }}
             onClick={() => props.onUse(props.template.id)}
           >
             Preview Template
@@ -216,11 +216,11 @@ function TemplateCard(props: {
       {/* Card body */}
       <div class="flex flex-1 flex-col p-5">
         <div class="flex items-center gap-2 mb-2">
-          <span class="text-base font-semibold text-white/90">
+          <span class="text-base font-semibold" style={{ color: "var(--color-text)" }}>
             {props.template.name}
           </span>
         </div>
-        <p class="text-sm text-white/40 leading-relaxed mb-4 flex-1">
+        <p class="text-sm leading-relaxed mb-4 flex-1" style={{ color: "var(--color-text-muted)" }}>
           {props.template.description}
         </p>
         <div class="flex items-center justify-between">
@@ -234,11 +234,11 @@ function TemplateCard(props: {
             >
               {props.template.category}
             </span>
-            <span class="rounded-md bg-white/[0.04] px-2 py-0.5 text-xs text-white/30">
+            <span class="rounded-md px-2 py-0.5 text-xs" style={{ background: "var(--color-bg-muted)", color: "var(--color-text-faint)" }}>
               {props.template.difficulty}
             </span>
           </div>
-          <span class="text-xs text-white/25 font-mono">
+          <span class="text-xs font-mono" style={{ color: "var(--color-text-faint)" }}>
             {props.template.estimatedTime}
           </span>
         </div>
@@ -247,10 +247,10 @@ function TemplateCard(props: {
         <div class="mt-4 flex gap-2">
           <button
             type="button"
-            class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-200"
+            class="flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200"
             style={{
-              background:
-                "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+              background: "var(--color-primary)",
+              color: "var(--color-primary-text)",
             }}
             onClick={() => props.onUse(props.template.id)}
           >
@@ -258,7 +258,12 @@ function TemplateCard(props: {
           </button>
           <button
             type="button"
-            class="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm text-white/60 transition-all duration-200 hover:bg-white/[0.06] hover:text-white/80"
+            class="rounded-xl px-4 py-2.5 text-sm transition-all duration-200"
+            style={{
+              background: "var(--color-bg-subtle)",
+              color: "var(--color-text-secondary)",
+              border: "1px solid var(--color-border)",
+            }}
             onClick={() => props.onUse(props.template.id + "?ai=true")}
           >
             Customize with AI
@@ -311,16 +316,10 @@ export default function TemplatesPage(): JSX.Element {
         path="/templates"
       />
 
-      <div class="min-h-screen" style={{ background: "#0a0a0a" }}>
+      <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
         {/* ── Hero ───────────────────────────────────────────────── */}
         <div class="relative overflow-hidden">
-          <div
-            class="absolute inset-0 opacity-25"
-            style={{
-              background:
-                "radial-gradient(ellipse at 30% 40%, rgba(139,92,246,0.15) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, rgba(236,72,153,0.1) 0%, transparent 50%)",
-            }}
-          />
+          <div class="absolute inset-0" />
 
           <div class="relative mx-auto max-w-6xl px-6 pt-20 pb-12">
             <div class="flex flex-col items-center text-center">
@@ -330,10 +329,7 @@ export default function TemplatesPage(): JSX.Element {
               <h1
                 class="mt-6 text-5xl font-bold tracking-tight sm:text-6xl"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #fff 0%, #c084fc 50%, #ec4899 100%)",
-                  "-webkit-background-clip": "text",
-                  "-webkit-text-fill-color": "transparent",
+                  color: "var(--color-text)",
                   "line-height": "1.1",
                 }}
               >
@@ -341,7 +337,7 @@ export default function TemplatesPage(): JSX.Element {
                 <br />
                 Ship in minutes.
               </h1>
-              <p class="mt-4 max-w-2xl text-lg text-white/50">
+              <p class="mt-4 max-w-2xl text-lg" style={{ color: "var(--color-text-secondary)" }}>
                 Production-ready designs built on the Crontech stack.
                 Every template is AI-composable, fully responsive, and
                 deploys to the edge in one click.
@@ -350,15 +346,16 @@ export default function TemplatesPage(): JSX.Element {
               {/* Search */}
               <div class="mt-8 w-full max-w-xl">
                 <div
-                  class="relative rounded-2xl border border-white/[0.08] overflow-hidden"
+                  class="relative rounded-2xl overflow-hidden"
                   style={{
-                    background: "rgba(255,255,255,0.03)",
-                    "backdrop-filter": "blur(12px)",
+                    background: "var(--color-bg-elevated)",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                     <svg
-                      class="h-5 w-5 text-white/30"
+                      class="h-5 w-5"
+                      style={{ color: "var(--color-text-faint)" }}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -378,7 +375,8 @@ export default function TemplatesPage(): JSX.Element {
                     onInput={(e) =>
                       setSearch(e.currentTarget.value)
                     }
-                    class="w-full bg-transparent py-4 pl-12 pr-4 text-white placeholder-white/30 outline-none text-sm"
+                    class="w-full bg-transparent py-4 pl-12 pr-4 outline-none text-sm"
+                    style={{ color: "var(--color-text)" }}
                   />
                 </div>
               </div>
@@ -397,16 +395,16 @@ export default function TemplatesPage(): JSX.Element {
                   style={{
                     background:
                       activeFilter() === cat.value
-                        ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)"
-                        : "rgba(255,255,255,0.04)",
+                        ? "var(--color-primary)"
+                        : "var(--color-bg-subtle)",
                     color:
                       activeFilter() === cat.value
-                        ? "#fff"
-                        : "rgba(255,255,255,0.5)",
+                        ? "var(--color-primary-text)"
+                        : "var(--color-text-secondary)",
                     border:
                       activeFilter() === cat.value
-                        ? "1px solid rgba(139,92,246,0.3)"
-                        : "1px solid rgba(255,255,255,0.06)",
+                        ? "1px solid var(--color-primary-light)"
+                        : "1px solid var(--color-border)",
                   }}
                   onClick={() => setActiveFilter(cat.value)}
                 >
@@ -426,10 +424,10 @@ export default function TemplatesPage(): JSX.Element {
                 <div class="text-4xl mb-4 opacity-30">
                   {"\uD83D\uDD0D"}
                 </div>
-                <p class="text-white/40 text-lg">
+                <p class="text-lg" style={{ color: "var(--color-text-muted)" }}>
                   No templates match your search
                 </p>
-                <p class="text-white/25 text-sm mt-1">
+                <p class="text-sm mt-1" style={{ color: "var(--color-text-faint)" }}>
                   Try adjusting your filters or search query
                 </p>
                 <button

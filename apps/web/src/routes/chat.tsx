@@ -60,9 +60,9 @@ function getSessionToken(): string | null {
 
 function renderContent(content: string): string {
   return content
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="my-3 overflow-x-auto rounded-xl border border-white/[0.08] bg-black/40 p-4"><code class="text-xs leading-relaxed text-emerald-300">$2</code></pre>')
-    .replace(/`([^`]+)`/g, '<code class="rounded bg-white/[0.08] px-1.5 py-0.5 text-xs text-violet-300">$1</code>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="my-3 overflow-x-auto rounded-xl p-4" style="background:var(--color-bg-inset);border:1px solid var(--color-border)"><code class="text-xs leading-relaxed" style="color:var(--color-primary-light)">$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code class="rounded px-1.5 py-0.5 text-xs" style="background:var(--color-bg-muted);color:var(--color-primary-light)">$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold" style="color:var(--color-text)">$1</strong>')
     .replace(/\n/g, "<br/>");
 }
 
@@ -82,15 +82,16 @@ function ConversationItem(props: {
       onClick={props.onClick}
       onMouseEnter={() => setShowDelete(true)}
       onMouseLeave={() => setShowDelete(false)}
-      class={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 ${
-        props.isActive
-          ? "border border-white/[0.1] bg-white/[0.06] text-white"
-          : "border border-transparent text-gray-400 hover:bg-white/[0.03] hover:text-gray-200"
-      }`}
+      class="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150"
+      style={{
+        background: props.isActive ? "var(--color-bg-elevated)" : "transparent",
+        color: props.isActive ? "var(--color-text)" : "var(--color-text-secondary)",
+        border: props.isActive ? "1px solid var(--color-border)" : "1px solid transparent",
+      }}
     >
       <div class="flex min-w-0 flex-1 flex-col">
         <span class="truncate text-xs font-medium">{props.conv.title}</span>
-        <span class="text-[10px] text-gray-600">
+        <span class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>
           {props.conv.totalTokens.toLocaleString()} tokens
         </span>
       </div>
@@ -101,7 +102,8 @@ function ConversationItem(props: {
             e.stopPropagation();
             props.onDelete();
           }}
-          class="shrink-0 rounded-md p-1 text-gray-600 transition-colors hover:bg-red-500/10 hover:text-red-400"
+          class="shrink-0 rounded-md p-1 transition-colors hover:bg-red-500/10 hover:text-red-400"
+          style={{ color: "var(--color-text-faint)" }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12" />
@@ -123,8 +125,9 @@ function MessageBubble(props: { message: ChatMessage }): JSX.Element {
         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
         style={{
           background: isUser()
-            ? "linear-gradient(135deg, #3b82f6, #8b5cf6)"
-            : "linear-gradient(135deg, #f97316, #ef4444)",
+            ? "var(--color-primary)"
+            : "var(--color-bg-elevated)",
+          color: isUser() ? "var(--color-primary-text)" : "var(--color-text)",
         }}
       >
         {isUser() ? "You" : "C"}
@@ -133,24 +136,39 @@ function MessageBubble(props: { message: ChatMessage }): JSX.Element {
       <div class={`flex max-w-[80%] flex-col gap-1.5 ${isUser() ? "items-end" : ""}`}>
         <Show when={isUser()} fallback={
           <div
-            class="rounded-2xl px-4 py-3 text-sm leading-relaxed bg-white/[0.04] border border-white/[0.06] text-gray-300"
+            class="chat-content rounded-2xl px-4 py-3 text-sm leading-relaxed"
+            style={{
+              background: "var(--color-bg-muted)",
+              border: "1px solid var(--color-border)",
+              color: "var(--color-text-secondary)",
+            }}
             innerHTML={renderContent(props.message.content)}
           />
         }>
-          <div class="rounded-2xl px-4 py-3 text-sm leading-relaxed bg-gradient-to-br from-blue-600/20 to-violet-600/20 border border-blue-500/20 text-gray-200">
+          <div
+            class="chat-content rounded-2xl px-4 py-3 text-sm leading-relaxed"
+            style={{
+              background: "var(--color-primary)",
+              border: "1px solid var(--color-border)",
+              color: "var(--color-primary-text)",
+            }}
+          >
             <span style={{ "white-space": "pre-wrap" }}>{props.message.content}</span>
           </div>
         </Show>
         <div class="flex items-center gap-2 px-1">
           <Show when={props.message.model}>
-            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ background: "#f9731615", color: "#f97316" }}>
+            <span
+              class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ background: "var(--color-bg-elevated)", color: "var(--color-primary-light)" }}
+            >
               {props.message.model}
             </span>
           </Show>
           <Show when={props.message.outputTokens}>
-            <span class="text-[10px] text-gray-600">{props.message.outputTokens} tokens</span>
+            <span class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>{props.message.outputTokens} tokens</span>
           </Show>
-          <span class="text-[10px] text-gray-700">
+          <span class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>
             {props.message.createdAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
         </div>
@@ -390,38 +408,43 @@ export default function ChatPage(): JSX.Element {
   };
 
   return (
-    <div class="flex h-screen bg-[#050508]">
+    <div class="flex h-screen" style={{ background: "var(--color-bg)" }}>
       <Title>Chat - Crontech</Title>
 
       {/* ── Left Sidebar: Conversations ─────────────────────────── */}
       <div
-        class="flex w-72 shrink-0 flex-col border-r border-white/[0.06]"
-        style={{ background: "linear-gradient(180deg, rgba(10,10,14,1) 0%, rgba(6,6,10,1) 100%)" }}
+        class="flex w-72 shrink-0 flex-col"
+        style={{ background: "var(--color-bg-subtle)", "border-right": "1px solid var(--color-border)" }}
       >
         {/* Header */}
-        <div class="border-b border-white/[0.06] px-5 py-4">
+        <div class="px-5 py-4" style={{ "border-bottom": "1px solid var(--color-border)" }}>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div
                 class="flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{ background: "linear-gradient(135deg, #f9731630, #ef444460)" }}
+                style={{ background: "var(--color-bg-elevated)" }}
               >
-                <span class="text-lg" style={{ color: "#f97316" }}>&#9889;</span>
+                <span class="text-lg" style={{ color: "var(--color-primary-light)" }}>&#9889;</span>
               </div>
               <div>
-                <h1 class="text-base font-bold text-white">Claude Chat</h1>
-                <p class="text-[10px] text-gray-600">Anthropic API Direct</p>
+                <h1 class="text-base font-bold" style={{ color: "var(--color-text)" }}>Claude Chat</h1>
+                <p class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>Anthropic API Direct</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* New Chat Button */}
-        <div class="border-b border-white/[0.06] px-4 py-3">
+        <div class="px-4 py-3" style={{ "border-bottom": "1px solid var(--color-border)" }}>
           <button
             type="button"
             onClick={() => void createConversation()}
-            class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-400 transition-all hover:border-white/[0.2] hover:bg-white/[0.04] hover:text-white"
+            class="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition-all"
+            style={{
+              background: "var(--color-bg-inset)",
+              color: "var(--color-text-secondary)",
+              border: "1px dashed var(--color-border)",
+            }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 5v14M5 12h14" />
@@ -435,7 +458,7 @@ export default function ChatPage(): JSX.Element {
           <Show when={conversations().length > 0} fallback={
             <div class="flex flex-col items-center gap-2 py-12 text-center">
               <span class="text-2xl opacity-30">&#128172;</span>
-              <span class="text-xs text-gray-600">No conversations yet</span>
+              <span class="text-xs" style={{ color: "var(--color-text-faint)" }}>No conversations yet</span>
             </div>
           }>
             <div class="flex flex-col gap-0.5">
@@ -454,16 +477,16 @@ export default function ChatPage(): JSX.Element {
         </div>
 
         {/* Session Stats */}
-        <div class="border-t border-white/[0.06] px-5 py-4">
-          <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Session</span>
+        <div class="px-5 py-4" style={{ "border-top": "1px solid var(--color-border)" }}>
+          <span class="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>Session</span>
           <div class="mt-2 grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] text-gray-600">Tokens</span>
-              <span class="text-sm font-bold text-orange-400">{sessionTokens().toLocaleString()}</span>
+              <span class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>Tokens</span>
+              <span class="text-sm font-bold" style={{ color: "var(--color-primary-light)" }}>{sessionTokens().toLocaleString()}</span>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] text-gray-600">Model</span>
-              <span class="truncate text-xs font-medium text-gray-400">{currentModel().name}</span>
+              <span class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>Model</span>
+              <span class="truncate text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{currentModel().name}</span>
             </div>
           </div>
         </div>
@@ -472,15 +495,21 @@ export default function ChatPage(): JSX.Element {
       {/* ── Center: Chat Interface ────────────────────────────── */}
       <div class="flex flex-1 flex-col overflow-hidden">
         {/* Chat Header */}
-        <div class="flex items-center justify-between border-b border-white/[0.06] bg-[#08080c] px-6 py-3">
+        <div
+          class="flex items-center justify-between px-6 py-3"
+          style={{ background: "var(--color-bg-subtle)", "border-bottom": "1px solid var(--color-border)" }}
+        >
           <div class="flex items-center gap-3">
-            <span class="text-sm font-semibold text-white">
+            <span class="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
               {activeConvId()
                 ? conversations().find((c) => c.id === activeConvId())?.title ?? "Chat"
                 : "New Chat"}
             </span>
-            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider" style={{ background: "#f9731615", color: "#f97316" }}>
-              <span class="h-1.5 w-1.5 rounded-full" style={{ background: "#f97316", "box-shadow": "0 0 6px #f9731640" }} />
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ background: "var(--color-bg-elevated)", color: "var(--color-primary-light)" }}
+            >
+              <span class="h-1.5 w-1.5 rounded-full" style={{ background: "var(--color-primary-light)" }} />
               Anthropic
             </span>
           </div>
@@ -489,22 +518,28 @@ export default function ChatPage(): JSX.Element {
             <select
               value={selectedModel()}
               onChange={(e) => setSelectedModel(e.currentTarget.value)}
-              class="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-300 outline-none transition-all focus:border-orange-500/30"
+              class="rounded-lg px-3 py-1.5 text-[11px] font-medium outline-none transition-all"
+              style={{
+                background: "var(--color-bg-inset)",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-text-secondary)",
+              }}
             >
               <For each={MODELS}>
                 {(model) => (
-                  <option value={model.id} class="bg-[#0a0a0e]">{model.name}</option>
+                  <option value={model.id} style={{ background: "var(--color-bg-elevated)" }}>{model.name}</option>
                 )}
               </For>
             </select>
             <button
               type="button"
               onClick={() => setShowSettings(!showSettings())}
-              class={`rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-all duration-200 ${
-                showSettings()
-                  ? "border-orange-500/30 bg-orange-500/10 text-orange-400"
-                  : "border-white/[0.06] bg-white/[0.03] text-gray-400 hover:text-white"
-              }`}
+              class="rounded-lg px-3 py-1.5 text-[11px] font-medium transition-all duration-200"
+              style={{
+                background: showSettings() ? "var(--color-bg-elevated)" : "var(--color-bg-inset)",
+                border: showSettings() ? "1px solid var(--color-primary-light)" : "1px solid var(--color-border)",
+                color: showSettings() ? "var(--color-primary-light)" : "var(--color-text-secondary)",
+              }}
             >
               Settings
             </button>

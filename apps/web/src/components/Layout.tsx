@@ -40,39 +40,36 @@ function NavLink(props: NavLinkProps): JSX.Element {
   return (
     <A
       href={props.href}
-      class="group relative px-3 py-2 text-sm font-medium transition-all duration-300 cursor-pointer"
-      classList={{
-        "text-white": isActive(),
-        "text-neutral-400 hover:text-white": !isActive(),
+      class="relative px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 cursor-pointer"
+      style={{
+        color: isActive() ? "var(--color-text)" : "var(--color-text-muted)",
+        background: isActive() ? "var(--color-bg-muted)" : "transparent",
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive()) {
+          e.currentTarget.style.color = "var(--color-text)";
+          e.currentTarget.style.background = "var(--color-bg-muted)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive()) {
+          e.currentTarget.style.color = "var(--color-text-muted)";
+          e.currentTarget.style.background = "transparent";
+        }
       }}
     >
-      <span class="relative z-10">{props.label}</span>
-
-      {/* Hover glow background */}
-      <span
-        class="absolute inset-0 rounded-lg bg-white/[0.04] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-      />
-
-      {/* Active gradient underline */}
-      <span
-        class="absolute bottom-0 left-1/2 h-[2px] -translate-x-1/2 rounded-full transition-all duration-400 ease-out"
-        classList={{
-          "w-4/5 bg-gradient-to-r from-violet-500 via-violet-400 to-cyan-500 shadow-[0_0_8px_rgba(139,92,246,0.4)]": isActive(),
-          "w-0 group-hover:w-3/5 bg-white/20": !isActive(),
-        }}
-      />
+      {props.label}
     </A>
   );
 }
 
-// ── User Menu (premium dropdown) ─────────────────────────────────────
+// ── User Menu ────────────────────────────────────────────────────────
 
 function UserMenu(): JSX.Element {
   const auth = useAuth();
   const [menuOpen, setMenuOpen] = createSignal(false);
   let menuRef: HTMLDivElement | undefined;
 
-  // Close dropdown when clicking outside
   const handleClickOutside = (e: MouseEvent): void => {
     if (menuRef && !menuRef.contains(e.target as Node)) {
       setMenuOpen(false);
@@ -94,59 +91,66 @@ function UserMenu(): JSX.Element {
   const userInitial = (): string =>
     auth.currentUser()?.displayName?.charAt(0).toUpperCase() ?? "?";
 
-  const roleBadgeColor = (): string => {
+  const roleBadge = (): { bg: string; text: string } => {
     const role = auth.currentUser()?.role;
-    if (role === "admin") return "bg-red-500/20 text-red-400 border-red-500/30";
-    if (role === "editor") return "bg-violet-500/20 text-violet-400 border-violet-500/30";
-    return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
+    if (role === "admin") return { bg: "var(--color-danger-bg)", text: "var(--color-danger-text)" };
+    if (role === "editor") return { bg: "var(--color-primary-light)", text: "var(--color-primary-text)" };
+    return { bg: "var(--color-success-bg)", text: "var(--color-success-text)" };
   };
 
   return (
     <div class="relative" ref={menuRef}>
-      {/* Avatar button with animated gradient ring */}
       <button
-        class="relative flex items-center justify-center w-9 h-9 rounded-full cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 group"
+        class="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer transition-opacity duration-150 hover:opacity-80 active:scale-95 text-sm font-semibold text-white"
+        style={{ background: "var(--color-primary)" }}
         onClick={() => setMenuOpen(!menuOpen())}
         type="button"
         aria-label="User menu"
       >
-        {/* Outer glow on hover */}
-        <span class="absolute -inset-1 rounded-full bg-gradient-to-br from-violet-500/0 to-cyan-500/0 group-hover:from-violet-500/20 group-hover:to-cyan-500/20 transition-all duration-300 blur-sm" />
-
-        {/* Gradient border ring with animation */}
-        <span class="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 p-[1.5px] transition-all duration-300 group-hover:from-violet-400 group-hover:to-cyan-400">
-          <span class="flex items-center justify-center w-full h-full rounded-full bg-[#0d0d0d] transition-colors duration-300 group-hover:bg-[#111111]">
-            <span class="text-sm font-bold text-white">{userInitial()}</span>
-          </span>
-        </span>
+        {userInitial()}
       </button>
 
       <Show when={menuOpen()}>
         <div
-          class="absolute right-0 top-full mt-3 w-72 rounded-2xl border border-white/[0.08] bg-[#0d0d0d]/98 backdrop-blur-2xl shadow-2xl shadow-black/60 overflow-hidden z-50"
-          style="animation: crontech-menu-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
+          class="absolute right-0 top-full mt-2 w-64 rounded-lg overflow-hidden z-50"
+          style={{
+            border: "1px solid var(--color-border)",
+            background: "var(--color-bg-elevated)",
+            "box-shadow": "var(--shadow-lg)",
+            animation: "dropdown-enter 0.15s ease",
+          }}
         >
-          {/* User info header with subtle gradient */}
-          <div class="px-5 py-4 border-b border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent">
-            <div class="flex items-center gap-3.5">
-              {/* Larger avatar in dropdown */}
-              <span class="relative flex items-center justify-center w-11 h-11 rounded-full shrink-0">
-                <span class="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 p-[1.5px]">
-                  <span class="flex items-center justify-center w-full h-full rounded-full bg-[#0d0d0d]">
-                    <span class="text-base font-bold text-white">{userInitial()}</span>
-                  </span>
-                </span>
+          <div
+            class="px-4 py-3"
+            style={{ "border-bottom": "1px solid var(--color-border)" }}
+          >
+            <div class="flex items-center gap-3">
+              <span
+                class="flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold text-white shrink-0"
+                style={{ background: "var(--color-primary)" }}
+              >
+                {userInitial()}
               </span>
               <div class="min-w-0 flex-1">
-                <p class="text-sm font-semibold text-white truncate leading-tight">
+                <p
+                  class="text-sm font-semibold truncate"
+                  style={{ color: "var(--color-text)" }}
+                >
                   {auth.currentUser()?.displayName}
                 </p>
-                <p class="text-xs text-neutral-500 truncate mt-0.5">
+                <p
+                  class="text-xs truncate mt-0.5"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   {auth.currentUser()?.email}
                 </p>
                 <Show when={auth.currentUser()?.role}>
                   <span
-                    class={`inline-block mt-1.5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border ${roleBadgeColor()}`}
+                    class="inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full"
+                    style={{
+                      background: roleBadge().bg,
+                      color: roleBadge().text,
+                    }}
                   >
                     {auth.currentUser()?.role}
                   </span>
@@ -155,37 +159,60 @@ function UserMenu(): JSX.Element {
             </div>
           </div>
 
-          {/* Menu items */}
-          <div class="py-1.5 px-1.5">
+          <div class="py-1 px-1">
             <A
               href="/dashboard"
-              class="group flex items-center gap-3 px-3.5 py-2.5 text-sm text-neutral-300 hover:text-white rounded-xl hover:bg-white/[0.05] transition-all duration-200 cursor-pointer"
+              class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors duration-150 cursor-pointer"
+              style={{ color: "var(--color-text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--color-bg-muted)";
+                e.currentTarget.style.color = "var(--color-text)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-secondary)";
+              }}
               onClick={() => setMenuOpen(false)}
             >
-              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400 group-hover:bg-violet-500/20 transition-colors duration-200 text-sm">{"\u25A0"}</span>
+              <span class="text-sm">{"\u25A0"}</span>
               <span class="font-medium">Dashboard</span>
             </A>
             <A
               href="/settings"
-              class="group flex items-center gap-3 px-3.5 py-2.5 text-sm text-neutral-300 hover:text-white rounded-xl hover:bg-white/[0.05] transition-all duration-200 cursor-pointer"
+              class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors duration-150 cursor-pointer"
+              style={{ color: "var(--color-text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--color-bg-muted)";
+                e.currentTarget.style.color = "var(--color-text)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-secondary)";
+              }}
               onClick={() => setMenuOpen(false)}
             >
-              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500/20 transition-colors duration-200 text-sm">{"\u2699"}</span>
+              <span class="text-sm">{"\u2699"}</span>
               <span class="font-medium">Settings</span>
             </A>
           </div>
 
-          {/* Sign out */}
-          <div class="border-t border-white/[0.06] p-1.5">
+          <div class="px-1 py-1" style={{ "border-top": "1px solid var(--color-border)" }}>
             <button
-              class="group flex items-center gap-3 w-full px-3.5 py-2.5 text-sm text-neutral-400 hover:text-red-400 rounded-xl hover:bg-red-500/[0.08] transition-all duration-200 cursor-pointer"
+              class="flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-md transition-colors duration-150 cursor-pointer"
+              style={{ color: "var(--color-danger)" }}
               onClick={() => {
                 setMenuOpen(false);
                 auth.logout();
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--color-danger-bg)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
               type="button"
             >
-              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-neutral-500/10 text-neutral-500 group-hover:bg-red-500/15 group-hover:text-red-400 transition-colors duration-200 text-sm">{"\u{279C}"}</span>
+              <span class="text-sm">{"\u{279C}"}</span>
               <span class="font-medium">Sign Out</span>
             </button>
           </div>
@@ -202,14 +229,16 @@ function ThemeToggle(): JSX.Element {
 
   return (
     <button
-      class="group flex items-center justify-center w-9 h-9 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-all duration-300 cursor-pointer active:scale-90"
+      class="theme-toggle"
       onClick={toggleTheme}
       aria-label={isDark() ? "Switch to light mode" : "Switch to dark mode"}
       type="button"
     >
-      <Show when={isDark()} fallback={<span class="text-lg transition-transform duration-300 group-hover:rotate-[-20deg]">{"\u263E"}</span>}>
-        <span class="text-lg transition-transform duration-300 group-hover:rotate-45">{"\u2600"}</span>
-      </Show>
+      <span class="theme-icon">
+        <Show when={isDark()} fallback={<span>{"\u263E"}</span>}>
+          <span>{"\u2600"}</span>
+        </Show>
+      </span>
     </button>
   );
 }
@@ -223,31 +252,40 @@ interface SidebarProps {
 
 function Sidebar(props: SidebarProps): JSX.Element {
   const location = useLocation();
-
   const isActive = (href: string): boolean => location.pathname === href;
 
   return (
     <aside
-      class="relative flex flex-col shrink-0 border-r border-white/[0.06] bg-[#080808] transition-all duration-300 ease-out"
-      classList={{
-        "w-[68px]": props.collapsed,
-        "w-60": !props.collapsed,
+      class="flex flex-col shrink-0 transition-all duration-200 ease-out overflow-y-auto overflow-x-hidden"
+      style={{
+        width: props.collapsed ? "52px" : "220px",
+        "border-right": "1px solid var(--color-border)",
+        background: "var(--color-bg-subtle)",
       }}
     >
-      {/* Subtle gradient glow along the right edge */}
-      <div class="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-violet-500/20 via-transparent to-cyan-500/20 pointer-events-none" />
-
-      {/* Toggle button */}
       <div
-        class="flex items-center h-12 border-b border-white/[0.04]"
-        classList={{
-          "justify-center": props.collapsed,
-          "justify-end pr-3": !props.collapsed,
+        class="flex items-center h-11"
+        style={{
+          "justify-content": props.collapsed ? "center" : "flex-end",
+          "padding-right": props.collapsed ? "0" : "0.75rem",
+          "border-bottom": "1px solid var(--color-border)",
         }}
       >
         <button
-          class="flex items-center justify-center w-7 h-7 rounded-lg text-neutral-600 hover:text-neutral-300 hover:bg-white/[0.06] transition-all duration-200 cursor-pointer text-xs active:scale-90"
+          class="flex items-center justify-center w-7 h-7 rounded-md text-xs cursor-pointer transition-colors duration-150"
+          style={{
+            color: "var(--color-text-muted)",
+            border: "1px solid var(--color-border)",
+          }}
           onClick={props.onToggle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--color-bg-muted)";
+            e.currentTarget.style.color = "var(--color-text)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--color-text-muted)";
+          }}
           type="button"
           aria-label={props.collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -255,51 +293,51 @@ function Sidebar(props: SidebarProps): JSX.Element {
         </button>
       </div>
 
-      {/* Nav items */}
-      <nav class="flex-1 py-3 px-2 overflow-y-auto">
+      <nav class="flex-1 py-2 px-1.5">
         <For each={sidebarNavItems}>
           {(item) => (
             <A
               href={item.href}
-              class="group relative flex items-center gap-3 my-0.5 rounded-xl transition-all duration-200 cursor-pointer"
-              classList={{
-                "justify-center px-0 py-3": props.collapsed,
-                "px-3 py-2.5": !props.collapsed,
+              class="relative flex items-center gap-2.5 my-0.5 rounded-md transition-colors duration-150 cursor-pointer"
+              style={{
+                "justify-content": props.collapsed ? "center" : "flex-start",
+                padding: props.collapsed ? "0.625rem 0" : "0.5rem 0.75rem",
+                background: isActive(item.href) ? "var(--color-primary-light)" : "transparent",
+                color: isActive(item.href) ? "var(--color-primary-text)" : "var(--color-text-secondary)",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive(item.href)) {
+                  e.currentTarget.style.background = "var(--color-bg-muted)";
+                  e.currentTarget.style.color = "var(--color-text)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive(item.href)) {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "var(--color-text-secondary)";
+                }
               }}
               title={props.collapsed ? item.label : undefined}
             >
-              {/* Active background glow */}
               <Show when={isActive(item.href)}>
-                <span class="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-500/12 via-violet-500/8 to-cyan-500/6" />
-                {/* Left edge accent bar */}
-                <span class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-violet-400 to-cyan-400 shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+                <span
+                  class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full"
+                  style={{ background: "var(--color-primary)" }}
+                />
               </Show>
 
-              {/* Hover background */}
-              <Show when={!isActive(item.href)}>
-                <span class="absolute inset-0 rounded-xl bg-white/0 group-hover:bg-white/[0.03] transition-colors duration-200" />
-              </Show>
-
-              {/* Icon */}
               <span
-                class="relative z-10 text-base shrink-0 transition-all duration-200"
-                classList={{
-                  "w-5 text-center": !props.collapsed,
-                  "text-violet-400": isActive(item.href),
-                  "text-neutral-500 group-hover:text-neutral-300 group-hover:scale-110": !isActive(item.href),
+                class="text-sm shrink-0"
+                style={{
+                  width: props.collapsed ? "auto" : "1.25rem",
+                  "text-align": "center",
                 }}
               >
                 {item.icon}
               </span>
 
               <Show when={!props.collapsed}>
-                <span
-                  class="relative z-10 text-sm font-medium truncate transition-colors duration-200"
-                  classList={{
-                    "text-white": isActive(item.href),
-                    "text-neutral-400 group-hover:text-white": !isActive(item.href),
-                  }}
-                >
+                <span class="text-sm font-medium truncate">
                   {item.label}
                 </span>
               </Show>
@@ -308,15 +346,17 @@ function Sidebar(props: SidebarProps): JSX.Element {
         </For>
       </nav>
 
-      {/* Sidebar footer branding */}
       <Show when={!props.collapsed}>
-        <div class="px-4 py-3 border-t border-white/[0.04]">
-          <div class="flex items-center gap-1.5">
-            <span class="text-[10px] text-neutral-700">{"\u26A1"}</span>
-            <p class="text-[10px] text-neutral-600 uppercase tracking-[0.2em] font-medium">
-              Crontech
-            </p>
-          </div>
+        <div
+          class="px-3 py-2.5"
+          style={{ "border-top": "1px solid var(--color-border)" }}
+        >
+          <p
+            class="text-[10px] uppercase tracking-[0.15em] font-medium"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Crontech
+          </p>
         </div>
       </Show>
     </aside>
@@ -334,30 +374,36 @@ export function Layout(props: LayoutProps): JSX.Element {
   const [sidebarCollapsed, setSidebarCollapsed] = createSignal(false);
 
   return (
-    <div class="flex flex-col min-h-screen bg-[#060606] text-white">
-      {/* ── Navbar (frosted glass, sticky, premium) ──────────────── */}
-      <header class="sticky top-0 z-50 backdrop-blur-2xl bg-[#060606]/75 border-b border-white/[0.06]">
-        {/* Top accent line -- subtle gradient */}
-        <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
-
+    <div
+      class="flex flex-col min-h-screen"
+      style={{
+        background: "var(--color-bg)",
+        color: "var(--color-text)",
+      }}
+    >
+      {/* ── Navbar ──────────────────────────────────────────────── */}
+      <header
+        class="sticky top-0 z-50"
+        style={{
+          background: "var(--color-bg-elevated)",
+          "border-bottom": "1px solid var(--color-border)",
+        }}
+      >
         <div class="flex items-center justify-between h-14 px-4 md:px-6">
-          {/* Left: Logo + nav links */}
           <div class="flex items-center gap-8">
-            {/* Logo with premium treatment */}
-            <A href="/" class="flex items-center gap-2.5 cursor-pointer group relative">
-              {/* Logo glow on hover */}
-              <span class="absolute -inset-3 rounded-2xl bg-gradient-to-r from-violet-500/0 to-cyan-500/0 group-hover:from-violet-500/5 group-hover:to-cyan-500/5 transition-all duration-500 blur-lg" />
-
-              <span class="relative text-xl transition-all duration-500 group-hover:rotate-12 group-hover:scale-110">{"\u26A1"}</span>
+            <A
+              href="/"
+              class="flex items-center gap-2 cursor-pointer"
+            >
+              <span class="text-lg">{"\u26A1"}</span>
               <span
-                class="relative text-xl font-extrabold tracking-tight bg-gradient-to-r from-violet-500 via-violet-400 to-cyan-500 bg-clip-text"
-                style="-webkit-background-clip: text; -webkit-text-fill-color: transparent;"
+                class="text-lg font-bold tracking-tight"
+                style={{ color: "var(--color-text)" }}
               >
                 Crontech
               </span>
             </A>
 
-            {/* Navigation links */}
             <nav class="hidden md:flex items-center gap-0.5">
               <NavLink href="/" label="Home" />
               <Show when={auth.isAuthenticated()}>
@@ -370,8 +416,7 @@ export function Layout(props: LayoutProps): JSX.Element {
             </nav>
           </div>
 
-          {/* Right: Actions cluster */}
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-2">
             <ThemeToggle />
             <Show when={auth.isAuthenticated()}>
               <NotificationCenter />
@@ -379,7 +424,7 @@ export function Layout(props: LayoutProps): JSX.Element {
             <Show
               when={auth.isAuthenticated()}
               fallback={
-                <A href="/login" class="ml-2">
+                <A href="/login" class="ml-1">
                   <Button variant="primary" size="sm">
                     Sign In
                   </Button>
@@ -392,7 +437,7 @@ export function Layout(props: LayoutProps): JSX.Element {
         </div>
       </header>
 
-      {/* ── Body (sidebar + content) ──────────────────────────────── */}
+      {/* ── Body (sidebar + content) ──────────────────────────── */}
       <div class="flex flex-1 overflow-hidden">
         <Show when={auth.isAuthenticated()}>
           <Sidebar
@@ -405,63 +450,61 @@ export function Layout(props: LayoutProps): JSX.Element {
         </main>
       </div>
 
-      {/* ── Footer (premium) ──────────────────────────────────────── */}
-      <footer class="relative border-t border-white/[0.06] bg-[#080808]">
-        {/* Top accent line */}
-        <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
-
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-5">
-          {/* Left: branding */}
-          <div class="flex items-center gap-6">
-            <div class="flex items-center gap-2">
+      {/* ── Footer ────────────────────────────────────────────── */}
+      <footer
+        style={{
+          "border-top": "1px solid var(--color-border)",
+          background: "var(--color-bg-elevated)",
+        }}
+      >
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3 px-6 py-4">
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-1.5">
               <span class="text-sm">{"\u26A1"}</span>
               <span
-                class="text-sm font-bold tracking-tight bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text"
-                style="-webkit-background-clip: text; -webkit-text-fill-color: transparent;"
+                class="text-sm font-bold tracking-tight"
+                style={{ color: "var(--color-text)" }}
               >
                 Crontech
               </span>
             </div>
-            <span class="hidden md:inline-block w-px h-4 bg-white/[0.08]" />
-            <span class="text-xs text-neutral-600">
+            <span
+              class="hidden md:inline-block text-xs"
+              style={{ color: "var(--color-text-faint)" }}
+            >
               {"\u00A9"} {new Date().getFullYear()} Crontech. All rights reserved.
             </span>
           </div>
 
-          {/* Right: legal links */}
           <nav class="flex items-center gap-1">
-            <A href="/legal/terms" class="px-2.5 py-1 text-xs text-neutral-500 hover:text-neutral-300 rounded-md hover:bg-white/[0.03] transition-all duration-200 cursor-pointer">
-              Terms
-            </A>
-            <A href="/legal/privacy" class="px-2.5 py-1 text-xs text-neutral-500 hover:text-neutral-300 rounded-md hover:bg-white/[0.03] transition-all duration-200 cursor-pointer">
-              Privacy
-            </A>
-            <A href="/legal/dmca" class="px-2.5 py-1 text-xs text-neutral-500 hover:text-neutral-300 rounded-md hover:bg-white/[0.03] transition-all duration-200 cursor-pointer">
-              DMCA
-            </A>
-            <A href="/legal/cookies" class="px-2.5 py-1 text-xs text-neutral-500 hover:text-neutral-300 rounded-md hover:bg-white/[0.03] transition-all duration-200 cursor-pointer">
-              Cookies
-            </A>
-            <A href="/legal/acceptable-use" class="px-2.5 py-1 text-xs text-neutral-500 hover:text-neutral-300 rounded-md hover:bg-white/[0.03] transition-all duration-200 cursor-pointer">
-              Acceptable Use
-            </A>
+            <For each={[
+              { href: "/legal/terms", label: "Terms" },
+              { href: "/legal/privacy", label: "Privacy" },
+              { href: "/legal/dmca", label: "DMCA" },
+              { href: "/legal/cookies", label: "Cookies" },
+              { href: "/legal/acceptable-use", label: "Acceptable Use" },
+            ]}>
+              {(link) => (
+                <A
+                  href={link.href}
+                  class="px-2 py-1 text-xs rounded-md transition-colors duration-150 cursor-pointer"
+                  style={{ color: "var(--color-text-muted)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--color-text)";
+                    e.currentTarget.style.background = "var(--color-bg-muted)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--color-text-muted)";
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {link.label}
+                </A>
+              )}
+            </For>
           </nav>
         </div>
       </footer>
-
-      {/* ── Inline keyframes for animations ───────────────────────── */}
-      <style>{`
-        @keyframes crontech-menu-enter {
-          from {
-            opacity: 0;
-            transform: scale(0.92) translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

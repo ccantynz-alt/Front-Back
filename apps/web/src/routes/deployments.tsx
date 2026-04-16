@@ -66,9 +66,9 @@ const PIPELINE_STAGES: ReadonlyArray<Stage> = [
 
 function StageCard(props: { stage: Stage }): JSX.Element {
   const badgeColor = (): string => {
-    if (props.stage.status === "done") return "#10b981";
-    if (props.stage.status === "in_progress") return "#f59e0b";
-    return "#6b7280";
+    if (props.stage.status === "done") return "var(--color-success)";
+    if (props.stage.status === "in_progress") return "var(--color-warning)";
+    return "var(--color-text-faint)";
   };
   const badgeLabel = (): string => {
     if (props.stage.status === "done") return "shipped";
@@ -78,22 +78,38 @@ function StageCard(props: { stage: Stage }): JSX.Element {
 
   return (
     <div
-      class="rounded-2xl border border-white/[0.06] p-5"
+      class="rounded-2xl p-5"
       style={{
-        background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border)",
       }}
     >
       <div class="flex items-start justify-between gap-4">
-        <h3 class="text-sm font-semibold text-white">{props.stage.name}</h3>
+        <h3
+          class="text-sm font-semibold"
+          style={{ color: "var(--color-text)" }}
+        >
+          {props.stage.name}
+        </h3>
         <span
           class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-          style={{ background: `${badgeColor()}18`, color: badgeColor() }}
+          style={{ background: "var(--color-warning-bg)", color: badgeColor() }}
         >
           {badgeLabel()}
         </span>
       </div>
-      <p class="mt-2 text-sm text-gray-300">{props.stage.summary}</p>
-      <p class="mt-2 text-xs leading-relaxed text-gray-500">{props.stage.detail}</p>
+      <p
+        class="mt-2 text-sm"
+        style={{ color: "var(--color-text-secondary)" }}
+      >
+        {props.stage.summary}
+      </p>
+      <p
+        class="mt-2 text-xs leading-relaxed"
+        style={{ color: "var(--color-text-faint)" }}
+      >
+        {props.stage.detail}
+      </p>
     </div>
   );
 }
@@ -106,26 +122,50 @@ export default function DeploymentsPage(): JSX.Element {
         description="Git-push-to-deploy pipeline. Edge-native builds, streamed logs, instant rollback."
         path="/deployments"
       />
-      <div class="min-h-screen bg-[#060606] text-white">
+      <div
+        class="min-h-screen"
+        style={{ background: "var(--color-bg)", color: "var(--color-text)" }}
+      >
         <div class="mx-auto max-w-5xl px-6 py-12">
           {/* Header */}
           <div class="mb-10">
-            <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/[0.08] px-3 py-1">
-              <span class="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              <span class="text-[10px] font-semibold uppercase tracking-widest text-amber-400">
+            <div
+              class="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1"
+              style={{
+                border: "1px solid var(--color-warning-border)",
+                background: "var(--color-warning-bg)",
+              }}
+            >
+              <span
+                class="h-1.5 w-1.5 rounded-full"
+                style={{ background: "var(--color-warning)" }}
+              />
+              <span
+                class="text-[10px] font-semibold uppercase tracking-widest"
+                style={{ color: "var(--color-warning)" }}
+              >
                 BLK-009 · in active build
               </span>
             </div>
-            <h1 class="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-4xl font-bold tracking-tight text-transparent">
+            <h1
+              class="text-4xl font-bold tracking-tight"
+              style={{ color: "var(--color-text)" }}
+            >
               Deployments
             </h1>
-            <p class="mt-3 max-w-2xl text-base text-gray-400">
+            <p
+              class="mt-3 max-w-2xl text-base"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               Push to a branch. Crontech builds it in an isolated edge container, streams
               the logs to your browser, and publishes the output to the Cloudflare edge
               the moment the build succeeds. No containers to manage. No regions to pick.
               No Dockerfiles.
             </p>
-            <p class="mt-4 max-w-2xl text-sm text-gray-500">
+            <p
+              class="mt-4 max-w-2xl text-sm"
+              style={{ color: "var(--color-text-faint)" }}
+            >
               This page currently shows the build plan. When BLK-009 ships, it becomes
               the live deployments dashboard — real projects, real builds, real logs.
               We chose not to fake it in the meantime.
@@ -139,13 +179,22 @@ export default function DeploymentsPage(): JSX.Element {
 
           {/* What to do right now */}
           <div
-            class="rounded-2xl border border-white/[0.06] p-6"
+            class="rounded-2xl p-6"
             style={{
-              background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
+              background: "var(--color-bg-elevated)",
+              border: "1px solid var(--color-border)",
             }}
           >
-            <h2 class="text-lg font-semibold text-white">Until BLK-009 ships</h2>
-            <p class="mt-2 text-sm text-gray-400">
+            <h2
+              class="text-lg font-semibold"
+              style={{ color: "var(--color-text)" }}
+            >
+              Until BLK-009 ships
+            </h2>
+            <p
+              class="mt-2 text-sm"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               The build side of the platform is still in progress. Everything else —
               auth, database, tRPC, UI kit, AI layer, real-time collab, observability —
               is live and running today.
@@ -153,19 +202,33 @@ export default function DeploymentsPage(): JSX.Element {
             <div class="mt-5 flex flex-wrap gap-3">
               <A
                 href="/builder"
-                class="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:brightness-110"
+                class="rounded-xl px-5 py-2.5 text-sm font-semibold transition hover:brightness-110"
+                style={{
+                  background: "var(--color-primary)",
+                  color: "#fff",
+                }}
               >
                 Try the Composer
               </A>
               <A
                 href="/docs"
-                class="rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-gray-300 transition hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
+                class="rounded-xl px-5 py-2.5 text-sm font-medium transition"
+                style={{
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-bg-subtle)",
+                  color: "var(--color-text-secondary)",
+                }}
               >
                 Read the docs
               </A>
               <A
                 href="/status"
-                class="rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-gray-300 transition hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
+                class="rounded-xl px-5 py-2.5 text-sm font-medium transition"
+                style={{
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-bg-subtle)",
+                  color: "var(--color-text-secondary)",
+                }}
               >
                 System status
               </A>
