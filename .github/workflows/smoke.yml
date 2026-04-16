@@ -1,0 +1,34 @@
+name: Smoke Tests (Phase D)
+
+# Manual trigger only. Runs the Phase D launch smoke suite against prod
+# (or a preview, via inputs) so Craig can verify crontech.ai + api.crontech.ai
+# from the Actions tab without leaving the browser.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_web:
+        description: "Web base URL (default: https://crontech.ai)"
+        required: false
+        default: "https://crontech.ai"
+      base_api:
+        description: "API base URL (default: https://api.crontech.ai)"
+        required: false
+        default: "https://api.crontech.ai"
+
+jobs:
+  smoke:
+    name: Phase D Smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Run smoke tests
+        env:
+          BASE_WEB: ${{ inputs.base_web }}
+          BASE_API: ${{ inputs.base_api }}
+        run: bun run smoke
