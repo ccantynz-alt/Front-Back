@@ -149,4 +149,72 @@ Current controls confirm the pre-launch posture:
 
 ---
 
+## 9. Five Flagged Issues — Status
+
+Each of the five pre-launch blockers previously flagged in §7 has been addressed in draft form. All edits are labeled "DRAFT — requires attorney review." Counsel is asked to confirm enforceability, tune legalese, and flag any remaining exposure.
+
+| # | Issue | File | Change |
+|---|---|---|---|
+| 1 | DMCA registration claim | `apps/web/src/routes/legal/dmca.tsx` (§7) | Replaced the false "registered with USCO" claim with a "we intend to register" statement; flagged as DRAFT pending actual USCO registration before accepting paid customer uploads. |
+| 2 | Sub-processor list mismatch | `apps/web/src/routes/legal/privacy.tsx` (§4) | Updated sub-processor list to match the stack per CLAUDE.md §3: Turso (primary), Neon, Qdrant, Cloudflare, Stripe (disabled pre-launch), Anthropic, OpenAI, Modal, Fly.io, Resend. Turso retained because it is in active use. |
+| 3 | AI audit language | `apps/web/src/routes/legal/ai-disclosure.tsx` (Regulatory Compliance) | Replaced "regular bias and safety audits" assertion with "we intend to engage independent AI safety auditors prior to general availability." Marked DRAFT pending attorney review and audit-partner retention. |
+| 4 | $50 vs $100 liability mismatch | `apps/web/src/routes/legal/beta-disclaimer.tsx` (§§8, 12) | Beta cap explicitly stated as a pre-launch limit below the main Terms' $100 cap. New §12 added: "In case of conflict between this Beta Disclaimer and the Terms of Service during pre-launch phase, the Beta Disclaimer's lower cap controls." DRAFT — attorney sign-off on enforceability. |
+| 5 | Gluecron legal stance | `apps/web/src/routes/legal/privacy.tsx` (§14) | New §14 added stating Crontech, GateTest, and Gluecron are separately operated; Crontech Privacy Policy governs Crontech only; Gluecron use is governed by its own policy (link placeholder). DRAFT — pending Gluecron legal page creation. |
+
+---
+
+## 10. Aggressive Protection Posture — Drafted Clauses
+
+Authorized by Craig on 2026-04-16: "most aggressive legal compliance and protection possible." The following protection clauses have been drafted across the eight legal pages. Every clause is labeled "DRAFT — requires attorney review" and phrased as "we intend to" rather than "we will." Counsel is asked to confirm enforceability, tune legalese, and advise on any jurisdictional carve-outs.
+
+Existing protections (pre-existing in `terms.tsx` Sections 5–15, `dmca.tsx`, `acceptable-use.tsx`, and elsewhere) have been reaffirmed and cross-referenced from the new aggressive-protection sections. No existing protection has been weakened. Additive only.
+
+### Clause-by-page matrix
+
+| Clause | terms | privacy | cookies | sla | acceptable-use | ai-disclosure | beta-disclaimer | dmca |
+|---|---|---|---|---|---|---|---|---|
+| Binding individual arbitration (AAA/JAMS) | §17.1 existing+strengthened | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Class-action waiver | §17.2 existing+strengthened | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| 30-day arbitration opt-out | §17.3 existing+strengthened | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Small-claims carve-out | §17.4 existing+strengthened | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Liability cap ($100 / 12 mo fees, $50 beta) | §17.5 reaffirms §10 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §§8, 12, 13 new | §7.5 reaffirms |
+| No consequential damages | §17.6 reaffirms §10 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| AS-IS / AS-AVAILABLE | §17.7 reaffirms §10 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| AI output disclaimer (informational, not professional advice) | §17.8 reaffirms §7 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Customer indemnification | §17.9 reaffirms §11 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Unilateral suspension / termination | §17.10 reaffirms §13 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Reverse engineering prohibited | §17.11 new | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms (AUP §2.2) | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Force majeure | §17.12 reaffirms §15 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Severability + entire agreement | §17.13 reaffirms §15 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Governing law: New Zealand | §17.14 new (supersedes Delaware per §12 for international enforcement) | §15 new | §12 new | §13 new | §7 new | §8.5 new | §13 new | §7.5 reaffirms |
+| Export controls / US sanctions | §17.15 new | §15 new | §12 reaffirms | §13 reaffirms | §7 reaffirms (AUP §1.1) | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+| Age requirement: 18+ | §17.16 new (supersedes age-13 platform use while retaining child-privacy statutory text) | §15 new | §12 new | §13 new | §7 new | §8.5 new | §13 new | §7.5 reaffirms |
+| 30-day notice for terms changes | §17.17 reaffirms §14 | §15 reaffirms | §12 reaffirms | §13 reaffirms | §7 reaffirms | §8.5 reaffirms | §13 new | §7.5 reaffirms |
+
+### Attorney review items for §10
+
+1. **Governing law switch (Delaware → New Zealand)** — §17.14 of the Terms of Service now identifies New Zealand as the governing-law jurisdiction, inferred from the solo operator's handle (`ccantynz`) and NZ-brand-safe posture. The Delaware language in §12 is retained as an internal-US fallback. Counsel to confirm enforceability against US, EU, and UK consumers; advise on US-specific carve-outs where NZ law cannot validly govern (consumer protection, California class-action rules, Massachusetts 93A, EU mandatory law).
+2. **Age-18 requirement layered over age-13 child-privacy language** — §17.16 of the Terms states the platform's operational age requirement is 18+, while retaining the existing age-13 / age-16-EEA language for child-privacy statutory obligations. Counsel to confirm this layered approach does not create enforceability gaps under COPPA, GDPR-K, or UK Children's Code.
+3. **Beta $50 cap conflict rule** — §12 of the Beta Disclaimer explicitly states that where Beta Terms and main Terms conflict, the lower $50 cap controls. Counsel to confirm this is enforceable against paid beta users and that the notice of the lower cap is sufficient.
+4. **Reverse-engineering prohibition** — added to all eight pages. Counsel to confirm enforceability in jurisdictions that permit reverse engineering for interoperability (EU Software Directive Art. 6, Australia Copyright Act s47D).
+5. **Export controls / US sanctions representation** — added to all eight pages. Counsel to advise whether the user representation alone is sufficient or whether signup-time geo-blocking of OFAC-comprehensive-sanctioned jurisdictions is also required (see §7 Q2).
+6. **Class-action waiver severability-at-Crontech's-election** — §17.2 of the Terms. Counsel to confirm this unilateral-severability form is enforceable, or whether mutual severability is safer.
+7. **Arbitrator decides arbitrability** — §17.1 of the Terms gives the arbitrator (not a court) authority over enforceability, arbitrability, and scope. Counsel to confirm this delegation clause is enforceable post-*Henry Schein* and *Coinbase v. Bielski*.
+8. **Gluecron scope statement in Crontech Privacy Policy** — §14 of the privacy policy now explicitly disclaims that Crontech's Privacy Policy governs Gluecron. Link placeholder pending. Counsel to advise whether Gluecron needs standalone legal pages before any Gluecron installer or marketing surface goes live (see §7 Q8).
+9. **AI audit language softened to "intent"** — the AI disclosure page now states audits have "not yet commenced" and "we do not currently have a contracted external audit partner." Counsel to confirm this wording fully cures the prior misrepresentation exposure.
+10. **DMCA designated-agent softened to "intent"** — DMCA §7 now states registration is intended prior to accepting paid customer uploads. Counsel to confirm the safe-harbor claim is withdrawn for pre-registration use and to advise on the actual USCO filing timeline.
+
+### Files modified in this sprint
+
+- `apps/web/src/routes/legal/terms.tsx` — §17 added (aggressive protection consolidation, governing-law-NZ override, age 18+, export controls, reverse engineering)
+- `apps/web/src/routes/legal/privacy.tsx` — sub-processor list corrected (§4); §14 added (Gluecron / GateTest scope); §15 added (aggressive protections)
+- `apps/web/src/routes/legal/cookies.tsx` — §12 added (aggressive protections)
+- `apps/web/src/routes/legal/sla.tsx` — §13 added (aggressive protections, service-credits-are-exclusive-remedy reaffirmed)
+- `apps/web/src/routes/legal/acceptable-use.tsx` — §7 added (aggressive protections, enforcement-rights reaffirmed)
+- `apps/web/src/routes/legal/ai-disclosure.tsx` — AI-audits language corrected; §8.5 added (aggressive protections, model-provider force majeure)
+- `apps/web/src/routes/legal/beta-disclaimer.tsx` — §§8, 12, 13 updated/added (beta $50 cap explicit, conflict rule, beta aggressive protections)
+- `apps/web/src/routes/legal/dmca.tsx` — designated-agent claim corrected (§7); §7.5 added (aggressive protections)
+
+---
+
 *End of package. Line-item replies welcome — all drafts above can be edited in place.*
