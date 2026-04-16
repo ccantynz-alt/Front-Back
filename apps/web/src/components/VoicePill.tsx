@@ -184,13 +184,13 @@ export function VoicePill(props: VoicePillProps): JSX.Element {
   const ringColor = (): string => {
     switch (status()) {
       case "listening":
-        return "#ef4444";
+        return "var(--color-danger)";
       case "processing":
-        return "#fbbf24";
+        return "var(--color-warning)";
       case "error":
-        return "#f87171";
+        return "var(--color-danger)";
       default:
-        return "#8b5cf6";
+        return "var(--color-primary)";
     }
   };
 

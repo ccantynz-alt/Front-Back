@@ -62,7 +62,7 @@ const PLANS: PlanTier[] = [
     ],
     highlighted: true,
     ctaLabel: "Start building",
-    accentColor: "#3b82f6",
+    accentColor: "var(--color-primary)",
   },
   {
     id: "enterprise",

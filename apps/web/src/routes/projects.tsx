@@ -92,14 +92,12 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
   return (
     <A href={`/projects/${props.id}`} class="block group">
       <div
-        class="relative overflow-hidden rounded-2xl border border-white/[0.06] p-5 transition-all duration-300 hover:border-white/[0.12] hover:shadow-xl hover:shadow-black/30"
+        class="relative overflow-hidden rounded-2xl p-5 transition-all duration-300"
         style={{
-          background:
-            "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
+          background: "var(--color-bg-elevated)",
+          border: "1px solid var(--color-border)",
         }}
       >
-        {/* Top glow */}
-        <div class="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-violet-500/10 blur-3xl transition-opacity duration-500 group-hover:opacity-60" />
 
         <div class="relative z-10 flex flex-col gap-4">
           {/* Header: name + status */}
@@ -108,7 +106,7 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
               <span class="text-xl shrink-0">
                 {frameworkIcon(props.framework ?? "")}
               </span>
-              <h3 class="text-sm font-semibold text-white truncate">
+              <h3 class="text-sm font-semibold truncate" style={{ color: "var(--color-text)" }}>
                 {props.name}
               </h3>
             </div>
@@ -123,25 +121,23 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
           {/* Details */}
           <div class="flex flex-col gap-2">
             <div class="flex items-center gap-2">
-              <span class="text-[11px] font-medium uppercase tracking-wider text-gray-500">
+              <span class="text-[11px] font-medium uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
                 Framework
               </span>
-              <span class="text-xs text-gray-300">{props.framework ?? "Unknown"}</span>
+              <span class="text-xs" style={{ color: "var(--color-text)" }}>{props.framework ?? "Unknown"}</span>
             </div>
 
             <div class="flex items-center gap-2">
-              <span class="text-[11px] font-medium uppercase tracking-wider text-gray-500">
+              <span class="text-[11px] font-medium uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
                 Updated
               </span>
-              <span class="text-xs text-gray-400">
+              <span class="text-xs" style={{ color: "var(--color-text-muted)" }}>
                 {relativeTime(props.updatedAt)}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Bottom shimmer */}
-        <div class="absolute bottom-0 left-0 h-[2px] w-full opacity-0 transition-opacity duration-500 group-hover:opacity-60 bg-gradient-to-r from-transparent via-violet-500 to-transparent" />
       </div>
     </A>
   );
@@ -152,12 +148,12 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
 function EmptyState(): JSX.Element {
   return (
     <div class="flex flex-col items-center justify-center gap-6 py-24">
-      <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600/20 to-cyan-600/20">
+      <div class="flex h-20 w-20 items-center justify-center rounded-2xl" style={{ background: "var(--color-bg-subtle)" }}>
         <span class="text-4xl">{"\u{1F680}"}</span>
       </div>
       <div class="flex flex-col items-center gap-2 text-center">
-        <h2 class="text-xl font-bold text-white">No projects yet</h2>
-        <p class="max-w-sm text-sm text-gray-500">
+        <h2 class="text-xl font-bold" style={{ color: "var(--color-text)" }}>No projects yet</h2>
+        <p class="max-w-sm text-sm" style={{ color: "var(--color-text-secondary)" }}>
           Deploy your first app on Crontech. Connect a repo or start from a
           template and have it live on the edge in under a minute.
         </p>
@@ -188,15 +184,15 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
       />
       <Title>Projects — Crontech</Title>
 
-      <div class="min-h-screen bg-[#060606]">
+      <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
         <div class="mx-auto max-w-[1400px] px-6 py-8 lg:px-8">
           {/* ── Header ─────────────────────────────────────────────── */}
           <div class="mb-8 flex items-center justify-between gap-4">
             <div class="flex flex-col gap-1">
-              <h1 class="text-3xl font-bold tracking-tight text-white">
+              <h1 class="text-3xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
                 Projects
               </h1>
-              <p class="text-sm text-gray-500">
+              <p class="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                 Your deployed apps and sites on the Crontech edge network.
               </p>
             </div>

@@ -59,23 +59,21 @@ export function Hero(props: HeroProps) {
 
   return (
     <section class="relative overflow-hidden py-24">
-      <div class="absolute inset-0 bg-gradient-to-br
-        from-blue-600/20 via-transparent to-violet-600/20" />
       <div class="relative mx-auto max-w-4xl text-center">
-        <h1 class="text-6xl font-bold text-white">
+        <h1 class="text-6xl font-bold" style={{ color: "var(--color-text)" }}>
           {props.title}
         </h1>
-        <p class="mt-6 text-xl text-gray-400">
+        <p class="mt-6 text-xl" style={{ color: "var(--color-text-muted)" }}>
           {props.subtitle}
         </p>
         <button
           onClick={props.onCta}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          class="mt-10 rounded-2xl bg-gradient-to-r
-            from-blue-600 to-violet-600 px-8 py-4
+          class="mt-10 rounded-2xl px-8 py-4
             text-lg font-semibold text-white
-            transition-all hover:shadow-2xl"
+            transition-all hover:brightness-110"
+          style={{ background: "var(--color-primary)" }}
         >
           {props.ctaLabel}
         </button>
@@ -90,18 +88,18 @@ function TierBadge(props: { tier: "client" | "edge" | "cloud" }): JSX.Element {
   const config = (): { label: string; color: string; glow: string } => {
     switch (props.tier) {
       case "client":
-        return { label: "Client GPU", color: "#10b981", glow: "#10b98140" };
+        return { label: "Client GPU", color: "var(--color-success)", glow: "color-mix(in oklab, var(--color-success) 25%, transparent)" };
       case "edge":
-        return { label: "Edge", color: "#3b82f6", glow: "#3b82f640" };
+        return { label: "Edge", color: "var(--color-primary)", glow: "color-mix(in oklab, var(--color-primary) 25%, transparent)" };
       case "cloud":
-        return { label: "Cloud", color: "#a78bfa", glow: "#a78bfa40" };
+        return { label: "Cloud", color: "var(--color-primary)", glow: "color-mix(in oklab, var(--color-primary) 25%, transparent)" };
     }
   };
 
   return (
     <span
       class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
-      style={{ background: `${config().color}15`, color: config().color }}
+      style={{ background: `color-mix(in oklab, ${config().color} 8%, transparent)`, color: config().color }}
     >
       <span
         class="h-1.5 w-1.5 rounded-full"
@@ -124,8 +122,8 @@ function ChatBubble(props: { message: ChatMessage }): JSX.Element {
         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
         style={{
           background: isUser()
-            ? "linear-gradient(135deg, #3b82f6, #8b5cf6)"
-            : "linear-gradient(135deg, #10b981, #06b6d4)",
+            ? "var(--color-primary)"
+            : "var(--color-success)",
         }}
       >
         {isUser() ? "Y" : "AI"}
@@ -136,10 +134,14 @@ function ChatBubble(props: { message: ChatMessage }): JSX.Element {
         <div
           class={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
             isUser()
-              ? "bg-gradient-to-br from-blue-600/20 to-violet-600/20 border border-blue-500/20 text-gray-200"
-              : "bg-white/[0.04] border border-white/[0.06] text-gray-300"
+              ? "border border-[var(--color-border)]"
+              : "bg-[var(--color-bg-elevated)] border border-[var(--color-border)]"
           }`}
-          style={{ "white-space": "pre-wrap" }}
+          style={{
+            "white-space": "pre-wrap",
+            color: "var(--color-text)",
+            ...(isUser() ? { background: "color-mix(in oklab, var(--color-primary) 12%, transparent)" } : {}),
+          }}
         >
           {props.message.content}
         </div>
@@ -148,9 +150,9 @@ function ChatBubble(props: { message: ChatMessage }): JSX.Element {
             <TierBadge tier={props.message.tier as "client" | "edge" | "cloud"} />
           </Show>
           <Show when={props.message.tokensPerSec}>
-            <span class="text-[10px] text-gray-600">{props.message.tokensPerSec} tok/s</span>
+            <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{props.message.tokensPerSec} tok/s</span>
           </Show>
-          <span class="text-[10px] text-gray-700">
+          <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>
             {props.message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
         </div>
@@ -221,55 +223,64 @@ export default function AIPlayground(): JSX.Element {
   };
 
   return (
-    <div class="flex h-screen bg-[#050508]">
+    <div class="flex h-screen" style={{ background: "var(--color-bg)" }}>
       <Title>AI Playground - Crontech</Title>
 
       {/* Left Panel - Controls */}
       <div
-        class="flex w-72 shrink-0 flex-col border-r border-white/[0.06]"
-        style={{ background: "linear-gradient(180deg, rgba(10,10,14,1) 0%, rgba(6,6,10,1) 100%)" }}
+        class="flex w-72 shrink-0 flex-col border-r border-[var(--color-border)]"
+        style={{ background: "var(--color-bg)" }}
       >
         {/* Header */}
-        <div class="border-b border-white/[0.06] px-5 py-4">
+        <div class="border-b border-[var(--color-border)] px-5 py-4">
           <div class="flex items-center gap-3">
             <div
               class="flex h-10 w-10 items-center justify-center rounded-xl"
-              style={{ background: "linear-gradient(135deg, #3b82f630, #8b5cf660)" }}
+              style={{ background: "color-mix(in oklab, var(--color-primary) 20%, transparent)" }}
             >
-              <span class="text-lg" style={{ color: "#a78bfa" }}>&#9889;</span>
+              <span class="text-lg" style={{ color: "var(--color-primary)" }}>&#9889;</span>
             </div>
             <div>
-              <h1 class="text-base font-bold text-white">AI Playground</h1>
-              <p class="text-[10px] text-gray-600">Three-tier compute inference</p>
+              <h1 class="text-base font-bold" style={{ color: "var(--color-text)" }}>AI Playground</h1>
+              <p class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>Three-tier compute inference</p>
             </div>
           </div>
         </div>
 
         {/* Compute Tier Indicator */}
-        <div class="border-b border-white/[0.06] px-5 py-4">
-          <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Active Compute Tier</span>
+        <div class="border-b border-[var(--color-border)] px-5 py-4">
+          <span class="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>Active Compute Tier</span>
           <div class="mt-3 flex flex-col gap-2">
-            <div class={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all ${currentModel().tier === "client" ? "bg-emerald-500/10 border border-emerald-500/20" : "opacity-40"}`}>
-              <div class="h-2 w-2 rounded-full bg-emerald-400" style={{ "box-shadow": currentModel().tier === "client" ? "0 0 8px #10b98180" : "none" }} />
-              <span class="text-xs text-emerald-400">Client GPU</span>
-              <span class="ml-auto text-[10px] text-emerald-500/60">$0/token</span>
+            <div
+              class={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all ${currentModel().tier === "client" ? "border" : "opacity-40"}`}
+              style={currentModel().tier === "client" ? { background: "color-mix(in oklab, var(--color-success) 10%, transparent)", "border-color": "color-mix(in oklab, var(--color-success) 20%, transparent)" } : {}}
+            >
+              <div class="h-2 w-2 rounded-full" style={{ background: "var(--color-success)", "box-shadow": currentModel().tier === "client" ? "0 0 8px color-mix(in oklab, var(--color-success) 50%, transparent)" : "none" }} />
+              <span class="text-xs" style={{ color: "var(--color-success)" }}>Client GPU</span>
+              <span class="ml-auto text-[10px]" style={{ color: "color-mix(in oklab, var(--color-success) 60%, transparent)" }}>$0/token</span>
             </div>
-            <div class={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all ${currentModel().tier === "edge" ? "bg-blue-500/10 border border-blue-500/20" : "opacity-40"}`}>
-              <div class="h-2 w-2 rounded-full bg-blue-400" style={{ "box-shadow": currentModel().tier === "edge" ? "0 0 8px #3b82f680" : "none" }} />
-              <span class="text-xs text-blue-400">Edge Network</span>
-              <span class="ml-auto text-[10px] text-blue-500/60">sub-50ms</span>
+            <div
+              class={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all ${currentModel().tier === "edge" ? "border" : "opacity-40"}`}
+              style={currentModel().tier === "edge" ? { background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", "border-color": "color-mix(in oklab, var(--color-primary) 20%, transparent)" } : {}}
+            >
+              <div class="h-2 w-2 rounded-full" style={{ background: "var(--color-primary)", "box-shadow": currentModel().tier === "edge" ? "0 0 8px color-mix(in oklab, var(--color-primary) 50%, transparent)" : "none" }} />
+              <span class="text-xs" style={{ color: "var(--color-primary)" }}>Edge Network</span>
+              <span class="ml-auto text-[10px]" style={{ color: "color-mix(in oklab, var(--color-primary) 60%, transparent)" }}>sub-50ms</span>
             </div>
-            <div class={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all ${currentModel().tier === "cloud" ? "bg-violet-500/10 border border-violet-500/20" : "opacity-40"}`}>
-              <div class="h-2 w-2 rounded-full bg-violet-400" style={{ "box-shadow": currentModel().tier === "cloud" ? "0 0 8px #a78bfa80" : "none" }} />
-              <span class="text-xs text-violet-400">Cloud GPU</span>
-              <span class="ml-auto text-[10px] text-violet-500/60">H100</span>
+            <div
+              class={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-all ${currentModel().tier === "cloud" ? "border" : "opacity-40"}`}
+              style={currentModel().tier === "cloud" ? { background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", "border-color": "color-mix(in oklab, var(--color-primary) 20%, transparent)" } : {}}
+            >
+              <div class="h-2 w-2 rounded-full" style={{ background: "var(--color-primary)", "box-shadow": currentModel().tier === "cloud" ? "0 0 8px color-mix(in oklab, var(--color-primary) 50%, transparent)" : "none" }} />
+              <span class="text-xs" style={{ color: "var(--color-primary)" }}>Cloud GPU</span>
+              <span class="ml-auto text-[10px]" style={{ color: "color-mix(in oklab, var(--color-primary) 60%, transparent)" }}>H100</span>
             </div>
           </div>
         </div>
 
         {/* Model Selector */}
-        <div class="border-b border-white/[0.06] px-5 py-4">
-          <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Model</span>
+        <div class="border-b border-[var(--color-border)] px-5 py-4">
+          <span class="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>Model</span>
           <div class="mt-3 flex flex-col gap-1">
             <For each={MODELS}>
               {(model) => (
@@ -278,20 +289,21 @@ export default function AIPlayground(): JSX.Element {
                   onClick={() => setSelectedModel(model.id)}
                   class={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-all duration-150 ${
                     selectedModel() === model.id
-                      ? "border border-white/[0.1] bg-white/[0.06] text-white"
-                      : "border border-transparent text-gray-500 hover:bg-white/[0.03] hover:text-gray-300"
+                      ? "border border-[var(--color-border)] bg-[var(--color-bg-elevated)]"
+                      : "border border-transparent hover:bg-[var(--color-bg-subtle)]"
                   }`}
+                  style={{ color: selectedModel() === model.id ? "var(--color-text)" : "var(--color-text-muted)" }}
                 >
                   <div class="flex min-w-0 flex-1 flex-col">
                     <span class="text-xs font-medium">{model.name}</span>
-                    <span class="text-[10px] text-gray-600">{model.provider}</span>
+                    <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{model.provider}</span>
                   </div>
                   <Show when={model.badge}>
                     <span
                       class="rounded-full px-2 py-0.5 text-[9px] font-semibold"
                       style={{
-                        background: model.tier === "client" ? "#10b98115" : model.tier === "edge" ? "#3b82f615" : "#a78bfa15",
-                        color: model.tier === "client" ? "#10b981" : model.tier === "edge" ? "#3b82f6" : "#a78bfa",
+                        background: model.tier === "client" ? "color-mix(in oklab, var(--color-success) 8%, transparent)" : model.tier === "edge" ? "color-mix(in oklab, var(--color-primary) 8%, transparent)" : "color-mix(in oklab, var(--color-primary) 8%, transparent)",
+                        color: model.tier === "client" ? "var(--color-success)" : "var(--color-primary)",
                       }}
                     >
                       {model.badge}
@@ -304,14 +316,14 @@ export default function AIPlayground(): JSX.Element {
         </div>
 
         {/* Parameters */}
-        <div class="border-b border-white/[0.06] px-5 py-4">
-          <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Parameters</span>
+        <div class="border-b border-[var(--color-border)] px-5 py-4">
+          <span class="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>Parameters</span>
           <div class="mt-3 flex flex-col gap-4">
             {/* Temperature */}
             <div>
               <div class="mb-2 flex items-center justify-between">
-                <span class="text-xs text-gray-400">Temperature</span>
-                <span class="rounded bg-white/[0.05] px-2 py-0.5 text-[11px] font-mono text-gray-400">{temperature().toFixed(1)}</span>
+                <span class="text-xs" style={{ color: "var(--color-text)" }}>Temperature</span>
+                <span class="rounded bg-[var(--color-bg-subtle)] px-2 py-0.5 text-[11px] font-mono" style={{ color: "var(--color-text)" }}>{temperature().toFixed(1)}</span>
               </div>
               <input
                 type="range"
@@ -320,15 +332,15 @@ export default function AIPlayground(): JSX.Element {
                 step="0.1"
                 value={temperature()}
                 onInput={(e) => setTemperature(parseFloat(e.currentTarget.value))}
-                class="w-full accent-blue-500"
-                style={{ height: "4px" }}
+                class="w-full"
+                style={{ height: "4px", "accent-color": "var(--color-primary)" }}
               />
             </div>
             {/* Max Tokens */}
             <div>
               <div class="mb-2 flex items-center justify-between">
-                <span class="text-xs text-gray-400">Max Tokens</span>
-                <span class="rounded bg-white/[0.05] px-2 py-0.5 text-[11px] font-mono text-gray-400">{maxTokens()}</span>
+                <span class="text-xs" style={{ color: "var(--color-text)" }}>Max Tokens</span>
+                <span class="rounded bg-[var(--color-bg-subtle)] px-2 py-0.5 text-[11px] font-mono" style={{ color: "var(--color-text)" }}>{maxTokens()}</span>
               </div>
               <input
                 type="range"
@@ -337,32 +349,32 @@ export default function AIPlayground(): JSX.Element {
                 step="256"
                 value={maxTokens()}
                 onInput={(e) => setMaxTokens(parseInt(e.currentTarget.value, 10))}
-                class="w-full accent-blue-500"
-                style={{ height: "4px" }}
+                class="w-full"
+                style={{ height: "4px", "accent-color": "var(--color-primary)" }}
               />
             </div>
           </div>
         </div>
 
         {/* Performance Stats */}
-        <div class="mt-auto border-t border-white/[0.06] px-5 py-4">
-          <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Session Stats</span>
+        <div class="mt-auto border-t border-[var(--color-border)] px-5 py-4">
+          <span class="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>Session Stats</span>
           <div class="mt-3 grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] text-gray-600">Tokens/sec</span>
-              <span class="text-lg font-bold text-emerald-400">{tokensPerSec().toFixed(1)}</span>
+              <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>Tokens/sec</span>
+              <span class="text-lg font-bold" style={{ color: "var(--color-success)" }}>{tokensPerSec().toFixed(1)}</span>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] text-gray-600">Total Tokens</span>
-              <span class="text-lg font-bold text-blue-400">{totalTokens().toLocaleString()}</span>
+              <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>Total Tokens</span>
+              <span class="text-lg font-bold" style={{ color: "var(--color-primary)" }}>{totalTokens().toLocaleString()}</span>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] text-gray-600">Session Cost</span>
-              <span class="text-lg font-bold text-emerald-400">{sessionCost()}</span>
+              <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>Session Cost</span>
+              <span class="text-lg font-bold" style={{ color: "var(--color-success)" }}>{sessionCost()}</span>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="text-[10px] text-gray-600">Model</span>
-              <span class="truncate text-xs font-medium text-gray-400">{currentModel().name}</span>
+              <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>Model</span>
+              <span class="truncate text-xs font-medium" style={{ color: "var(--color-text)" }}>{currentModel().name}</span>
             </div>
           </div>
         </div>
@@ -371,27 +383,28 @@ export default function AIPlayground(): JSX.Element {
       {/* Center - Chat Interface */}
       <div class="flex flex-1 flex-col overflow-hidden">
         {/* Chat Header */}
-        <div class="flex items-center justify-between border-b border-white/[0.06] bg-[#08080c] px-6 py-3">
+        <div class="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-3" style={{ background: "var(--color-bg)" }}>
           <div class="flex items-center gap-3">
-            <span class="text-sm font-semibold text-white">Chat</span>
+            <span class="text-sm font-semibold" style={{ color: "var(--color-text)" }}>Chat</span>
             <TierBadge tier={currentModel().tier} />
           </div>
           <div class="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowCodePanel(!showCodePanel())}
-              class={`rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-all duration-200 ${
-                showCodePanel()
-                  ? "border-violet-500/30 bg-violet-500/10 text-violet-400"
-                  : "border-white/[0.06] bg-white/[0.03] text-gray-400 hover:text-white"
-              }`}
+              class="rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-all duration-200"
+              style={showCodePanel()
+                ? { "border-color": "color-mix(in oklab, var(--color-primary) 30%, transparent)", background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", color: "var(--color-primary)" }
+                : { "border-color": "var(--color-border)", background: "var(--color-bg-subtle)", color: "var(--color-text-muted)" }
+              }
             >
               Code Preview
             </button>
             <button
               type="button"
               onClick={() => { setMessages(INITIAL_MESSAGES); setTotalTokens(0); }}
-              class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-gray-400 transition-all hover:text-white"
+              class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-1.5 text-[11px] font-medium transition-all"
+              style={{ color: "var(--color-text-muted)" }}
             >
               Clear
             </button>
@@ -410,15 +423,15 @@ export default function AIPlayground(): JSX.Element {
               <div class="flex gap-3">
                 <div
                   class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
-                  style={{ background: "linear-gradient(135deg, #10b981, #06b6d4)" }}
+                  style={{ background: "var(--color-success)" }}
                 >
                   AI
                 </div>
-                <div class="rounded-2xl border border-white/[0.06] bg-white/[0.04] px-4 py-3">
+                <div class="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-3">
                   <div class="flex items-center gap-1.5">
-                    <div class="h-2 w-2 animate-pulse rounded-full bg-blue-400" />
-                    <div class="h-2 w-2 animate-pulse rounded-full bg-blue-400" style={{ "animation-delay": "0.2s" }} />
-                    <div class="h-2 w-2 animate-pulse rounded-full bg-blue-400" style={{ "animation-delay": "0.4s" }} />
+                    <div class="h-2 w-2 animate-pulse rounded-full" style={{ background: "var(--color-primary)" }} />
+                    <div class="h-2 w-2 animate-pulse rounded-full" style={{ background: "var(--color-primary)", "animation-delay": "0.2s" }} />
+                    <div class="h-2 w-2 animate-pulse rounded-full" style={{ background: "var(--color-primary)", "animation-delay": "0.4s" }} />
                   </div>
                 </div>
               </div>
@@ -427,23 +440,24 @@ export default function AIPlayground(): JSX.Element {
         </div>
 
         {/* Input Area */}
-        <div class="border-t border-white/[0.06] bg-[#08080c] px-6 py-4">
+        <div class="border-t border-[var(--color-border)] px-6 py-4" style={{ background: "var(--color-bg)" }}>
           <div class="mx-auto max-w-3xl">
-            <div class="flex items-end gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-2 transition-all duration-200 focus-within:border-blue-500/30 focus-within:shadow-lg focus-within:shadow-blue-500/5">
+            <div class="flex items-end gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-2 transition-all duration-200">
               <textarea
                 value={input()}
                 onInput={(e) => setInput(e.currentTarget.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Describe what you want to build..."
                 rows={1}
-                class="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-gray-200 placeholder-gray-600 outline-none"
-                style={{ "max-height": "120px" }}
+                class="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm placeholder-gray-600 outline-none"
+                style={{ "max-height": "120px", color: "var(--color-text)" }}
               />
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={!input().trim() || isGenerating()}
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110 disabled:opacity-30 disabled:shadow-none"
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white transition-all duration-200 hover:brightness-110 disabled:opacity-30"
+                style={{ background: "var(--color-primary)" }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M22 2L11 13" />
@@ -452,10 +466,10 @@ export default function AIPlayground(): JSX.Element {
               </button>
             </div>
             <div class="mt-2 flex items-center justify-between px-1">
-              <span class="text-[10px] text-gray-700">
+              <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>
                 Shift+Enter for new line
               </span>
-              <span class="text-[10px] text-gray-700">
+              <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>
                 Powered by {currentModel().name} on {currentModel().tier === "client" ? "your GPU" : currentModel().tier === "edge" ? "edge network" : "cloud"}
               </span>
             </div>
@@ -466,13 +480,13 @@ export default function AIPlayground(): JSX.Element {
       {/* Right Panel - Code Preview */}
       <Show when={showCodePanel()}>
         <div
-          class="flex w-96 shrink-0 flex-col border-l border-white/[0.06]"
-          style={{ background: "linear-gradient(180deg, rgba(10,10,14,1) 0%, rgba(6,6,10,1) 100%)" }}
+          class="flex w-96 shrink-0 flex-col border-l border-[var(--color-border)]"
+          style={{ background: "var(--color-bg)" }}
         >
-          <div class="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
+          <div class="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-semibold text-white">Code Preview</span>
-              <span class="rounded-full bg-violet-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-violet-400">Live</span>
+              <span class="text-xs font-semibold" style={{ color: "var(--color-text)" }}>Code Preview</span>
+              <span class="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase" style={{ background: "color-mix(in oklab, var(--color-primary) 15%, transparent)", color: "var(--color-primary)" }}>Live</span>
             </div>
             <div class="flex items-center gap-1.5">
               <button
@@ -482,7 +496,8 @@ export default function AIPlayground(): JSX.Element {
                   setCodeCopied(true);
                   setTimeout(() => setCodeCopied(false), 2000);
                 }}
-                class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-gray-400 transition-all hover:text-white"
+                class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-2.5 py-1 text-[10px] font-medium transition-all"
+                style={{ color: "var(--color-text-muted)" }}
               >
                 {codeCopied() ? "Copied!" : "Copy"}
               </button>
@@ -493,7 +508,8 @@ export default function AIPlayground(): JSX.Element {
                   setCodeInserted(true);
                   setTimeout(() => setCodeInserted(false), 2000);
                 }}
-                class="rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium text-gray-400 transition-all hover:text-white"
+                class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-2.5 py-1 text-[10px] font-medium transition-all"
+                style={{ color: "var(--color-text-muted)" }}
               >
                 {codeInserted() ? "Inserted!" : "Insert"}
               </button>
@@ -501,14 +517,14 @@ export default function AIPlayground(): JSX.Element {
           </div>
 
           {/* File Tab */}
-          <div class="flex border-b border-white/[0.06]">
-            <div class="flex items-center gap-2 border-b-2 border-blue-500 bg-white/[0.02] px-4 py-2.5">
-              <span class="text-[10px] text-blue-400">&#128196;</span>
-              <span class="text-[11px] font-medium text-gray-300">Hero.tsx</span>
+          <div class="flex border-b border-[var(--color-border)]">
+            <div class="flex items-center gap-2 border-b-2 bg-[var(--color-bg-subtle)] px-4 py-2.5" style={{ "border-bottom-color": "var(--color-primary)" }}>
+              <span class="text-[10px]" style={{ color: "var(--color-primary)" }}>&#128196;</span>
+              <span class="text-[11px] font-medium" style={{ color: "var(--color-text)" }}>Hero.tsx</span>
             </div>
             <div class="flex items-center gap-2 px-4 py-2.5">
-              <span class="text-[10px] text-gray-600">&#128196;</span>
-              <span class="text-[11px] text-gray-600">styles.css</span>
+              <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>&#128196;</span>
+              <span class="text-[11px]" style={{ color: "var(--color-text-muted)" }}>styles.css</span>
             </div>
           </div>
 
@@ -519,8 +535,8 @@ export default function AIPlayground(): JSX.Element {
                 <For each={SAMPLE_CODE.split("\n")}>
                   {(line, i) => (
                     <div class="flex">
-                      <span class="mr-4 inline-block w-6 text-right text-gray-700 select-none">{i() + 1}</span>
-                      <span class="text-gray-300" style={{ "white-space": "pre" }}>{line}</span>
+                      <span class="mr-4 inline-block w-6 text-right select-none" style={{ color: "var(--color-text-muted)" }}>{i() + 1}</span>
+                      <span style={{ "white-space": "pre", color: "var(--color-text)" }}>{line}</span>
                     </div>
                   )}
                 </For>
@@ -529,8 +545,8 @@ export default function AIPlayground(): JSX.Element {
           </div>
 
           {/* Code Stats */}
-          <div class="border-t border-white/[0.06] px-5 py-3">
-            <div class="flex items-center justify-between text-[10px] text-gray-600">
+          <div class="border-t border-[var(--color-border)] px-5 py-3">
+            <div class="flex items-center justify-between text-[10px]" style={{ color: "var(--color-text-muted)" }}>
               <span>TypeScript JSX</span>
               <span>{SAMPLE_CODE.split("\n").length} lines</span>
               <span>UTF-8</span>

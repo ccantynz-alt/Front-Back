@@ -75,32 +75,32 @@ export default function DatabasePage(): JSX.Element {
   };
 
   return (
-    <div class="flex h-screen bg-[#060606]">
+    <div class="flex h-screen" style={{ background: "var(--color-bg)" }}>
       <Title>Database Explorer - Crontech</Title>
 
       {/* Sidebar - Table List */}
       <div
-        class="flex w-64 shrink-0 flex-col border-r border-white/[0.06]"
-        style={{ background: "linear-gradient(180deg, rgba(12,12,12,1) 0%, rgba(8,8,8,1) 100%)" }}
+        class="flex w-64 shrink-0 flex-col border-r border-[var(--color-border)]"
+        style={{ background: "var(--color-bg)" }}
       >
         {/* Sidebar Header */}
-        <div class="border-b border-white/[0.06] px-4 py-4">
+        <div class="border-b border-[var(--color-border)] px-4 py-4">
           <div class="flex items-center gap-2.5">
-            <div class="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: "linear-gradient(135deg, #10b98130, #10b98160)" }}>
-              <span class="text-sm" style={{ color: "#10b981" }}>&#128450;</span>
+            <div class="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `linear-gradient(135deg, color-mix(in oklab, var(--color-success) 19%, transparent), color-mix(in oklab, var(--color-success) 38%, transparent))` }}>
+              <span class="text-sm" style={{ color: "var(--color-success)" }}>&#128450;</span>
             </div>
             <div>
-              <h2 class="text-sm font-semibold text-white">Database Explorer</h2>
+              <h2 class="text-sm font-semibold" style={{ color: "var(--color-text)" }}>Database Explorer</h2>
               <p class="text-[10px] text-gray-600">Turso Edge SQLite</p>
             </div>
           </div>
         </div>
 
         {/* Connection Status */}
-        <div class="border-b border-white/[0.06] px-4 py-3">
+        <div class="border-b border-[var(--color-border)] px-4 py-3">
           <div class="flex items-center gap-2">
-            <div class="h-2 w-2 rounded-full bg-emerald-400" style={{ "box-shadow": "0 0 6px #10b98180" }} />
-            <span class="text-[11px] font-medium text-emerald-400">Connected</span>
+            <div class="h-2 w-2 rounded-full" style={{ background: "var(--color-success)", "box-shadow": `0 0 6px color-mix(in oklab, var(--color-success) 50%, transparent)` }} />
+            <span class="text-[11px] font-medium" style={{ color: "var(--color-success)" }}>Connected</span>
             <span class="ml-auto text-[10px] text-gray-600">us-east-1</span>
           </div>
         </div>
@@ -120,8 +120,8 @@ export default function DatabasePage(): JSX.Element {
                 }}
                 class={`mb-0.5 flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-all duration-150 ${
                   selectedTable() === table.name
-                    ? "border border-white/[0.08] bg-white/[0.06] text-white"
-                    : "border border-transparent text-gray-500 hover:bg-white/[0.03] hover:text-gray-300"
+                    ? "border border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-text)]"
+                    : "border border-transparent text-gray-500 hover:bg-[var(--color-bg-subtle)] hover:text-gray-300"
                 }`}
               >
                 <span class="text-sm" innerHTML={table.icon} />
@@ -136,7 +136,7 @@ export default function DatabasePage(): JSX.Element {
         </div>
 
         {/* Sidebar Footer */}
-        <div class="border-t border-white/[0.06] px-4 py-3">
+        <div class="border-t border-[var(--color-border)] px-4 py-3">
           <div class="flex items-center justify-between text-[10px] text-gray-600">
             <span>{TABLES.length} tables</span>
             <span>11.7 GB total</span>
@@ -147,20 +147,21 @@ export default function DatabasePage(): JSX.Element {
       {/* Main Content */}
       <div class="flex flex-1 flex-col overflow-hidden">
         {/* Toolbar */}
-        <div class="flex items-center justify-between border-b border-white/[0.06] bg-[#0a0a0a] px-5 py-3">
+        <div class="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3" style={{ background: "var(--color-bg)" }}>
           <div class="flex items-center gap-3">
             <button
               type="button"
               onClick={handleRunQuery}
               disabled={isRunning()}
-              class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:shadow-emerald-500/40 hover:brightness-110 disabled:opacity-50"
+              class="flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-all duration-200 hover:brightness-110 disabled:opacity-50"
+              style={{ background: "var(--color-success)" }}
             >
               <Show when={!isRunning()} fallback={<span class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />}>
                 <span>&#9654;</span>
               </Show>
               Run Query
             </button>
-            <span class="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[10px] font-mono text-gray-500">
+            <span class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-2.5 py-1.5 text-[10px] font-mono text-gray-500">
               {navigator.platform?.includes("Mac") ? "Cmd" : "Ctrl"}+Enter
             </span>
           </div>
@@ -170,16 +171,17 @@ export default function DatabasePage(): JSX.Element {
               onClick={() => setShowSchema(!showSchema())}
               class={`rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-all duration-200 ${
                 showSchema()
-                  ? "border-blue-500/30 bg-blue-500/10 text-blue-400"
-                  : "border-white/[0.06] bg-white/[0.03] text-gray-400 hover:text-white"
+                  ? "border-[var(--color-border)] text-[var(--color-text)]"
+                  : "border-[var(--color-border)] bg-[var(--color-bg-subtle)] text-gray-400 hover:text-[var(--color-text)]"
               }`}
+              style={showSchema() ? { background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", color: "var(--color-primary)", "border-color": "color-mix(in oklab, var(--color-primary) 30%, transparent)" } : {}}
             >
               Schema
             </button>
             <Show when={showResults()}>
               <div class="flex items-center gap-3 text-[11px]">
                 <span class="text-gray-500">{rowsAffected()} rows</span>
-                <span class="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400">{executionTime()}</span>
+                <span class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{ background: "color-mix(in oklab, var(--color-success) 15%, transparent)", color: "var(--color-success)" }}>{executionTime()}</span>
               </div>
             </Show>
           </div>
@@ -189,8 +191,8 @@ export default function DatabasePage(): JSX.Element {
         <div class="flex flex-1 overflow-hidden">
           <div class={`flex flex-1 flex-col overflow-hidden ${showSchema() ? "" : ""}`}>
             {/* Query Editor */}
-            <div class="border-b border-white/[0.06] bg-[#0c0c0c]">
-              <div class="flex items-center justify-between border-b border-white/[0.04] px-4 py-2">
+            <div class="border-b border-[var(--color-border)]" style={{ background: "var(--color-bg)" }}>
+              <div class="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2">
                 <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Query Editor</span>
                 <div class="flex items-center gap-2">
                   {/* Quick Query Buttons */}
@@ -199,7 +201,7 @@ export default function DatabasePage(): JSX.Element {
                       <button
                         type="button"
                         onClick={() => setQuery(sq)}
-                        class="rounded border border-white/[0.04] bg-white/[0.02] px-2 py-0.5 text-[10px] text-gray-600 transition-all hover:border-white/[0.1] hover:text-gray-400"
+                        class="rounded border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-2 py-0.5 text-[10px] text-gray-600 transition-all hover:border-[var(--color-border)] hover:text-gray-400"
                       >
                         Query {i() + 1}
                       </button>
@@ -219,7 +221,7 @@ export default function DatabasePage(): JSX.Element {
             </div>
 
             {/* Results Table */}
-            <div class="flex-1 overflow-auto bg-[#080808]">
+            <div class="flex-1 overflow-auto" style={{ background: "var(--color-bg)" }}>
               <Show
                 when={showResults()}
                 fallback={
@@ -228,7 +230,7 @@ export default function DatabasePage(): JSX.Element {
                       when={!isRunning()}
                       fallback={
                         <div class="flex flex-col items-center gap-3">
-                          <span class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-500/30 border-t-blue-500" />
+                          <span class="inline-block h-6 w-6 animate-spin rounded-full border-2" style={{ "border-color": "color-mix(in oklab, var(--color-primary) 30%, transparent)", "border-top-color": "var(--color-primary)" }} />
                           <span class="text-xs text-gray-500">Executing query...</span>
                         </div>
                       }
@@ -241,11 +243,11 @@ export default function DatabasePage(): JSX.Element {
               >
                 <div class="min-w-full">
                   {/* Table Header */}
-                  <div class="sticky top-0 z-10 flex border-b border-white/[0.08] bg-[#0a0a0a]">
-                    <div class="w-12 shrink-0 border-r border-white/[0.04] px-3 py-2.5 text-[10px] font-semibold text-gray-600">#</div>
+                  <div class="sticky top-0 z-10 flex border-b border-[var(--color-border)]" style={{ background: "var(--color-bg)" }}>
+                    <div class="w-12 shrink-0 border-r border-[var(--color-border)] px-3 py-2.5 text-[10px] font-semibold text-gray-600">#</div>
                     <For each={MOCK_QUERY_RESULT.columns}>
                       {(col) => (
-                        <div class="min-w-[140px] flex-1 border-r border-white/[0.04] px-4 py-2.5">
+                        <div class="min-w-[140px] flex-1 border-r border-[var(--color-border)] px-4 py-2.5">
                           <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-500">{col}</span>
                         </div>
                       )}
@@ -254,11 +256,11 @@ export default function DatabasePage(): JSX.Element {
                   {/* Table Body */}
                   <For each={MOCK_QUERY_RESULT.rows}>
                     {(row, rowIdx) => (
-                      <div class="flex border-b border-white/[0.03] transition-colors duration-100 hover:bg-white/[0.02]">
-                        <div class="w-12 shrink-0 border-r border-white/[0.04] px-3 py-2.5 text-[11px] font-mono text-gray-700">{rowIdx() + 1}</div>
+                      <div class="flex border-b border-[var(--color-border)] transition-colors duration-100 hover:bg-[var(--color-bg-subtle)]">
+                        <div class="w-12 shrink-0 border-r border-[var(--color-border)] px-3 py-2.5 text-[11px] font-mono text-gray-700">{rowIdx() + 1}</div>
                         <For each={row}>
                           {(cell) => (
-                            <div class="min-w-[140px] flex-1 border-r border-white/[0.04] px-4 py-2.5">
+                            <div class="min-w-[140px] flex-1 border-r border-[var(--color-border)] px-4 py-2.5">
                               <span class="font-mono text-xs text-gray-300">{cell}</span>
                             </div>
                           )}
@@ -273,8 +275,8 @@ export default function DatabasePage(): JSX.Element {
 
           {/* Schema Panel */}
           <Show when={showSchema()}>
-            <div class="w-72 shrink-0 overflow-y-auto border-l border-white/[0.06] bg-[#0a0a0a]">
-              <div class="border-b border-white/[0.06] px-4 py-3">
+            <div class="w-72 shrink-0 overflow-y-auto border-l border-[var(--color-border)]" style={{ background: "var(--color-bg)" }}>
+              <div class="border-b border-[var(--color-border)] px-4 py-3">
                 <h3 class="text-xs font-semibold uppercase tracking-widest text-gray-500">
                   Schema: {selectedTable()}
                 </h3>
@@ -282,17 +284,17 @@ export default function DatabasePage(): JSX.Element {
               <div class="p-3">
                 <For each={SCHEMA_COLUMNS}>
                   {(col) => (
-                    <div class="flex items-center gap-2 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.02]">
+                    <div class="flex items-center gap-2 rounded-lg px-3 py-2.5 transition-colors hover:bg-[var(--color-bg-subtle)]">
                       <div class="flex items-center gap-2 flex-1 min-w-0">
                         <Show when={col.primary}>
-                          <span class="text-[10px] text-amber-500" title="Primary Key">&#128273;</span>
+                          <span class="text-[10px]" style={{ color: "var(--color-warning)" }} title="Primary Key">&#128273;</span>
                         </Show>
                         <span class="text-xs font-medium text-gray-300 truncate">{col.name}</span>
                       </div>
                       <div class="flex items-center gap-1.5 shrink-0">
-                        <span class="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] font-mono text-gray-500">{col.type}</span>
+                        <span class="rounded bg-[var(--color-bg-elevated)] px-1.5 py-0.5 text-[10px] font-mono text-gray-500">{col.type}</span>
                         <Show when={!col.nullable}>
-                          <span class="text-[9px] text-orange-500/70" title="NOT NULL">NN</span>
+                          <span class="text-[9px]" style={{ color: "color-mix(in oklab, var(--color-warning) 70%, transparent)" }} title="NOT NULL">NN</span>
                         </Show>
                       </div>
                     </div>
@@ -300,23 +302,23 @@ export default function DatabasePage(): JSX.Element {
                 </For>
 
                 {/* Indexes Section */}
-                <div class="mt-4 border-t border-white/[0.04] pt-3">
+                <div class="mt-4 border-t border-[var(--color-border)] pt-3">
                   <span class="px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Indexes</span>
                   <div class="mt-2 flex flex-col gap-1">
                     <div class="flex items-center gap-2 rounded-lg px-3 py-2">
-                      <span class="text-[10px] text-blue-400">&#9679;</span>
+                      <span class="text-[10px]" style={{ color: "var(--color-primary)" }}>&#9679;</span>
                       <span class="text-[11px] text-gray-400">idx_users_email</span>
-                      <span class="ml-auto rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] text-blue-400">UNIQUE</span>
+                      <span class="ml-auto rounded px-1.5 py-0.5 text-[9px]" style={{ background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", color: "var(--color-primary)" }}>UNIQUE</span>
                     </div>
                     <div class="flex items-center gap-2 rounded-lg px-3 py-2">
-                      <span class="text-[10px] text-emerald-400">&#9679;</span>
+                      <span class="text-[10px]" style={{ color: "var(--color-success)" }}>&#9679;</span>
                       <span class="text-[11px] text-gray-400">idx_users_plan</span>
-                      <span class="ml-auto rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] text-emerald-400">BTREE</span>
+                      <span class="ml-auto rounded px-1.5 py-0.5 text-[9px]" style={{ background: "color-mix(in oklab, var(--color-success) 10%, transparent)", color: "var(--color-success)" }}>BTREE</span>
                     </div>
                     <div class="flex items-center gap-2 rounded-lg px-3 py-2">
-                      <span class="text-[10px] text-violet-400">&#9679;</span>
+                      <span class="text-[10px]" style={{ color: "var(--color-primary)" }}>&#9679;</span>
                       <span class="text-[11px] text-gray-400">idx_users_created</span>
-                      <span class="ml-auto rounded bg-violet-500/10 px-1.5 py-0.5 text-[9px] text-violet-400">BTREE</span>
+                      <span class="ml-auto rounded px-1.5 py-0.5 text-[9px]" style={{ background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", color: "var(--color-primary)" }}>BTREE</span>
                     </div>
                   </div>
                 </div>

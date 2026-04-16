@@ -38,7 +38,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "High-conversion landing page with hero, features grid, testimonials, and CTA. Designed for product launches and early-stage startups.",
     category: "landing",
-    gradient: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%)",
+    gradient: "var(--color-primary)",
     difficulty: "Beginner",
     estimatedTime: "2 min",
     featured: true,
@@ -49,7 +49,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Streaming chat UI with conversation history, tool calls, and generative UI components. Powered by the AI SDK with three-tier compute routing.",
     category: "ai-app",
-    gradient: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #6366f1 100%)",
+    gradient: "var(--color-primary)",
     difficulty: "Intermediate",
     estimatedTime: "5 min",
     featured: true,
@@ -60,7 +60,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "WebGPU-accelerated video editing workspace with timeline, effects panel, and real-time preview. Multi-user collaboration via CRDTs.",
     category: "video",
-    gradient: "linear-gradient(135deg, #f97316 0%, #ef4444 50%, #dc2626 100%)",
+    gradient: "var(--color-danger)",
     difficulty: "Advanced",
     estimatedTime: "10 min",
     featured: true,
@@ -71,7 +71,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Product grid with filters, cart, checkout flow, and Stripe integration. Responsive design with AI-powered product recommendations.",
     category: "ecommerce",
-    gradient: "linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)",
+    gradient: "var(--color-success)",
     difficulty: "Intermediate",
     estimatedTime: "5 min",
   },
@@ -81,7 +81,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Analytics dashboard with real-time charts, user management, billing portal, and feature flags. Complete admin panel out of the box.",
     category: "saas",
-    gradient: "linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)",
+    gradient: "var(--color-primary)",
     difficulty: "Advanced",
     estimatedTime: "8 min",
     featured: true,
@@ -92,7 +92,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Showcase projects with animated transitions, image galleries, and a contact form. Designed for designers, photographers, and artists.",
     category: "website",
-    gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)",
+    gradient: "var(--color-warning)",
     difficulty: "Beginner",
     estimatedTime: "3 min",
   },
@@ -102,7 +102,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Text-to-image generation interface with prompt builder, style presets, gallery view, and download management. Client-side inference via WebGPU.",
     category: "ai-app",
-    gradient: "linear-gradient(135deg, #a78bfa 0%, #c084fc 50%, #e879f9 100%)",
+    gradient: "var(--color-primary)",
     difficulty: "Intermediate",
     estimatedTime: "6 min",
   },
@@ -112,7 +112,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Video-first landing page with background playback, chapter navigation, and embedded player. Optimized for product demos and course previews.",
     category: "video",
-    gradient: "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+    gradient: "var(--color-success)",
     difficulty: "Beginner",
     estimatedTime: "3 min",
   },
@@ -122,7 +122,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Multi-page agency site with services, case studies, team section, and contact form. Enterprise-grade design with glassmorphism effects.",
     category: "website",
-    gradient: "linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%)",
+    gradient: "var(--color-text-muted)",
     difficulty: "Intermediate",
     estimatedTime: "7 min",
   },
@@ -132,7 +132,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Three-tier pricing table with feature comparison, annual/monthly toggle, and Stripe checkout integration. Conversion-optimized layout.",
     category: "saas",
-    gradient: "linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)",
+    gradient: "var(--color-primary)",
     difficulty: "Beginner",
     estimatedTime: "2 min",
   },
@@ -142,7 +142,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Upload documents for AI-powered analysis, summarization, and entity extraction. Built-in RAG pipeline with semantic search across uploaded files.",
     category: "ai-app",
-    gradient: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%)",
+    gradient: "var(--color-primary)",
     difficulty: "Advanced",
     estimatedTime: "8 min",
   },
@@ -152,7 +152,7 @@ const TEMPLATE_ITEMS: TemplateItem[] = [
     description:
       "Countdown timer, email capture, feature previews, and social proof. Everything you need to build anticipation before launch day.",
     category: "landing",
-    gradient: "linear-gradient(135deg, #e11d48 0%, #be123c 50%, #9f1239 100%)",
+    gradient: "var(--color-danger)",
     difficulty: "Beginner",
     estimatedTime: "2 min",
   },
@@ -228,8 +228,8 @@ function TemplateCard(props: {
             <span
               class="rounded-md px-2 py-0.5 text-xs font-medium"
               style={{
-                background: "rgba(99,102,241,0.15)",
-                color: "rgb(165,148,249)",
+                background: "color-mix(in oklab, var(--color-primary) 15%, transparent)",
+                color: "var(--color-primary)",
               }}
             >
               {props.template.category}

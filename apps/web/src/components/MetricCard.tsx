@@ -20,9 +20,9 @@ export interface MetricCardProps {
 // ── Helpers ──────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<MetricCardProps["status"], string> = {
-  healthy: "#10b981",
-  warning: "#f59e0b",
-  critical: "#ef4444",
+  healthy: "var(--color-success)",
+  warning: "var(--color-warning)",
+  critical: "var(--color-danger)",
 };
 
 function sparklinePath(values: number[], width: number, height: number): string {
@@ -95,24 +95,11 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
 
   return (
     <div
-      class="group relative overflow-hidden rounded-2xl border border-white/[0.06] p-5 transition-all duration-300 hover:border-white/[0.12]"
+      class="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] p-5 transition-all duration-300 hover:border-[var(--color-border-hover)]"
       style={{
-        background: "linear-gradient(145deg, rgba(14,14,14,0.95) 0%, rgba(8,8,8,0.98) 100%)",
+        background: "var(--color-bg-elevated)",
       }}
     >
-      {/* Glow effect on hover */}
-      <div
-        class="absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-30"
-        style={{ background: accentColor() }}
-      />
-
-      {/* Subtle bottom shimmer */}
-      <div
-        class="absolute bottom-0 left-0 h-[2px] w-full opacity-40 transition-opacity duration-300 group-hover:opacity-80"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${accentColor()}, transparent)`,
-        }}
-      />
 
       <div class="relative z-10">
         {/* Header row: label + sparkline */}
@@ -135,7 +122,7 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
 
             {/* Value row */}
             <div class="mt-2 flex items-baseline gap-2">
-              <span class="text-3xl font-bold tracking-tight text-white">
+              <span class="text-3xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
                 {props.value}
               </span>
               <span class="text-sm text-gray-500">{props.unit ?? ""}</span>

@@ -59,9 +59,9 @@ type HealthStatus = "ok" | "error" | "active" | "inactive";
 
 function HealthRow(props: { label: string; status: HealthStatus; detail?: string }): JSX.Element {
   const statusColor = (): string => {
-    if (props.status === "ok" || props.status === "active") return "#10b981";
-    if (props.status === "inactive") return "#6b7280";
-    return "#ef4444";
+    if (props.status === "ok" || props.status === "active") return "var(--color-success)";
+    if (props.status === "inactive") return "var(--color-text-muted)";
+    return "var(--color-danger)";
   };
 
   return (
@@ -114,9 +114,9 @@ function UserRow(props: {
   pending: boolean;
 }): JSX.Element {
   const roleColor = (): string => {
-    if (props.user.role === "admin") return "#a78bfa";
-    if (props.user.role === "editor") return "#3b82f6";
-    return "#6b7280";
+    if (props.user.role === "admin") return "var(--color-primary)";
+    if (props.user.role === "editor") return "var(--color-primary)";
+    return "var(--color-text-muted)";
   };
 
   return (
@@ -297,28 +297,28 @@ function AdminPageContent(): JSX.Element {
                   value={s().totalUsers.toLocaleString()}
                   sublabel="Registered accounts"
                   icon="&#128101;"
-                  accentColor="#3b82f6"
+                  accentColor="var(--color-primary)"
                 />
                 <StatCard
                   label="Active Subscriptions"
                   value={s().activeSubscriptions.toLocaleString()}
                   sublabel="Currently paying"
                   icon="&#128179;"
-                  accentColor="#8b5cf6"
+                  accentColor="var(--color-primary)"
                 />
                 <StatCard
                   label="Revenue (lifetime)"
                   value={fmtCurrency(s().totalRevenue)}
                   sublabel="Succeeded payments"
                   icon="&#128176;"
-                  accentColor="#10b981"
+                  accentColor="var(--color-success)"
                 />
                 <StatCard
                   label="AI Generations"
                   value={s().aiGenerations.toLocaleString()}
                   sublabel="Total events logged"
                   icon="&#9889;"
-                  accentColor="#f59e0b"
+                  accentColor="var(--color-warning)"
                 />
               </>
             )}
@@ -475,7 +475,7 @@ function AdminPageContent(): JSX.Element {
                   class="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200"
                   style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)" }}
                 >
-                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#3b82f618", color: "#3b82f6" }}>&#128231;</span>
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", color: "var(--color-primary)" }}>&#128231;</span>
                   <div>
                     <span class="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>Support Queue</span>
                     <p class="text-[11px]" style={{ color: "var(--color-text-faint)" }}>Review AI draft replies before they go out</p>
@@ -487,7 +487,7 @@ function AdminPageContent(): JSX.Element {
                   class="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200"
                   style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)" }}
                 >
-                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#10b98118", color: "#10b981" }}>&#128203;</span>
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "color-mix(in oklab, var(--color-success) 10%, transparent)", color: "var(--color-success)" }}>&#128203;</span>
                   <div>
                     <span class="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>Progress Board</span>
                     <p class="text-[11px]" style={{ color: "var(--color-text-faint)" }}>Track block status across the platform</p>
@@ -499,7 +499,7 @@ function AdminPageContent(): JSX.Element {
                   class="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200"
                   style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)" }}
                 >
-                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#f59e0b18", color: "#f59e0b" }}>&#128229;</span>
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "color-mix(in oklab, var(--color-warning) 10%, transparent)", color: "var(--color-warning)" }}>&#128229;</span>
                   <div>
                     <span class="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>Export Users</span>
                     <p class="text-[11px]" style={{ color: "var(--color-text-faint)" }}>Download CSV of real users from the DB</p>
@@ -511,7 +511,7 @@ function AdminPageContent(): JSX.Element {
                   class="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200"
                   style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)" }}
                 >
-                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "#a78bfa18", color: "#a78bfa" }}>&#128200;</span>
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", color: "var(--color-primary)" }}>&#128200;</span>
                   <div>
                     <span class="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>Status Page</span>
                     <p class="text-[11px]" style={{ color: "var(--color-text-faint)" }}>Public uptime and incidents</p>
