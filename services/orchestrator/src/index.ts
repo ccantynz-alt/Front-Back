@@ -11,6 +11,7 @@ import {
   status,
   listApps,
   getLogs,
+  getLogStream,
 } from "./deployer";
 import { startHealthMonitor } from "./health";
 
@@ -112,7 +113,7 @@ app.get("/apps", async (c) => {
   }
 });
 
-// ── Logs ──────────────────────────────────────────────────────────────
+// ── Logs (JSON) ──────────────────────────────────────────────────────
 
 app.get("/logs/:app", async (c) => {
   try {
@@ -127,17 +128,36 @@ app.get("/logs/:app", async (c) => {
   }
 });
 
+// ── Logs (SSE Stream) ────────────────────────────────────────────────
+
+app.get("/logs/:app/stream", (c) => {
+  try {
+    const appName = c.req.param("app");
+    const stream = getLogStream(appName);
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Log stream failed";
+    return c.json({ error: message }, 500);
+  }
+});
+
 // ── Start Server ──────────────────────────────────────────────────────
 
 const PORT = Number(process.env["ORCHESTRATOR_PORT"] ?? "9000");
 
-// Start health monitor in background
 startHealthMonitor();
 
 Bun.serve({
   fetch: app.fetch,
   port: PORT,
-  hostname: "127.0.0.1", // localhost ONLY — not exposed to internet
+  hostname: "127.0.0.1",
 });
 
 console.log(`[orchestrator] Deploy orchestrator running on http://127.0.0.1:${PORT}`);
