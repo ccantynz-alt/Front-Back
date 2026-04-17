@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { eq, desc, gt, sql } from "drizzle-orm";
-import { router, protectedProcedure, adminProcedure } from "../init";
+import { router, adminProcedure } from "../init";
 import { users } from "@back-to-the-future/db";
 import {
   CreateUserInput,

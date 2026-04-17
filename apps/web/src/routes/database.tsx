@@ -217,8 +217,7 @@ export default function DatabasePage(): JSX.Element {
                 onKeyDown={handleKeyDown}
                 spellcheck={false}
                 class="w-full resize-none bg-transparent px-5 py-4 font-mono text-sm outline-none placeholder-gray-700"
-                style={{ color: "var(--color-text)" }}
-                style={{ "min-height": "140px", "line-height": "1.7" }}
+                style={{ color: "var(--color-text)", "min-height": "140px", "line-height": "1.7" }}
                 placeholder="Write your SQL query here..."
               />
             </div>

@@ -62,16 +62,38 @@ describe("tRPC Health Endpoint", () => {
 describe("tRPC Users CRUD", () => {
   const testUserIds: string[] = [];
 
+  // Admin user created before each test to satisfy adminProcedure auth gate
+  let adminUserId: string;
+  let adminSessionToken: string;
+  const ADMIN_EMAIL = `admin-crud-${Date.now()}@example.com`;
+
+  beforeEach(async () => {
+    adminUserId = crypto.randomUUID();
+    await db.insert(users).values({
+      id: adminUserId,
+      email: ADMIN_EMAIL,
+      displayName: "Admin Test User",
+      role: "admin",
+    });
+    adminSessionToken = await createSession(adminUserId, db);
+  });
+
   afterEach(async () => {
     for (const id of testUserIds) {
       await db.delete(sessions).where(eq(sessions.userId, id));
       await db.delete(users).where(eq(users.id, id));
     }
     testUserIds.length = 0;
+    // Clean up the admin user and its session
+    await db.delete(sessions).where(eq(sessions.userId, adminUserId));
+    await db.delete(users).where(eq(users.id, adminUserId));
   });
 
   test("create user and get by id", async () => {
-    const ctx = createTestContext();
+    const ctx = createTestContext({
+      userId: adminUserId,
+      sessionToken: adminSessionToken,
+    });
     const email = `crud-test-${Date.now()}@example.com`;
 
     const created = await caller(ctx).users.create({
@@ -90,7 +112,10 @@ describe("tRPC Users CRUD", () => {
   });
 
   test("list users returns paginated results", async () => {
-    const ctx = createTestContext();
+    const ctx = createTestContext({
+      userId: adminUserId,
+      sessionToken: adminSessionToken,
+    });
     const email = `list-test-${Date.now()}@example.com`;
 
     const created = await caller(ctx).users.create({
@@ -105,7 +130,10 @@ describe("tRPC Users CRUD", () => {
   });
 
   test("update user modifies fields", async () => {
-    const ctx = createTestContext();
+    const ctx = createTestContext({
+      userId: adminUserId,
+      sessionToken: adminSessionToken,
+    });
     const email = `update-test-${Date.now()}@example.com`;
 
     const created = await caller(ctx).users.create({
@@ -124,7 +152,10 @@ describe("tRPC Users CRUD", () => {
   });
 
   test("delete user removes it", async () => {
-    const ctx = createTestContext();
+    const ctx = createTestContext({
+      userId: adminUserId,
+      sessionToken: adminSessionToken,
+    });
     const email = `delete-test-${Date.now()}@example.com`;
 
     const created = await caller(ctx).users.create({
