@@ -38,7 +38,7 @@ function StatCard(props: StatCardProps): JSX.Element {
         <div
           class="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
           style={{
-            background: `${props.accentColor}22`,
+            background: `color-mix(in oklab, ${props.accentColor} 13%, transparent)`,
             color: props.accentColor,
           }}
         >
@@ -79,7 +79,7 @@ function HealthRow(props: { label: string; status: HealthStatus; detail?: string
         </Show>
         <span
           class="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-          style={{ background: `${statusColor()}18`, color: statusColor() }}
+          style={{ background: `color-mix(in oklab, ${statusColor()} 10%, transparent)`, color: statusColor() }}
         >
           {props.status}
         </span>

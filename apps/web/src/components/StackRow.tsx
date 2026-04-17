@@ -73,7 +73,8 @@ export function StackRow(props: StackRowProps): JSX.Element {
               {index() < STACK.length - 1 && (
                 <li
                   aria-hidden="true"
-                  class="select-none text-gray-600 text-xs leading-none"
+                  class="select-none text-xs leading-none"
+                  style={{ color: "var(--color-text-faint)" }}
                 >
                   {"\u00B7"}
                 </li>
@@ -104,7 +105,8 @@ function StackBadge(inputProps: StackBadgeProps): JSX.Element {
       href={item.href}
       target="_blank"
       rel="noreferrer noopener"
-      class="group inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm text-gray-200 leading-none no-underline transition-colors duration-200 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40"
+      class="group inline-flex items-center gap-2 rounded-md px-1.5 py-1 text-sm leading-none no-underline transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+      style={{ color: "var(--color-text-secondary)" }}
       title={item.name}
     >
       <span class="inline-flex h-5 w-5 items-center justify-center transition-transform duration-300 ease-out group-hover:scale-110">

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { eq, desc, gt, sql } from "drizzle-orm";
-import { router, publicProcedure } from "../init";
+import { router, protectedProcedure, adminProcedure } from "../init";
 import { users } from "@back-to-the-future/db";
 import {
   CreateUserInput,
@@ -15,7 +15,7 @@ const UpdateUserInput = z.object({
 });
 
 export const usersRouter = router({
-  list: publicProcedure.input(PaginationInput).query(async ({ ctx, input }) => {
+  list: adminProcedure.input(PaginationInput).query(async ({ ctx, input }) => {
     const { cursor, limit } = input;
 
     const conditions = cursor ? gt(users.id, cursor) : undefined;
@@ -43,7 +43,7 @@ export const usersRouter = router({
     };
   }),
 
-  getById: publicProcedure
+  getById: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const result = await ctx.db
@@ -60,7 +60,7 @@ export const usersRouter = router({
       return user;
     }),
 
-  create: publicProcedure
+  create: adminProcedure
     .input(CreateUserInput)
     .mutation(async ({ ctx, input }) => {
       const id = crypto.randomUUID();
@@ -86,7 +86,7 @@ export const usersRouter = router({
       return created;
     }),
 
-  update: publicProcedure
+  update: adminProcedure
     .input(UpdateUserInput)
     .mutation(async ({ ctx, input }) => {
       const { id, ...fields } = input;
@@ -110,7 +110,7 @@ export const usersRouter = router({
       return updated;
     }),
 
-  delete: publicProcedure
+  delete: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db

@@ -135,7 +135,7 @@ export default function LoginPage(): ReturnType<typeof Stack> {
                 style={{
                   flex: "1",
                   height: "1px",
-                  background: "var(--border-color, #e5e7eb)",
+                  background: "var(--color-border)",
                 }}
               />
               <Text variant="caption" class="text-muted">
@@ -145,7 +145,7 @@ export default function LoginPage(): ReturnType<typeof Stack> {
                 style={{
                   flex: "1",
                   height: "1px",
-                  background: "var(--border-color, #e5e7eb)",
+                  background: "var(--color-border)",
                 }}
               />
             </div>
@@ -213,7 +213,7 @@ export default function LoginPage(): ReturnType<typeof Stack> {
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    color: "var(--text-muted, #6b7280)",
+                    color: "var(--color-text-muted)",
                     "font-size": "13px",
                   }}
                 >

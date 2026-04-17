@@ -395,7 +395,7 @@ export function MetricsChart(props: MetricsChartProps): JSX.Element {
             }}
           >
             <span class="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{t().value}</span>
-            <span class="text-[10px] text-gray-500">{t().time}</span>
+            <span class="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{t().time}</span>
           </div>
         )}
       </Show>

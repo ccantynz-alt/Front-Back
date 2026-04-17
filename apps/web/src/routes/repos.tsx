@@ -581,7 +581,7 @@ export default function ReposPage(): JSX.Element {
               class="flex h-10 w-10 items-center justify-center rounded-xl"
               style={{ background: "var(--color-bg-subtle)" }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style={{ color: "var(--color-primary)" }}>
                 <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4" />
                 <path d="M9 18c-4.51 2-5-2-7-2" />
               </svg>
@@ -598,7 +598,7 @@ export default function ReposPage(): JSX.Element {
         {/* Search */}
         <div class="px-4 py-3" style={{ "border-bottom": "1px solid var(--color-border)" }}>
           <div class="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: "var(--color-bg-subtle)", border: "1px solid var(--color-border)" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style={{ color: "var(--color-text-muted)" }}>
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.3-4.3" />
             </svg>
@@ -678,7 +678,7 @@ export default function ReposPage(): JSX.Element {
               class="flex h-24 w-24 items-center justify-center rounded-3xl"
               style={{ background: "var(--color-bg-subtle)" }}
             >
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style={{ color: "var(--color-primary)" }}>
                 <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4" />
                 <path d="M9 18c-4.51 2-5-2-7-2" />
               </svg>

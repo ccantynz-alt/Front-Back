@@ -22,32 +22,33 @@ function newId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-// ── Encryption helpers ─────────────────────────────────────────────────
-// Simple XOR-based obfuscation with the session secret. This is NOT
-// cryptographic-grade encryption — it prevents plaintext storage and
-// casual exposure. For production, swap to AES-256-GCM with a KMS key.
+// ── Encryption helpers (AES-256-GCM) ──────────────────────────────────
 
-function getEncryptionKey(): string {
-  return process.env["SESSION_SECRET"] ?? "crontech-default-key-change-me";
+import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
+
+function getEncryptionKey(): Buffer {
+  const secret = process.env["SESSION_SECRET"] ?? "crontech-default-key-change-me";
+  return createHash("sha256").update(secret).digest();
 }
 
-function xorEncrypt(plaintext: string, key: string): string {
-  const result: number[] = [];
-  for (let i = 0; i < plaintext.length; i++) {
-    // biome-ignore lint/style/noNonNullAssertion: index always valid
-    result.push(plaintext.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-  }
-  return Buffer.from(result).toString("base64");
+function aesEncrypt(plaintext: string): string {
+  const key = getEncryptionKey();
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString("base64");
 }
 
-function xorDecrypt(encoded: string, key: string): string {
+function aesDecrypt(encoded: string): string {
+  const key = getEncryptionKey();
   const buf = Buffer.from(encoded, "base64");
-  const result: number[] = [];
-  for (let i = 0; i < buf.length; i++) {
-    // biome-ignore lint/style/noNonNullAssertion: index always valid
-    result.push(buf[i]! ^ key.charCodeAt(i % key.length));
-  }
-  return String.fromCharCode(...result);
+  const iv = buf.subarray(0, 12);
+  const tag = buf.subarray(12, 28);
+  const encrypted = buf.subarray(28);
+  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  return decipher.update(encrypted) + decipher.final("utf8");
 }
 
 // ── Input Schemas ──────────────────────────────────────────────────────
@@ -356,8 +357,7 @@ export const chatRouter = router({
   saveProviderKey: adminProcedure
     .input(SaveProviderKeyInput)
     .mutation(async ({ ctx, input }) => {
-      const key = getEncryptionKey();
-      const encrypted = xorEncrypt(input.apiKey, key);
+      const encrypted = aesEncrypt(input.apiKey);
       const prefix = `${input.apiKey.slice(0, 7)}...${input.apiKey.slice(-4)}`;
 
       // Deactivate existing keys for this provider
@@ -446,8 +446,7 @@ export const chatRouter = router({
       const row = rows[0];
       if (!row) return null;
 
-      const key = getEncryptionKey();
-      const decrypted = xorDecrypt(row.encryptedKey, key);
+      const decrypted = aesDecrypt(row.encryptedKey);
 
       // Update last used timestamp
       await ctx.db

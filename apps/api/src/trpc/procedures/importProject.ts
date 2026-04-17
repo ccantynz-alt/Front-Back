@@ -5,12 +5,23 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { createCipheriv, randomBytes, createHash } from "node:crypto";
 import { router, protectedProcedure } from "../init";
 import {
   projects,
   projectDomains,
   projectEnvVars,
 } from "@back-to-the-future/db";
+
+function encryptEnvValue(plaintext: string): string {
+  const secret = process.env["SESSION_SECRET"] ?? "crontech-default-key-change-me";
+  const key = createHash("sha256").update(secret).digest();
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString("base64");
+}
 
 // ── Zod Schemas ────────────────────────────────────────────────────────
 
@@ -259,7 +270,6 @@ export const importRouter = router({
         updatedAt: now,
       });
 
-      // Insert env vars (stored encrypted — for now, base64 as placeholder)
       const envInserts = envVars
         .filter(
           (e): e is typeof e & { value: string } =>
@@ -269,7 +279,7 @@ export const importRouter = router({
           id: generateId(),
           projectId,
           key: e.key,
-          encryptedValue: btoa(e.value),
+          encryptedValue: encryptEnvValue(e.value),
           environment: mapVercelTarget(e.target),
           createdAt: now,
           updatedAt: now,
@@ -370,7 +380,7 @@ export const importRouter = router({
               id: generateId(),
               projectId,
               key: env.key,
-              encryptedValue: btoa(val.value),
+              encryptedValue: encryptEnvValue(val.value),
               environment:
                 val.context === "production"
                   ? "production"

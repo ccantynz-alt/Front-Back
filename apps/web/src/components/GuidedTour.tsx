@@ -118,7 +118,7 @@ export function GuidedTour(props: GuidedTourProps): ReturnType<typeof Show> {
             width: `${rect().width + 12}px`,
             height: `${rect().height + 12}px`,
             "border-radius": "10px",
-            border: "3px solid #6366f1",
+            border: "3px solid var(--color-primary)",
             "box-shadow": "0 0 0 9999px rgba(0,0,0,0.5), 0 0 24px rgba(99,102,241,0.6)",
             "pointer-events": "none",
             animation: "btf-pulse 1.6s ease-in-out infinite",
@@ -131,15 +131,15 @@ export function GuidedTour(props: GuidedTourProps): ReturnType<typeof Show> {
             top: `${Math.min(rect().top + rect().height + 16, window.innerHeight - 200)}px`,
             left: `${Math.max(16, Math.min(rect().left, window.innerWidth - 340))}px`,
             width: "320px",
-            background: "white",
-            color: "#111",
+            background: "var(--color-bg-elevated)",
+            color: "var(--color-text)",
             "border-radius": "12px",
             padding: "1rem",
             "box-shadow": "0 16px 48px rgba(0,0,0,0.3)",
             "font-family": "system-ui, -apple-system, sans-serif",
           }}
         >
-          <div style={{ "font-size": "12px", color: "#6366f1", "font-weight": "600" }}>
+          <div style={{ "font-size": "12px", color: "var(--color-primary)", "font-weight": "600" }}>
             Step {index() + 1} of {steps().length}
           </div>
           <div
@@ -154,7 +154,7 @@ export function GuidedTour(props: GuidedTourProps): ReturnType<typeof Show> {
           <div
             style={{
               "font-size": "14px",
-              color: "#374151",
+              color: "var(--color-text-secondary)",
               "margin-top": "0.5rem",
               "line-height": "1.5",
             }}
@@ -176,7 +176,7 @@ export function GuidedTour(props: GuidedTourProps): ReturnType<typeof Show> {
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#9ca3af",
+                color: "var(--color-text-muted)",
                 cursor: "pointer",
                 "font-size": "13px",
               }}
@@ -191,8 +191,8 @@ export function GuidedTour(props: GuidedTourProps): ReturnType<typeof Show> {
                   style={{
                     padding: "0.4rem 0.75rem",
                     "border-radius": "6px",
-                    border: "1px solid #e5e7eb",
-                    background: "white",
+                    border: "1px solid var(--color-border)",
+                    background: "var(--color-bg-elevated)",
                     cursor: "pointer",
                     "font-size": "13px",
                   }}
@@ -207,7 +207,7 @@ export function GuidedTour(props: GuidedTourProps): ReturnType<typeof Show> {
                   padding: "0.4rem 0.875rem",
                   "border-radius": "6px",
                   border: "none",
-                  background: "#6366f1",
+                  background: "var(--color-primary)",
                   color: "white",
                   cursor: "pointer",
                   "font-size": "13px",

@@ -30,28 +30,28 @@ const features: Feature[] = [
     title: "Unified Data",
     description:
       "Turso SQLite replicas at the edge for zero-latency reads. Neon Postgres when you need the full engine. Qdrant for vector search.",
-    href: "/database",
+    href: "/admin",
   },
   {
     icon: "link-2",
     title: "Type-Safe APIs",
     description:
       "tRPC v11 end to end. Change a server type, see the client error instantly. No OpenAPI specs, no codegen step, no drift.",
-    href: "/docs",
+    href: "/pricing",
   },
   {
     icon: "radio",
     title: "Real-Time Layer",
     description:
       "WebSockets, SSE, and Yjs CRDTs on every edge node. Multi-user editing with AI agents as first-class peers.",
-    href: "/collab",
+    href: "/chat",
   },
   {
     icon: "brain",
     title: "AI Runtime",
     description:
       "Three-tier compute routes inference where it is cheapest: client GPU, edge, or cloud H100s on demand. Generative UI and streaming native.",
-    href: "/ai-playground",
+    href: "/chat",
   },
   {
     icon: "lock",
@@ -405,9 +405,9 @@ export default function Home(): JSX.Element {
                 <Show
                   when={auth.isAuthenticated()}
                   fallback={
-                    <A href="/docs">
+                    <A href="/pricing">
                       <Button variant="outline" size="lg">
-                        See the docs
+                        See pricing
                       </Button>
                     </A>
                   }

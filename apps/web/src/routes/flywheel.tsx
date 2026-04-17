@@ -66,10 +66,10 @@ function formatWhen(d: string | Date): string {
 }
 
 function roleColor(role: string): string {
-  if (role === "user") return "#60a5fa";
-  if (role === "assistant") return "#34d399";
-  if (role === "tool") return "#fbbf24";
-  return "#a1a1aa";
+  if (role === "user") return "var(--color-primary-text)";
+  if (role === "assistant") return "var(--color-success)";
+  if (role === "tool") return "var(--color-warning)";
+  return "var(--color-text-secondary)";
 }
 
 export default function FlywheelPage(): JSX.Element {
@@ -109,7 +109,7 @@ export default function FlywheelPage(): JSX.Element {
   });
 
   return (
-    <div style={{ "min-height": "100vh", background: "#0a0a0b", color: "#e4e4e7" }}>
+    <div style={{ "min-height": "100vh", background: "var(--color-bg)", color: "var(--color-text)" }}>
       <SEOHead
         title="Flywheel Memory"
         description="Searchable memory across every Claude Code session on Crontech. Turn transcripts into institutional knowledge."
@@ -120,7 +120,7 @@ export default function FlywheelPage(): JSX.Element {
         <h1 style={{ "font-size": "2rem", "font-weight": "700", margin: "0 0 0.25rem" }}>
           Flywheel Memory
         </h1>
-        <p style={{ color: "#71717a", margin: "0 0 2rem", "font-size": "0.9rem" }}>
+        <p style={{ color: "var(--color-text-muted)", margin: "0 0 2rem", "font-size": "0.9rem" }}>
           Full-text search over every Claude Code session ingested from this repo.
           Every transcript becomes institutional memory the next agent can act on.
         </p>
@@ -135,8 +135,8 @@ export default function FlywheelPage(): JSX.Element {
           {/* Left column: recent sessions */}
           <div
             style={{
-              background: "#0f0f11",
-              border: "1px solid #27272a",
+              background: "var(--color-bg-subtle)",
+              border: "1px solid var(--color-border)",
               "border-radius": "8px",
               overflow: "hidden",
               "max-height": "80vh",
@@ -146,14 +146,14 @@ export default function FlywheelPage(): JSX.Element {
             <div
               style={{
                 padding: "0.75rem 1rem",
-                "border-bottom": "1px solid #27272a",
+                "border-bottom": "1px solid var(--color-border)",
                 "font-size": "0.75rem",
                 "text-transform": "uppercase",
                 "letter-spacing": "0.08em",
-                color: "#a1a1aa",
+                color: "var(--color-text-secondary)",
                 position: "sticky",
                 top: "0",
-                background: "#0f0f11",
+                background: "var(--color-bg-subtle)",
                 "z-index": 1,
               }}
             >
@@ -165,12 +165,12 @@ export default function FlywheelPage(): JSX.Element {
                 <div
                   style={{
                     padding: "2rem 1rem",
-                    color: "#71717a",
+                    color: "var(--color-text-muted)",
                     "font-size": "0.9rem",
                   }}
                 >
                   No sessions ingested yet. Run{" "}
-                  <code style={{ color: "#e4e4e7" }}>
+                  <code style={{ color: "var(--color-text)" }}>
                     bun run --filter=@back-to-the-future/flywheel ingest
                   </code>{" "}
                   to populate the memory.
@@ -188,10 +188,10 @@ export default function FlywheelPage(): JSX.Element {
                       "text-align": "left",
                       padding: "0.75rem 1rem",
                       background:
-                        selectedSessionId() === s.id ? "#18181b" : "transparent",
+                        selectedSessionId() === s.id ? "var(--color-bg-muted)" : "transparent",
                       border: "none",
-                      "border-bottom": "1px solid #27272a",
-                      color: "#e4e4e7",
+                      "border-bottom": "1px solid var(--color-border)",
+                      color: "var(--color-text)",
                       cursor: "pointer",
                     }}
                   >
@@ -202,11 +202,11 @@ export default function FlywheelPage(): JSX.Element {
                         "align-items": "center",
                       }}
                     >
-                      <span style={{ "font-size": "0.72rem", color: "#71717a" }}>
+                      <span style={{ "font-size": "0.72rem", color: "var(--color-text-muted)" }}>
                         {formatWhen(s.startedAt)}
                       </span>
                       <span
-                        style={{ "font-size": "0.72rem", color: "#52525b" }}
+                        style={{ "font-size": "0.72rem", color: "var(--color-text-faint)" }}
                       >
                         {s.turnCount} turns
                       </span>
@@ -227,7 +227,7 @@ export default function FlywheelPage(): JSX.Element {
                     <div
                       style={{
                         "font-size": "0.7rem",
-                        color: "#52525b",
+                        color: "var(--color-text-faint)",
                       }}
                     >
                       {s.gitBranch ?? "—"}
@@ -249,8 +249,8 @@ export default function FlywheelPage(): JSX.Element {
           >
             <div
               style={{
-                background: "#0f0f11",
-                border: "1px solid #27272a",
+                background: "var(--color-bg-subtle)",
+                border: "1px solid var(--color-border)",
                 "border-radius": "8px",
                 padding: "1rem",
               }}
@@ -263,10 +263,10 @@ export default function FlywheelPage(): JSX.Element {
                 style={{
                   width: "100%",
                   padding: "0.6rem 0.8rem",
-                  background: "#18181b",
-                  border: "1px solid #3f3f46",
+                  background: "var(--color-bg-muted)",
+                  border: "1px solid var(--color-border-strong)",
                   "border-radius": "6px",
-                  color: "#e4e4e7",
+                  color: "var(--color-text)",
                   "font-size": "0.95rem",
                   outline: "none",
                 }}
@@ -276,7 +276,7 @@ export default function FlywheelPage(): JSX.Element {
                   style={{
                     "margin-top": "0.75rem",
                     "font-size": "0.75rem",
-                    color: "#a1a1aa",
+                    color: "var(--color-text-secondary)",
                   }}
                 >
                   {hits.loading
@@ -301,9 +301,9 @@ export default function FlywheelPage(): JSX.Element {
                           "text-align": "left",
                           padding: "0.65rem 0.8rem",
                           background: "transparent",
-                          border: "1px solid #27272a",
+                          border: "1px solid var(--color-border)",
                           "border-radius": "6px",
-                          color: "#e4e4e7",
+                          color: "var(--color-text)",
                           cursor: "pointer",
                           "margin-bottom": "0.4rem",
                         }}
@@ -313,7 +313,7 @@ export default function FlywheelPage(): JSX.Element {
                             display: "flex",
                             "justify-content": "space-between",
                             "font-size": "0.7rem",
-                            color: "#71717a",
+                            color: "var(--color-text-muted)",
                           }}
                         >
                           <span>
@@ -332,7 +332,7 @@ export default function FlywheelPage(): JSX.Element {
                             "font-size": "0.85rem",
                             "line-height": "1.4",
                             "margin-top": "0.25rem",
-                            color: "#d4d4d8",
+                            color: "var(--color-text)",
                             "white-space": "pre-wrap",
                             "word-break": "break-word",
                           }}
@@ -348,8 +348,8 @@ export default function FlywheelPage(): JSX.Element {
 
             <div
               style={{
-                background: "#0f0f11",
-                border: "1px solid #27272a",
+                background: "var(--color-bg-subtle)",
+                border: "1px solid var(--color-border)",
                 "border-radius": "8px",
                 "min-height": "400px",
               }}
@@ -360,7 +360,7 @@ export default function FlywheelPage(): JSX.Element {
                   <div
                     style={{
                       padding: "4rem 2rem",
-                      color: "#71717a",
+                      color: "var(--color-text-muted)",
                       "text-align": "center",
                     }}
                   >
@@ -372,7 +372,7 @@ export default function FlywheelPage(): JSX.Element {
                 <Show
                   when={sessionDetail()}
                   fallback={
-                    <div style={{ padding: "2rem", color: "#71717a" }}>
+                    <div style={{ padding: "2rem", color: "var(--color-text-muted)" }}>
                       {sessionDetail.loading
                         ? "Loading transcript…"
                         : "Transcript not found."}
@@ -384,11 +384,11 @@ export default function FlywheelPage(): JSX.Element {
                       <div
                         style={{
                           padding: "1rem",
-                          "border-bottom": "1px solid #27272a",
+                          "border-bottom": "1px solid var(--color-border)",
                         }}
                       >
                         <div
-                          style={{ "font-size": "0.72rem", color: "#71717a" }}
+                          style={{ "font-size": "0.72rem", color: "var(--color-text-muted)" }}
                         >
                           {formatWhen(detail().startedAt)}
                           {" · "}
@@ -418,7 +418,7 @@ export default function FlywheelPage(): JSX.Element {
                           "line-height": "1.55",
                           "max-height": "60vh",
                           "overflow-y": "auto",
-                          color: "#d4d4d8",
+                          color: "var(--color-text)",
                         }}
                       >
                         <For each={detail().turns}>

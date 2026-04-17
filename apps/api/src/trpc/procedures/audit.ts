@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { eq, and, desc, gt, sql } from "drizzle-orm";
-import { router, publicProcedure } from "../init";
+import { router, adminProcedure } from "../init";
 import { auditLogs } from "@back-to-the-future/db";
 import { PaginationInput } from "@back-to-the-future/schemas";
 
 export const auditRouter = router({
-  list: publicProcedure.input(PaginationInput).query(async ({ ctx, input }) => {
+  list: adminProcedure.input(PaginationInput).query(async ({ ctx, input }) => {
     const { cursor, limit } = input;
 
     const conditions = cursor ? gt(auditLogs.id, cursor) : undefined;
@@ -33,7 +33,7 @@ export const auditRouter = router({
     };
   }),
 
-  getByResource: publicProcedure
+  getByResource: adminProcedure
     .input(
       z.object({
         resourceType: z.string().min(1),

@@ -108,7 +108,7 @@ export default function VideoPage(): JSX.Element {
     const comment: TimelineComment = {
       id: `c-${Date.now()}`,
       author: "You",
-      color: "#60a5fa",
+      color: "var(--color-primary)",
       time: currentTime(),
       text,
       timestamp: "just now",

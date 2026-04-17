@@ -34,9 +34,9 @@ const PAGE_HINTS: Record<string, PageHints> = {
     title: "Composer",
     suggestions: ["How do I create a landing page?", "Can I change colors?", "How do I publish?"],
   },
-  "/video": {
-    title: "Video Editor",
-    suggestions: ["How do I upload a video?", "How do I add captions?", "How do I export?"],
+  "/chat": {
+    title: "Claude Chat",
+    suggestions: ["How do I add my API key?", "What models are available?", "How does billing work?"],
   },
   "/billing": {
     title: "Billing",
@@ -197,7 +197,7 @@ export function SupportBot(): ReturnType<typeof Show> {
 
   const quickActions = (): ReadonlyArray<QuickAction> => [
     { label: "Create a website", action: () => navigate("/builder") },
-    { label: "Upload video", action: () => navigate("/video") },
+    { label: "Open chat", action: () => navigate("/chat") },
     { label: "Invite team", action: () => navigate("/settings") },
     { label: "Start trial", action: () => navigate("/billing") },
   ];
@@ -216,7 +216,7 @@ export function SupportBot(): ReturnType<typeof Show> {
     const q = question.toLowerCase();
     if (q.includes("take me") || q.includes("open ") || q.includes("go to ")) {
       if (q.includes("builder") || q.includes("website")) navigate("/builder");
-      else if (q.includes("video")) navigate("/video");
+      else if (q.includes("chat") || q.includes("ai")) navigate("/chat");
       else if (q.includes("billing") || q.includes("upgrade")) navigate("/billing");
       else if (q.includes("settings")) navigate("/settings");
       else if (q.includes("dashboard")) navigate("/dashboard");
@@ -326,14 +326,14 @@ export function SupportBot(): ReturnType<typeof Show> {
               "max-width": "calc(100vw - 2rem)",
               height: minimized() ? "48px" : "520px",
               "max-height": "calc(100vh - 2rem)",
-              background: "white",
-              color: "#111",
+              background: "var(--color-bg-elevated)",
+              color: "var(--color-text)",
               "border-radius": "16px",
-              "box-shadow": "0 24px 64px rgba(0,0,0,0.25)",
+              "box-shadow": "var(--shadow-xl)",
               display: "flex",
               "flex-direction": "column",
               overflow: "hidden",
-              border: "1px solid rgba(0,0,0,0.08)",
+              border: "1px solid var(--color-border)",
             }}
           >
             <div
@@ -396,7 +396,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                   flex: "1",
                   "overflow-y": "auto",
                   padding: "0.75rem 1rem",
-                  background: "#f9fafb",
+                  background: "var(--color-bg-subtle)",
                   display: "flex",
                   "flex-direction": "column",
                   gap: "0.5rem",
@@ -407,8 +407,8 @@ export function SupportBot(): ReturnType<typeof Show> {
                     <div
                       style={{
                         "align-self": msg.role === "user" ? "flex-end" : "flex-start",
-                        background: msg.role === "user" ? "#6366f1" : "white",
-                        color: msg.role === "user" ? "white" : "#111",
+                        background: msg.role === "user" ? "var(--color-primary)" : "var(--color-bg-elevated)",
+                        color: msg.role === "user" ? "#fff" : "var(--color-text)",
                         padding: "0.5rem 0.75rem",
                         "border-radius": "12px",
                         "max-width": "85%",
@@ -423,14 +423,14 @@ export function SupportBot(): ReturnType<typeof Show> {
                   )}
                 </For>
                 <Show when={thinking()}>
-                  <div style={{ "font-size": "12px", color: "#6b7280" }}>Thinking…</div>
+                  <div style={{ "font-size": "12px", color: "var(--color-text-muted)" }}>Thinking…</div>
                 </Show>
               </div>
               <div
                 style={{
                   padding: "0.5rem 1rem",
-                  "border-top": "1px solid #e5e7eb",
-                  background: "white",
+                  "border-top": "1px solid var(--color-border)",
+                  background: "var(--color-bg-elevated)",
                 }}
               >
                 <div
@@ -450,9 +450,9 @@ export function SupportBot(): ReturnType<typeof Show> {
                           "font-size": "12px",
                           padding: "0.25rem 0.5rem",
                           "border-radius": "9999px",
-                          border: "1px solid #e5e7eb",
-                          background: "#f3f4f6",
-                          color: "#374151",
+                          border: "1px solid var(--color-border)",
+                          background: "var(--color-bg-muted)",
+                          color: "var(--color-text-secondary)",
                           cursor: "pointer",
                         }}
                       >
@@ -479,8 +479,8 @@ export function SupportBot(): ReturnType<typeof Show> {
                           padding: "0.25rem 0.5rem",
                           "border-radius": "6px",
                           border: "none",
-                          background: "#eef2ff",
-                          color: "#4338ca",
+                          background: "var(--color-primary-light)",
+                          color: "var(--color-primary-text)",
                           cursor: "pointer",
                           "font-weight": "500",
                         }}
@@ -506,7 +506,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                       flex: "1",
                       padding: "0.5rem 0.75rem",
                       "border-radius": "8px",
-                      border: "1px solid #e5e7eb",
+                      border: "1px solid var(--color-border)",
                       "font-size": "14px",
                       outline: "none",
                     }}
@@ -518,7 +518,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                       padding: "0.5rem 0.875rem",
                       "border-radius": "8px",
                       border: "none",
-                      background: "#6366f1",
+                      background: "var(--color-primary)",
                       color: "white",
                       cursor: "pointer",
                       "font-weight": "500",
@@ -537,7 +537,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                     "font-size": "11px",
                     background: "transparent",
                     border: "none",
-                    color: "#9ca3af",
+                    color: "var(--color-text-faint)",
                     cursor: "pointer",
                   }}
                 >

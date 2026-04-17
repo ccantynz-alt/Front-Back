@@ -132,16 +132,6 @@ export const QUICK_ACTIONS: QuickAction[] = [
     },
   },
   {
-    id: "open-ai-playground",
-    name: "Open AI Playground",
-    description: "Experiment with the AI assistants and prompts.",
-    icon: "flask",
-    category: "ai",
-    execute: async () => {
-      navigate("/ai-playground");
-    },
-  },
-  {
     id: "open-chat",
     name: "Open Claude Chat",
     description: "Chat with Claude via Anthropic API.",

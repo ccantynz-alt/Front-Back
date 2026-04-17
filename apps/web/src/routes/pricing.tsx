@@ -40,7 +40,7 @@ const PLANS: PlanTier[] = [
     ],
     highlighted: false,
     ctaLabel: "Join waitlist",
-    accentColor: "#6b7280",
+    accentColor: "var(--color-text-muted)",
   },
   {
     id: "pro",
@@ -86,7 +86,7 @@ const PLANS: PlanTier[] = [
     ],
     highlighted: false,
     ctaLabel: "Talk to the team",
-    accentColor: "#a78bfa",
+    accentColor: "var(--color-primary-light)",
   },
 ];
 

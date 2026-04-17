@@ -319,12 +319,10 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
 
   const quickActions: QuickActionProps[] = [
     { title: "Component Composer", description: "Generate validated SolidJS component trees from a prompt. Three-tier routing, zero boilerplate.", href: "/builder", label: "Open Composer", badge: "Popular", icon: "\u{1F680}" },
-    { title: "Real-Time Collaboration", description: "Start a session. Invite your team. Let AI agents co-author alongside them.", href: "/collab", label: "Start session", icon: "\u{1F91D}" },
-    { title: "AI Playground", description: "Test prompts, swap models, tune agents. Ship from notebook to production in one click.", href: "/ai-playground", label: "Open playground", icon: "\u{1F9EA}" },
     { title: "Claude Chat", description: "Direct Anthropic API access. No subscriptions. Your key, your data, your control.", href: "/chat", label: "Open chat", icon: "\u{26A1}" },
     { title: "Repositories", description: "Your repos, PRs, branches, issues, and CI status. All in one command center.", href: "/repos", label: "View repos", icon: "\u{1F4BB}" },
     { title: "Templates", description: "Start from a battle-tested blueprint. Clone, customize, deploy in under five minutes.", href: "/templates", label: "Browse templates", icon: "\u{1F4CB}" },
-    { title: "Docs & Guides", description: "Architecture deep-dives, recipes, and API reference.", href: "/docs", label: "Read docs", icon: "\u{1F4D6}" },
+    { title: "Ops Theatre", description: "Live build runs, CI status, and deployment logs. Full observability.", href: "/ops", label: "Open ops", icon: "\u{25B6}" },
   ];
 
   return (

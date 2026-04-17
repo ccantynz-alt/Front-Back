@@ -182,7 +182,7 @@ export default function OpsPage(): JSX.Element {
   }
 
   return (
-    <div style={{ "min-height": "100vh", background: "#0a0a0b", color: "#e4e4e7" }}>
+    <div style={{ "min-height": "100vh", background: "var(--color-bg)", color: "var(--color-text)" }}>
       <SEOHead
         title="Operations Theatre"
         description="Live view of every build, deploy, ingest, voice, and agent operation in motion on Crontech."
@@ -193,7 +193,7 @@ export default function OpsPage(): JSX.Element {
         <h1 style={{ "font-size": "2rem", "font-weight": "700", margin: "0 0 0.25rem" }}>
           Operations Theatre
         </h1>
-        <p style={{ color: "#71717a", margin: "0 0 2rem", "font-size": "0.9rem" }}>
+        <p style={{ color: "var(--color-text-muted)", margin: "0 0 2rem", "font-size": "0.9rem" }}>
           Live visibility into every long-running operation on the platform.
           Deploys, ingests, voice dispatches, migrations, agent runs — all in one pane of glass.
         </p>
@@ -202,8 +202,8 @@ export default function OpsPage(): JSX.Element {
           {/* Left column: run list */}
           <div
             style={{
-              background: "#0f0f11",
-              border: "1px solid #27272a",
+              background: "var(--color-bg-subtle)",
+              border: "1px solid var(--color-border)",
               "border-radius": "8px",
               overflow: "hidden",
             }}
@@ -211,11 +211,11 @@ export default function OpsPage(): JSX.Element {
             <div
               style={{
                 padding: "0.75rem 1rem",
-                "border-bottom": "1px solid #27272a",
+                "border-bottom": "1px solid var(--color-border)",
                 "font-size": "0.75rem",
                 "text-transform": "uppercase",
                 "letter-spacing": "0.08em",
-                color: "#a1a1aa",
+                color: "var(--color-text-secondary)",
               }}
             >
               Recent runs
@@ -223,7 +223,7 @@ export default function OpsPage(): JSX.Element {
             <Show
               when={(runs()?.length ?? 0) > 0}
               fallback={
-                <div style={{ padding: "2rem 1rem", color: "#71717a", "font-size": "0.9rem" }}>
+                <div style={{ padding: "2rem 1rem", color: "var(--color-text-muted)", "font-size": "0.9rem" }}>
                   No runs yet. Operations will appear here as they start.
                 </div>
               }
@@ -238,15 +238,15 @@ export default function OpsPage(): JSX.Element {
                       width: "100%",
                       "text-align": "left",
                       padding: "0.75rem 1rem",
-                      background: selectedRunId() === run.id ? "#18181b" : "transparent",
+                      background: selectedRunId() === run.id ? "var(--color-bg-muted)" : "transparent",
                       border: "none",
-                      "border-bottom": "1px solid #27272a",
-                      color: "#e4e4e7",
+                      "border-bottom": "1px solid var(--color-border)",
+                      color: "var(--color-text)",
                       cursor: "pointer",
                     }}
                   >
                     <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center" }}>
-                      <span style={{ "font-size": "0.72rem", color: "#71717a", "text-transform": "uppercase" }}>
+                      <span style={{ "font-size": "0.72rem", color: "var(--color-text-muted)", "text-transform": "uppercase" }}>
                         {run.kind}
                       </span>
                       <span style={{ "font-size": "0.72rem", color: statusColor(run.status) }}>
@@ -256,7 +256,7 @@ export default function OpsPage(): JSX.Element {
                     <div style={{ "font-size": "0.9rem", "font-weight": "500", margin: "0.25rem 0" }}>
                       {run.title}
                     </div>
-                    <div style={{ "font-size": "0.72rem", color: "#71717a" }}>
+                    <div style={{ "font-size": "0.72rem", color: "var(--color-text-muted)" }}>
                       {run.gitBranch ?? "—"} · {formatDuration(run.startedAt, run.endedAt)}
                     </div>
                   </button>
@@ -268,8 +268,8 @@ export default function OpsPage(): JSX.Element {
           {/* Right column: selected run detail */}
           <div
             style={{
-              background: "#0f0f11",
-              border: "1px solid #27272a",
+              background: "var(--color-bg-subtle)",
+              border: "1px solid var(--color-border)",
               "border-radius": "8px",
               "min-height": "500px",
             }}
@@ -277,7 +277,7 @@ export default function OpsPage(): JSX.Element {
             <Show
               when={selectedRunId()}
               fallback={
-                <div style={{ padding: "4rem 2rem", color: "#71717a", "text-align": "center" }}>
+                <div style={{ padding: "4rem 2rem", color: "var(--color-text-muted)", "text-align": "center" }}>
                   Select a run on the left to see its live logs.
                 </div>
               }
@@ -285,14 +285,14 @@ export default function OpsPage(): JSX.Element {
               <div
                 style={{
                   padding: "1rem",
-                  "border-bottom": "1px solid #27272a",
+                  "border-bottom": "1px solid var(--color-border)",
                   display: "flex",
                   "justify-content": "space-between",
                   "align-items": "center",
                 }}
               >
                 <div>
-                  <div style={{ "font-size": "0.72rem", color: "#71717a" }}>
+                  <div style={{ "font-size": "0.72rem", color: "var(--color-text-muted)" }}>
                     stream: {streamStatus()}
                   </div>
                   <div style={{ "font-size": "0.9rem", "font-weight": "500" }}>
@@ -307,8 +307,8 @@ export default function OpsPage(): JSX.Element {
                     style={{
                       padding: "0.4rem 0.8rem",
                       background: "transparent",
-                      border: "1px solid #991b1b",
-                      color: "#f87171",
+                      border: "1px solid var(--color-danger)",
+                      color: "var(--color-danger)",
                       "border-radius": "6px",
                       "font-size": "0.8rem",
                       cursor: cancelling() ? "not-allowed" : "pointer",
@@ -320,12 +320,12 @@ export default function OpsPage(): JSX.Element {
               </div>
 
               <Show when={steps().length > 0}>
-                <div style={{ padding: "0.5rem 1rem", "border-bottom": "1px solid #27272a" }}>
+                <div style={{ padding: "0.5rem 1rem", "border-bottom": "1px solid var(--color-border)" }}>
                   <For each={steps()}>
                     {(s) => (
                       <div style={{ display: "flex", "justify-content": "space-between", padding: "0.2rem 0", "font-size": "0.85rem" }}>
                         <span>
-                          <span style={{ color: "#71717a", "margin-right": "0.5rem" }}>{s.seq}.</span>
+                          <span style={{ color: "var(--color-text-muted)", "margin-right": "0.5rem" }}>{s.seq}.</span>
                           {s.name}
                         </span>
                         <span style={{ color: statusColor(s.status) }}>{statusLabel(s.status)}</span>
@@ -343,21 +343,21 @@ export default function OpsPage(): JSX.Element {
                   "line-height": "1.5",
                   "max-height": "600px",
                   "overflow-y": "auto",
-                  color: "#d4d4d8",
+                  color: "var(--color-text)",
                 }}
               >
                 <Show
                   when={logs().length > 0}
                   fallback={
-                    <div style={{ color: "#71717a" }}>
+                    <div style={{ color: "var(--color-text-muted)" }}>
                       {streamStatus() === "connecting" ? "Connecting to log stream…" : "No log lines yet."}
                     </div>
                   }
                 >
                   <For each={logs()}>
                     {(log) => (
-                      <div style={{ color: log.stream === "stderr" ? "#f87171" : "#d4d4d8" }}>
-                        <span style={{ color: "#52525b", "margin-right": "0.75rem" }}>
+                      <div style={{ color: log.stream === "stderr" ? "var(--color-danger)" : "var(--color-text)" }}>
+                        <span style={{ color: "var(--color-text-faint)", "margin-right": "0.75rem" }}>
                           {new Date(log.timestamp).toISOString().slice(11, 19)}
                         </span>
                         {log.line}

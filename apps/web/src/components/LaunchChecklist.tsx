@@ -444,7 +444,7 @@ export function LaunchChecklist(): JSX.Element {
           "max-width": "min(24rem, calc(100vw - 2rem))",
           "font-family":
             "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          color: "#e4e4e7",
+          color: "var(--color-text)",
         }}
       >
         <Show
@@ -463,13 +463,13 @@ export function LaunchChecklist(): JSX.Element {
                 background: isLive()
                   ? "rgba(16,185,129,0.18)"
                   : "rgba(15,15,17,0.95)",
-                border: `1px solid ${isLive() ? "#10b981" : "#27272a"}`,
+                border: `1px solid ${isLive() ? "var(--color-success)" : "var(--color-border)"}`,
                 "box-shadow": isLive()
                   ? "0 0 20px rgba(16,185,129,0.45)"
                   : "0 8px 24px rgba(0,0,0,0.4)",
                 cursor: "pointer",
                 "font-size": "0.8rem",
-                color: "#e4e4e7",
+                color: "var(--color-text)",
               }}
             >
               <span
@@ -478,8 +478,8 @@ export function LaunchChecklist(): JSX.Element {
                   width: "8px",
                   height: "8px",
                   "border-radius": "50%",
-                  background: isLive() ? "#10b981" : "#f59e0b",
-                  "box-shadow": `0 0 6px ${isLive() ? "#10b981" : "#f59e0b"}`,
+                  background: isLive() ? "var(--color-success)" : "var(--color-warning)",
+                  "box-shadow": `0 0 6px ${isLive() ? "var(--color-success)" : "var(--color-warning)"}`,
                 }}
               />
               <span style={{ "font-weight": 700 }}>
@@ -495,7 +495,7 @@ export function LaunchChecklist(): JSX.Element {
           <div
             style={{
               background: "rgba(15,15,17,0.96)",
-              border: `1px solid ${isLive() ? "#10b981" : "#27272a"}`,
+              border: `1px solid ${isLive() ? "var(--color-success)" : "var(--color-border)"}`,
               "border-radius": "14px",
               "box-shadow": isLive()
                 ? "0 16px 48px rgba(16,185,129,0.4)"
@@ -512,7 +512,7 @@ export function LaunchChecklist(): JSX.Element {
                 "justify-content": "space-between",
                 gap: "0.75rem",
                 padding: "0.75rem 0.95rem",
-                "border-bottom": "1px solid #27272a",
+                "border-bottom": "1px solid var(--color-border)",
                 background: isLive()
                   ? "rgba(16,185,129,0.08)"
                   : "rgba(255,255,255,0.02)",
@@ -524,7 +524,7 @@ export function LaunchChecklist(): JSX.Element {
                     "font-size": "0.7rem",
                     "letter-spacing": "0.14em",
                     "text-transform": "uppercase",
-                    color: "#71717a",
+                    color: "var(--color-text-muted)",
                     "font-weight": 600,
                   }}
                 >
@@ -542,7 +542,7 @@ export function LaunchChecklist(): JSX.Element {
                     style={{
                       "font-size": "1.6rem",
                       "font-weight": 800,
-                      color: isLive() ? "#10b981" : "#e4e4e7",
+                      color: isLive() ? "var(--color-success)" : "var(--color-text)",
                       "text-shadow": isLive()
                         ? "0 0 16px rgba(16,185,129,0.6)"
                         : "none",
@@ -552,7 +552,7 @@ export function LaunchChecklist(): JSX.Element {
                   >
                     {isLive() ? "LIVE" : `${counts().pct}%`}
                   </span>
-                  <span style={{ color: "#a1a1aa", "font-size": "0.78rem" }}>
+                  <span style={{ color: "var(--color-text-secondary)", "font-size": "0.78rem" }}>
                     {counts().doneCount} / {counts().total} done
                   </span>
                 </div>
@@ -563,8 +563,8 @@ export function LaunchChecklist(): JSX.Element {
                 aria-label="Collapse launch checklist"
                 style={{
                   background: "transparent",
-                  border: "1px solid #27272a",
-                  color: "#a1a1aa",
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-text-secondary)",
                   "border-radius": "8px",
                   padding: "0.25rem 0.55rem",
                   "font-size": "0.8rem",
@@ -596,7 +596,7 @@ export function LaunchChecklist(): JSX.Element {
                   return (
                     <div
                       style={{
-                        "border-bottom": "1px solid #1f1f23",
+                        "border-bottom": "1px solid var(--color-border)",
                         padding: "0.55rem 0.95rem 0.75rem",
                       }}
                     >
@@ -613,7 +613,7 @@ export function LaunchChecklist(): JSX.Element {
                             "font-size": "0.7rem",
                             "letter-spacing": "0.1em",
                             "text-transform": "uppercase",
-                            color: phaseComplete() ? "#10b981" : "#a1a1aa",
+                            color: phaseComplete() ? "var(--color-success)" : "var(--color-text-secondary)",
                             "font-weight": 700,
                           }}
                         >
@@ -622,7 +622,7 @@ export function LaunchChecklist(): JSX.Element {
                         <span
                           style={{
                             "font-size": "0.78rem",
-                            color: "#d4d4d8",
+                            color: "var(--color-text)",
                             flex: 1,
                           }}
                         >
@@ -631,7 +631,7 @@ export function LaunchChecklist(): JSX.Element {
                         <span
                           style={{
                             "font-size": "0.68rem",
-                            color: phaseComplete() ? "#10b981" : "#71717a",
+                            color: phaseComplete() ? "var(--color-success)" : "var(--color-text-muted)",
                             "font-variant-numeric": "tabular-nums",
                             "font-weight": 600,
                           }}
@@ -682,9 +682,9 @@ export function LaunchChecklist(): JSX.Element {
                                     ? "rgba(16,185,129,0.25)"
                                     : "rgba(255,255,255,0.04)",
                                   border: `1px solid ${
-                                    isDone() ? "#10b981" : "#3f3f46"
+                                    isDone() ? "var(--color-success)" : "var(--color-border-strong)"
                                   }`,
-                                  color: isDone() ? "#10b981" : "#71717a",
+                                  color: isDone() ? "var(--color-success)" : "var(--color-text-muted)",
                                   "font-weight": 800,
                                   "font-size": "0.85rem",
                                   "box-shadow": isDone()
@@ -701,7 +701,7 @@ export function LaunchChecklist(): JSX.Element {
                                   "min-width": 0,
                                   "font-size": isDone() ? "0.92rem" : "0.82rem",
                                   "font-weight": isDone() ? 700 : 500,
-                                  color: isDone() ? "#10b981" : "#d4d4d8",
+                                  color: isDone() ? "var(--color-success)" : "var(--color-text)",
                                   "text-shadow": isDone()
                                     ? "0 0 8px rgba(16,185,129,0.35)"
                                     : "none",
@@ -713,7 +713,7 @@ export function LaunchChecklist(): JSX.Element {
                                   <span
                                     style={{
                                       display: "block",
-                                      color: "#71717a",
+                                      color: "var(--color-text-muted)",
                                       "font-size": "0.7rem",
                                       "font-weight": 400,
                                       "text-shadow": "none",
@@ -739,7 +739,7 @@ export function LaunchChecklist(): JSX.Element {
               style={{
                 padding: "0.5rem 0.95rem",
                 "font-size": "0.7rem",
-                color: "#71717a",
+                color: "var(--color-text-muted)",
                 "text-align": "center",
                 background: "rgba(255,255,255,0.01)",
               }}

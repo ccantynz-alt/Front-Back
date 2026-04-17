@@ -43,10 +43,10 @@ export function CookieConsent(): JSX.Element {
       >
         <div class="mx-auto max-w-4xl p-4">
           <div
-            class="flex flex-col gap-4 rounded-xl border border-[var(--border-color,#e5e7eb)] bg-[var(--card-bg,#ffffff)] p-5 shadow-lg sm:flex-row sm:items-center sm:justify-between"
+            class="flex flex-col gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5 shadow-lg sm:flex-row sm:items-center sm:justify-between"
             style={{
-              "background-color": "var(--card-bg, #ffffff)",
-              "border-color": "var(--border-color, #e5e7eb)",
+              "background-color": "var(--color-bg-elevated)",
+              "border-color": "var(--color-border)",
             }}
           >
             <div class="flex-1">

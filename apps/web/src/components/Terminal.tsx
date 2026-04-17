@@ -291,7 +291,7 @@ export function Terminal(props: TerminalProps): JSX.Element {
 
       {/* Error banner */}
       <Show when={errorMessage()}>
-        <div class="px-4 py-2 text-xs font-medium text-red-300 border-b border-red-500/20" style={{ background: "rgba(220,38,38,0.1)" }}>
+        <div class="px-4 py-2 text-xs font-medium text-red-300 border-b border-red-500/20" style={{ background: "color-mix(in oklab, var(--color-danger) 10%, transparent)" }}>
           {errorMessage()}
         </div>
       </Show>
@@ -301,7 +301,7 @@ export function Terminal(props: TerminalProps): JSX.Element {
         ref={containerRef}
         class="terminal-container flex-1 min-h-0"
         style={{
-          background: "#0a0a0a",
+          background: "var(--color-bg)",
           padding: "8px",
         }}
       />

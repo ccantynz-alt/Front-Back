@@ -255,9 +255,9 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
               style={{
                 width: "100%",
                 "border-radius": "12px",
-                border: "1px solid rgba(59, 130, 246, 0.25)",
+                border: "1px solid color-mix(in oklab, var(--color-primary) 25%, transparent)",
                 background:
-                  "linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.08))",
+                  "linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 8%, transparent), color-mix(in oklab, var(--color-primary-light) 8%, transparent))",
                 padding: "14px 16px",
               }}
             >
@@ -276,9 +276,9 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
               style={{
                 width: "100%",
                 "border-radius": "12px",
-                border: "1px solid rgba(167, 139, 250, 0.25)",
+                border: "1px solid color-mix(in oklab, var(--color-primary-light) 25%, transparent)",
                 background:
-                  "linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.05))",
+                  "linear-gradient(135deg, color-mix(in oklab, var(--color-primary-light) 8%, transparent), color-mix(in oklab, var(--color-primary) 5%, transparent))",
                 padding: "14px 16px",
               }}
             >

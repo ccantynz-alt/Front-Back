@@ -40,11 +40,11 @@ function getInitials(name: string): string {
 function getStatusColor(status: string): string {
   switch (status) {
     case "typing":
-      return "#22c55e";
+      return "var(--color-success)";
     case "idle":
-      return "#eab308";
+      return "var(--color-warning)";
     default:
-      return "#22c55e";
+      return "var(--color-success)";
   }
 }
 
@@ -81,9 +81,9 @@ export function PresenceBar(props: PresenceBarProps): JSX.Element {
         "align-items": "center",
         gap: "8px",
         padding: "6px 12px",
-        background: "var(--color-surface, #1a1a2e)",
+        background: "var(--color-bg-elevated)",
         "border-radius": "8px",
-        "border": "1px solid var(--color-border, #333)",
+        "border": "1px solid var(--color-border)",
       }}
     >
       {/* Current user */}
@@ -114,8 +114,8 @@ export function PresenceBar(props: PresenceBarProps): JSX.Element {
               width: "10px",
               height: "10px",
               "border-radius": "50%",
-              background: "#22c55e",
-              border: "2px solid var(--color-surface, #1a1a2e)",
+              background: "var(--color-success)",
+              border: "2px solid var(--color-bg-elevated)",
             }}
           />
         </div>
@@ -153,7 +153,7 @@ export function PresenceBar(props: PresenceBarProps): JSX.Element {
                   height: "10px",
                   "border-radius": "50%",
                   background: getStatusColor(user.status),
-                  border: "2px solid var(--color-surface, #1a1a2e)",
+                  border: "2px solid var(--color-bg-elevated)",
                 }}
               />
             </div>
@@ -166,7 +166,7 @@ export function PresenceBar(props: PresenceBarProps): JSX.Element {
         style={{
           width: "1px",
           height: "20px",
-          background: "var(--color-border, #333)",
+          background: "var(--color-border)",
           margin: "0 4px",
         }}
       />

@@ -115,7 +115,7 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
               >
                 {props.icon ?? "\u{1F4CA}"}
               </span>
-              <span class="text-xs font-medium uppercase tracking-widest text-gray-500">
+              <span class="text-xs font-medium uppercase tracking-widest text-[var(--color-text-muted)]">
                 {props.name}
               </span>
             </div>
@@ -125,7 +125,7 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
               <span class="text-3xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
                 {props.value}
               </span>
-              <span class="text-sm text-gray-500">{props.unit ?? ""}</span>
+              <span class="text-sm text-[var(--color-text-muted)]">{props.unit ?? ""}</span>
             </div>
 
             {/* Trend row */}
@@ -137,7 +137,7 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
               >
                 {trendUp() ? "\u2191" : "\u2193"} {changeText()}
               </span>
-              <span class="text-[10px] text-gray-600">vs prev period</span>
+              <span class="text-[10px] text-[var(--color-text-faint)]">vs prev period</span>
             </div>
           </div>
 
@@ -178,7 +178,7 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
             class="h-1.5 w-1.5 rounded-full"
             style={{ background: accentColor() }}
           />
-          <span class="text-[10px] font-medium uppercase tracking-wider text-gray-600">
+          <span class="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-faint)]">
             {props.status}
           </span>
         </div>

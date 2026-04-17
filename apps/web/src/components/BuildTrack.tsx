@@ -115,17 +115,17 @@ interface StatusStyle {
 function statusStyle(status: BlockStatus): StatusStyle {
   switch (status) {
     case "shipped":
-      return { label: "SHIPPED", color: "#10b981", bg: "rgba(16,185,129,0.15)", icon: "✓" };
+      return { label: "SHIPPED", color: "var(--color-success)", bg: "rgba(16,185,129,0.15)", icon: "✓" };
     case "set":
       return { label: "SET", color: "#06b6d4", bg: "rgba(6,182,212,0.15)", icon: "●" };
     case "building":
-      return { label: "BUILDING", color: "#f59e0b", bg: "rgba(245,158,11,0.15)", icon: "◐" };
+      return { label: "BUILDING", color: "var(--color-warning)", bg: "rgba(245,158,11,0.15)", icon: "◐" };
     case "planned":
-      return { label: "PLANNED", color: "#6366f1", bg: "rgba(99,102,241,0.15)", icon: "○" };
+      return { label: "PLANNED", color: "var(--color-primary)", bg: "rgba(99,102,241,0.15)", icon: "○" };
     case "paused":
       return { label: "PAUSED", color: "#94a3b8", bg: "rgba(148,163,184,0.15)", icon: "⏸" };
     case "undocumented":
-      return { label: "NEEDS DOC", color: "#eab308", bg: "rgba(234,179,8,0.15)", icon: "⚠" };
+      return { label: "NEEDS DOC", color: "var(--color-warning)", bg: "rgba(234,179,8,0.15)", icon: "⚠" };
     case "proposed":
       return { label: "PROPOSED", color: "#a78bfa", bg: "rgba(167,139,250,0.15)", icon: "?" };
   }
@@ -256,9 +256,9 @@ export function BuildTrack(): JSX.Element {
   const driftColor = createMemo<string>(() => {
     switch (deployDrift()) {
       case "ok":
-        return "#10b981";
+        return "var(--color-success)";
       case "drift":
-        return "#ef4444";
+        return "var(--color-danger)";
       default:
         return "#94a3b8";
     }
@@ -294,7 +294,7 @@ export function BuildTrack(): JSX.Element {
           "max-width": "min(28rem, calc(100vw - 2rem))",
           "font-family":
             "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          color: "#e4e4e7",
+          color: "var(--color-text)",
         }}
       >
         <Show
@@ -311,11 +311,11 @@ export function BuildTrack(): JSX.Element {
                 padding: "0.5rem 0.85rem",
                 "border-radius": "999px",
                 background: "rgba(15,15,17,0.95)",
-                border: "1px solid #27272a",
+                border: "1px solid var(--color-border)",
                 "box-shadow": "0 8px 24px rgba(0,0,0,0.4)",
                 cursor: "pointer",
                 "font-size": "0.8rem",
-                color: "#e4e4e7",
+                color: "var(--color-text)",
               }}
             >
               <span
@@ -341,7 +341,7 @@ export function BuildTrack(): JSX.Element {
           <div
             style={{
               background: "rgba(15,15,17,0.96)",
-              border: "1px solid #27272a",
+              border: "1px solid var(--color-border)",
               "border-radius": "14px",
               "box-shadow": "0 16px 48px rgba(0,0,0,0.55)",
               overflow: "hidden",
@@ -356,7 +356,7 @@ export function BuildTrack(): JSX.Element {
                 "justify-content": "space-between",
                 gap: "0.75rem",
                 padding: "0.65rem 0.85rem",
-                "border-bottom": "1px solid #27272a",
+                "border-bottom": "1px solid var(--color-border)",
                 background: "rgba(255,255,255,0.02)",
               }}
             >
@@ -384,8 +384,8 @@ export function BuildTrack(): JSX.Element {
                 aria-label="Collapse build tracker"
                 style={{
                   background: "transparent",
-                  border: "1px solid #27272a",
-                  color: "#a1a1aa",
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-text-secondary)",
                   "border-radius": "8px",
                   padding: "0.2rem 0.5rem",
                   "font-size": "0.75rem",
@@ -400,9 +400,9 @@ export function BuildTrack(): JSX.Element {
             <div
               style={{
                 padding: "0.55rem 0.85rem",
-                "border-bottom": "1px solid #27272a",
+                "border-bottom": "1px solid var(--color-border)",
                 "font-size": "0.75rem",
-                color: "#a1a1aa",
+                color: "var(--color-text-secondary)",
                 display: "flex",
                 "flex-direction": "column",
                 gap: "0.2rem",
@@ -411,7 +411,7 @@ export function BuildTrack(): JSX.Element {
             >
               <div>
                 Bundle:{" "}
-                <span style={{ color: "#e4e4e7", "font-variant-numeric": "tabular-nums" }}>
+                <span style={{ color: "var(--color-text)", "font-variant-numeric": "tabular-nums" }}>
                   {shortSha(BUILD_SHA)}
                 </span>
                 {"  "}·  Live:{" "}
@@ -420,7 +420,7 @@ export function BuildTrack(): JSX.Element {
                 </span>
               </div>
               <Show when={deployDrift() === "drift"}>
-                <div style={{ color: "#f87171" }}>
+                <div style={{ color: "var(--color-danger)" }}>
                   Deploy drift — commits are not reaching production.
                 </div>
               </Show>
@@ -438,15 +438,15 @@ export function BuildTrack(): JSX.Element {
                 "flex-wrap": "wrap",
                 gap: "0.35rem",
                 padding: "0.55rem 0.85rem",
-                "border-bottom": "1px solid #27272a",
+                "border-bottom": "1px solid var(--color-border)",
               }}
             >
-              <SummaryChip color="#10b981" label={`${counts().shipped} shipped`} />
-              <SummaryChip color="#f59e0b" label={`${counts().building} building`} />
+              <SummaryChip color="var(--color-success)" label={`${counts().shipped} shipped`} />
+              <SummaryChip color="var(--color-warning)" label={`${counts().building} building`} />
               <SummaryChip color="#a78bfa" label={`${counts().proposed} proposed`} />
               <Show when={counts().undocumented > 0}>
                 <SummaryChip
-                  color="#eab308"
+                  color="var(--color-warning)"
                   label={`${counts().undocumented} need Bible entry`}
                 />
               </Show>
@@ -497,15 +497,15 @@ export function BuildTrack(): JSX.Element {
                             style={{
                               "font-variant-numeric": "tabular-nums",
                               "font-weight": 600,
-                              color: "#e4e4e7",
+                              color: "var(--color-text)",
                             }}
                           >
                             {b.id}
                           </span>
-                          <span style={{ color: "#d4d4d8", flex: 1 }}>{b.title}</span>
+                          <span style={{ color: "var(--color-text)", flex: 1 }}>{b.title}</span>
                         </div>
                         <Show when={b.note}>
-                          <div style={{ color: "#71717a", "font-size": "0.72rem", "margin-top": "0.1rem" }}>
+                          <div style={{ color: "var(--color-text-muted)", "font-size": "0.72rem", "margin-top": "0.1rem" }}>
                             {b.note}
                           </div>
                         </Show>
@@ -543,9 +543,9 @@ function SummaryChip(props: { color: string; label: string }): JSX.Element {
         padding: "0.15rem 0.5rem",
         "border-radius": "999px",
         background: "rgba(255,255,255,0.04)",
-        border: "1px solid #27272a",
+        border: "1px solid var(--color-border)",
         "font-size": "0.7rem",
-        color: "#d4d4d8",
+        color: "var(--color-text)",
       }}
     >
       <span
