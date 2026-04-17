@@ -208,7 +208,7 @@ export function GuidedTour(props: GuidedTourProps): ReturnType<typeof Show> {
                   "border-radius": "6px",
                   border: "none",
                   background: "var(--color-primary)",
-                  color: "white",
+                  color: "var(--color-text)",
                   cursor: "pointer",
                   "font-size": "13px",
                   "font-weight": "600",

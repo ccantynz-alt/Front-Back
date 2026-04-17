@@ -152,7 +152,7 @@ function ProfileTab(): JSX.Element {
           <div class="flex items-center gap-5">
             <div
               class="flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-bold"
-              style={{ background: "var(--color-primary)", color: "white" }}
+              style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
             >
               {initials()}
             </div>
@@ -187,7 +187,7 @@ function ProfileTab(): JSX.Element {
               disabled={save.loading() || !name().trim() || name().trim() === initialName}
               onClick={() => void handleSave()}
               class="rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 hover:brightness-110 disabled:opacity-40"
-              style={{ background: "var(--color-primary)", color: "white" }}
+              style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
             >
               {save.loading() ? "Saving…" : "Save Changes"}
             </button>
@@ -416,13 +416,18 @@ function ApiKeysTab(): JSX.Element {
                   </button>
                 </div>
                 <div class="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2.5" style={{ background: "var(--color-bg-muted)" }}>
-                  <code class="flex-1 break-all font-mono text-xs text-amber-200">
+                  <code class="flex-1 break-all font-mono text-xs" style={{ color: "var(--color-warning)" }}>
                     {reveal().rawKey}
                   </code>
                   <button
                     type="button"
                     onClick={() => handleCopy(reveal().id, reveal().rawKey)}
-                    class="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold text-amber-200 transition-all hover:bg-amber-500/20"
+                    class="shrink-0 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all hover:brightness-110"
+                    style={{
+                      border: "1px solid color-mix(in oklab, var(--color-warning) 30%, transparent)",
+                      background: "color-mix(in oklab, var(--color-warning) 10%, transparent)",
+                      color: "var(--color-warning)",
+                    }}
                   >
                     {copiedId() === reveal().id ? "Copied!" : "Copy"}
                   </button>
@@ -466,7 +471,13 @@ function ApiKeysTab(): JSX.Element {
                       <div class="flex items-center gap-2">
                         <span class="text-sm font-medium text-[var(--color-text)]">{key.name}</span>
                         <Show when={expired()}>
-                          <span class="rounded-full bg-red-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-[var(--color-danger)]">
+                          <span
+                            class="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase"
+                            style={{
+                              background: "color-mix(in oklab, var(--color-danger) 15%, transparent)",
+                              color: "var(--color-danger)",
+                            }}
+                          >
                             Expired
                           </span>
                         </Show>
@@ -493,7 +504,7 @@ function ApiKeysTab(): JSX.Element {
                             disabled={revokeKey.loading()}
                             onClick={() => void handleRevoke(key.id)}
                             class="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all hover:brightness-110 disabled:opacity-50"
-                            style={{ background: "var(--color-danger)", color: "white" }}
+                            style={{ background: "var(--color-danger)", color: "var(--color-text)" }}
                           >
                             {revokeKey.loading() ? "Revoking…" : "Confirm revoke"}
                           </button>
@@ -503,7 +514,7 @@ function ApiKeysTab(): JSX.Element {
                       <button
                         type="button"
                         onClick={() => setConfirmRevoke(key.id)}
-                        class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] transition-all hover:border-red-500/20 hover:bg-red-500/10 hover:text-[var(--color-danger)]"
+                        class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] transition-all hover:border-[color-mix(in_oklab,var(--color-danger)_20%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-danger)_10%,transparent)] hover:text-[var(--color-danger)]"
                       >
                         Revoke
                       </button>
@@ -531,7 +542,7 @@ function ApiKeysTab(): JSX.Element {
                 disabled={!newKeyName().trim() || createKey.loading()}
                 onClick={() => void handleGenerate()}
                 class="shrink-0 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 hover:brightness-110 disabled:opacity-40"
-                style={{ background: "var(--color-primary)", color: "white" }}
+                style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
               >
                 {createKey.loading() ? "Generating…" : "Generate Key"}
               </button>
@@ -733,10 +744,10 @@ function GitHubTokenSection(): JSX.Element {
               <Show when={!ghDeleteConfirm()} fallback={
                 <div class="flex items-center gap-1.5">
                   <button type="button" onClick={() => setGhDeleteConfirm(false)} class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]">Cancel</button>
-                  <button type="button" onClick={() => void handleGhDelete()} class="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all hover:brightness-110" style={{ background: "var(--color-danger)", color: "white" }}>Delete</button>
+                  <button type="button" onClick={() => void handleGhDelete()} class="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all hover:brightness-110" style={{ background: "var(--color-danger)", color: "var(--color-text)" }}>Delete</button>
                 </div>
               }>
-                <button type="button" onClick={() => setGhDeleteConfirm(true)} class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:border-red-500/20 hover:bg-red-500/10 hover:text-[var(--color-danger)]">Remove</button>
+                <button type="button" onClick={() => setGhDeleteConfirm(true)} class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] hover:border-[color-mix(in_oklab,var(--color-danger)_20%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-danger)_10%,transparent)] hover:text-[var(--color-danger)]">Remove</button>
               </Show>
             </div>
           )}
@@ -753,7 +764,7 @@ function GitHubTokenSection(): JSX.Element {
               disabled={!ghToken().trim() || ghSaving()}
               onClick={() => void handleGhSave()}
               class="shrink-0 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 hover:brightness-110 disabled:opacity-40"
-              style={{ background: "var(--color-primary)", color: "white" }}
+              style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
             >
               {ghSaving() ? "Saving..." : "Save Token"}
             </button>
@@ -865,10 +876,10 @@ function AIProvidersTab(): JSX.Element {
                 <Show when={!deleteConfirm()} fallback={
                   <div class="flex items-center gap-1.5">
                     <button type="button" onClick={() => setDeleteConfirm(false)} class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] transition-all hover:text-[var(--color-text)]">Cancel</button>
-                    <button type="button" onClick={() => void handleDelete()} class="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all hover:brightness-110" style={{ background: "var(--color-danger)", color: "white" }}>Delete</button>
+                    <button type="button" onClick={() => void handleDelete()} class="rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all hover:brightness-110" style={{ background: "var(--color-danger)", color: "var(--color-text)" }}>Delete</button>
                   </div>
                 }>
-                  <button type="button" onClick={() => setDeleteConfirm(true)} class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] transition-all hover:border-red-500/20 hover:bg-red-500/10 hover:text-[var(--color-danger)]">
+                  <button type="button" onClick={() => setDeleteConfirm(true)} class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-muted)] transition-all hover:border-[color-mix(in_oklab,var(--color-danger)_20%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-danger)_10%,transparent)] hover:text-[var(--color-danger)]">
                     Remove
                   </button>
                 </Show>
@@ -895,7 +906,7 @@ function AIProvidersTab(): JSX.Element {
                 disabled={!anthropicKey().trim() || saving()}
                 onClick={() => void handleSave()}
                 class="shrink-0 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 hover:brightness-110 disabled:opacity-40"
-                style={{ background: "var(--color-danger)", color: "white" }}
+                style={{ background: "var(--color-danger)", color: "var(--color-text)" }}
               >
                 {saving() ? "Saving..." : "Save Key"}
               </button>
@@ -912,12 +923,12 @@ function AIProvidersTab(): JSX.Element {
           <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-5">
             <h4 class="mb-3 text-sm font-semibold text-[var(--color-text-secondary)]">Cost Comparison</h4>
             <div class="grid grid-cols-2 gap-4">
-              <div class="rounded-lg border border-red-500/10 bg-red-500/5 p-4">
+              <div class="rounded-lg p-4" style={{ border: "1px solid color-mix(in oklab, var(--color-danger) 10%, transparent)", background: "color-mix(in oklab, var(--color-danger) 5%, transparent)" }}>
                 <span class="text-xs text-[var(--color-text-muted)]">Subscriptions</span>
                 <div class="mt-1 text-2xl font-bold text-[var(--color-danger)]">$1,800<span class="text-sm font-normal text-[var(--color-text-faint)]">/mo</span></div>
                 <span class="text-[10px] text-[var(--color-text-faint)]">Fixed cost, whether you use it or not</span>
               </div>
-              <div class="rounded-lg border border-emerald-500/10 bg-emerald-500/5 p-4">
+              <div class="rounded-lg p-4" style={{ border: "1px solid color-mix(in oklab, var(--color-success) 10%, transparent)", background: "color-mix(in oklab, var(--color-success) 5%, transparent)" }}>
                 <span class="text-xs text-[var(--color-text-muted)]">API Direct</span>
                 <div class="mt-1 text-2xl font-bold text-[var(--color-success)]">Pay-per-use</div>
                 <span class="text-[10px] text-[var(--color-text-faint)]">$3/1M input tokens with Sonnet</span>

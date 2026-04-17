@@ -225,8 +225,8 @@ export default function BillingPage(): JSX.Element {
                   type="button"
                   disabled={portal.loading()}
                   onClick={() => void handlePortal()}
-                  class="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50"
-                  style={{ background: "var(--color-primary)" }}
+                  class="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 disabled:opacity-50"
+                  style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
                 >
                   {portal.loading() ? "Opening…" : "Manage subscription"}
                 </button>
@@ -308,8 +308,8 @@ export default function BillingPage(): JSX.Element {
                           type="button"
                           disabled={checkout.loading() || !plan.stripePriceId}
                           onClick={() => void handleUpgrade(plan.stripePriceId)}
-                          class="w-full rounded-xl py-2.5 text-xs font-semibold text-white transition-all duration-200 disabled:opacity-40"
-                          style={{ background: "var(--color-primary)" }}
+                          class="w-full rounded-xl py-2.5 text-xs font-semibold transition-all duration-200 disabled:opacity-40"
+                          style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
                         >
                           {checkout.loading() ? "Opening Stripe…" : plan.stripePriceId ? `Upgrade to ${plan.name}` : "Contact sales"}
                         </button>

@@ -441,7 +441,7 @@ export default function SupportPage(): JSX.Element {
                       background: "var(--color-bg-elevated)",
                       color: "var(--color-text-secondary)",
                       "background-image":
-                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.3)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E\")",
+                        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='currentColor' opacity='0.3' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E\")",
                       "background-repeat": "no-repeat",
                       "background-position": "right 16px center",
                     }}
@@ -480,9 +480,10 @@ export default function SupportPage(): JSX.Element {
                 <button
                   type="submit"
                   disabled={submitting()}
-                  class="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="w-full rounded-xl py-3 text-sm font-semibold transition-all duration-200 hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: "var(--color-primary)",
+                    color: "var(--color-text)",
                   }}
                 >
                   {submitting()

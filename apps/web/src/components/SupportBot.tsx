@@ -310,7 +310,7 @@ export function SupportBot(): ReturnType<typeof Show> {
               height: "56px",
               border: "none",
               background: "var(--color-primary)",
-              color: "white",
+              color: "var(--color-text)",
               "font-size": "24px",
               "box-shadow": "0 8px 24px rgba(0,0,0,0.2)",
               cursor: "pointer",
@@ -339,7 +339,7 @@ export function SupportBot(): ReturnType<typeof Show> {
             <div
               style={{
                 background: "var(--color-primary)",
-                color: "white",
+                color: "var(--color-text)",
                 padding: "0.75rem 1rem",
                 display: "flex",
                 "align-items": "center",
@@ -361,7 +361,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                   }}
                   style={{
                     background: "transparent",
-                    color: "white",
+                    color: "var(--color-text)",
                     border: "none",
                     cursor: "pointer",
                     "font-size": "18px",
@@ -379,7 +379,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                   }}
                   style={{
                     background: "transparent",
-                    color: "white",
+                    color: "var(--color-text)",
                     border: "none",
                     cursor: "pointer",
                     "font-size": "18px",
@@ -408,7 +408,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                       style={{
                         "align-self": msg.role === "user" ? "flex-end" : "flex-start",
                         background: msg.role === "user" ? "var(--color-primary)" : "var(--color-bg-elevated)",
-                        color: msg.role === "user" ? "#fff" : "var(--color-text)",
+                        color: msg.role === "user" ? "var(--color-text)" : "var(--color-text)",
                         padding: "0.5rem 0.75rem",
                         "border-radius": "12px",
                         "max-width": "85%",
@@ -519,7 +519,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                       "border-radius": "8px",
                       border: "none",
                       background: "var(--color-primary)",
-                      color: "white",
+                      color: "var(--color-text)",
                       cursor: "pointer",
                       "font-weight": "500",
                       "font-size": "14px",

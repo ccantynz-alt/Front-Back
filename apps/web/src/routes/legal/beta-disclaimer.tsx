@@ -138,14 +138,14 @@ export default function BetaDisclaimerPage(): JSX.Element {
         description="Understand the terms of using Crontech during the beta and early access period. AI features are provided as-is. Features may change without notice."
         path="/legal/beta-disclaimer"
       />
-      <div class="min-h-screen bg-[#0a0a0a] text-white">
+      <div class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
         <div class="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:py-24">
           <Stack direction="vertical" gap="lg">
             <Stack direction="vertical" gap="sm">
               <Text variant="h1" weight="bold" class="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                 Beta & Early Access Disclaimer
               </Text>
-              <Text variant="caption" class="text-gray-500">
+              <Text variant="caption" style={{ color: "var(--color-text-faint)" }}>
                 Last updated: April 9, 2026 | Effective: April 9, 2026
               </Text>
             </Stack>
@@ -159,7 +159,7 @@ export default function BetaDisclaimerPage(): JSX.Element {
                     </Text>
                     <For each={section.content}>
                       {(paragraph) => (
-                        <Text variant="body" class="text-gray-400 leading-relaxed">
+                        <Text variant="body" class="leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
                           {paragraph}
                         </Text>
                       )}

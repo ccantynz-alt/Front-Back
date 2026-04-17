@@ -126,7 +126,7 @@ export function NotificationCenter(): JSX.Element {
               top: "0",
               right: "0",
               background: "var(--color-danger)",
-              color: "#fff",
+              color: "var(--color-text)",
               "font-size": "10px",
               "font-weight": "bold",
               "border-radius": "50%",

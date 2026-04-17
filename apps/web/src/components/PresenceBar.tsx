@@ -98,10 +98,10 @@ export function PresenceBar(props: PresenceBarProps): JSX.Element {
             display: "flex",
             "align-items": "center",
             "justify-content": "center",
-            color: "white",
+            color: "var(--color-text)",
             "font-size": "12px",
             "font-weight": "700",
-            border: "2px solid white",
+            border: "2px solid var(--color-text)",
             cursor: "default",
           }}
         >
@@ -135,10 +135,10 @@ export function PresenceBar(props: PresenceBarProps): JSX.Element {
                 display: "flex",
                 "align-items": "center",
                 "justify-content": "center",
-                color: "white",
+                color: "var(--color-text)",
                 "font-size": "12px",
                 "font-weight": "700",
-                border: user.isAI ? "2px dashed white" : "2px solid transparent",
+                border: user.isAI ? "2px dashed var(--color-text)" : "2px solid transparent",
                 cursor: "default",
                 animation: user.isAI ? "pulse-avatar 2s ease-in-out infinite" : "none",
               }}

@@ -71,19 +71,19 @@ export default function SLAPage(): JSX.Element {
             <div class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
-                  <tr class="border-b border-white/10">
-                    <th class="py-2 pr-4 font-semibold text-white/90">Tier</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Monthly Uptime</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Max Monthly Downtime</th>
+                  <tr class="border-b border-[var(--color-border)]">
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Tier</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Monthly Uptime</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Max Monthly Downtime</th>
                   </tr>
                 </thead>
-                <tbody class="text-white/70">
-                  <tr class="border-b border-white/5">
+                <tbody class="text-[var(--color-text-muted)]">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
                     <td class="py-2 pr-4">Pro</td>
                     <td class="py-2 pr-4">99.9%</td>
                     <td class="py-2 pr-4">43 minutes 49 seconds</td>
                   </tr>
-                  <tr class="border-b border-white/5">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
                     <td class="py-2 pr-4">Team</td>
                     <td class="py-2 pr-4">99.9%</td>
                     <td class="py-2 pr-4">43 minutes 49 seconds</td>
@@ -111,7 +111,7 @@ export default function SLAPage(): JSX.Element {
             <Text variant="body">
               Monthly Uptime Percentage is calculated using the following formula:
             </Text>
-            <div class="bg-white/5 rounded-lg p-4 font-mono text-sm text-white/80">
+            <div class="bg-[var(--color-bg-subtle)] rounded-lg p-4 font-mono text-sm text-[var(--color-text-secondary)]">
               <Text variant="body" class="font-mono">
                 Monthly Uptime % = ((Total Minutes in Month - Downtime Minutes) / Total Minutes in Month) x 100
               </Text>
@@ -195,17 +195,17 @@ export default function SLAPage(): JSX.Element {
             <div class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
-                  <tr class="border-b border-white/10">
-                    <th class="py-2 pr-4 font-semibold text-white/90">Monthly Uptime %</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Service Credit</th>
+                  <tr class="border-b border-[var(--color-border)]">
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Monthly Uptime %</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Service Credit</th>
                   </tr>
                 </thead>
-                <tbody class="text-white/70">
-                  <tr class="border-b border-white/5">
+                <tbody class="text-[var(--color-text-muted)]">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
                     <td class="py-2 pr-4">99.0% to &lt; 99.9% (or &lt; 99.99% for Enterprise)</td>
                     <td class="py-2 pr-4">10% of monthly subscription fee</td>
                   </tr>
-                  <tr class="border-b border-white/5">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
                     <td class="py-2 pr-4">95.0% to &lt; 99.0%</td>
                     <td class="py-2 pr-4">25% of monthly subscription fee</td>
                   </tr>
@@ -312,28 +312,28 @@ export default function SLAPage(): JSX.Element {
             <div class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
-                  <tr class="border-b border-white/10">
-                    <th class="py-2 pr-4 font-semibold text-white/90">Severity</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Enterprise</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Team</th>
-                    <th class="py-2 font-semibold text-white/90">Pro</th>
+                  <tr class="border-b border-[var(--color-border)]">
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Severity</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Enterprise</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Team</th>
+                    <th class="py-2 font-semibold text-[var(--color-text)]">Pro</th>
                   </tr>
                 </thead>
-                <tbody class="text-white/70">
-                  <tr class="border-b border-white/5">
-                    <td class="py-2 pr-4 font-semibold text-white/80">Critical</td>
+                <tbody class="text-[var(--color-text-muted)]">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
+                    <td class="py-2 pr-4 font-semibold text-[var(--color-text-secondary)]">Critical</td>
                     <td class="py-2 pr-4">1 hour (24/7)</td>
                     <td class="py-2 pr-4">4 hours</td>
                     <td class="py-2">24 hours</td>
                   </tr>
-                  <tr class="border-b border-white/5">
-                    <td class="py-2 pr-4 font-semibold text-white/80">High</td>
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
+                    <td class="py-2 pr-4 font-semibold text-[var(--color-text-secondary)]">High</td>
                     <td class="py-2 pr-4">4 hours</td>
                     <td class="py-2 pr-4">8 hours</td>
                     <td class="py-2">48 hours</td>
                   </tr>
                   <tr>
-                    <td class="py-2 pr-4 font-semibold text-white/80">Medium</td>
+                    <td class="py-2 pr-4 font-semibold text-[var(--color-text-secondary)]">Medium</td>
                     <td class="py-2 pr-4">24 hours</td>
                     <td class="py-2 pr-4">48 hours</td>
                     <td class="py-2">5 business days</td>
@@ -376,8 +376,8 @@ export default function SLAPage(): JSX.Element {
             <Text variant="body">
               Scheduled maintenance is performed during our preferred maintenance window:
             </Text>
-            <div class="bg-white/5 rounded-lg p-4">
-              <Text variant="body" weight="semibold" class="text-white/90">
+            <div class="bg-[var(--color-bg-subtle)] rounded-lg p-4">
+              <Text variant="body" weight="semibold" class="text-[var(--color-text)]">
                 Preferred Window: Sundays, 02:00 - 06:00 UTC
               </Text>
             </div>

@@ -102,7 +102,7 @@ function ConversationItem(props: {
             e.stopPropagation();
             props.onDelete();
           }}
-          class="shrink-0 rounded-md p-1 transition-colors hover:bg-red-500/10 hover:text-red-400"
+          class="shrink-0 rounded-md p-1 transition-colors hover:bg-[color-mix(in_oklab,var(--color-danger)_10%,transparent)] hover:text-[var(--color-danger)]"
           style={{ color: "var(--color-text-faint)" }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

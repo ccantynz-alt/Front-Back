@@ -123,7 +123,7 @@ function UserRow(props: {
     <div class="flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all duration-200" style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)" }}>
       <div
         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-        style={{ background: roleColor(), color: "#fff" }}
+        style={{ background: roleColor(), color: "var(--color-text)" }}
       >
         {initialsFor(props.user)}
       </div>
@@ -276,7 +276,7 @@ function AdminPageContent(): JSX.Element {
               type="button"
               onClick={() => navigate("/admin/support")}
               class="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200"
-              style={{ background: "var(--color-primary)", color: "#fff" }}
+              style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
             >
               <span class="text-base">&#128231;</span>
               Support Queue

@@ -55,8 +55,8 @@ function StepIndicator(props: StepIndicatorProps): JSX.Element {
                   class="h-px w-8 transition-colors duration-300"
                   style={{
                     background: isCompleted()
-                      ? "rgba(139, 92, 246, 0.6)"
-                      : "rgba(255, 255, 255, 0.06)",
+                      ? "color-mix(in srgb, var(--color-primary) 60%, transparent)"
+                      : "var(--color-border)",
                   }}
                 />
               </Show>
@@ -65,11 +65,11 @@ function StepIndicator(props: StepIndicatorProps): JSX.Element {
                   class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all duration-300"
                   style={{
                     background: isActive()
-                      ? "linear-gradient(135deg, #8b5cf6, #06b6d4)"
+                      ? "linear-gradient(135deg, var(--color-primary), var(--color-accent, #06b6d4))"
                       : isCompleted()
-                        ? "rgba(139, 92, 246, 0.3)"
-                        : "rgba(255, 255, 255, 0.06)",
-                    color: isActive() || isCompleted() ? "#fff" : "#6b7280",
+                        ? "color-mix(in srgb, var(--color-primary) 30%, transparent)"
+                        : "var(--color-border)",
+                    color: isActive() || isCompleted() ? "var(--color-text)" : "var(--color-text-faint)",
                   }}
                 >
                   <Show when={isCompleted()} fallback={<>{stepNum + 1}</>}>
@@ -80,10 +80,10 @@ function StepIndicator(props: StepIndicatorProps): JSX.Element {
                   class="text-xs font-medium transition-colors duration-300"
                   style={{
                     color: isActive()
-                      ? "#fff"
+                      ? "var(--color-text)"
                       : isCompleted()
-                        ? "#a78bfa"
-                        : "#6b7280",
+                        ? "var(--color-primary)"
+                        : "var(--color-text-faint)",
                   }}
                 >
                   {label}
@@ -101,38 +101,38 @@ function StepIndicator(props: StepIndicatorProps): JSX.Element {
 
 function DnsInstructions(props: { domain: string }): JSX.Element {
   return (
-    <div class="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
-      <h4 class="mb-3 text-sm font-semibold text-white">
+    <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-5">
+      <h4 class="mb-3 text-sm font-semibold" style={{ color: "var(--color-text)" }}>
         DNS Configuration
       </h4>
-      <p class="mb-4 text-xs text-gray-500">
+      <p class="mb-4 text-xs" style={{ color: "var(--color-text-faint)" }}>
         Add the following record to your domain's DNS provider to point{" "}
-        <span class="font-mono text-cyan-400">{props.domain}</span>{" "}
+        <span class="font-mono" style={{ color: "var(--color-accent, #06b6d4)" }}>{props.domain}</span>{" "}
         to Crontech.
       </p>
-      <div class="overflow-x-auto rounded-lg border border-white/[0.06] bg-black/40">
+      <div class="overflow-x-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)]">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="border-b border-white/[0.06]">
-              <th class="px-4 py-2 font-semibold text-gray-400">Type</th>
-              <th class="px-4 py-2 font-semibold text-gray-400">Name</th>
-              <th class="px-4 py-2 font-semibold text-gray-400">Value</th>
-              <th class="px-4 py-2 font-semibold text-gray-400">TTL</th>
+            <tr class="border-b border-[var(--color-border)]">
+              <th class="px-4 py-2 font-semibold" style={{ color: "var(--color-text-muted)" }}>Type</th>
+              <th class="px-4 py-2 font-semibold" style={{ color: "var(--color-text-muted)" }}>Name</th>
+              <th class="px-4 py-2 font-semibold" style={{ color: "var(--color-text-muted)" }}>Value</th>
+              <th class="px-4 py-2 font-semibold" style={{ color: "var(--color-text-muted)" }}>TTL</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="px-4 py-2 font-mono text-violet-400">CNAME</td>
-              <td class="px-4 py-2 font-mono text-gray-300">{props.domain}</td>
-              <td class="px-4 py-2 font-mono text-cyan-400">
+              <td class="px-4 py-2 font-mono" style={{ color: "var(--color-primary)" }}>CNAME</td>
+              <td class="px-4 py-2 font-mono" style={{ color: "var(--color-text-secondary)" }}>{props.domain}</td>
+              <td class="px-4 py-2 font-mono" style={{ color: "var(--color-accent, #06b6d4)" }}>
                 cname.crontech.ai
               </td>
-              <td class="px-4 py-2 text-gray-500">Auto</td>
+              <td class="px-4 py-2" style={{ color: "var(--color-text-faint)" }}>Auto</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <p class="mt-3 text-[11px] text-gray-600">
+      <p class="mt-3 text-[11px]" style={{ color: "var(--color-text-faint)" }}>
         DNS propagation can take up to 48 hours, but typically completes within
         minutes. SSL will be provisioned automatically.
       </p>
@@ -237,26 +237,26 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
       />
       <Title>New Project — Crontech</Title>
 
-      <div class="min-h-screen bg-[#060606]">
+      <div class="min-h-screen bg-[var(--color-bg)]">
         <div class="mx-auto max-w-2xl px-6 py-8 lg:px-8">
           {/* ── Breadcrumb ──────────────────────────────────────── */}
-          <div class="mb-6 flex items-center gap-2 text-xs text-gray-500">
+          <div class="mb-6 flex items-center gap-2 text-xs" style={{ color: "var(--color-text-faint)" }}>
             <A
               href="/projects"
-              class="transition-colors hover:text-gray-300"
+              class="transition-colors hover:text-[var(--color-text-secondary)]"
             >
               Projects
             </A>
             <span>/</span>
-            <span class="text-gray-300">New</span>
+            <span style={{ color: "var(--color-text-secondary)" }}>New</span>
           </div>
 
           {/* ── Header ──────────────────────────────────────────── */}
           <div class="mb-8">
-            <h1 class="text-2xl font-bold tracking-tight text-white">
+            <h1 class="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
               Create a new project
             </h1>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
               Configure and deploy to the Crontech edge network.
             </p>
           </div>
@@ -268,16 +268,16 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
 
           {/* ── Step Content ─────────────────────────────────────── */}
           <div
-            class="rounded-2xl border border-white/[0.06] p-6"
+            class="rounded-2xl border border-[var(--color-border)] p-6"
             style={{
               background:
-                "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
+                "linear-gradient(135deg, color-mix(in srgb, var(--color-bg-elevated) 90%, transparent) 0%, color-mix(in srgb, var(--color-bg) 95%, transparent) 100%)",
             }}
           >
             {/* Step 0: Basics */}
             <Show when={step() === 0}>
               <div class="flex flex-col gap-5">
-                <h2 class="text-lg font-semibold text-white">
+                <h2 class="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
                   Project basics
                 </h2>
 
@@ -313,7 +313,7 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
             {/* Step 1: Configuration */}
             <Show when={step() === 1}>
               <div class="flex flex-col gap-5">
-                <h2 class="text-lg font-semibold text-white">
+                <h2 class="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
                   Build configuration
                 </h2>
 
@@ -356,12 +356,12 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
             {/* Step 2: Domain */}
             <Show when={step() === 2}>
               <div class="flex flex-col gap-5">
-                <h2 class="text-lg font-semibold text-white">
+                <h2 class="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
                   Custom domain
                 </h2>
-                <p class="text-sm text-gray-500">
+                <p class="text-sm" style={{ color: "var(--color-text-faint)" }}>
                   You can add a custom domain now or later from project settings.
-                  A <span class="font-mono text-cyan-400">.crontech.app</span> subdomain
+                  A <span class="font-mono" style={{ color: "var(--color-accent, #06b6d4)" }}>.crontech.app</span> subdomain
                   will be assigned automatically.
                 </p>
 
@@ -380,7 +380,7 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
 
             {/* ── Error display ──────────────────────────────────── */}
             <Show when={createProject.error()}>
-              <div class="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div class="mt-4 rounded-lg border border-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-4 py-3 text-sm" style={{ color: "var(--color-danger)" }}>
                 {friendlyError(createProject.error())}
               </div>
             </Show>

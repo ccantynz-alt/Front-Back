@@ -101,8 +101,8 @@ function UserMenu(): JSX.Element {
   return (
     <div class="relative" ref={menuRef}>
       <button
-        class="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer transition-opacity duration-150 hover:opacity-80 active:scale-95 text-sm font-semibold text-white"
-        style={{ background: "var(--color-primary)" }}
+        class="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer transition-opacity duration-150 hover:opacity-80 active:scale-95 text-sm font-semibold"
+        style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
         onClick={() => setMenuOpen(!menuOpen())}
         type="button"
         aria-label="User menu"
@@ -126,8 +126,8 @@ function UserMenu(): JSX.Element {
           >
             <div class="flex items-center gap-3">
               <span
-                class="flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold text-white shrink-0"
-                style={{ background: "var(--color-primary)" }}
+                class="flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold shrink-0"
+                style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
               >
                 {userInitial()}
               </span>

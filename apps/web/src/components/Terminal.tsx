@@ -262,7 +262,7 @@ export function Terminal(props: TerminalProps): JSX.Element {
             </Badge>
           </div>
 
-          <span class="text-xs text-gray-500 font-mono">
+          <span class="text-xs font-mono" style={{ color: "var(--color-text-faint)" }}>
             project:{props.projectId}
           </span>
         </div>

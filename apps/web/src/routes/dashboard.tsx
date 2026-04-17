@@ -603,8 +603,8 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
           >
             <div class="mb-4 flex items-center gap-3">
               <div
-                class="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
-                style={{ background: "var(--color-primary)" }}
+                class="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold"
+                style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
               >
                 {firstName().charAt(0).toUpperCase()}
               </div>

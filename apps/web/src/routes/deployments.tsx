@@ -205,7 +205,7 @@ export default function DeploymentsPage(): JSX.Element {
                 class="rounded-xl px-5 py-2.5 text-sm font-semibold transition hover:brightness-110"
                 style={{
                   background: "var(--color-primary)",
-                  color: "#fff",
+                  color: "var(--color-text)",
                 }}
               >
                 Try the Composer

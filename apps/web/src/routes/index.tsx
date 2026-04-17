@@ -225,8 +225,8 @@ function StepCard(props: Step): JSX.Element {
           <span style={{ color: "var(--color-primary-text)" }}>{props.icon}</span>
         </div>
         <div
-          class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold text-white"
-          style={{ background: "var(--color-primary)" }}
+          class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold"
+          style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
         >
           {props.number}
         </div>
@@ -251,7 +251,7 @@ function StepCard(props: Step): JSX.Element {
 
 function StatBlock(props: Stat): JSX.Element {
   return (
-    <div class="flex flex-col items-center justify-center gap-3 bg-white/[0.02] px-6 py-10 transition-colors duration-300 hover:bg-white/[0.035] sm:py-12">
+    <div class="flex flex-col items-center justify-center gap-3 bg-[color-mix(in_oklab,var(--color-text)_2%,transparent)] px-6 py-10 transition-colors duration-300 hover:bg-[color-mix(in_oklab,var(--color-text)_3.5%,transparent)] sm:py-12">
       <span
         class="text-2xl font-bold tracking-tight sm:text-3xl"
         style={{ color: "var(--color-primary)" }}

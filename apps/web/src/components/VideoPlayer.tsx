@@ -307,7 +307,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             display: "flex",
             "align-items": "center",
             gap: "8px",
-            color: "#fff",
+            color: "var(--color-text)",
             "font-size": "13px",
           }}
         >
@@ -317,7 +317,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             style={{
               background: "none",
               border: "none",
-              color: "#fff",
+              color: "var(--color-text)",
               cursor: "pointer",
               padding: "4px 8px",
               "font-size": "14px",
@@ -339,7 +339,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             style={{
               background: "none",
               border: "none",
-              color: "#fff",
+              color: "var(--color-text)",
               cursor: "pointer",
               padding: "4px",
               "font-size": "13px",
@@ -364,7 +364,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             style={{
               background: "none",
               border: "none",
-              color: "#fff",
+              color: "var(--color-text)",
               cursor: "pointer",
               padding: "4px 8px",
               "font-size": "13px",

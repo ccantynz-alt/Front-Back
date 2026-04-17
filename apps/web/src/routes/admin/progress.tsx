@@ -42,13 +42,13 @@ function statusIcon(status: ProgressStatus): string {
 function statusColor(status: ProgressStatus): string {
   switch (status) {
     case "completed":
-      return "#10b981"; // emerald
+      return "var(--color-success)";
     case "in_progress":
-      return "#f59e0b"; // amber
+      return "var(--color-warning)";
     case "blocked":
-      return "#ef4444"; // red
+      return "var(--color-danger)";
     case "pending":
-      return "#6b7280"; // gray
+      return "var(--color-text-muted)";
   }
 }
 
@@ -68,15 +68,15 @@ function statusLabel(status: ProgressStatus): string {
 function priorityColor(priority: string): string {
   switch (priority) {
     case "p0":
-      return "#ef4444";
+      return "var(--color-danger)";
     case "p1":
-      return "#f59e0b";
+      return "var(--color-warning)";
     case "p2":
-      return "#3b82f6";
+      return "var(--color-info)";
     case "p3":
-      return "#6b7280";
+      return "var(--color-text-muted)";
     default:
-      return "#6b7280";
+      return "var(--color-text-muted)";
   }
 }
 
@@ -139,9 +139,9 @@ function FilterPill(props: {
         cursor: "pointer",
         border: props.active
           ? `1px solid ${props.color}`
-          : "1px solid rgba(255,255,255,0.15)",
-        background: props.active ? `${props.color}22` : "rgba(255,255,255,0.03)",
-        color: props.active ? props.color : "rgba(255,255,255,0.7)",
+          : "1px solid var(--color-border)",
+        background: props.active ? `${props.color}22` : "var(--color-bg-subtle)",
+        color: props.active ? props.color : "var(--color-text-secondary)",
         transition: "all 0.15s ease",
       }}
     >
@@ -166,7 +166,7 @@ function EntryRow(props: {
         gap: "12px",
         "align-items": "start",
         padding: "12px 16px",
-        "border-bottom": "1px solid rgba(255,255,255,0.06)",
+        "border-bottom": "1px solid var(--color-border-subtle)",
       }}
     >
       <div
@@ -179,7 +179,7 @@ function EntryRow(props: {
           "justify-content": "center",
           "font-size": "16px",
           "font-weight": "bold",
-          color: "#fff",
+          color: "var(--color-text)",
           "background-color": statusColor(entry.status),
         }}
         aria-label={statusLabel(entry.status)}
@@ -205,7 +205,7 @@ function EntryRow(props: {
               "font-weight": "bold",
               padding: "2px 6px",
               "border-radius": "4px",
-              color: "#fff",
+              color: "var(--color-text)",
               "background-color": priorityColor(entry.priority),
               "text-transform": "uppercase",
             }}
@@ -232,7 +232,7 @@ function EntryRow(props: {
           "align-items": "flex-end",
           gap: "4px",
           "font-size": "11px",
-          color: "rgba(255,255,255,0.55)",
+          color: "var(--color-text-muted)",
           "font-family": "monospace",
         }}
       >
@@ -247,7 +247,7 @@ function EntryRow(props: {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  color: "#60a5fa",
+                  color: "var(--color-link)",
                   "text-decoration": "none",
                 }}
                 title="Open commit on GitHub"
@@ -350,8 +350,8 @@ function ProgressPage(): JSX.Element {
       <div
         style={{
           "min-height": "100vh",
-          background: "linear-gradient(180deg, #0a0a0f 0%, #0f0f1a 100%)",
-          color: "#fff",
+          background: "linear-gradient(180deg, var(--color-bg-deep) 0%, var(--color-bg-base) 100%)",
+          color: "var(--color-text)",
           padding: "32px 24px",
         }}
       >
@@ -415,8 +415,8 @@ function ProgressPage(): JSX.Element {
                         value={`${counts().blocked}`}
                         color={statusColor("blocked")}
                       />
-                      <StatBox label="Total" value={`${total()}`} color="#8b5cf6" />
-                      <StatBox label="Complete" value={`${pct()}%`} color="#10b981" />
+                      <StatBox label="Total" value={`${total()}`} color="var(--color-accent)" />
+                      <StatBox label="Complete" value={`${pct()}%`} color="var(--color-success)" />
                     </div>
 
                     {/* Progress bar */}
@@ -424,7 +424,7 @@ function ProgressPage(): JSX.Element {
                       style={{
                         height: "8px",
                         "border-radius": "4px",
-                        background: "rgba(255,255,255,0.08)",
+                        background: "var(--color-bg-elevated)",
                         overflow: "hidden",
                       }}
                     >
@@ -432,7 +432,7 @@ function ProgressPage(): JSX.Element {
                         style={{
                           width: `${pct()}%`,
                           height: "100%",
-                          background: "linear-gradient(90deg, #10b981, #34d399)",
+                          background: "linear-gradient(90deg, var(--color-success), var(--color-success-light))",
                           transition: "width 0.6s ease",
                         }}
                       />
@@ -443,8 +443,8 @@ function ProgressPage(): JSX.Element {
                       style={{
                         padding: "12px 16px",
                         "border-radius": "8px",
-                        background: "rgba(139,92,246,0.08)",
-                        border: "1px solid rgba(139,92,246,0.3)",
+                        background: "color-mix(in srgb, var(--color-accent) 8%, transparent)",
+                        border: "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)",
                       }}
                     >
                       <Text variant="caption" class="text-muted">
@@ -460,8 +460,8 @@ function ProgressPage(): JSX.Element {
                       style={{
                         padding: "16px",
                         "border-radius": "12px",
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "var(--color-bg-elevated)",
+                        border: "1px solid var(--color-border-subtle)",
                         display: "flex",
                         "flex-direction": "column",
                         gap: "12px",
@@ -476,9 +476,9 @@ function ProgressPage(): JSX.Element {
                           width: "100%",
                           padding: "10px 14px",
                           "border-radius": "8px",
-                          background: "rgba(0,0,0,0.3)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          color: "#fff",
+                          background: "var(--color-bg-deep)",
+                          border: "1px solid var(--color-border)",
+                          color: "var(--color-text)",
                           "font-size": "14px",
                           outline: "none",
                         }}
@@ -540,7 +540,7 @@ function ProgressPage(): JSX.Element {
                           <FilterPill
                             label="Last 24h"
                             active={within24h()}
-                            color="#8b5cf6"
+                            color="var(--color-accent)"
                             onClick={() => setWithin24h(!within24h())}
                           />
                           <Show when={hasActiveFilters()}>
@@ -553,9 +553,9 @@ function ProgressPage(): JSX.Element {
                                 "font-size": "12px",
                                 "font-weight": "600",
                                 cursor: "pointer",
-                                border: "1px solid rgba(255,255,255,0.15)",
+                                border: "1px solid var(--color-border)",
                                 background: "transparent",
-                                color: "rgba(255,255,255,0.7)",
+                                color: "var(--color-text-secondary)",
                               }}
                             >
                               Clear filters
@@ -593,8 +593,8 @@ function ProgressPage(): JSX.Element {
                                 <div
                                   style={{
                                     "border-radius": "12px",
-                                    background: "rgba(255,255,255,0.03)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    background: "var(--color-bg-elevated)",
+                                    border: "1px solid var(--color-border-subtle)",
                                     overflow: "hidden",
                                   }}
                                 >
@@ -606,15 +606,15 @@ function ProgressPage(): JSX.Element {
                                       padding: "16px 20px",
                                       "border-bottom": isCollapsed()
                                         ? "none"
-                                        : "1px solid rgba(255,255,255,0.08)",
-                                      background: "rgba(255,255,255,0.02)",
+                                        : "1px solid var(--color-border-subtle)",
+                                      background: "var(--color-bg-subtle)",
                                       border: "none",
                                       "border-top": "none",
                                       "border-left": "none",
                                       "border-right": "none",
                                       cursor: "pointer",
                                       "text-align": "left",
-                                      color: "#fff",
+                                      color: "var(--color-text)",
                                       display: "flex",
                                       "align-items": "center",
                                       "justify-content": "space-between",
@@ -640,7 +640,7 @@ function ProgressPage(): JSX.Element {
                                       <span
                                         style={{
                                           "font-size": "12px",
-                                          color: "rgba(255,255,255,0.55)",
+                                          color: "var(--color-text-muted)",
                                           "font-variant-numeric": "tabular-nums",
                                         }}
                                       >
@@ -649,7 +649,7 @@ function ProgressPage(): JSX.Element {
                                       <span
                                         style={{
                                           "font-size": "16px",
-                                          color: "rgba(255,255,255,0.55)",
+                                          color: "var(--color-text-muted)",
                                           transform: isCollapsed()
                                             ? "rotate(-90deg)"
                                             : "rotate(0deg)",
@@ -698,8 +698,8 @@ function StatBox(props: { label: string; value: string; color: string }): JSX.El
       style={{
         padding: "16px",
         "border-radius": "10px",
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border-subtle)",
       }}
     >
       <div
@@ -707,7 +707,7 @@ function StatBox(props: { label: string; value: string; color: string }): JSX.El
           "font-size": "11px",
           "text-transform": "uppercase",
           "letter-spacing": "0.08em",
-          color: "rgba(255,255,255,0.6)",
+          color: "var(--color-text-muted)",
         }}
       >
         {props.label}
