@@ -1556,6 +1556,213 @@ textarea:focus-visible {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   BUTTONS
+   ══════════════════════════════════════════════════════════════════════ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+.btn-md { padding: 0.5rem 1rem; font-size: 0.875rem; }
+.btn-lg { padding: 0.75rem 1.5rem; font-size: 0.9375rem; font-weight: 600; }
+.btn-icon { padding: 0.5rem; }
+
+.btn-default {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.btn-default:hover:not(:disabled) {
+  background: var(--color-bg-muted);
+  border-color: var(--color-border-strong);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 0 0 0 var(--color-primary);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+}
+
+.btn-secondary {
+  background: var(--color-bg-muted);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-bg-inset);
+  border-color: var(--color-border-strong);
+}
+
+.btn-destructive {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+.btn-destructive:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-bg-muted);
+  border-color: var(--color-border-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-text-secondary);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-bg-muted);
+  color: var(--color-text);
+}
+
+.btn-link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-primary);
+  padding-left: 0;
+  padding-right: 0;
+}
+.btn-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LANDING PAGE — Premium Effects
+   ══════════════════════════════════════════════════════════════════════ */
+
+.landing-hero-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-hero-bg::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 900px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37,99,235,0.06) 0%, rgba(139,92,246,0.03) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+html.dark .landing-hero-bg::before {
+  background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(139,92,246,0.04) 40%, transparent 70%);
+}
+
+.landing-gradient-text {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.landing-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  transition: all 0.2s ease;
+}
+
+.landing-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02);
+  transform: translateY(-2px);
+}
+
+html.dark .landing-card:hover {
+  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+.landing-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+
+.landing-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+}
+
+.landing-step-connector {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: calc(100% - 2rem);
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-border-strong), var(--color-border));
+}
+
+@media (max-width: 640px) {
+  .landing-step-connector { display: none; }
+}
+
+@keyframes landing-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.landing-animate {
+  animation: landing-fade-in 0.5s ease both;
+}
+
+.landing-cta-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-cta-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-subtle) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    SKELETON / SHIMMER / LOADING / EMPTY / ERROR STATES
    ══════════════════════════════════════════════════════════════════════ */
 

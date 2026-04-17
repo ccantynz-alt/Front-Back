@@ -137,68 +137,50 @@ const techPillars: TechPillar[] = [
 
 function FeatureCard(props: Feature): JSX.Element {
   return (
-    <A href={props.href} class="block group">
-      {/*
-        Outer card is NOT overflow-hidden — that was clipping the "L" of
-        "Learn more" on the bottom row (issue #1). Instead we isolate the
-        glow inside its own overflow-hidden layer, and give the card
-        generous padding so its content has breathing room (issue #7).
-      */}
-      <div
-        class="h-full rounded-xl p-6 transition-all duration-200"
-        style={{
-          background: "var(--color-bg-elevated)",
-          border: "1px solid var(--color-border)",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--color-border-strong)";
-          e.currentTarget.style.boxShadow = "var(--shadow-md)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "var(--color-border)";
-          e.currentTarget.style.boxShadow = "none";
-        }}
-      >
-        <div class="flex h-full flex-col gap-4">
+    <A href={props.href} class="block group" style={{ "text-decoration": "none" }}>
+      <div class="landing-card h-full p-7">
+        <div class="flex h-full flex-col gap-5">
           <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-3.5">
-              <div
-                class="flex h-11 w-11 items-center justify-center rounded-lg text-lg"
-                style={{
-                  background: "var(--color-primary-light)",
-                  color: "var(--color-primary-text)",
-                }}
-              >
-                <Icon name={props.icon} size={20} />
-              </div>
-              <span
-                class="text-base font-semibold"
-                style={{ color: "var(--color-text)" }}
-              >
-                {props.title}
-              </span>
+            <div
+              class="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{
+                background: "linear-gradient(135deg, var(--color-primary-light), color-mix(in oklab, var(--color-primary-light) 70%, var(--color-accent)))",
+                color: "var(--color-primary)",
+              }}
+            >
+              <Icon name={props.icon} size={22} />
             </div>
             <Show when={props.badge}>
               <span
-                class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                class="shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
                 style={{
                   background: "var(--color-primary-light)",
-                  color: "var(--color-primary-text)",
+                  color: "var(--color-primary)",
                 }}
               >
                 {props.badge}
               </span>
             </Show>
           </div>
-          <p
-            class="text-sm leading-relaxed"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
-            {props.description}
-          </p>
+
+          <div class="flex flex-col gap-2">
+            <h3
+              class="text-[1.0625rem] font-semibold tracking-tight"
+              style={{ color: "var(--color-text)" }}
+            >
+              {props.title}
+            </h3>
+            <p
+              class="text-[0.9rem] leading-[1.65]"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              {props.description}
+            </p>
+          </div>
+
           <div
-            class="mt-auto flex items-center gap-1.5 pt-2 text-xs font-medium"
-            style={{ color: "var(--color-primary-text)" }}
+            class="mt-auto flex items-center gap-1.5 pt-3 text-sm font-medium"
+            style={{ color: "var(--color-primary)" }}
           >
             <span>Learn more</span>
             <span class="transition-transform duration-200 group-hover:translate-x-1">&#8594;</span>
@@ -211,38 +193,48 @@ function FeatureCard(props: Feature): JSX.Element {
 
 // ── Step Card ───────────────────────────────────────────────────────
 
-function StepCard(props: Step): JSX.Element {
+function StepCard(props: Step & { isLast: boolean }): JSX.Element {
   return (
-    <div class="flex flex-col items-center gap-4 text-center">
+    <div class="relative flex flex-col items-center gap-5 text-center">
       <div class="relative">
         <div
-          class="flex h-16 w-16 items-center justify-center rounded-xl text-xl"
+          class="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl"
           style={{
-            background: "var(--color-primary-light)",
+            background: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border)",
+            "box-shadow": "var(--shadow-sm)",
           }}
         >
-          <span style={{ color: "var(--color-primary-text)" }}>{props.icon}</span>
+          {props.icon}
         </div>
         <div
-          class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold"
-          style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
+          class="absolute -top-2.5 -right-2.5 flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold"
+          style={{
+            background: "var(--color-primary)",
+            color: "#fff",
+            "box-shadow": "0 2px 8px rgba(37,99,235,0.3)",
+          }}
         >
           {props.number}
         </div>
       </div>
+
       <h3
-        class="text-lg font-bold"
+        class="text-lg font-semibold tracking-tight"
         style={{ color: "var(--color-text)" }}
       >
         {props.title}
       </h3>
       <p
-        class="max-w-xs text-sm leading-relaxed"
+        class="max-w-[280px] text-[0.9rem] leading-[1.65]"
         style={{ color: "var(--color-text-secondary)" }}
       >
         {props.description}
       </p>
+
+      <Show when={!props.isLast}>
+        <div class="landing-step-connector" />
+      </Show>
     </div>
   );
 }
@@ -251,15 +243,12 @@ function StepCard(props: Step): JSX.Element {
 
 function StatBlock(props: Stat): JSX.Element {
   return (
-    <div class="flex flex-col items-center justify-center gap-3 bg-[color-mix(in_oklab,var(--color-text)_2%,transparent)] px-6 py-10 transition-colors duration-300 hover:bg-[color-mix(in_oklab,var(--color-text)_3.5%,transparent)] sm:py-12">
-      <span
-        class="text-2xl font-bold tracking-tight sm:text-3xl"
-        style={{ color: "var(--color-primary)" }}
-      >
+    <div class="flex flex-col items-center justify-center gap-2 px-6 py-10 sm:py-12">
+      <span class="landing-gradient-text text-2xl font-extrabold tracking-tight sm:text-3xl">
         {props.value}
       </span>
       <span
-        class="text-[11px] font-medium uppercase tracking-widest"
+        class="text-[11px] font-medium uppercase tracking-[0.16em]"
         style={{ color: "var(--color-text-muted)" }}
       >
         {props.label}
@@ -268,69 +257,31 @@ function StatBlock(props: Stat): JSX.Element {
   );
 }
 
-// ── Section Eyebrow Pill ────────────────────────────────────────────
-// Shared pill used for small section labels like "PLATFORM" and
-// "ONBOARDING". Previously these floated mid-page as bare violet text —
-// now they render as proper bordered pill badges so they look
-// intentional (issues #3 and #4).
-
-interface EyebrowPillProps {
-  label: string;
-  color: string;
-}
-
-function EyebrowPill(props: EyebrowPillProps): JSX.Element {
-  return (
-    <span
-      class="mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]"
-      style={{
-        "border-color": `${props.color}40`,
-        background: `${props.color}12`,
-        color: props.color,
-      }}
-    >
-      <span
-        class="h-1.5 w-1.5 rounded-full"
-        style={{ background: props.color }}
-      />
-      {props.label}
-    </span>
-  );
-}
-
 // ── Tech Pillar Card ────────────────────────────────────────────────
 
 function TechPillarCard(props: TechPillar): JSX.Element {
   return (
-    <div
-      class="rounded-xl p-7 transition-all duration-200"
-      style={{
-        background: "var(--color-bg-elevated)",
-        border: "1px solid var(--color-border)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "var(--color-border-strong)";
-        e.currentTarget.style.boxShadow = "var(--shadow-md)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--color-border)";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    >
+    <div class="landing-card relative overflow-hidden p-8">
+      <div
+        class="absolute top-0 left-0 right-0 h-[2px]"
+        style={{
+          background: "linear-gradient(90deg, var(--color-primary), var(--color-accent))",
+        }}
+      />
       <span
-        class="mb-3 inline-block text-xs font-semibold uppercase tracking-widest"
-        style={{ color: "var(--color-primary-text)" }}
+        class="mb-4 inline-block text-xs font-semibold uppercase tracking-[0.14em]"
+        style={{ color: "var(--color-primary)" }}
       >
         {props.label}
       </span>
       <h3
-        class="mb-3 text-xl font-bold"
+        class="mb-3 text-xl font-bold tracking-tight"
         style={{ color: "var(--color-text)" }}
       >
         {props.title}
       </h3>
       <p
-        class="text-sm leading-relaxed"
+        class="text-[0.9rem] leading-[1.65]"
         style={{ color: "var(--color-text-secondary)" }}
       >
         {props.description}
@@ -354,40 +305,44 @@ export default function Home(): JSX.Element {
 
       <div style={{ background: "var(--color-bg)" }}>
         {/* ── Hero ──────────────────────────────────────────────── */}
-        <section class="relative overflow-hidden">
-          <div class="mx-auto max-w-[1200px] px-6 pt-24 pb-20 lg:px-8 lg:pt-36 lg:pb-28">
+        <section class="landing-hero-bg">
+          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-28 pb-24 lg:px-8 lg:pt-40 lg:pb-32">
             <div class="flex flex-col items-center text-center">
+              {/* Announcement badge */}
               <div
-                class="mb-8 inline-flex items-center gap-2 rounded-full px-4 py-1.5"
+                class="mb-10 inline-flex items-center gap-2.5 rounded-full px-4 py-2"
                 style={{
                   border: "1px solid var(--color-border)",
                   background: "var(--color-bg-elevated)",
+                  "box-shadow": "var(--shadow-sm)",
                 }}
               >
                 <div
-                  class="h-1.5 w-1.5 rounded-full animate-pulse"
+                  class="h-2 w-2 rounded-full animate-pulse"
                   style={{ background: "var(--color-success)" }}
                 />
                 <span
-                  class="text-xs font-medium"
-                  style={{ color: "var(--color-text-muted)" }}
+                  class="text-[0.8125rem] font-medium"
+                  style={{ color: "var(--color-text-secondary)" }}
                 >
                   Now in early access
                 </span>
               </div>
 
+              {/* Headline */}
               <h1
-                class="max-w-4xl text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.75rem]"
+                class="max-w-4xl text-[2.75rem] font-extrabold leading-[1.1] tracking-[-0.025em] sm:text-[3.25rem] lg:text-[4rem]"
                 style={{ color: "var(--color-text)" }}
               >
                 The developer platform{" "}
-                <span style={{ color: "var(--color-primary)" }}>
+                <span class="landing-gradient-text">
                   for the next decade.
                 </span>
               </h1>
 
+              {/* Subheading */}
               <p
-                class="mt-6 max-w-2xl text-base leading-relaxed sm:text-lg"
+                class="mt-7 max-w-2xl text-[1.0625rem] leading-[1.7] sm:text-lg"
                 style={{ color: "var(--color-text-secondary)" }}
               >
                 Backend and frontend, joined as one product. Hosting, database,
@@ -396,7 +351,8 @@ export default function Home(): JSX.Element {
                 ready the moment your team is.
               </p>
 
-              <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+              {/* CTAs */}
+              <div class="mt-12 flex flex-col items-center gap-4 sm:flex-row">
                 <A href="/register">
                   <Button variant="primary" size="lg">
                     Start building &#8594;
@@ -420,7 +376,8 @@ export default function Home(): JSX.Element {
                 </Show>
               </div>
 
-              <div class="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+              {/* Tech stack strip */}
+              <div class="mt-20 flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
                 <For
                   each={[
                     "SolidJS",
@@ -434,7 +391,7 @@ export default function Home(): JSX.Element {
                 >
                   {(tech) => (
                     <span
-                      class="text-xs font-medium uppercase tracking-widest transition-colors duration-200"
+                      class="text-[0.6875rem] font-medium uppercase tracking-[0.18em] transition-colors duration-200"
                       style={{ color: "var(--color-text-faint)" }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.color = "var(--color-text-secondary)";
@@ -453,9 +410,12 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Stats strip ───────────────────────────────────────── */}
-        <section style={{ "border-top": "1px solid var(--color-border)", "border-bottom": "1px solid var(--color-border)" }}>
-          <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <div class="grid grid-cols-2 sm:grid-cols-4" style={{ "column-gap": "0" }}>
+        <section>
+          <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
+            <hr class="landing-divider" />
+          </div>
+          <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
+            <div class="grid grid-cols-2 sm:grid-cols-4">
               <For each={stats}>
                 {(stat, i) => (
                   <div
@@ -469,26 +429,30 @@ export default function Home(): JSX.Element {
               </For>
             </div>
           </div>
+          <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
+            <hr class="landing-divider" />
+          </div>
         </section>
 
         {/* ── Platform layers ───────────────────────────────────── */}
-        <section class="py-24 lg:py-32">
-          <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
+        <section class="py-28 lg:py-36">
+          <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="mb-16 flex flex-col items-center text-center">
-              <span
-                class="mb-4 text-xs font-semibold uppercase tracking-widest"
-                style={{ color: "var(--color-primary-text)" }}
-              >
+              <div class="landing-section-label">
+                <div
+                  class="h-1.5 w-1.5 rounded-full"
+                  style={{ background: "var(--color-primary)" }}
+                />
                 Platform
-              </span>
+              </div>
               <h2
-                class="max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl"
+                class="max-w-2xl text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem]"
                 style={{ color: "var(--color-text)" }}
               >
                 Every layer your app needs, in one product
               </h2>
               <p
-                class="mt-4 max-w-xl text-base leading-relaxed"
+                class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7]"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 Stop stitching together a dozen services. Crontech is one
@@ -496,7 +460,7 @@ export default function Home(): JSX.Element {
               </p>
             </div>
 
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <For each={features}>
                 {(feature) => (
                   <FeatureCard
@@ -514,28 +478,26 @@ export default function Home(): JSX.Element {
 
         {/* ── How it works ──────────────────────────────────────── */}
         <section
-          class="py-24 lg:py-32"
-          style={{
-            "border-top": "1px solid var(--color-border)",
-            "border-bottom": "1px solid var(--color-border)",
-          }}
+          class="py-28 lg:py-36"
+          style={{ background: "var(--color-bg-subtle)" }}
         >
-          <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
+          <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="mb-16 flex flex-col items-center text-center">
-              <span
-                class="mb-4 text-xs font-semibold uppercase tracking-widest"
-                style={{ color: "var(--color-primary-text)" }}
-              >
+              <div class="landing-section-label">
+                <div
+                  class="h-1.5 w-1.5 rounded-full"
+                  style={{ background: "var(--color-primary)" }}
+                />
                 Onboarding
-              </span>
+              </div>
               <h2
-                class="max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl"
+                class="max-w-2xl text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem]"
                 style={{ color: "var(--color-text)" }}
               >
                 Move your app to Crontech in three steps
               </h2>
               <p
-                class="mt-4 max-w-xl text-base leading-relaxed"
+                class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7]"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 No rebuild. No long migration. Bring the code you already have,
@@ -543,14 +505,15 @@ export default function Home(): JSX.Element {
               </p>
             </div>
 
-            <div class="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
+            <div class="grid grid-cols-1 gap-14 sm:grid-cols-3 sm:gap-8">
               <For each={steps}>
-                {(step) => (
+                {(step, i) => (
                   <StepCard
                     number={step.number}
                     title={step.title}
                     description={step.description}
                     icon={step.icon}
+                    isLast={i() === steps.length - 1}
                   />
                 )}
               </For>
@@ -559,9 +522,9 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Tech pillars ──────────────────────────────────────── */}
-        <section class="py-32 lg:py-40">
-          <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <section class="py-28 lg:py-36">
+          <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
               <For each={techPillars}>
                 {(pillar) => (
                   <TechPillarCard
@@ -576,28 +539,25 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Bottom CTA ────────────────────────────────────────── */}
-        <section
-          class="py-24 lg:py-32"
-          style={{ "border-top": "1px solid var(--color-border)" }}
-        >
-          <div class="mx-auto max-w-[800px] px-6 text-center lg:px-8">
+        <section class="landing-cta-section">
+          <div class="relative z-10 mx-auto max-w-[800px] px-6 py-28 text-center lg:px-8 lg:py-36">
             <h2
-              class="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl"
+              class="text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem] lg:text-[2.75rem]"
               style={{ color: "var(--color-text)" }}
             >
               The developer platform{" "}
-              <span style={{ color: "var(--color-primary)" }}>
+              <span class="landing-gradient-text">
                 for the next decade.
               </span>
             </h2>
             <p
-              class="mt-5 text-base leading-relaxed sm:text-lg"
+              class="mt-6 text-[1.0625rem] leading-[1.7] sm:text-lg"
               style={{ color: "var(--color-text-secondary)" }}
             >
               One product. Every layer. Built for teams who refuse to settle
               for yesterday&#39;s tools.
             </p>
-            <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div class="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <A href="/register">
                 <Button variant="primary" size="lg">
                   Start building &#8594;
