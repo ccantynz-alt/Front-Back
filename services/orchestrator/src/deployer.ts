@@ -81,23 +81,11 @@ async function exec(
     timeoutMs?: number;
   } = {},
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const spawnOpts: {
-    cwd?: string;
-    env: Record<string, string | undefined>;
-    stdout: "pipe";
-    stderr: "pipe";
-  } = {
+  const proc = Bun.spawn(command, {
+    cwd: options.cwd,
     env: { ...process.env, ...options.env },
     stdout: "pipe",
     stderr: "pipe",
-  };
-
-  if (options.cwd) {
-    spawnOpts.cwd = options.cwd;
-  }
-
-  const proc = Bun.spawn(command, {
-    ...spawnOpts,
   });
 
   let timedOut = false;

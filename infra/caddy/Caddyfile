@@ -3,7 +3,7 @@
 #
 # This Caddyfile is mounted into the Caddy container by
 # docker-compose.production.yml. All upstreams are Docker-internal
-# service names (not 127.0.0.1 — Caddy runs inside the compose network).
+# service names (no 127.0.0.1 — Caddy runs inside the compose network).
 #
 # Cache-Control strategy:
 #   /_build/*, /assets/*  -> content-hashed by Vinxi, safe to cache forever
@@ -14,7 +14,7 @@
 # ── Global options ────────────────────────────────────────────────────
 
 {
-	# Enable HTTP/3 (QUIC) on all servers
+	# Enable HTTP/3 (QUIC)
 	servers {
 		protocols h1 h2 h2c h3
 	}
@@ -22,9 +22,8 @@
 	# Let's Encrypt email for certificate notifications
 	email {$ACME_EMAIL:admin@crontech.ai}
 
-	# Admin API — enabled on localhost only for health checks.
-	# Not exposed to the internet (Caddy container has no host port for 2019).
-	admin :2019
+	# Admin API — disabled in production for security
+	admin off
 }
 
 # ── crontech.ai -> Web App (SolidStart SSR) ──────────────────────────
@@ -62,7 +61,7 @@ crontech.ai {
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-		# Remove server identity header
+		# Remove server identity
 		-Server
 	}
 
@@ -71,7 +70,7 @@ crontech.ai {
 		health_interval 30s
 		health_timeout 5s
 
-		# Pass original client info to the application
+		# Pass original client info
 		header_up X-Real-IP {remote_host}
 		header_up X-Forwarded-For {remote_host}
 		header_up X-Forwarded-Proto {scheme}
@@ -106,11 +105,8 @@ api.crontech.ai {
 		Expires "0"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
-		X-XSS-Protection "1; mode=block"
-		Referrer-Policy "strict-origin-when-cross-origin"
 		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
-		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-		# Remove server identity header
+		# Remove server identity
 		-Server
 	}
 
@@ -143,15 +139,10 @@ api.crontech.ai {
 # *.crontech.app {
 # 	encode gzip zstd
 #
-# 	tls {
-# 		on_demand
-# 	}
-#
 # 	header {
 # 		X-Content-Type-Options "nosniff"
 # 		X-Frame-Options "SAMEORIGIN"
 # 		Strict-Transport-Security "max-age=63072000; includeSubDomains"
-# 		Referrer-Policy "strict-origin-when-cross-origin"
 # 		-Server
 # 	}
 #

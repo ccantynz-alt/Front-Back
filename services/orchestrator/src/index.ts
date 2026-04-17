@@ -160,7 +160,7 @@ startHealthMonitor();
 Bun.serve({
   fetch: app.fetch,
   port: PORT,
-  hostname: HOSTNAME,
+  hostname: "127.0.0.1",
 });
 
 console.log(`[orchestrator] Deploy orchestrator running on http://${HOSTNAME}:${PORT}`);
