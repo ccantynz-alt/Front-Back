@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "bun install",
-  "buildCommand": "turbo build --filter=@back-to-the-future/web",
-  "outputDirectory": "apps/web/.output",
+  "buildCommand": "SERVER_PRESET=vercel turbo build --filter=@back-to-the-future/web",
   "framework": null
 }
