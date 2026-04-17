@@ -367,6 +367,34 @@ export const tenants = sqliteTable("tenants", {
     .$defaultFn(() => new Date()),
 });
 
+// ── Tenant Git Repos (Gluecron push-notification mapping) ────────
+// Maps a git repository (owner/name) to the tenant deploy configuration
+// the /api/hooks/gluecron/push endpoint should invoke. Populated by the
+// tenant admin; read-only from the perspective of the hook.
+
+export const tenantGitRepos = sqliteTable("tenant_git_repos", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  repository: text("repository").notNull().unique(),
+  appName: text("app_name").notNull(),
+  branch: text("branch").notNull().default("main"),
+  domain: text("domain").notNull(),
+  port: integer("port").notNull(),
+  runtime: text("runtime").notNull(),
+  envVars: text("env_vars"),
+  autoDeploy: integer("auto_deploy", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 // ── Feature Flags ─────────────────────────────────────────────────
 
 export const featureFlags = sqliteTable("feature_flags", {

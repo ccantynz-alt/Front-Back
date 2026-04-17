@@ -2,6 +2,14 @@
 // The first AI agent: a website builder assistant.
 // Knows the component catalog, can compose UI, search content, and
 // generate validated component trees via streaming responses.
+//
+// TODO(BLK-020 Phase B): still depends on Vercel `ai`'s `streamText`
+// with `stopWhen: stepCountIs(...)` (multi-step tool calling) and
+// `generateObject` (schema-validated structured output via Zod).
+// Both are non-trivial to port to raw vendor SDKs — they require
+// reimplementing the tool-call loop and a JSON-mode / schema-coercion
+// wrapper around `openai.chat.completions.create` or Anthropic's tool
+// use API. Deferred to Phase B so Phase A can ship.
 
 import { streamText, generateObject, stepCountIs, type ModelMessage } from "ai";
 import { z } from "zod";

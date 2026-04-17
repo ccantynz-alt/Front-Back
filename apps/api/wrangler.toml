@@ -1,37 +1,210 @@
+# =============================================================================
+# Crontech API — Cloudflare Workers configuration
+# =============================================================================
+#
+# This config is the single source of truth for the API worker's shape on
+# Cloudflare. It defines the top-level (development) environment plus two
+# named deploy targets: `production` and `staging`. Resource bindings
+# (D1, R2, KV, Durable Objects) are stubbed as commented blocks below so
+# Craig can flip them on one at a time as he provisions each resource.
+#
+# -----------------------------------------------------------------------------
+# REQUIRED SECRETS — run before first deploy (per env)
+# -----------------------------------------------------------------------------
+# Secrets MUST be set via `wrangler secret put`. They are NEVER stored in
+# this file. The variable names below are what the API code actually
+# reads (see packages/db/src/client.ts + apps/api/src/**). If you rename
+# any of these, grep the code first or you will ship a dead worker.
+#
+# Run each command twice — once with `--env production`, once with
+# `--env staging`:
+#
+#   # --- Database (Turso libsql) ----------------------------------------
+#   wrangler secret put DATABASE_URL            --env production   # libsql://<db>.turso.io
+#   wrangler secret put DATABASE_AUTH_TOKEN     --env production
+#
+#   # --- Auth -----------------------------------------------------------
+#   wrangler secret put GOOGLE_CLIENT_ID        --env production
+#   wrangler secret put GOOGLE_CLIENT_SECRET    --env production
+#   wrangler secret put SESSION_SECRET          --env production   # openssl rand -base64 48
+#   wrangler secret put JWT_SECRET              --env production   # openssl rand -base64 48
+#
+#   # --- Stripe ---------------------------------------------------------
+#   wrangler secret put STRIPE_SECRET_KEY       --env production
+#   wrangler secret put STRIPE_WEBHOOK_SECRET   --env production
+#   wrangler secret put STRIPE_PRO_PRICE_ID     --env production
+#   wrangler secret put STRIPE_ENTERPRISE_PRICE_ID --env production
+#
+#   # --- AI providers ---------------------------------------------------
+#   wrangler secret put OPENAI_API_KEY          --env production
+#   wrangler secret put ANTHROPIC_API_KEY       --env production
+#
+# Optional / later (see §5D):
+#   wrangler secret put NEON_DATABASE_URL       --env production   # if Neon comes online
+#   wrangler secret put QDRANT_API_KEY          --env production   # if Qdrant comes online
+#   wrangler secret put STRIPE_PUBLISHABLE_KEY  --env production   # public, but easier to keep env-scoped
+#
+# NOTE: CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID are NOT Worker
+# secrets. They live in GitHub Actions repo secrets (so deploy.yml can
+# call wrangler-action) — setting them on the Worker itself has no effect.
+#
+# Repeat every command with `--env staging` for the staging worker.
+#
+# -----------------------------------------------------------------------------
+# NOTE ON ENTRYPOINT
+# -----------------------------------------------------------------------------
+# `main = "src/index.ts"` currently points at a module that exports both
+# `workerHandler` (fetch + scheduled) and a default `app` (Hono instance).
+# Wrangler uses the default export. Hono's `app` has a `.fetch` method so
+# HTTP works, but the `scheduled` cron handler lives on `workerHandler`.
+# If the cron trigger below does not fire, swap the default export in
+# `src/index.ts` to `workerHandler` (tracked as a follow-up — out of scope
+# for BLK-020 Agent E).
+#
+# =============================================================================
+
 name = "back-to-the-future-api"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
+# -----------------------------------------------------------------------------
+# Top-level vars (applies to `wrangler dev` and the default environment).
+# Secrets NEVER go here — use `wrangler secret put`.
+# -----------------------------------------------------------------------------
 [vars]
-ENVIRONMENT = "production"
+NODE_ENV = "development"
+ENVIRONMENT = "development"
 
+# -----------------------------------------------------------------------------
 # Cron triggers — fire scheduled handlers on a schedule. The webhook
 # dispatcher drains `webhook_deliveries` every minute.
+# -----------------------------------------------------------------------------
 [triggers]
 crons = ["*/1 * * * *"]
 
-# Uncomment and configure when ready to deploy:
+# =============================================================================
+# STUBBED BINDINGS (top-level / development)
+# =============================================================================
+# Uncomment each block once the corresponding resource is provisioned.
+# Production/staging envs should mirror these under their own `[env.*]`
+# blocks with environment-scoped resource IDs.
+
+# --- D1 (edge SQL) -----------------------------------------------------------
+# Provision: `wrangler d1 create crontech-primary`
 # [[d1_databases]]
 # binding = "DB"
-# database_name = "back-to-the-future-db"
-# database_id = "<your-database-id>"
+# database_name = "crontech-primary"
+# database_id = "TODO-provision-via-wrangler-d1-create"
 
+# --- R2 (object storage) -----------------------------------------------------
+# Provision: `wrangler r2 bucket create crontech-assets`
 # [[r2_buckets]]
-# binding = "STORAGE"
-# bucket_name = "back-to-the-future-assets"
+# binding = "R2"
+# bucket_name = "crontech-assets"
 
+# --- KV (global key-value) ---------------------------------------------------
+# Provision: `wrangler kv namespace create KV`
 # [[kv_namespaces]]
-# binding = "CACHE"
-# id = "<your-kv-namespace-id>"
+# binding = "KV"
+# id = "TODO-provision-via-wrangler-kv-namespace-create"
 
-# Rate limiter store — shared across isolates so rate limiting survives
-# cold starts (the in-memory Map implementation loses state on every spin-up,
-# which effectively breaks rate limiting at Workers scale).
-#
-# Provisioning:
-#   wrangler kv:namespace create RATE_LIMIT_KV
-# Then copy the generated id below and uncomment.
+# --- KV (rate limiter store) -------------------------------------------------
+# Shared across isolates so rate limiting survives cold starts. The in-memory
+# Map implementation loses state on every spin-up, which effectively breaks
+# rate limiting at Workers scale.
+# Provision: `wrangler kv namespace create RATE_LIMIT_KV`
 # [[kv_namespaces]]
 # binding = "RATE_LIMIT_KV"
-# id = "<run `wrangler kv:namespace create RATE_LIMIT_KV` and paste the id>"
+# id = "TODO-provision-via-wrangler-kv-namespace-create"
+
+# --- Durable Objects (collab rooms, WebSockets) ------------------------------
+# Provision: declared here + `[[migrations]]` block below when first deployed.
+# [[durable_objects.bindings]]
+# name = "COLLAB"
+# class_name = "CollabRoom"
+
+# [[migrations]]
+# tag = "v1"
+# new_classes = ["CollabRoom"]
+
+# =============================================================================
+# PRODUCTION ENVIRONMENT — `wrangler deploy --env production`
+# =============================================================================
+[env.production]
+name = "crontech-api"
+workers_dev = false
+
+[[env.production.routes]]
+pattern = "api.crontech.ai/*"
+zone_name = "crontech.ai"
+
+[env.production.vars]
+NODE_ENV = "production"
+ENVIRONMENT = "production"
+
+[env.production.triggers]
+crons = ["*/1 * * * *"]
+
+# --- Production bindings (stubbed) -------------------------------------------
+# Uncomment after provisioning the prod resources.
+
+# [[env.production.d1_databases]]
+# binding = "DB"
+# database_name = "crontech-primary"
+# database_id = "TODO-provision-via-wrangler-d1-create"
+
+# [[env.production.r2_buckets]]
+# binding = "R2"
+# bucket_name = "crontech-assets"
+
+# [[env.production.kv_namespaces]]
+# binding = "KV"
+# id = "TODO-provision-via-wrangler-kv-namespace-create"
+
+# [[env.production.kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "TODO-provision-via-wrangler-kv-namespace-create"
+
+# [[env.production.durable_objects.bindings]]
+# name = "COLLAB"
+# class_name = "CollabRoom"
+
+# =============================================================================
+# STAGING ENVIRONMENT — `wrangler deploy --env staging`
+# =============================================================================
+[env.staging]
+name = "crontech-api-staging"
+workers_dev = true
+
+[env.staging.vars]
+NODE_ENV = "staging"
+ENVIRONMENT = "staging"
+
+[env.staging.triggers]
+crons = ["*/1 * * * *"]
+
+# --- Staging bindings (stubbed) ----------------------------------------------
+# Uncomment after provisioning the staging resources. Use *-staging suffixes
+# on resource names to keep prod/staging data strictly separate.
+
+# [[env.staging.d1_databases]]
+# binding = "DB"
+# database_name = "crontech-primary-staging"
+# database_id = "TODO-provision-via-wrangler-d1-create"
+
+# [[env.staging.r2_buckets]]
+# binding = "R2"
+# bucket_name = "crontech-assets-staging"
+
+# [[env.staging.kv_namespaces]]
+# binding = "KV"
+# id = "TODO-provision-via-wrangler-kv-namespace-create"
+
+# [[env.staging.kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "TODO-provision-via-wrangler-kv-namespace-create"
+
+# [[env.staging.durable_objects.bindings]]
+# name = "COLLAB"
+# class_name = "CollabRoom"

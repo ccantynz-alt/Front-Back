@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import app from "./index";
+import { app } from "./index";
 
 // ── Health endpoint ──────────────────────────────────────────────────
 

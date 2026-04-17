@@ -24,7 +24,7 @@ Each migration proves a specific substrate capability before a paying customer r
 | 6 | GateTest | React + Node + Claude + Stripe ($29–399 tiers) | Week 5 — revenue-bearing proof (paying Stripe customers migrated without any customer-facing change) |
 | 7 | voice | Tauri (Rust) + TS + Vite + Swift iOS | Week 6 — streaming AI stress test (backend only; desktop stays native) |
 | 8 | Zoobicon.com | Next.js + React + TS + Vercel | Week 7 — flagship, thesis proof ("our AI website builder runs on our AI-native dev platform") |
-| 9 | Esim | Empty placeholder | Week 8+ — greenfield build directly on Crontech from day one |
+| 9 | Esim | Greenfield on Crontech (no prior stack) | Week 8+ — AI-generated eSIM storefront, built directly on Crontech from day one (competitors: Airalo, Holafly, Nomad eSIM, Saily, GigSky, Ubigi — see `docs/strategy/COMPETITOR-FREE-STACK.md` §Esim) |
 
 ## 3. Week-by-week execution plan
 
@@ -193,6 +193,15 @@ Each migration proves a specific substrate capability before a paying customer r
 ### Week 8+ — Esim (greenfield)
 
 Built directly on Crontech from day one. No migration needed. The easiest kind of dogfood — the one where the wrong tool never touched it.
+
+**Product intent (per `docs/strategy/COMPETITOR-FREE-STACK.md` §Esim):** the most sophisticated AI-generated eSIM storefront on the market. Target competitors to beat on experience, coverage surfacing, and AI-led plan selection: Airalo, Holafly, Nomad eSIM, Saily, GigSky, Ubigi.
+
+**Substrate capabilities proven:**
+- Greenfield-on-Crontech developer experience (no prior stack to migrate from — the bar is "does a fresh project feel premium out of the box?")
+- AI agent pipeline applied to a consumer-commerce surface (storefront + checkout + plan recommendation)
+- Any primitives still missing after Weeks 0–7 surface here as the final gap list
+
+**Out of scope here:** exact feature list, launch geography, and pricing tiers. These are product decisions owned by Craig; this plan locks only the substrate role ("Week 8+ greenfield dogfood") and the competitive frame.
 
 ## 4. What each migration adds to Crontech itself
 

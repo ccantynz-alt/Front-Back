@@ -1,27 +1,64 @@
 name: Deploy
 
-# ── Crontech Production Deploy ──────────────────────────────────────
-# Pushes to main build + smoke-test the monorepo, then SSH into the
-# Hetzner box and roll both crontech-web and crontech-api containers
-# with the new commit SHA baked in. The deploy script on the box
-# verifies /api/version reports the new SHA before reporting success,
-# which is the actual cache-buster contract.
+# ── Crontech Production Deploy (Cloudflare-native) ──────────────────
+# BLK-020: Hetzner is dead. Crontech runs 100% on Cloudflare.
 #
-# Required GitHub secrets:
-#   HETZNER_IP      — production server IPv4
-#   DEPLOY_SSH_KEY  — private key for the 'deploy' user on the box
-#   DEPLOY_SSH_KNOWN_HOSTS — output of `ssh-keyscan <HETZNER_IP>`
-#                             (pin host key, reject on change)
+# What this workflow does:
+#   1. On push to `main`, gate on check / test / build (preflight).
+#   2. Deploy apps/api  -> Cloudflare Workers (via apps/api/wrangler.toml).
+#   3. Deploy apps/web  -> Cloudflare Pages   (project: crontech-web,
+#      dir:  apps/web/dist, config: apps/web/wrangler.toml).
+#   4. Bake VITE_GIT_SHA=${GITHUB_SHA} into the web build so the in-app
+#      Build Track HUD can detect deploy drift at runtime.
+#
+# Deploy tool choice:
+#   We use cloudflare/wrangler-action@v3 for both deploys. It handles
+#   credential plumbing (CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID)
+#   automatically, pins a reproducible wrangler version, and keeps the
+#   YAML short. Raw `npx wrangler` was the alternative — rejected because
+#   we'd re-implement credential injection and per-step env boilerplate
+#   four times. The action is cleaner.
+#
+# Required GitHub repo secrets (Craig must set these before first run):
+#   CLOUDFLARE_API_TOKEN   — API token with permissions:
+#                              - Account: Workers Scripts: Edit
+#                              - Account: Cloudflare Pages: Edit
+#                              - User: User Details: Read
+#                              - Zone: Zone: Read (if using custom domain)
+#   CLOUDFLARE_ACCOUNT_ID  — your Cloudflare account ID (dashboard → right sidebar)
+#
+# No other secrets. No SSH keys. No Hetzner IP. No docker compose.
+# If this workflow ever regrows SSH, rsync, or anything referencing a
+# long-lived server, that is a doctrine breach — see CLAUDE.md §0.7.
+#
+# Rollback to Hetzner:
+#   Not supported. Hetzner infra is being torn down as part of BLK-020.
+#   Rollback strategy going forward is "redeploy a prior commit to
+#   Cloudflare" via `workflow_dispatch` pointing at an older SHA, which
+#   Cloudflare Workers and Pages both support natively (Workers keeps
+#   versions, Pages keeps deployments). If a red deploy lands, the fix
+#   is: `git revert`, push, re-run this workflow.
 
 on:
   push:
-    branches: [main]
+    # Default branch on this repo is `Main` (capital M), not `main`.
+    # GitHub ref matching is case-sensitive, so we need the exact name
+    # here or auto-deploy on merge never fires. Listing both is a
+    # belt-and-braces in case the default is ever renamed to lowercase.
+    branches: [Main, main]
   workflow_dispatch:
 
+# Workflow-wide baseline: read-only. Deployment steps talk to Cloudflare
+# via CLOUDFLARE_API_TOKEN (not GITHUB_TOKEN), so no job needs write
+# scope on the repo itself. Least-privilege by default.
+permissions:
+  contents: read
+
 concurrency:
-  # One deploy at a time for main. cancel-in-progress: false because
-  # killing a mid-deploy SSH session can leave docker compose in a
-  # half-rolled state on the box.
+  # One deploy at a time for main. cancel-in-progress: false because a
+  # mid-flight wrangler deploy that gets killed can leave Cloudflare
+  # with a half-propagated worker version, which then requires manual
+  # cleanup in the dashboard.
   group: deploy-main
   cancel-in-progress: false
 
@@ -33,6 +70,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # TODO(sha-pin): replace @v2 with specific SHA after verifying
+      # upstream release. Third-party action (non github/ org) — must
+      # be SHA-pinned per supply-chain hardening guidance. 3 call-sites
+      # in this workflow; resolve all to the same SHA.
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -58,94 +99,74 @@ jobs:
       - name: Run tests
         run: bun run test
 
-  deploy-hetzner:
-    name: Deploy to Hetzner
+  deploy-api:
+    name: Deploy API → Cloudflare Workers
     runs-on: ubuntu-latest
     needs: build-and-test
     environment: production
-    timeout-minutes: 15
-
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+      # TODO(sha-pin): replace @v2 with specific SHA after verifying
+      # upstream release. Third-party action — see deploy-api's note.
+      - uses: oven-sh/setup-bun@v2
         with:
-          host: ${{ secrets.HETZNER_IP }}
-          username: deploy
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          command_timeout: 10m
-          script: |
-            set -euo pipefail
-            echo "=== Deploying Crontech to production ==="
+          bun-version: latest
 
-            APP_DIR="/opt/crontech"
-            cd "$APP_DIR"
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-            # 1. Pull latest code
-            echo "[1/5] Pulling latest code..."
-            git fetch origin main
-            git reset --hard origin/main
+      - name: Build API
+        # The api bundle is what wrangler ships. Build here explicitly
+        # (rather than trusting the preflight artefact) so this job is
+        # self-contained and can be re-run on its own via workflow_dispatch.
+        run: bun run --filter=@back-to-the-future/api build
 
-            # 2. Install dependencies
-            echo "[2/5] Installing dependencies..."
-            bun install --frozen-lockfile
+      - name: Deploy API to Cloudflare Workers
+        # Not using cloudflare/wrangler-action@v3 because it runs
+        # `npm install` inside workingDirectory, and this monorepo uses
+        # `workspace:*` refs that npm can't resolve (bun/pnpm only).
+        # Running wrangler directly via bunx sidesteps the problem and
+        # keeps the toolchain consistent with the rest of the build.
+        working-directory: apps/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx wrangler deploy --env production
 
-            # 3. Rebuild Docker containers
-            echo "[3/5] Rebuilding containers..."
-            docker compose -f infra/hetzner/docker-compose.crontech.yml build --no-cache crontech-web crontech-api
+  deploy-web:
+    name: Deploy Web → Cloudflare Pages
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
 
-            # 4. Rolling restart (API first, then web)
-            echo "[4/5] Restarting services..."
-            docker compose -f infra/hetzner/docker-compose.crontech.yml up -d crontech-api
-            sleep 5
-            docker compose -f infra/hetzner/docker-compose.crontech.yml up -d crontech-web
+      # TODO(sha-pin): replace @v2 with specific SHA after verifying
+      # upstream release. Third-party action — see deploy-api's note.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            # 5. Health checks
-            echo "[5/5] Running health checks..."
-            sleep 10
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-            API_OK=false
-            for i in 1 2 3 4 5; do
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
-              if [ "$STATUS" = "200" ]; then
-                echo "API health check passed"
-                API_OK=true
-                break
-              fi
-              echo "  API attempt $i: status $STATUS, retrying..."
-              sleep 5
-            done
+      - name: Build Web (with git SHA baked in)
+        # VITE_GIT_SHA is exposed as import.meta.env.VITE_GIT_SHA in the
+        # client bundle. The Build Track HUD reads this and compares
+        # against /api/version at runtime to detect cache / CDN drift.
+        # Without this env var the HUD cannot tell if the user is on
+        # a stale deploy, which is the whole point of the HUD.
+        env:
+          VITE_GIT_SHA: ${{ github.sha }}
+        run: bun run --filter=@back-to-the-future/web build
 
-            WEB_OK=false
-            for i in 1 2 3 4 5; do
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
-              if [ "$STATUS" = "200" ]; then
-                echo "Web health check passed"
-                WEB_OK=true
-                break
-              fi
-              echo "  Web attempt $i: status $STATUS, retrying..."
-              sleep 5
-            done
-
-            if [ "$API_OK" = true ] && [ "$WEB_OK" = true ]; then
-              echo ""
-              echo "=== DEPLOY SUCCESS ==="
-              echo "  Web: https://crontech.ai"
-              echo "  API: https://api.crontech.ai"
-              docker compose -f infra/hetzner/docker-compose.crontech.yml ps
-            else
-              echo ""
-              echo "=== DEPLOY FAILED ==="
-              echo "  API healthy: $API_OK"
-              echo "  Web healthy: $WEB_OK"
-              echo ""
-              echo "--- Container status ---"
-              docker compose -f infra/hetzner/docker-compose.crontech.yml ps
-              echo ""
-              echo "--- Last 30 log lines ---"
-              docker compose -f infra/hetzner/docker-compose.crontech.yml logs --tail 30
-              exit 1
-            fi
+      - name: Deploy Web to Cloudflare Pages
+        # See deploy-api step for why we avoid cloudflare/wrangler-action.
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx wrangler pages deploy dist --project-name=crontech-web

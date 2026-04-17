@@ -4,11 +4,12 @@ import type { JSX } from "solid-js";
 import { Button } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 import { SEOHead } from "../components/SEOHead";
+import { Icon, type IconName } from "../components/Icon";
 
 // ── Data ────────────────────────────────────────────────────────────
 
 interface Feature {
-  icon: string;
+  icon: IconName;
   title: string;
   description: string;
   href: string;
@@ -17,7 +18,7 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    icon: "\u26A1",
+    icon: "zap",
     title: "Edge Compute",
     description:
       "Cloudflare Workers at the edge. Sub-5ms cold starts across 330+ cities. No containers, no regions, no capacity planning.",
@@ -25,35 +26,35 @@ const features: Feature[] = [
     badge: "Core",
   },
   {
-    icon: "\u{1F5C4}\uFE0F",
+    icon: "database",
     title: "Unified Data",
     description:
       "Turso SQLite replicas at the edge for zero-latency reads. Neon Postgres when you need the full engine. Qdrant for vector search.",
     href: "/database",
   },
   {
-    icon: "\u{1F517}",
+    icon: "link-2",
     title: "Type-Safe APIs",
     description:
       "tRPC v11 end to end. Change a server type, see the client error instantly. No OpenAPI specs, no codegen step, no drift.",
     href: "/docs",
   },
   {
-    icon: "\u{1F310}",
+    icon: "radio",
     title: "Real-Time Layer",
     description:
       "WebSockets, SSE, and Yjs CRDTs on every edge node. Multi-user editing with AI agents as first-class peers.",
     href: "/collab",
   },
   {
-    icon: "\u{1F9E0}",
+    icon: "brain",
     title: "AI Runtime",
     description:
       "Three-tier compute routes inference where it is cheapest: client GPU, edge, or cloud H100s on demand. Generative UI and streaming native.",
     href: "/ai-playground",
   },
   {
-    icon: "\u{1F512}",
+    icon: "lock",
     title: "Auth + Admin",
     description:
       "Passkeys, OAuth, 2FA. Role-based access control. Audit logs, analytics, and user management. Ships with the platform.",
@@ -137,6 +138,12 @@ const techPillars: TechPillar[] = [
 function FeatureCard(props: Feature): JSX.Element {
   return (
     <A href={props.href} class="block group">
+      {/*
+        Outer card is NOT overflow-hidden — that was clipping the "L" of
+        "Learn more" on the bottom row (issue #1). Instead we isolate the
+        glow inside its own overflow-hidden layer, and give the card
+        generous padding so its content has breathing room (issue #7).
+      */}
       <div
         class="h-full rounded-xl p-6 transition-all duration-200"
         style={{
@@ -154,15 +161,15 @@ function FeatureCard(props: Feature): JSX.Element {
       >
         <div class="flex h-full flex-col gap-4">
           <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3.5">
               <div
-                class="flex h-10 w-10 items-center justify-center rounded-lg text-base"
+                class="flex h-11 w-11 items-center justify-center rounded-lg text-lg"
                 style={{
                   background: "var(--color-primary-light)",
                   color: "var(--color-primary-text)",
                 }}
               >
-                {props.icon}
+                <Icon name={props.icon} size={20} />
               </div>
               <span
                 class="text-base font-semibold"
@@ -244,7 +251,7 @@ function StepCard(props: Step): JSX.Element {
 
 function StatBlock(props: Stat): JSX.Element {
   return (
-    <div class="flex flex-col items-center gap-1 px-6 py-5">
+    <div class="flex flex-col items-center justify-center gap-3 bg-white/[0.02] px-6 py-10 transition-colors duration-300 hover:bg-white/[0.035] sm:py-12">
       <span
         class="text-2xl font-bold tracking-tight sm:text-3xl"
         style={{ color: "var(--color-primary)" }}
@@ -258,6 +265,36 @@ function StatBlock(props: Stat): JSX.Element {
         {props.label}
       </span>
     </div>
+  );
+}
+
+// ── Section Eyebrow Pill ────────────────────────────────────────────
+// Shared pill used for small section labels like "PLATFORM" and
+// "ONBOARDING". Previously these floated mid-page as bare violet text —
+// now they render as proper bordered pill badges so they look
+// intentional (issues #3 and #4).
+
+interface EyebrowPillProps {
+  label: string;
+  color: string;
+}
+
+function EyebrowPill(props: EyebrowPillProps): JSX.Element {
+  return (
+    <span
+      class="mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em]"
+      style={{
+        "border-color": `${props.color}40`,
+        background: `${props.color}12`,
+        color: props.color,
+      }}
+    >
+      <span
+        class="h-1.5 w-1.5 rounded-full"
+        style={{ background: props.color }}
+      />
+      {props.label}
+    </span>
   );
 }
 
@@ -459,7 +496,7 @@ export default function Home(): JSX.Element {
               </p>
             </div>
 
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <For each={features}>
                 {(feature) => (
                   <FeatureCard
@@ -522,7 +559,7 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Tech pillars ──────────────────────────────────────── */}
-        <section class="py-24 lg:py-32">
+        <section class="py-32 lg:py-40">
           <div class="mx-auto max-w-[1200px] px-6 lg:px-8">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <For each={techPillars}>

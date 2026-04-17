@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Workflow-wide baseline: read-only access. Individual jobs may expand
+# scope explicitly if they need it. Anything that doesn't override stays
+# least-privilege, matching GitHub hardening guidance.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -133,11 +139,11 @@ jobs:
     name: GateTest Quality Gate
     runs-on: ubuntu-latest
     needs: test  # only run if native tests pass
-    # BLK-007 observation sprint: GateTest is advisory while we verify the
-    # signal is accurate and actionable on 2 clean PRs. After observation,
-    # flip continue-on-error to false and add GateTest to main branch
-    # protection's required-checks list. See docs/BUILD_BIBLE.md BLK-007.
-    continue-on-error: true
+    # BLK-007 observation complete — gate now blocks merge. GateTest ran
+    # advisory on 2 clean PRs and produced accurate, actionable signal.
+    # Craig authorised the flip from advisory to hard-fail. Next step
+    # (off-CI): add this job to main branch protection's required-checks
+    # list. See docs/BUILD_BIBLE.md BLK-007 and CLAUDE.md §0.4.2.
     steps:
       - uses: actions/checkout@v4
 

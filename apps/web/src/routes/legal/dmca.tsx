@@ -308,8 +308,47 @@ export default function DMCAPage(): JSX.Element {
               ensure prompt routing and processing.
             </Text>
             <Text variant="body">
-              Crontech's designated agent is registered with the U.S.
-              Copyright Office in accordance with 17 U.S.C. Section 512(c)(2).
+              DRAFT — requires attorney review and actual USCO registration
+              before launch. We intend to register a DMCA designated agent
+              with the U.S. Copyright Office prior to accepting paid customer
+              uploads. Until that registration is complete, safe-harbor
+              protection under 17 U.S.C. Section 512(c)(2) is not assured.
+              For takedown notices in the interim, contact dmca@crontech.ai.
+            </Text>
+          </Stack>
+        </Card>
+
+        {/* Section 7.5: Aggressive Pre-Launch Protection — DRAFT */}
+        <Card padding="md">
+          <Stack direction="vertical" gap="sm">
+            <Text variant="h4" weight="semibold">
+              7.5 Additional Protections (DRAFT — requires attorney review)
+            </Text>
+            <Text variant="body">
+              DRAFT — requires attorney review. Nothing in this DMCA Policy
+              shall be construed to waive, diminish, or otherwise limit any
+              protection, defense, disclaimer, limitation of liability,
+              indemnification, dispute-resolution clause, or class-action
+              waiver set forth in the Crontech Terms of Service. The
+              AS-IS / AS-AVAILABLE disclaimer, no-consequential-damages
+              exclusion, liability cap, customer indemnification, binding
+              individual arbitration with class-action waiver, governing
+              law (New Zealand), export-controls and U.S. sanctions
+              compliance clause, 18+ age requirement, and 30-day notice
+              for terms changes set forth in the Terms of Service apply
+              with full force to all use of the DMCA procedures described
+              here. Submitting a DMCA notice or counter-notification does
+              not create any rights or remedies beyond those expressly
+              granted by 17 U.S.C. Section 512 and the Terms of Service.
+            </Text>
+            <Text variant="body">
+              We intend to operate DMCA procedures in good faith. We
+              reserve the right to suspend or terminate access to the
+              Service at our sole discretion, with notice where
+              practicable, for any reason including suspected abuse of
+              the DMCA process. Reverse engineering of the Service or its
+              takedown infrastructure is prohibited. Force majeure and
+              severability provisions of the Terms of Service apply.
             </Text>
           </Stack>
         </Card>

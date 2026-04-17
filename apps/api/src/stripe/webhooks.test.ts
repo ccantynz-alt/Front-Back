@@ -1,0 +1,348 @@
+// ── Stripe Webhook Handler Tests ──────────────────────────────────
+//
+// Covers the four Stripe event types the platform dispatches:
+//   - checkout.session.completed
+//   - customer.subscription.updated
+//   - invoice.payment_succeeded
+//   - invoice.payment_failed
+//
+// Plus idempotency: the same Stripe event delivered twice (Stripe
+// retries webhooks on non-2xx responses, so double-delivery is not
+// hypothetical) must not produce duplicate subscription or payment
+// rows.
+//
+// Mocking strategy: Stripe is mocked at the SDK boundary
+// (`./client::getStripe`). Handlers never make real Stripe API calls
+// from tests. The DB is the real test DB (wiped + re-migrated in
+// apps/api/test/setup.ts), so subscription/payment persistence is
+// exercised end-to-end against the real Drizzle schema.
+
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import type Stripe from "stripe";
+import { eq } from "drizzle-orm";
+import { db, users, subscriptions, payments } from "@back-to-the-future/db";
+
+// ── Stripe SDK Boundary Mock ──────────────────────────────────────
+//
+// handleCheckoutCompleted calls `getStripe().subscriptions.retrieve(id)`
+// to fetch the full subscription after the checkout session fires.
+// Mock returns a canned Stripe.Subscription object keyed off the id
+// the test passes in. Tests override `mockSubscription` before each
+// case so each scenario can set status / period / cancel flags.
+
+let mockSubscription: Partial<Stripe.Subscription> = {};
+
+await mock.module("./client", () => ({
+  getStripe: () => ({
+    subscriptions: {
+      retrieve: async (id: string) => ({
+        id,
+        customer: mockSubscription.customer ?? "cus_test_default",
+        status: mockSubscription.status ?? "active",
+        cancel_at_period_end: mockSubscription.cancel_at_period_end ?? false,
+        current_period_start:
+          mockSubscription.current_period_start ?? 1_700_000_000,
+        current_period_end:
+          mockSubscription.current_period_end ?? 1_702_592_000,
+        items: mockSubscription.items ?? {
+          data: [{ price: { id: "price_test_pro" } }],
+        },
+      }),
+    },
+  }),
+}));
+
+// Dynamic import AFTER mock.module so the handler picks up the mocked
+// client. Top-level `await mock.module` + dynamic import is the Bun
+// Test pattern for module-level substitution.
+const { handleWebhookEvent } = await import("./webhooks");
+
+// ── Test Fixtures ─────────────────────────────────────────────────
+
+async function createTestUser(): Promise<string> {
+  const id = crypto.randomUUID();
+  await db.insert(users).values({
+    id,
+    email: `stripe-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
+    displayName: "Stripe Test User",
+  });
+  return id;
+}
+
+async function cleanupUser(userId: string): Promise<void> {
+  await db.delete(payments).where(eq(payments.userId, userId));
+  await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+  await db.delete(users).where(eq(users.id, userId));
+}
+
+/** Build a minimally-shaped Stripe.Event for the handler. */
+function buildEvent<T>(
+  type: Stripe.Event.Type,
+  data: T,
+  eventId = `evt_test_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+): Stripe.Event {
+  return {
+    id: eventId,
+    api_version: "2025-02-24.acacia",
+    created: Math.floor(Date.now() / 1000),
+    data: { object: data as unknown as Stripe.Event.Data.Object },
+    livemode: false,
+    object: "event",
+    pending_webhooks: 0,
+    request: { id: null, idempotency_key: null },
+    type,
+  } as unknown as Stripe.Event;
+}
+
+// ── Tests ─────────────────────────────────────────────────────────
+
+describe("Stripe webhook: checkout.session.completed", () => {
+  let userId: string;
+
+  beforeEach(async () => {
+    userId = await createTestUser();
+    mockSubscription = {
+      status: "active",
+      cancel_at_period_end: false,
+      current_period_start: 1_700_000_000,
+      current_period_end: 1_702_592_000,
+      customer: "cus_test_123",
+      items: {
+        data: [{ price: { id: "price_test_pro" } }],
+      } as Stripe.Subscription["items"],
+    };
+  });
+
+  afterEach(async () => {
+    await cleanupUser(userId);
+  });
+
+  test("creates a subscription row tied to client_reference_id (payment intent / checkout)", async () => {
+    const event = buildEvent<Partial<Stripe.Checkout.Session>>(
+      "checkout.session.completed",
+      {
+        id: "cs_test_create_sub",
+        subscription: "sub_test_new_1",
+        customer: "cus_test_123",
+        client_reference_id: userId,
+        metadata: {},
+      },
+    );
+
+    await handleWebhookEvent(event);
+
+    const row = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.stripeSubscriptionId, "sub_test_new_1"),
+    });
+    expect(row).toBeDefined();
+    expect(row!.userId).toBe(userId);
+    expect(row!.stripeCustomerId).toBe("cus_test_123");
+    expect(row!.stripePriceId).toBe("price_test_pro");
+    expect(row!.status).toBe("active");
+    expect(row!.cancelAtPeriodEnd).toBe(false);
+  });
+
+  test("falls back to metadata.userId when client_reference_id is missing", async () => {
+    const event = buildEvent<Partial<Stripe.Checkout.Session>>(
+      "checkout.session.completed",
+      {
+        id: "cs_test_metadata_userid",
+        subscription: "sub_test_new_2",
+        customer: "cus_test_123",
+        client_reference_id: null,
+        metadata: { userId },
+      },
+    );
+
+    await handleWebhookEvent(event);
+
+    const row = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.stripeSubscriptionId, "sub_test_new_2"),
+    });
+    expect(row).toBeDefined();
+    expect(row!.userId).toBe(userId);
+  });
+
+  test("is idempotent: the same event delivered twice leaves one row (on-conflict-do-update)", async () => {
+    const event = buildEvent<Partial<Stripe.Checkout.Session>>(
+      "checkout.session.completed",
+      {
+        id: "cs_test_idempotent",
+        subscription: "sub_test_idempotent",
+        customer: "cus_test_123",
+        client_reference_id: userId,
+        metadata: {},
+      },
+      "evt_test_idempotent_fixed",
+    );
+
+    // Stripe retries on non-2xx, so identical redelivery is expected.
+    await handleWebhookEvent(event);
+    await handleWebhookEvent(event);
+
+    const rows = await db.query.subscriptions.findMany({
+      where: eq(subscriptions.stripeSubscriptionId, "sub_test_idempotent"),
+    });
+    expect(rows.length).toBe(1);
+  });
+});
+
+describe("Stripe webhook: customer.subscription.updated", () => {
+  let userId: string;
+
+  beforeEach(async () => {
+    userId = await createTestUser();
+    // Seed an existing subscription row so the UPDATE has a target.
+    await db.insert(subscriptions).values({
+      id: crypto.randomUUID(),
+      userId,
+      stripeCustomerId: "cus_test_update",
+      stripeSubscriptionId: "sub_test_to_update",
+      stripePriceId: "price_test_pro",
+      status: "active",
+      currentPeriodStart: new Date(1_700_000_000 * 1000),
+      currentPeriodEnd: new Date(1_702_592_000 * 1000),
+      cancelAtPeriodEnd: false,
+    });
+  });
+
+  afterEach(async () => {
+    await cleanupUser(userId);
+  });
+
+  test("flips status from active to past_due and persists cancel_at_period_end", async () => {
+    const sub = {
+      id: "sub_test_to_update",
+      status: "past_due",
+      cancel_at_period_end: true,
+      current_period_start: 1_700_000_000,
+      current_period_end: 1_703_000_000,
+      items: { data: [{ price: { id: "price_test_pro" } }] },
+    } as unknown as Stripe.Subscription;
+
+    const event = buildEvent("customer.subscription.updated", sub);
+    await handleWebhookEvent(event);
+
+    const row = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.stripeSubscriptionId, "sub_test_to_update"),
+    });
+    expect(row).toBeDefined();
+    expect(row!.status).toBe("past_due");
+    expect(row!.cancelAtPeriodEnd).toBe(true);
+  });
+});
+
+describe("Stripe webhook: invoice.payment_succeeded", () => {
+  let userId: string;
+
+  beforeEach(async () => {
+    userId = await createTestUser();
+    await db.insert(subscriptions).values({
+      id: crypto.randomUUID(),
+      userId,
+      stripeCustomerId: "cus_test_pay_ok",
+      stripeSubscriptionId: "sub_test_pay_ok",
+      stripePriceId: "price_test_pro",
+      status: "past_due", // deliberately start past_due to prove payment flips it active
+      currentPeriodStart: new Date(1_700_000_000 * 1000),
+      currentPeriodEnd: new Date(1_702_592_000 * 1000),
+      cancelAtPeriodEnd: false,
+    });
+  });
+
+  afterEach(async () => {
+    await cleanupUser(userId);
+  });
+
+  test("records a payment row and flips the subscription back to active", async () => {
+    const invoice = {
+      id: "in_test_pay_ok",
+      payment_intent: "pi_test_pay_ok_1",
+      subscription: "sub_test_pay_ok",
+      amount_paid: 2900,
+      currency: "usd",
+    } as unknown as Stripe.Invoice;
+
+    const event = buildEvent("invoice.payment_succeeded", invoice);
+    await handleWebhookEvent(event);
+
+    const pay = await db.query.payments.findFirst({
+      where: eq(payments.stripePaymentIntentId, "pi_test_pay_ok_1"),
+    });
+    expect(pay).toBeDefined();
+    expect(pay!.userId).toBe(userId);
+    expect(pay!.amount).toBe(2900);
+    expect(pay!.currency).toBe("usd");
+    expect(pay!.status).toBe("succeeded");
+
+    const sub = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.stripeSubscriptionId, "sub_test_pay_ok"),
+    });
+    expect(sub!.status).toBe("active");
+  });
+
+  test("is idempotent: duplicate invoice.payment_succeeded does not create a second payment row", async () => {
+    const invoice = {
+      id: "in_test_pay_dup",
+      payment_intent: "pi_test_pay_dup_1",
+      subscription: "sub_test_pay_ok",
+      amount_paid: 2900,
+      currency: "usd",
+    } as unknown as Stripe.Invoice;
+
+    const event = buildEvent(
+      "invoice.payment_succeeded",
+      invoice,
+      "evt_pay_dup_fixed",
+    );
+    await handleWebhookEvent(event);
+    await handleWebhookEvent(event);
+
+    const rows = await db.query.payments.findMany({
+      where: eq(payments.stripePaymentIntentId, "pi_test_pay_dup_1"),
+    });
+    expect(rows.length).toBe(1);
+  });
+});
+
+describe("Stripe webhook: invoice.payment_failed", () => {
+  let userId: string;
+
+  beforeEach(async () => {
+    userId = await createTestUser();
+    await db.insert(subscriptions).values({
+      id: crypto.randomUUID(),
+      userId,
+      stripeCustomerId: "cus_test_pay_fail",
+      stripeSubscriptionId: "sub_test_pay_fail",
+      stripePriceId: "price_test_pro",
+      status: "active",
+      currentPeriodStart: new Date(1_700_000_000 * 1000),
+      currentPeriodEnd: new Date(1_702_592_000 * 1000),
+      cancelAtPeriodEnd: false,
+    });
+  });
+
+  afterEach(async () => {
+    await cleanupUser(userId);
+  });
+
+  test("flips subscription status to past_due when Stripe reports a failed invoice", async () => {
+    const invoice = {
+      id: "in_test_pay_fail",
+      payment_intent: "pi_test_pay_fail_1",
+      subscription: "sub_test_pay_fail",
+      amount_paid: 0,
+      currency: "usd",
+    } as unknown as Stripe.Invoice;
+
+    const event = buildEvent("invoice.payment_failed", invoice);
+    await handleWebhookEvent(event);
+
+    const sub = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.stripeSubscriptionId, "sub_test_pay_fail"),
+    });
+    expect(sub).toBeDefined();
+    expect(sub!.status).toBe("past_due");
+  });
+});

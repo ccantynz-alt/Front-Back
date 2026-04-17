@@ -1,21 +1,37 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
-    groups:
-      production-dependencies:
-        patterns:
-          - "*"
-        update-types:
-          - "patch"
-          - "minor"
+  # npm ecosystem is DISABLED.
+  #
+  # Crontech is a bun-only monorepo (see CLAUDE.md §3: "Bun for package management.
+  # Not npm. Not yarn. Not pnpm."). Dependabot does not support bun lockfiles
+  # (as of Apr 2026) — it only updates package.json, which leaves bun.lock stale
+  # and breaks CI's `bun install --frozen-lockfile` with:
+  #   "lockfile had changes, but lockfile is frozen"
+  #
+  # Renovate handles npm updates instead (see .github/renovate.json). Renovate
+  # natively regenerates bun.lock via `postUpdateOptions: ["bundler"]` / bun support.
+  # See docs/DEPENDENCY_UPDATES.md for the full rationale.
+  #
+  # DO NOT re-enable npm updates here without coordinating with Renovate config,
+  # or both bots will race on the same PRs.
+  #
+  # - package-ecosystem: "npm"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "daily"
+  #   open-pull-requests-limit: 10
+  #   labels:
+  #     - "dependencies"
+  #     - "security"
+  #   groups:
+  #     production-dependencies:
+  #       patterns:
+  #         - "*"
+  #       update-types:
+  #         - "patch"
+  #         - "minor"
 
+  # GitHub Actions updates stay on Dependabot — no lockfile involved, works fine.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

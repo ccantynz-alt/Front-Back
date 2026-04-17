@@ -3,6 +3,13 @@
 // better with direct HTTP responses (SSE / data streams).
 // All inputs validated with Zod. All responses streamed.
 // Supports demo mode when no AI provider keys are configured.
+//
+// TODO(BLK-020 Phase B): `streamText` (chat + site-builder) and
+// `generateObject` (schema-validated UI layouts) are still Vercel AI
+// SDK wrappers. These are the tool-calling and schema-coercion paths
+// that require non-trivial reimplementation on raw vendor SDKs — see
+// providers.ts + agents/site-builder.ts for the deferred list. This
+// file flips when those do.
 
 import { Hono } from "hono";
 import { streamText, generateObject, type ModelMessage } from "ai";

@@ -1,10 +1,28 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { db } from "@back-to-the-future/db";
 import { plans, subscriptions } from "@back-to-the-future/db/schema";
 import { router, publicProcedure, protectedProcedure } from "../init";
 import { createCheckoutSession, createPortalSession } from "../../stripe/checkout";
 import { auditMiddleware } from "../../middleware/audit";
+
+// ── Pre-launch guard ────────────────────────────────────────────────
+// Authorised by Craig on 16 Apr 2026. Stripe must be unreachable until
+// the attorney package is signed off and customer onboarding opens.
+// Any procedure that would CREATE a payment (checkout, portal, paid
+// subscription start, payment-intent creation) short-circuits with a
+// clean pre-launch error when STRIPE_ENABLED !== "true". Webhook
+// HANDLERS are intentionally left untouched — they still need to
+// parse any late-firing Stripe webhook defensively.
+function assertBillingEnabled(): void {
+  if (process.env["STRIPE_ENABLED"] !== "true") {
+    throw new TRPCError({
+      code: "SERVICE_UNAVAILABLE",
+      message: "Billing is not yet operational. Crontech is in pre-launch.",
+    });
+  }
+}
 
 const hardcodedPlans = [
   {
@@ -98,6 +116,7 @@ export const billingRouter = router({
     .input(z.object({ priceId: z.string() }))
     .use(auditMiddleware("billing.checkout"))
     .mutation(async ({ input }) => {
+      assertBillingEnabled();
       return createCheckoutSession({ priceId: input.priceId });
     }),
 
@@ -105,6 +124,7 @@ export const billingRouter = router({
     .input(z.object({ customerId: z.string() }))
     .use(auditMiddleware("billing.portal"))
     .mutation(async ({ input }) => {
+      assertBillingEnabled();
       return createPortalSession({ customerId: input.customerId });
     }),
 });

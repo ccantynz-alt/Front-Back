@@ -29,7 +29,7 @@ interface ShellState {
   history: string[];
 }
 
-function createShellState(projectId: string): ShellState {
+export function createShellState(projectId: string): ShellState {
   return {
     cwd: `/home/user/projects/${projectId}`,
     env: {
@@ -45,7 +45,7 @@ function createShellState(projectId: string): ShellState {
   };
 }
 
-function processCommand(input: string, state: ShellState): string {
+export function processCommand(input: string, state: ShellState): string {
   const trimmed = input.trim();
   if (trimmed === "") return "";
 
@@ -192,7 +192,7 @@ function processCommand(input: string, state: ShellState): string {
         "  \x1b[1mhelp\x1b[0m              Show this help",
         "  \x1b[1mexit\x1b[0m              Close terminal session",
         "",
-        "\x1b[2mFull Docker-backed PTY coming soon.\x1b[0m",
+        "\x1b[2mPTY is currently unavailable in this environment. Contact support if you need terminal access.\x1b[0m",
         "",
       ].join("\r\n");
 

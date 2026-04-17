@@ -23,7 +23,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "static-middleware@0.4.5",
       "lastKnownReleaseAt": "2026-03-25T23:06:25Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:00.608Z",
+      "lastCommitCheckAt": "2026-04-16T10:06:13.483Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -36,8 +36,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "@sveltejs/kit@2.57.1",
       "lastKnownReleaseAt": "2026-04-09T21:45:47Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:00.940Z",
-      "baselineCommitsPerWeek": 20
+      "lastCommitCheckAt": "2026-04-16T10:06:13.712Z",
+      "baselineCommitsPerWeek": 15
     },
     {
       "owner": "QwikDev",
@@ -49,7 +49,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "eslint-plugin-qwik@2.0.0-beta.32",
       "lastKnownReleaseAt": "2026-04-13T21:55:28Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:19.691Z",
+      "lastCommitCheckAt": "2026-04-16T00:17:08.988Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -60,10 +60,10 @@
       "category": "framework",
       "description": "Content-focused web framework. Islands architecture for partial hydration.",
       "defaultBranch": "main",
-      "lastKnownRelease": "astro@6.1.5",
-      "lastKnownReleaseAt": "2026-04-08T13:52:10Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:17.932Z",
-      "baselineCommitsPerWeek": 25
+      "lastKnownRelease": "astro@6.1.7",
+      "lastKnownReleaseAt": "2026-04-15T18:07:56Z",
+      "lastCommitCheckAt": "2026-04-16T10:06:13.913Z",
+      "baselineCommitsPerWeek": 26
     },
     {
       "owner": "honojs",
@@ -125,10 +125,10 @@
       "category": "ai",
       "description": "JS framework for LLM applications. Multi-agent orchestration via LangGraph.",
       "defaultBranch": "main",
-      "lastKnownRelease": "langchain@1.3.2",
-      "lastKnownReleaseAt": "2026-04-13T22:39:29Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:01.269Z",
-      "baselineCommitsPerWeek": 13
+      "lastKnownRelease": "langchain@1.3.3",
+      "lastKnownReleaseAt": "2026-04-15T00:22:14Z",
+      "lastCommitCheckAt": "2026-04-16T10:05:04.577Z",
+      "baselineCommitsPerWeek": 17
     },
     {
       "owner": "cloudflare",
@@ -151,9 +151,9 @@
       "category": "backend",
       "description": "Official Pages deploy GitHub Action. Track deploy surface evolution.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-14T07:10:47.629Z",
+      "lastKnownRelease": "v1.5.0",
+      "lastKnownReleaseAt": "2023-05-23T17:46:18Z",
+      "lastCommitCheckAt": "2026-04-16T10:05:04.753Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -166,7 +166,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v1.26.04",
       "lastKnownReleaseAt": "2026-04-09T14:38:08Z",
-      "lastCommitCheckAt": "2026-04-14T03:40:00.756Z",
+      "lastCommitCheckAt": "2026-04-16T10:06:11.446Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -177,10 +177,10 @@
       "category": "backend",
       "description": "Reactive backend competitor. Sync engine + TS functions.",
       "defaultBranch": "main",
-      "lastKnownRelease": "precompiled-2026-04-14-d34e278",
-      "lastKnownReleaseAt": "2026-04-14T01:10:34Z",
-      "lastCommitCheckAt": "2026-04-14T03:40:01.369Z",
-      "baselineCommitsPerWeek": 98
+      "lastKnownRelease": "precompiled-2026-04-16-8cd4a52",
+      "lastKnownReleaseAt": "2026-04-16T00:20:49Z",
+      "lastCommitCheckAt": "2026-04-16T10:06:11.763Z",
+      "baselineCommitsPerWeek": 99
     },
     {
       "owner": "superfly",
@@ -190,10 +190,10 @@
       "category": "backend",
       "description": "Firecracker microVM platform. Long-lived process competitor.",
       "defaultBranch": "master",
-      "lastKnownRelease": "v0.4.34",
-      "lastKnownReleaseAt": "2026-04-13T19:35:15Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:01.585Z",
-      "baselineCommitsPerWeek": 19
+      "lastKnownRelease": "v0.4.35",
+      "lastKnownReleaseAt": "2026-04-14T19:35:30Z",
+      "lastCommitCheckAt": "2026-04-16T10:05:05.140Z",
+      "baselineCommitsPerWeek": 17
     },
     {
       "owner": "renovatebot",
@@ -203,9 +203,9 @@
       "category": "backend",
       "description": "We use Renovate; track feature evolution for self-evolution pipeline.",
       "defaultBranch": "main",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-10T21:20:20.237Z",
+      "lastKnownRelease": "43.123.5",
+      "lastKnownReleaseAt": "2026-04-15T23:58:58Z",
+      "lastCommitCheckAt": "2026-04-16T00:17:09.368Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -216,9 +216,9 @@
       "category": "backend",
       "description": "Railway PaaS competitor for deploy/runtime story.",
       "defaultBranch": "master",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-14T07:10:48.729Z",
+      "lastKnownRelease": "v4.37.3",
+      "lastKnownReleaseAt": "2026-04-15T00:28:12Z",
+      "lastCommitCheckAt": "2026-04-16T00:17:09.551Z",
       "baselineCommitsPerWeek": 6
     },
     {
@@ -229,10 +229,10 @@
       "category": "backend",
       "description": "Netlify deploy/edge competitor.",
       "defaultBranch": "main",
-      "lastKnownRelease": "v24.11.1",
-      "lastKnownReleaseAt": "2026-04-09T19:00:22Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:19.143Z",
-      "baselineCommitsPerWeek": 8
+      "lastKnownRelease": "v24.11.3",
+      "lastKnownReleaseAt": "2026-04-15T11:17:11Z",
+      "lastCommitCheckAt": "2026-04-16T10:05:05.391Z",
+      "baselineCommitsPerWeek": 11
     },
     {
       "owner": "XeroAPI",
@@ -242,23 +242,10 @@
       "category": "api",
       "description": "Xero accounting API client. Astra/ledger.ai integration & competitive surface.",
       "defaultBranch": "master",
-      "lastKnownRelease": null,
-      "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-14T07:15:02.375Z",
+      "lastKnownRelease": "15.0.0",
+      "lastKnownReleaseAt": "2026-04-02T01:26:35Z",
+      "lastCommitCheckAt": "2026-04-16T00:17:09.747Z",
       "baselineCommitsPerWeek": 0
-    },
-    {
-      "owner": "codeclimate",
-      "repo": "codeclimate",
-      "displayName": "Code Climate CLI",
-      "priority": "medium",
-      "category": "api",
-      "description": "Code quality / maintainability scanner. GateTest competitor.",
-      "defaultBranch": "master",
-      "lastKnownRelease": "v0.619.0",
-      "lastKnownReleaseAt": "2026-04-09T21:18:22Z",
-      "lastCommitCheckAt": null,
-      "baselineCommitsPerWeek": null
     },
     {
       "owner": "codacy",
@@ -270,7 +257,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v4.4.7",
       "lastKnownReleaseAt": "2025-07-17T14:30:19Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:21.212Z",
+      "lastCommitCheckAt": "2026-04-15T23:08:59.422Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -283,8 +270,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v1.1304.0",
       "lastKnownReleaseAt": "2026-04-09T11:40:07Z",
-      "lastCommitCheckAt": "2026-04-14T07:15:01.980Z",
-      "baselineCommitsPerWeek": 27
+      "lastCommitCheckAt": "2026-04-16T00:17:08.524Z",
+      "baselineCommitsPerWeek": 25
     },
     {
       "owner": "openai",
@@ -296,8 +283,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v20250625",
       "lastKnownReleaseAt": "2025-06-26T01:06:09Z",
-      "lastCommitCheckAt": "2026-04-10T21:20:19.472Z",
-      "baselineCommitsPerWeek": 0
+      "lastCommitCheckAt": "2026-04-16T00:17:08.765Z",
+      "baselineCommitsPerWeek": 1
     },
     {
       "owner": "stackblitz",
@@ -309,7 +296,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-14T07:15:00.477Z",
+      "lastCommitCheckAt": "2026-04-16T10:06:11.929Z",
       "baselineCommitsPerWeek": 0
     }
   ],

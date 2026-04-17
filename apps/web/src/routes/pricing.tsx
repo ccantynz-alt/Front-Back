@@ -39,7 +39,7 @@ const PLANS: PlanTier[] = [
       "1 GB storage",
     ],
     highlighted: false,
-    ctaLabel: "Start free",
+    ctaLabel: "Join waitlist",
     accentColor: "#6b7280",
   },
   {
@@ -138,12 +138,14 @@ function PlanCard(props: { plan: PlanTier; isAnnual: boolean }): JSX.Element {
   const isCustom = (): boolean => props.plan.monthlyPrice === -1;
 
   const handleCtaClick = (): void => {
+    // Pre-launch: every plan routes to the waitlist/contact flow.
+    // Billing is disabled at the tRPC layer (see billing.ts and the
+    // STRIPE_ENABLED env flag) until the attorney package is signed
+    // off and customer onboarding opens post-launch.
     if (props.plan.id === "enterprise") {
       window.location.href = "/support?topic=enterprise";
-    } else if (props.plan.id === "pro") {
-      window.location.href = "/register?plan=pro&billing=" + (props.isAnnual ? "annual" : "monthly");
     } else {
-      window.location.href = "/register?plan=free";
+      window.location.href = "/support?topic=waitlist&plan=" + props.plan.id;
     }
   };
 
@@ -431,7 +433,7 @@ export default function PricingPage(): JSX.Element {
                 class="rounded-xl px-8 py-3 text-sm font-semibold transition-all duration-200 hover:brightness-110"
                 style={{ background: "var(--color-primary)", color: "var(--color-primary-text)" }}
               >
-                Start building
+                Join waitlist
               </button>
               <button
                 type="button"
