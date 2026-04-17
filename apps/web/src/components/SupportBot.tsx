@@ -309,10 +309,10 @@ export function SupportBot(): ReturnType<typeof Show> {
               width: "56px",
               height: "56px",
               border: "none",
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              background: "var(--color-primary)",
               color: "white",
               "font-size": "24px",
-              "box-shadow": "0 8px 24px rgba(99,102,241,0.4)",
+              "box-shadow": "0 8px 24px rgba(0,0,0,0.2)",
               cursor: "pointer",
             }}
           >
@@ -338,7 +338,7 @@ export function SupportBot(): ReturnType<typeof Show> {
           >
             <div
               style={{
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                background: "var(--color-primary)",
                 color: "white",
                 padding: "0.75rem 1rem",
                 display: "flex",

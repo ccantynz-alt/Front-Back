@@ -48,21 +48,21 @@ function tierColor(tier: ComputeTier): { bg: string; border: string; dot: string
   switch (tier) {
     case "client":
       return {
-        bg: "rgba(34, 197, 94, 0.12)",
-        border: "rgba(34, 197, 94, 0.35)",
-        dot: "#22c55e",
+        bg: "color-mix(in oklab, var(--color-success) 12%, transparent)",
+        border: "color-mix(in oklab, var(--color-success) 35%, transparent)",
+        dot: "var(--color-success)",
       };
     case "edge":
       return {
-        bg: "rgba(59, 130, 246, 0.12)",
-        border: "rgba(59, 130, 246, 0.35)",
-        dot: "#3b82f6",
+        bg: "color-mix(in oklab, var(--color-primary) 12%, transparent)",
+        border: "color-mix(in oklab, var(--color-primary) 35%, transparent)",
+        dot: "var(--color-primary)",
       };
     case "cloud":
       return {
-        bg: "rgba(249, 115, 22, 0.12)",
-        border: "rgba(249, 115, 22, 0.35)",
-        dot: "#f97316",
+        bg: "color-mix(in oklab, var(--color-warning) 12%, transparent)",
+        border: "color-mix(in oklab, var(--color-warning) 35%, transparent)",
+        dot: "var(--color-warning)",
       };
   }
 }
@@ -199,8 +199,10 @@ function ConnectionStatus(props: { connected: boolean }): JSX.Element {
         gap: "6px",
         padding: "4px 10px",
         "border-radius": "12px",
-        background: props.connected ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
-        border: `1px solid ${props.connected ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+        background: props.connected
+          ? "color-mix(in oklab, var(--color-success) 10%, transparent)"
+          : "color-mix(in oklab, var(--color-danger) 10%, transparent)",
+        border: `1px solid ${props.connected ? "color-mix(in oklab, var(--color-success) 30%, transparent)" : "color-mix(in oklab, var(--color-danger) 30%, transparent)"}`,
       }}
     >
       <div
@@ -208,7 +210,7 @@ function ConnectionStatus(props: { connected: boolean }): JSX.Element {
           width: "8px",
           height: "8px",
           "border-radius": "50%",
-          background: props.connected ? "#22c55e" : "#ef4444",
+          background: props.connected ? "var(--color-success)" : "var(--color-danger)",
         }}
       />
       <Text variant="caption">

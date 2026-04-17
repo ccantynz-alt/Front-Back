@@ -231,6 +231,7 @@ For the purposes of this doctrine, a "session" is any time:
 - Fixing typos, formatting, and Biome lint errors
 - Bumping patch versions of dependencies via Renovate auto-merges
 - Creating new feature branches (never deleting them)
+- **All tactical fixes listed in §0.10** (fix-on-sight items: broken styling, dead code, missing error handling, hardcoded values, unused imports, type safety improvements, accessibility gaps, lint issues, missing tests)
 
 **Default disposition: when uncertain, ASK.** Asking takes 30 seconds. Acting wrong takes hours to undo.
 
@@ -336,6 +337,96 @@ After the next session's first action, per §0.0 above, the old handoff is delet
 Craig has lost hours to session-drift: one agent shipping a locked-block rewrite that the previous agent had just corrected, a second agent silently reverting positioning copy, a third agent rebranding a locked route. Every one of those breaches cost trust and production time.
 
 The read-and-confirm protocol makes drift impossible to hide: if an agent writes to a locked block without citing Craig's authorization in its first message, the violation is visible in the chat history before any code runs. If the session ends without a `SESSION_LOG` entry, the next agent starts the next session knowing the prior agent broke protocol. Drift stops being silent, so drift stops being worth attempting.
+
+### 0.10 The Zero-Idle Rule (PROACTIVE MODE)
+
+**Authorized by Craig on 16 April 2026.** Claude does not sit idle. Every session must produce forward progress. Idle time is lost revenue, lost coding time, and lost competitive advantage.
+
+#### The Three Proactive Mandates
+
+1. **Fix-on-sight.** If you encounter broken code, dead patterns, hardcoded values that should be variables, missing error handling, stale imports, unused exports, or any other obvious defect *while working on something else*, **fix it immediately.** Do not note it for later. Do not file a mental TODO. Do not say "I noticed X but didn't touch it." Fix it. The cost of fixing a bug on sight is 30 seconds. The cost of leaving it for the next session is context-rebuilding + diagnosis + fix = 10 minutes minimum. Multiply by every bug left unfixed and the compound cost is catastrophic.
+
+2. **Advance the platform.** When the primary task is complete, do not stop. Identify and implement the next highest-impact improvement from the BUILD_BIBLE block list. If all blocks are shipped or blocked on Craig, look for: missing test coverage, component quality improvements, performance optimizations, accessibility gaps, dead code removal, dependency updates. There is *always* work. The codebase is never perfect. Find what's next and do it.
+
+3. **Never request permission for tactical fixes.** The Craig authorization gates (§0.7) exist for *strategic* decisions — new routes, stack changes, positioning, pricing. Tactical improvements are **free actions**:
+   - Fixing broken styling, dead links, dead buttons
+   - Replacing hardcoded values with proper abstractions
+   - Adding missing error handling or input validation
+   - Removing dead code, unused imports, stale files
+   - Improving component accessibility (ARIA, keyboard nav)
+   - Adding missing types or tightening type safety
+   - Writing tests for untested code
+   - Performance improvements that don't change APIs
+   - Fixing lint/format issues
+
+   If it makes the codebase better without changing architecture, user-facing behavior, or strategic direction — **just do it.**
+
+#### The Idle Detection Rule
+
+If at any point during a session the agent has no explicit task and is not currently executing a proactive fix or advancement, that is a doctrine breach. The session should:
+
+1. Run `bun run check-links`, `bun run check-buttons`, `bun run build` to find any regressions.
+2. Grep for known anti-patterns (hardcoded hex colors, `any` casts, `@ts-ignore`, unused exports).
+3. Check the BUILD_BIBLE for the next unshipped block.
+4. Execute the highest-priority item found.
+
+**The only acceptable idle state is waiting for Craig's response to a question that blocks all further work.**
+
+### 0.11 The Doctrine Drift Circuit Breaker
+
+**Long conversations cause drift.** The further a session runs from the initial CLAUDE.md read, the more likely the agent is to forget rules, soften constraints, or invent patterns that contradict doctrine. This is not a character flaw — it is a context window reality.
+
+#### The 10-Turn Re-Read Rule
+
+Every 10 conversational turns (user message + agent response = 1 turn), the agent MUST silently re-read the following:
+
+1. **The Iron Rules** (§0, rules 1–10) — 30 seconds to skim, infinite value in staying aligned.
+2. **The Craig Authorization Gates** (§0.7) — the most commonly drifted section.
+3. **The current session's objective** — as stated in the agent's first message.
+
+This re-read is **silent** — the agent does not announce it to Craig. It simply re-grounds itself. If the re-read reveals that recent work has drifted from doctrine, the agent corrects course immediately and flags the drift to Craig: "I caught myself drifting from [rule X] — corrected."
+
+#### Manual Circuit Breakers
+
+Craig can force a re-read at any time by saying:
+
+- **`rule check`** — Agent re-reads CLAUDE.md in full and confirms alignment.
+- **`memory check`** — Agent re-reads HANDOFF.md, BUILD_BIBLE, and POSITIONING.md and confirms alignment.
+- **`reset context`** — Agent re-reads all doctrine files and restates the session objective.
+
+These are not punishments. They are tools. Use them freely.
+
+### 0.12 The Memory Persistence Protocol
+
+**Authorized by Craig on 16 April 2026.** Sessions are ephemeral. Knowledge must not be. Every session must leave the codebase smarter than it found it.
+
+#### What Gets Persisted (MANDATORY)
+
+At session end, the HANDOFF.md entry (§0.9) is the minimum. But the following additional persistence actions are also mandatory:
+
+1. **Decisions made during the session** — If Craig authorized a new pattern, approved a dependency, rejected an approach, or made any architectural call, it MUST be recorded in the HANDOFF.md session log with Craig's exact words quoted. The next session cannot re-litigate what Craig already decided.
+
+2. **Patterns discovered** — If the session discovered a pattern that future sessions need (e.g., "button checker regex stops at first `>` — put onClick before onMouseEnter", "Tailwind v4 supports `bg-[var(--color-x)]` syntax"), add it to the relevant section of CLAUDE.md or BUILD_BIBLE as a code comment, doc note, or rule — wherever it will be seen by the next agent at the right time.
+
+3. **Open questions** — If the session ended with unresolved questions for Craig, they go in HANDOFF.md with enough context that Craig can answer without scrolling back through the conversation.
+
+4. **Failure modes encountered** — If something broke in a surprising way, document the root cause and fix so the next session doesn't waste 20 minutes rediscovering it.
+
+#### What Does NOT Get Persisted
+
+- Internal reasoning or deliberation (keep it in the conversation, not in files)
+- Speculative plans that Craig hasn't approved
+- TODO comments in code (use the BUILD_BIBLE block system instead)
+
+#### The Memory Loading Sequence
+
+At session start, after the hook runs and the three mandatory reads complete, the agent SHOULD also check:
+
+1. `git log --oneline -10` — What happened recently?
+2. `git diff main..HEAD --stat` — What's on this branch?
+3. Any `HANDOFF.md` entries from the previous session.
+
+This gives the agent a 30-second situational awareness boost that prevents the most common session-start mistakes: re-doing work that's already done, reverting decisions Craig already made, or working on the wrong branch.
 
 ---
 

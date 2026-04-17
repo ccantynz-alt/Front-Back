@@ -244,7 +244,7 @@ export function Terminal(props: TerminalProps): JSX.Element {
   return (
     <div class="terminal-wrapper flex flex-col h-full w-full">
       {/* Status bar */}
-      <div class="terminal-status-bar flex items-center justify-between px-4 py-2 border-b border-white/[0.06]" style={{ background: "#111111" }}>
+      <div class="terminal-status-bar flex items-center justify-between px-4 py-2 border-b border-[var(--color-border)]" style={{ background: "var(--color-bg-elevated)" }}>
         <div class="flex items-center gap-3">
           <div class="flex items-center gap-2">
             <div

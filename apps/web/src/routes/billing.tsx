@@ -140,14 +140,14 @@ export default function BillingPage(): JSX.Element {
   };
 
   return (
-    <div class="min-h-screen bg-[#060606]">
+    <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
       <Title>Billing - Crontech</Title>
 
       <div class="mx-auto max-w-6xl px-6 py-8">
         {/* Header */}
         <div class="mb-8">
-          <h1 class="text-3xl font-bold tracking-tight text-white">Billing</h1>
-          <p class="mt-1 text-sm text-gray-500">
+          <h1 class="text-3xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>Billing</h1>
+          <p class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
             Your plan, billed through Stripe. Invoices, cards, tax details,
             and cancellation all live in the Stripe portal linked below.
           </p>
@@ -155,7 +155,7 @@ export default function BillingPage(): JSX.Element {
 
         <Show when={error()}>
           {(msg) => (
-            <div class="mb-6 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-medium text-red-400">
+            <div class="mb-6 rounded-xl px-4 py-3 text-xs font-medium" style={{ background: "var(--color-danger-bg)", border: "1px solid var(--color-danger-border)", color: "var(--color-danger-text)" }}>
               {msg()}
             </div>
           )}
@@ -163,25 +163,20 @@ export default function BillingPage(): JSX.Element {
 
         {/* Current Plan */}
         <div
-          class="relative mb-8 overflow-hidden rounded-2xl border border-white/[0.06] p-6"
-          style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
+          class="relative mb-8 overflow-hidden rounded-2xl p-6"
+          style={{ background: "var(--color-bg-elevated)", border: "1px solid var(--color-border)" }}
         >
-          <div
-            class="absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-15 blur-3xl"
-            style={{ background: "#3b82f6" }}
-          />
-
           <div class="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-5">
               <div
                 class="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
-                style={{ background: "linear-gradient(135deg, #3b82f630, #8b5cf660)" }}
+                style={{ background: "var(--color-primary-light)" }}
               >
-                <span style={{ color: "#a78bfa" }}>&#9889;</span>
+                <span style={{ color: "var(--color-primary-text)" }}>&#9889;</span>
               </div>
               <div>
                 <div class="flex items-center gap-3">
-                  <h2 class="text-xl font-bold text-white">
+                  <h2 class="text-xl font-bold" style={{ color: "var(--color-text)" }}>
                     <Show when={!subscription.loading()} fallback="Loading…">
                       {currentPlanName()} Plan
                     </Show>
@@ -191,8 +186,8 @@ export default function BillingPage(): JSX.Element {
                       <span
                         class="rounded-full px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
                         style={{
-                          background: status() === "active" ? "#10b98118" : status() === "free" ? "#6b728018" : "#f59e0b18",
-                          color: status() === "active" ? "#10b981" : status() === "free" ? "#9ca3af" : "#f59e0b",
+                          background: status() === "active" ? "var(--color-success-bg)" : status() === "free" ? "var(--color-bg-muted)" : "var(--color-warning-bg)",
+                          color: status() === "active" ? "var(--color-success)" : status() === "free" ? "var(--color-text-muted)" : "var(--color-warning)",
                         }}
                       >
                         {status()}
@@ -200,12 +195,12 @@ export default function BillingPage(): JSX.Element {
                     )}
                   </Show>
                   <Show when={subscription.data()?.cancelAtPeriodEnd}>
-                    <span class="rounded-full bg-amber-500/15 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+                    <span class="rounded-full px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ background: "var(--color-warning-bg)", color: "var(--color-warning)" }}>
                       Cancels at period end
                     </span>
                   </Show>
                 </div>
-                <p class="mt-0.5 text-sm text-gray-500">
+                <p class="mt-0.5 text-sm" style={{ color: "var(--color-text-faint)" }}>
                   <Show
                     when={isPaid() && renewalDate()}
                     fallback={
@@ -230,27 +225,23 @@ export default function BillingPage(): JSX.Element {
                   type="button"
                   disabled={portal.loading()}
                   onClick={() => void handlePortal()}
-                  class="rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110 disabled:opacity-50"
+                  class="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50"
+                  style={{ background: "var(--color-primary)" }}
                 >
                   {portal.loading() ? "Opening…" : "Manage subscription"}
                 </button>
               </Show>
             </div>
           </div>
-
-          <div
-            class="absolute bottom-0 left-0 h-[2px] w-full opacity-60"
-            style={{ background: "linear-gradient(90deg, transparent, #3b82f6, #8b5cf6, transparent)" }}
-          />
         </div>
 
         {/* Plan list */}
         <div class="mb-8">
-          <h2 class="mb-4 text-lg font-semibold text-white">Available plans</h2>
+          <h2 class="mb-4 text-lg font-semibold" style={{ color: "var(--color-text)" }}>Available plans</h2>
           <Show
             when={!plans.loading() && (plans.data() ?? []).length > 0}
             fallback={
-              <div class="rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.01] px-6 py-10 text-center text-sm text-gray-500">
+              <div class="rounded-2xl px-6 py-10 text-center text-sm" style={{ border: "1px dashed var(--color-border)", background: "var(--color-bg-subtle)", color: "var(--color-text-faint)" }}>
                 <Show when={plans.loading()} fallback="No plans configured.">
                   Loading plans…
                 </Show>
@@ -267,32 +258,34 @@ export default function BillingPage(): JSX.Element {
                   const isFree = plan.price === 0;
                   return (
                     <div
-                      class={`rounded-2xl border p-6 transition-all duration-200 ${
-                        isCurrent() ? "border-blue-500/40 bg-blue-500/5" : "border-white/[0.06] bg-[#0d0d0d] hover:border-white/[0.12]"
-                      }`}
+                      class="rounded-2xl p-6 transition-all duration-200"
+                      style={{
+                        border: isCurrent() ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                        background: isCurrent() ? "var(--color-primary-light)" : "var(--color-bg-elevated)",
+                      }}
                     >
                       <div class="mb-4 flex items-center justify-between">
-                        <h3 class="text-lg font-bold text-white">{plan.name}</h3>
+                        <h3 class="text-lg font-bold" style={{ color: "var(--color-text)" }}>{plan.name}</h3>
                         <Show when={isCurrent()}>
-                          <span class="rounded-full bg-blue-500/15 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                          <span class="rounded-full px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ background: "var(--color-primary-light)", color: "var(--color-primary-text)" }}>
                             Current
                           </span>
                         </Show>
                       </div>
                       <div class="mb-4">
-                        <span class="text-3xl font-bold text-white">{formatMoney(plan.price)}</span>
+                        <span class="text-3xl font-bold" style={{ color: "var(--color-text)" }}>{formatMoney(plan.price)}</span>
                         <Show when={!isFree}>
-                          <span class="text-sm text-gray-500">/{plan.interval ?? "month"}</span>
+                          <span class="text-sm" style={{ color: "var(--color-text-faint)" }}>/{plan.interval ?? "month"}</span>
                         </Show>
                       </div>
                       <Show when={plan.description}>
-                        <p class="mb-4 text-xs text-gray-500">{plan.description}</p>
+                        <p class="mb-4 text-xs" style={{ color: "var(--color-text-faint)" }}>{plan.description}</p>
                       </Show>
                       <ul class="mb-5 flex flex-col gap-2">
                         <For each={features()}>
                           {(feature) => (
-                            <li class="flex items-start gap-2 text-xs text-gray-400">
-                              <span class="mt-0.5 text-emerald-400">&#10003;</span>
+                            <li class="flex items-start gap-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                              <span class="mt-0.5" style={{ color: "var(--color-success)" }}>&#10003;</span>
                               <span>{feature}</span>
                             </li>
                           )}
@@ -304,7 +297,8 @@ export default function BillingPage(): JSX.Element {
                           <button
                             type="button"
                             disabled
-                            class="w-full rounded-xl border border-white/[0.06] bg-white/[0.02] py-2.5 text-xs font-medium text-gray-500"
+                            class="w-full rounded-xl py-2.5 text-xs font-medium"
+                            style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)", color: "var(--color-text-faint)" }}
                           >
                             {isCurrent() ? "Your current plan" : "Free tier"}
                           </button>
@@ -314,7 +308,8 @@ export default function BillingPage(): JSX.Element {
                           type="button"
                           disabled={checkout.loading() || !plan.stripePriceId}
                           onClick={() => void handleUpgrade(plan.stripePriceId)}
-                          class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-blue-500/40 hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+                          class="w-full rounded-xl py-2.5 text-xs font-semibold text-white transition-all duration-200 disabled:opacity-40"
+                          style={{ background: "var(--color-primary)" }}
                         >
                           {checkout.loading() ? "Opening Stripe…" : plan.stripePriceId ? `Upgrade to ${plan.name}` : "Contact sales"}
                         </button>
@@ -329,11 +324,11 @@ export default function BillingPage(): JSX.Element {
 
         {/* Billing portal explainer */}
         <div
-          class="rounded-2xl border border-white/[0.06] p-6"
-          style={{ background: "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)" }}
+          class="rounded-2xl p-6"
+          style={{ background: "var(--color-bg-elevated)", border: "1px solid var(--color-border)" }}
         >
-          <h2 class="text-lg font-semibold text-white">Everything else lives in Stripe</h2>
-          <p class="mt-2 text-sm text-gray-400">
+          <h2 class="text-lg font-semibold" style={{ color: "var(--color-text)" }}>Everything else lives in Stripe</h2>
+          <p class="mt-2 text-sm" style={{ color: "var(--color-text-secondary)" }}>
             Invoices, payment methods, billing address, tax IDs, and
             cancellation all live inside Stripe's billing portal. One click
             from here, real state, real receipts, real PCI compliance — no
@@ -343,7 +338,7 @@ export default function BillingPage(): JSX.Element {
             <Show
               when={isPaid()}
               fallback={
-                <span class="text-xs text-gray-600">
+                <span class="text-xs" style={{ color: "var(--color-text-faint)" }}>
                   The portal becomes available after your first paid subscription.
                 </span>
               }
@@ -352,13 +347,14 @@ export default function BillingPage(): JSX.Element {
                 type="button"
                 disabled={portal.loading()}
                 onClick={() => void handlePortal()}
-                class="rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
+                class="rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-200 disabled:opacity-50"
+                style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)", color: "var(--color-text-secondary)" }}
               >
                 {portal.loading() ? "Opening…" : "Open Stripe portal"}
               </button>
             </Show>
           </div>
-          <p class="mt-4 text-[11px] leading-relaxed text-gray-600">
+          <p class="mt-4 text-[11px] leading-relaxed" style={{ color: "var(--color-text-faint)" }}>
             Usage-based charts (API calls, AI tokens, storage, seats) arrive
             with the usage-metering block (BLK-011). Until that pipeline is
             live, this page shows only things we can verify against Stripe.

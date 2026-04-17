@@ -8,9 +8,9 @@
       "category": "framework",
       "description": "React framework for production. Primary competitor in full-stack web.",
       "defaultBranch": "canary",
-      "lastKnownRelease": "v16.2.4",
-      "lastKnownReleaseAt": "2026-04-15T22:35:38Z",
-      "lastCommitCheckAt": "2026-04-16T10:07:15.424Z",
+      "lastKnownRelease": "v16.2.1-canary.38",
+      "lastKnownReleaseAt": "2026-04-13T23:43:40Z",
+      "lastCommitCheckAt": "2026-04-17T02:28:50.315Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -73,9 +73,9 @@
       "category": "backend",
       "description": "Ultrafast web framework. Our backend runtime. Must track closely.",
       "defaultBranch": "main",
-      "lastKnownRelease": "v4.12.14",
-      "lastKnownReleaseAt": "2026-04-15T06:15:10Z",
-      "lastCommitCheckAt": "2026-04-16T10:07:15.609Z",
+      "lastKnownRelease": "v4.12.12",
+      "lastKnownReleaseAt": "2026-04-07T04:15:34Z",
+      "lastCommitCheckAt": "2026-04-17T02:28:50.482Z",
       "baselineCommitsPerWeek": 6
     },
     {
@@ -88,7 +88,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v2.0.0-beta.0",
       "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
-      "lastCommitCheckAt": "2026-04-16T10:07:15.755Z",
+      "lastCommitCheckAt": "2026-04-17T02:28:50.610Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -101,7 +101,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v11.16.0",
       "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
-      "lastCommitCheckAt": "2026-04-16T10:06:10.080Z",
+      "lastCommitCheckAt": "2026-04-17T02:28:50.765Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -112,10 +112,10 @@
       "category": "ai",
       "description": "AI SDK for streaming responses and generative UI. Core AI orchestration layer.",
       "defaultBranch": "main",
-      "lastKnownRelease": "ai@6.0.164",
-      "lastKnownReleaseAt": "2026-04-16T07:54:05Z",
-      "lastCommitCheckAt": "2026-04-16T10:06:10.324Z",
-      "baselineCommitsPerWeek": 89
+      "lastKnownRelease": "ai@6.0.159",
+      "lastKnownReleaseAt": "2026-04-13T17:50:47Z",
+      "lastCommitCheckAt": "2026-04-17T02:28:51.085Z",
+      "baselineCommitsPerWeek": 81
     },
     {
       "owner": "langchain-ai",
@@ -138,10 +138,10 @@
       "category": "backend",
       "description": "Wrangler + Workers tooling. We run on this today; we also compete on DX.",
       "defaultBranch": "main",
-      "lastKnownRelease": "wrangler@4.83.0",
-      "lastKnownReleaseAt": "2026-04-15T09:28:42Z",
-      "lastCommitCheckAt": "2026-04-16T10:06:10.746Z",
-      "baselineCommitsPerWeek": 64
+      "lastKnownRelease": "wrangler@4.82.2",
+      "lastKnownReleaseAt": "2026-04-13T19:08:48Z",
+      "lastCommitCheckAt": "2026-04-17T02:28:51.751Z",
+      "baselineCommitsPerWeek": 44
     },
     {
       "owner": "cloudflare",
@@ -300,6 +300,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-16T10:07:15.756Z",
+  "lastUpdated": "2026-04-17T02:28:51.751Z",
   "schemaVersion": 1
 }

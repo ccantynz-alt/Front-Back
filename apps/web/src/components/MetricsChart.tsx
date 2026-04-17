@@ -384,17 +384,17 @@ export function MetricsChart(props: MetricsChartProps): JSX.Element {
       <Show when={tooltip()}>
         {(t) => (
           <div
-            class="pointer-events-none absolute z-20 flex flex-col items-center gap-0.5 rounded-lg border border-white/10 px-3 py-1.5"
+            class="pointer-events-none absolute z-20 flex flex-col items-center gap-0.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5"
             style={{
               left: `${Math.min(Math.max(t().x, 60), containerWidth() - 60)}px`,
               top: `${Math.max(t().y - 56, 0)}px`,
               transform: "translateX(-50%)",
-              background: "rgba(10,10,10,0.92)",
+              background: "var(--color-bg-elevated)",
               "backdrop-filter": "blur(12px)",
-              "box-shadow": `0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)`,
+              "box-shadow": `0 4px 24px rgba(0,0,0,0.2)`,
             }}
           >
-            <span class="text-sm font-semibold text-white">{t().value}</span>
+            <span class="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{t().value}</span>
             <span class="text-[10px] text-gray-500">{t().time}</span>
           </div>
         )}
