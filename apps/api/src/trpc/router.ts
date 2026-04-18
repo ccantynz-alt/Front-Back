@@ -9,6 +9,7 @@ import { collabRouter } from "./procedures/collab";
 import { emailRouter } from "./procedures/email";
 import { adminRouter } from "./procedures/admin";
 import { analyticsRouter } from "./procedures/analytics";
+import { analyticsChartsRouter } from "./procedures/analytics-charts";
 import { notificationsRouter } from "./procedures/notifications";
 import { tenantRouter } from "./procedures/tenant";
 import { apiKeysRouter } from "./procedures/apiKeys";
@@ -22,12 +23,14 @@ import { uiRouter } from "./procedures/ui";
 import { storageRouter } from "./procedures/storage";
 import { reposRouter } from "./procedures/repos";
 import { projectsRouter } from "./procedures/projects";
+import { deploymentsRouter } from "./procedures/deployments";
 import { importRouter } from "./procedures/importProject";
 import { aiDeployRouter } from "./procedures/aiDeploy";
 import { theatreRouter } from "./procedures/theatre";
 import { flywheelRouter } from "./procedures/flywheel";
 import { voiceRouter } from "./procedures/voice";
 import { launchRouter } from "./procedures/launch";
+import { usageRouter } from "./procedures/usage";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -49,6 +52,7 @@ export const appRouter = router({
   email: emailRouter,
   admin: adminRouter,
   analytics: analyticsRouter,
+  analyticsCharts: analyticsChartsRouter,
   notifications: notificationsRouter,
   tenant: tenantRouter,
   apiKeys: apiKeysRouter,
@@ -62,12 +66,14 @@ export const appRouter = router({
   storage: storageRouter,
   repos: reposRouter,
   projects: projectsRouter,
+  deployments: deploymentsRouter,
   import: importRouter,
   aiDeploy: aiDeployRouter,
   theatre: theatreRouter,
   flywheel: flywheelRouter,
   voice: voiceRouter,
   launch: launchRouter,
+  usage: usageRouter,
 });
 
 export type AppRouter = typeof appRouter;

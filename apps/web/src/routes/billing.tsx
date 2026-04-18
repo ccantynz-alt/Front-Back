@@ -3,6 +3,7 @@ import { createSignal, For, Show, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
 import { trpc } from "../lib/trpc";
 import { useQuery, useMutation, friendlyError } from "../lib/use-trpc";
+import { PreLaunchBilling } from "../components/PreLaunchBilling";
 
 // ── Billing (honest preview, real Stripe backend) ────────────────────
 //
@@ -67,6 +68,16 @@ function formatRenewalDate(value: string | number | Date | null | undefined): st
 }
 
 export default function BillingPage(): JSX.Element {
+  // Billing activation is env-driven on the API (STRIPE_ENABLED). The
+  // UI asks the server BEFORE rendering checkout surfaces so a
+  // pre-launch platform never dumps a raw SERVICE_UNAVAILABLE error
+  // at the user — it shows the PreLaunchBilling waitlist instead.
+  const billingStatus = useQuery(
+    () => trpc.billing.getStatus.query().catch(() => ({ enabled: false })),
+    { key: "billing-status" },
+  );
+  const billingEnabled = createMemo((): boolean => billingStatus.data()?.enabled ?? false);
+
   const subscription = useQuery(
     () =>
       trpc.billing.getSubscription.query().catch(() => ({
@@ -148,10 +159,42 @@ export default function BillingPage(): JSX.Element {
         <div class="mb-8">
           <h1 class="text-3xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>Billing</h1>
           <p class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
-            Your plan, billed through Stripe. Invoices, cards, tax details,
-            and cancellation all live in the Stripe portal linked below.
+            <Show
+              when={billingEnabled()}
+              fallback="Paid plans are coming soon. Join the waitlist below to get early access."
+            >
+              Your plan, billed through Stripe. Invoices, cards, tax details,
+              and cancellation all live in the Stripe portal linked below.
+            </Show>
           </p>
         </div>
+
+        {/* Pre-launch swap — backend rejects checkout/portal mutations
+            while STRIPE_ENABLED !== "true". Render the premium waitlist
+            surface instead of a raw error; hide the checkout UI entirely
+            until the server reports `{ enabled: true }`. */}
+        <Show
+          when={billingEnabled()}
+          fallback={
+            <Show
+              when={!billingStatus.loading()}
+              fallback={
+                <div
+                  class="rounded-2xl px-6 py-10 text-center text-sm"
+                  style={{
+                    border: "1px dashed var(--color-border)",
+                    background: "var(--color-bg-subtle)",
+                    color: "var(--color-text-faint)",
+                  }}
+                >
+                  Loading billing…
+                </div>
+              }
+            >
+              <PreLaunchBilling />
+            </Show>
+          }
+        >
 
         <Show when={error()}>
           {(msg) => (
@@ -360,6 +403,8 @@ export default function BillingPage(): JSX.Element {
             live, this page shows only things we can verify against Stripe.
           </p>
         </div>
+
+        </Show>
       </div>
     </div>
   );

@@ -610,9 +610,10 @@ export const deployments = sqliteTable("deployments", {
     .references(() => users.id),
   commitSha: text("commit_sha"),
   commitMessage: text("commit_message"),
+  commitAuthor: text("commit_author"),
   branch: text("branch").default("main"),
   status: text("status", {
-    enum: ["queued", "building", "deploying", "live", "failed", "rolled_back"],
+    enum: ["queued", "building", "deploying", "live", "failed", "rolled_back", "cancelled"],
   })
     .notNull()
     .default("queued"),
@@ -620,12 +621,45 @@ export const deployments = sqliteTable("deployments", {
   containerId: text("container_id"),
   containerImage: text("container_image"),
   url: text("url"),
+  /** Canonical public deployment URL — alias for BLK-009 naming (`deployUrl`). */
+  deployUrl: text("deploy_url"),
   duration: integer("duration"),
+  /** Build-only duration in milliseconds (excludes deploy + queue time). */
+  buildDuration: integer("build_duration"),
+  errorMessage: text("error_message"),
+  triggeredBy: text("triggered_by", {
+    enum: ["manual", "webhook", "api", "scheduled"],
+  })
+    .notNull()
+    .default("manual"),
   isCurrent: integer("is_current", { mode: "boolean" }).notNull().default(false),
+  startedAt: integer("started_at", { mode: "timestamp" }),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  cancelRequestedAt: integer("cancel_requested_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
   finishedAt: integer("finished_at", { mode: "timestamp" }),
+});
+
+// ── Deployment Logs (BLK-009) ────────────────────────────────────────
+// Line-by-line build output for a deployment. Populated by
+// `apps/api/src/automation/build-runner.ts` as it runs
+// git-clone / install / build steps. Streamed to the UI by the deploy
+// SSE channel.
+
+export const deploymentLogs = sqliteTable("deployment_logs", {
+  id: text("id").primaryKey(),
+  deploymentId: text("deployment_id")
+    .notNull()
+    .references(() => deployments.id, { onDelete: "cascade" }),
+  stream: text("stream", { enum: ["stdout", "stderr", "event"] })
+    .notNull()
+    .default("stdout"),
+  line: text("line").notNull(),
+  timestamp: integer("timestamp", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 // ── Flywheel Memory (BLK-017) ────────────────────────────────────────
@@ -719,6 +753,34 @@ export const flywheelVoiceCommands = sqliteTable("flywheel_voice_commands", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
+});
+
+// =============================================================================
+// BLK-010 — Usage Metering (Stripe metered billing).
+// Every billable event — build minute consumed, edge request served, AI
+// token generated, storage byte held — lands here first. A downstream
+// reporter (not this file) aggregates rows by (userId, billingMonth,
+// eventType) and pushes the totals to Stripe's usage record API. Keeping
+// Stripe out of the hot path means we never drop usage if Stripe is down.
+// =============================================================================
+export const usageEvents = sqliteTable("usage_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  projectId: text("project_id").references(() => projects.id, {
+    onDelete: "set null",
+  }),
+  eventType: text("event_type", {
+    enum: ["build", "request", "ai_tokens", "storage"],
+  }).notNull(),
+  quantity: integer("quantity").notNull(),
+  unit: text("unit").notNull(), // "minutes" | "requests" | "tokens" | "bytes"
+  metadata: text("metadata"), // arbitrary JSON
+  occurredAt: integer("occurred_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  billingMonth: text("billing_month").notNull(), // YYYY-MM, UTC
 });
 
 // =============================================================================

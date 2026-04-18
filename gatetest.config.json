@@ -48,10 +48,16 @@
   },
   "ignore": {
     "paths": [
-      "node_modules/**",
-      ".turbo/**",
+      "**/node_modules/**",
+      "**/.turbo/**",
       ".claude/**",
-      ".vercel/**",
+      "**/.vercel/**",
+      "**/.output/**",
+      "**/.vinxi/**",
+      "**/dist/**",
+      "**/build/**",
+      "apps/web/.output/**",
+      "apps/web/public/_build/**",
       "apps/*/dist/**",
       "apps/*/.output/**",
       "apps/*/.vinxi/**",
@@ -59,9 +65,11 @@
       "packages/*/dist/**",
       "services/*/dist/**",
       "**/*.min.js",
+      "**/*.min.css",
       "**/*.map",
       "coverage/**",
       "docs/**/*.md",
+      "bun.lock",
       "HANDOFF.md"
     ],
     "rules": {

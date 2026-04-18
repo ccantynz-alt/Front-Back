@@ -1,6 +1,6 @@
 # Grafana LGTM observability stack
 #
-# Deployed to Hetzner box during Phase 0 bootstrap (step 12).
+# Deployed to Vultr box during Phase 0 bootstrap (step 12).
 # Referenced by infra/bootstrap/phase-0.sh and CLAUDE.md §3 Observability.
 #
 # Components:
@@ -120,7 +120,7 @@ networks:
 #      - otel-collector-config.yml
 #    These are intentionally NOT committed yet — they will be written
 #    when Phase 0 starts, since their exact settings depend on the
-#    Hetzner box specs and expected load.
+#    Vultr box specs and expected load.
 #
 # 2. Write grafana-provisioning/datasources.yml to auto-connect Grafana
 #    to Loki, Tempo, and Mimir on first boot.

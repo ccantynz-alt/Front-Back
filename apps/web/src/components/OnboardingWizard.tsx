@@ -9,9 +9,9 @@ const ONBOARDING_KEY = "btf_onboarding_complete";
 const PREFERENCES_KEY = "btf_onboarding_preferences";
 
 export interface OnboardingPreferences {
-  buildGoal: "website" | "video" | "both";
-  experience: "beginner" | "intermediate" | "expert";
-  firstAction: "builder" | "video" | "explore";
+  buildGoal: "webapp" | "api" | "ai";
+  experience: "typescript" | "python" | "byof";
+  firstAction: "create" | "explore" | "docs";
 }
 
 function getOnboardingComplete(): boolean {
@@ -123,13 +123,13 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
   const [animating, setAnimating] = createSignal(false);
 
   const [buildGoal, setBuildGoal] = createSignal<OnboardingPreferences["buildGoal"] | null>(null);
-  const [experience, setExperience] = createSignal<OnboardingPreferences["experience"] | null>(null);
+  const [stackPref, setStackPref] = createSignal<OnboardingPreferences["experience"] | null>(null);
   const [firstAction, setFirstAction] = createSignal<OnboardingPreferences["firstAction"] | null>(null);
 
   const canProceed = (): boolean => {
     const s = step();
     if (s === 0) return buildGoal() !== null;
-    if (s === 1) return experience() !== null;
+    if (s === 1) return stackPref() !== null;
     if (s === 2) return firstAction() !== null;
     return false;
   };
@@ -159,8 +159,8 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
   const handleDismiss = (): void => {
     setVisible(false);
     const prefs: OnboardingPreferences = {
-      buildGoal: buildGoal() ?? "both",
-      experience: experience() ?? "beginner",
+      buildGoal: buildGoal() ?? "webapp",
+      experience: stackPref() ?? "typescript",
       firstAction: firstAction() ?? "explore",
     };
     setOnboardingComplete(prefs);
@@ -170,7 +170,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
   const handleComplete = (): void => {
     const prefs: OnboardingPreferences = {
       buildGoal: buildGoal()!,
-      experience: experience()!,
+      experience: stackPref()!,
       firstAction: firstAction()!,
     };
     setOnboardingComplete(prefs);
@@ -179,10 +179,10 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
 
     // Navigate based on chosen first action
     const action = firstAction();
-    if (action === "builder") {
-      navigate("/builder");
-    } else if (action === "video") {
-      navigate("/builder");
+    if (action === "create") {
+      navigate("/projects/new");
+    } else if (action === "docs") {
+      navigate("/docs");
     }
     // "explore" stays on dashboard
   };
@@ -218,7 +218,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
               <Stack direction="vertical" gap="xs" style={{ flex: "1" }}>
                 <Text variant="h3" weight="bold">Welcome to Crontech</Text>
                 <Text variant="caption" class="text-muted">
-                  Let us personalize your experience.
+                  Set up your developer environment.
                 </Text>
               </Stack>
               <button
@@ -249,74 +249,74 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
             {/* Step 1: Build Goal */}
             <Show when={step() === 0}>
               <Stack direction="vertical" gap="md">
-                <Text variant="h4" weight="semibold">What do you want to build?</Text>
+                <Text variant="h4" weight="semibold">What are you building?</Text>
                 <OptionButton
-                  label="Websites"
-                  description="Use the AI website builder to create stunning sites."
-                  selected={buildGoal() === "website"}
-                  onClick={() => setBuildGoal("website")}
+                  label="Web App"
+                  description="Full-stack web application with API, database, and auth."
+                  selected={buildGoal() === "webapp"}
+                  onClick={() => setBuildGoal("webapp")}
                 />
                 <OptionButton
-                  label="Videos"
-                  description="WebGPU-accelerated video editing in the browser."
-                  selected={buildGoal() === "video"}
-                  onClick={() => setBuildGoal("video")}
+                  label="API Service"
+                  description="Backend API with edge compute, database, and real-time."
+                  selected={buildGoal() === "api"}
+                  onClick={() => setBuildGoal("api")}
                 />
                 <OptionButton
-                  label="Both"
-                  description="Full access to website builder and video editor."
-                  selected={buildGoal() === "both"}
-                  onClick={() => setBuildGoal("both")}
+                  label="AI Project"
+                  description="AI-powered application with three-tier compute routing."
+                  selected={buildGoal() === "ai"}
+                  onClick={() => setBuildGoal("ai")}
                 />
               </Stack>
             </Show>
 
-            {/* Step 2: Experience Level */}
+            {/* Step 2: Stack Preferences */}
             <Show when={step() === 1}>
               <Stack direction="vertical" gap="md">
-                <Text variant="h4" weight="semibold">What is your experience level?</Text>
+                <Text variant="h4" weight="semibold">Your stack preferences</Text>
                 <OptionButton
-                  label="Beginner"
-                  description="New to building websites or editing video."
-                  selected={experience() === "beginner"}
-                  onClick={() => setExperience("beginner")}
+                  label="TypeScript"
+                  description="SolidJS + Hono + tRPC. The default Crontech stack."
+                  selected={stackPref() === "typescript"}
+                  onClick={() => setStackPref("typescript")}
                 />
                 <OptionButton
-                  label="Intermediate"
-                  description="Some experience with web development or video tools."
-                  selected={experience() === "intermediate"}
-                  onClick={() => setExperience("intermediate")}
+                  label="Python"
+                  description="Python backend with TypeScript frontend. AI/ML workloads."
+                  selected={stackPref() === "python"}
+                  onClick={() => setStackPref("python")}
                 />
                 <OptionButton
-                  label="Expert"
-                  description="Professional developer or video editor."
-                  selected={experience() === "expert"}
-                  onClick={() => setExperience("expert")}
+                  label="Bring your own"
+                  description="Connect an existing repo. Any framework."
+                  selected={stackPref() === "byof"}
+                  onClick={() => setStackPref("byof")}
                 />
               </Stack>
             </Show>
 
-            {/* Step 3: First Action */}
+            {/* Step 3: Get Started */}
             <Show when={step() === 2}>
               <Stack direction="vertical" gap="md">
-                <Text variant="h4" weight="semibold">Choose your first action</Text>
+                <Text variant="h4" weight="semibold">Get started</Text>
                 <OptionButton
-                  label="Open Composer"
-                  description="Generate SolidJS component trees from a prompt using the three-tier compute router."
-                  selected={firstAction() === "builder"}
-                  onClick={() => setFirstAction("builder")}
+                  label="Create a project"
+                  description="Set up your first project with a database and deploy target."
+                  selected={firstAction() === "create"}
+                  onClick={() => setFirstAction("create")}
                 />
                 <OptionButton
-                  label="Open Video Editor"
-                  description="Jump into the WebGPU-powered video editor."
-                  selected={firstAction() === "video"}
-                  onClick={() => setFirstAction("video")}
-                />
-                <OptionButton
-                  label="Explore the Platform"
-                  description="Browse the dashboard and discover features."
+                  label="Explore the dashboard"
+                  description="Browse the platform and discover features."
                   selected={firstAction() === "explore"}
                   onClick={() => setFirstAction("explore")}
+                />
+                <OptionButton
+                  label="Read the docs"
+                  description="Learn the platform before building."
+                  selected={firstAction() === "docs"}
+                  onClick={() => setFirstAction("docs")}
                 />
               </Stack>
             </Show>

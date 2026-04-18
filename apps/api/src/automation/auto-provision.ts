@@ -54,11 +54,11 @@ async function initializeWorkspace(input: ProvisionInput): Promise<void> {
 
 async function sendWelcomeEmail(input: ProvisionInput): Promise<void> {
   const { sendEmail } = await import("../email/client");
-  const result = await sendEmail(
-    input.email,
-    "Welcome to Crontech",
-    `<p>Hi ${input.displayName ?? "there"}, your account is ready.</p>`,
-  );
+  const { welcomeEmail } = await import("../email/templates");
+  const { subject, html } = welcomeEmail({
+    userName: input.displayName ?? "there",
+  });
+  const result = await sendEmail(input.email, subject, html);
   if (!result.success) {
     throw new Error(result.error ?? "email send failed");
   }

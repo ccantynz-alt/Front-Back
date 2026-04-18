@@ -20,7 +20,7 @@
 | Revenue — Founding Member | $ | $ | | $ | |
 | Revenue — other tiers | $ | $ | | $ | |
 | **Total revenue** | **$** | **$** | | **$** | |
-| Hosting (Hetzner) | $ | $ | | $ | |
+| Hosting (Vultr) | $ | $ | | $ | |
 | AI costs (Claude API, OpenAI) | $ | $ | | $ | |
 | Accountant fees | $ | $ | | $ | |
 | Legal / HR retainer | $ | $ | | $ | |

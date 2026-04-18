@@ -36,6 +36,7 @@ import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
 import { runDispatcher } from "./webhooks/dispatcher";
 import { gluecronPushApp } from "./webhooks/gluecron-push";
+import { githubWebhookApp } from "./github/webhook";
 import { db as defaultDb } from "@back-to-the-future/db";
 import {
   startHealthMonitor,
@@ -339,6 +340,12 @@ app.post("/webhooks/inbound-email", async (c) => {
 // handled inside the route, not via the global middleware stack).
 // POST /api/hooks/gluecron/push — see webhooks/gluecron-push.ts.
 app.route("/", gluecronPushApp);
+
+// Mount GitHub push webhook receiver (BLK-009) — HMAC-SHA256 verification
+// is performed inside the handler against raw body, so it MUST stay
+// outside global middleware that would rewrite / consume the body.
+// POST /api/webhook/github — see github/webhook.ts.
+app.route("/", githubWebhookApp);
 
 // Mount Google OAuth routes (raw Hono -- needs redirects outside tRPC)
 app.route("/auth", googleOAuthRoutes);

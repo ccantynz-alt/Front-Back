@@ -1,9 +1,11 @@
-import { createSignal, createMemo, For, Show, Switch, Match, type Accessor } from "solid-js";
+import { createSignal, createMemo, For, Show, Switch, Match } from "solid-js";
 import type { JSX } from "solid-js";
 import { A, useParams, useNavigate } from "@solidjs/router";
 import { Badge, Button, Card, Stack, Text, Spinner } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { SEOHead } from "../../components/SEOHead";
+import { EnvVarsPanel } from "../../components/EnvVarsPanel";
+import { DomainsPanel } from "../../components/DomainsPanel";
 import { trpc } from "../../lib/trpc";
 import { useQuery } from "../../lib/use-trpc";
 
@@ -177,299 +179,6 @@ function OverviewTab(props: { project: ProjectData }): JSX.Element {
         </Stack>
       </Card>
     </div>
-  );
-}
-
-// ── Domains Tab ────────────────────────────────────────────────────────
-
-function DomainsTab(props: {
-  projectId: string;
-  domains: DomainData[];
-}): JSX.Element {
-  const [newDomain, setNewDomain] = createSignal("");
-  const [verifying, setVerifying] = createSignal<string | null>(null);
-
-  return (
-    <Stack direction="vertical" gap="lg">
-      {/* Add Domain Form */}
-      <Card padding="lg">
-        <Stack direction="vertical" gap="md">
-          <Text variant="h4" weight="semibold">Add Custom Domain</Text>
-          <Stack direction="horizontal" gap="sm" class="items-end">
-            <div class="flex-1">
-              <label class="mb-1 block text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
-                Domain
-              </label>
-              <input
-                type="text"
-                value={newDomain()}
-                onInput={(e) => setNewDomain(e.currentTarget.value)}
-                placeholder="app.example.com"
-                class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-2 text-sm placeholder:text-[var(--color-text-faint)] focus:border-[var(--color-primary)] focus:outline-none"
-                style={{ color: "var(--color-text)" }}
-              />
-            </div>
-            <Button
-              variant="primary"
-              size="md"
-              disabled={newDomain().trim().length < 4}
-              onClick={async () => {
-                const domain = newDomain().trim();
-                if (!domain) return;
-                try {
-                  await trpc.projects.addDomain.mutate({
-                    projectId: props.projectId,
-                    domain,
-                  });
-                  setNewDomain("");
-                  window.location.reload();
-                } catch {
-                  // Error handled by tRPC
-                }
-              }}
-            >
-              Add Domain
-            </Button>
-          </Stack>
-
-          {/* DNS Instructions */}
-          <div class="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
-            <Text variant="caption" weight="semibold" class="text-amber-400">
-              DNS Configuration Required
-            </Text>
-            <Text variant="caption" class="mt-1" style={{ color: "var(--color-text-muted)" }}>
-              Point your domain's A record to{" "}
-              <span class="font-mono" style={{ color: "var(--color-primary)" }}>204.168.251.243</span>
-            </Text>
-          </div>
-        </Stack>
-      </Card>
-
-      {/* Domain List */}
-      <Show
-        when={props.domains.length > 0}
-        fallback={
-          <Card padding="lg">
-            <Text variant="body" class="text-center" style={{ color: "var(--color-text-faint)" }}>
-              No custom domains configured yet. Add one above.
-            </Text>
-          </Card>
-        }
-      >
-        <div class="space-y-3">
-          <For each={props.domains}>
-            {(domain) => (
-              <Card padding="md">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="h-2 w-2 rounded-full"
-                      style={{
-                        background: domain.dnsVerified ? "#10b981" : "#f59e0b",
-                      }}
-                    />
-                    <span class="font-mono text-sm" style={{ color: "var(--color-text)" }}>{domain.domain}</span>
-                    <Show when={domain.isPrimary}>
-                      <Badge variant="info" size="sm">Primary</Badge>
-                    </Show>
-                  </div>
-                  <Stack direction="horizontal" gap="sm">
-                    <Show when={!domain.dnsVerified}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={verifying() === domain.id}
-                        onClick={async () => {
-                          setVerifying(domain.id);
-                          try {
-                            await trpc.projects.verifyDomain.mutate({
-                              projectId: props.projectId,
-                              domainId: domain.id,
-                            });
-                            window.location.reload();
-                          } catch {
-                            // handled by tRPC
-                          } finally {
-                            setVerifying(null);
-                          }
-                        }}
-                      >
-                        {verifying() === domain.id ? "Checking..." : "Verify DNS"}
-                      </Button>
-                    </Show>
-                    <Show when={domain.dnsVerified}>
-                      <Badge variant="success" size="sm">Verified</Badge>
-                    </Show>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
-                        try {
-                          await trpc.projects.removeDomain.mutate({
-                            projectId: props.projectId,
-                            domainId: domain.id,
-                          });
-                          window.location.reload();
-                        } catch {
-                          // handled
-                        }
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </Stack>
-                </div>
-              </Card>
-            )}
-          </For>
-        </div>
-      </Show>
-    </Stack>
-  );
-}
-
-// ── Env Vars Tab ───────────────────────────────────────────────────────
-
-function EnvVarsTab(props: { projectId: string }): JSX.Element {
-  const [newKey, setNewKey] = createSignal("");
-  const [newValue, setNewValue] = createSignal("");
-  const [newEnv, setNewEnv] = createSignal<"production" | "preview" | "development">("production");
-
-  const envVarsQuery = useQuery(
-    () => trpc.projects.listEnvVars.query({ projectId: props.projectId }),
-    { key: "projects" },
-  );
-
-  return (
-    <Stack direction="vertical" gap="lg">
-      {/* Add Env Var Form */}
-      <Card padding="lg">
-        <Stack direction="vertical" gap="md">
-          <Text variant="h4" weight="semibold">Add Environment Variable</Text>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <label class="mb-1 block text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>Key</label>
-              <input
-                type="text"
-                value={newKey()}
-                onInput={(e) => setNewKey(e.currentTarget.value.toUpperCase())}
-                placeholder="DATABASE_URL"
-                class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-2 text-sm font-mono placeholder:text-[var(--color-text-faint)] focus:border-[var(--color-primary)] focus:outline-none"
-                style={{ color: "var(--color-text)" }}
-              />
-            </div>
-            <div>
-              <label class="mb-1 block text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>Value</label>
-              <input
-                type="password"
-                value={newValue()}
-                onInput={(e) => setNewValue(e.currentTarget.value)}
-                placeholder="secret..."
-                class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-2 text-sm placeholder:text-[var(--color-text-faint)] focus:border-[var(--color-primary)] focus:outline-none"
-                style={{ color: "var(--color-text)" }}
-              />
-            </div>
-            <div>
-              <label class="mb-1 block text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>Environment</label>
-              <select
-                value={newEnv()}
-                onChange={(e) =>
-                  setNewEnv(e.currentTarget.value as "production" | "preview" | "development")
-                }
-                class="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-subtle)] px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none"
-                style={{ color: "var(--color-text)" }}
-              >
-                <option value="production">Production</option>
-                <option value="preview">Preview</option>
-                <option value="development">Development</option>
-              </select>
-            </div>
-          </div>
-          <div class="flex justify-end">
-            <Button
-              variant="primary"
-              size="md"
-              disabled={newKey().trim().length < 1 || newValue().length < 1}
-              onClick={async () => {
-                try {
-                  await trpc.projects.setEnvVar.mutate({
-                    projectId: props.projectId,
-                    key: newKey().trim(),
-                    value: newValue(),
-                    environment: newEnv(),
-                  });
-                  setNewKey("");
-                  setNewValue("");
-                  window.location.reload();
-                } catch {
-                  // handled by tRPC
-                }
-              }}
-            >
-              Add Variable
-            </Button>
-          </div>
-        </Stack>
-      </Card>
-
-      {/* Env Vars List */}
-      <Show
-        when={!envVarsQuery.loading}
-        fallback={
-          <div class="flex justify-center py-8">
-            <Spinner size="lg" />
-          </div>
-        }
-      >
-        <Show
-          when={envVarsQuery.data && envVarsQuery.data.length > 0}
-          fallback={
-            <Card padding="lg">
-              <Text variant="body" class="text-center" style={{ color: "var(--color-text-faint)" }}>
-                No environment variables set. Values are encrypted at rest.
-              </Text>
-            </Card>
-          }
-        >
-          <div class="space-y-2">
-            <For each={envVarsQuery.data()}>
-              {(envVar) => (
-                <Card padding="sm">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                      <span class="font-mono text-sm" style={{ color: "var(--color-text)" }}>{envVar.key}</span>
-                      <Badge variant="default" size="sm">{envVar.environment}</Badge>
-                    </div>
-                    <Stack direction="horizontal" gap="sm" class="items-center">
-                      <Text variant="caption" style={{ color: "var(--color-text-faint)" }}>
-                        {relativeTime(envVar.updatedAt)}
-                      </Text>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          try {
-                            await trpc.projects.deleteEnvVar.mutate({
-                              projectId: props.projectId,
-                              envVarId: envVar.id,
-                            });
-                            window.location.reload();
-                          } catch {
-                            // handled
-                          }
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </Stack>
-                  </div>
-                </Card>
-              )}
-            </For>
-          </div>
-        </Show>
-      </Show>
-    </Stack>
   );
 }
 
@@ -811,13 +520,14 @@ export default function ProjectDetailPage(): JSX.Element {
                   <OverviewTab project={project()} />
                 </Match>
                 <Match when={activeTab() === "domains"}>
-                  <DomainsTab
+                  <DomainsPanel
                     projectId={project().id}
                     domains={project().domains}
+                    onChange={() => projectQuery.refetch()}
                   />
                 </Match>
                 <Match when={activeTab() === "env"}>
-                  <EnvVarsTab projectId={project().id} />
+                  <EnvVarsPanel projectId={project().id} />
                 </Match>
                 <Match when={activeTab() === "deployments"}>
                   <DeploymentsTab project={project()} />

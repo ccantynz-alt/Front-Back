@@ -44,8 +44,8 @@ For each project in the empire, identify the primary competitors that are **bann
 - DigitalOcean App Platform (hosting)
 
 **Current exceptions (with expiration dates):**
-- Vercel deployment of apps/web — **EXPIRES Week 0** when Hetzner Phase 0 is live
-- Cloudflare Pages deployment — **EXPIRES Week 0** when Hetzner Phase 0 is live
+- Vercel deployment of apps/web — **EXPIRES Week 0** when Vultr Phase 0 is live
+- Cloudflare Pages deployment — **EXPIRES Week 0** when Vultr Phase 0 is live
 - These exceptions exist ONLY because Phase 0 infrastructure is not yet provisioned
 
 ### Astra / ledger.ai — competes with accounting platforms
@@ -162,7 +162,7 @@ Sometimes you need a competitor's product temporarily because the empire project
 
 | Bridge tool | Reason | Replacement | Expires |
 |---|---|---|---|
-| Vercel hosting (apps/web) | Crontech Phase 0 not yet live on Hetzner | Crontech self-hosting | Phase 0 Week 0 completion |
+| Vercel hosting (apps/web) | Crontech Phase 0 not yet live on Vultr | Crontech self-hosting | Phase 0 Week 0 completion |
 | Cloudflare Pages hosting | Same | Same | Same |
 | NZ accountant's back-office tool for books | Astra not yet production-ready for NZ GST | Astra on Crontech | Astra Week 3+ of migration plan |
 | Resend for outbound email (Crontech) | emailed not yet production-ready | emailed on Crontech | emailed Week 2 of migration plan (review then) |
@@ -178,7 +178,7 @@ These tools do not have any empire project targeting them and are safe to use in
 - Stripe (payment processing) — allowed (we are not building a Stripe competitor)
 - Claude API / Anthropic SDK — allowed (we use LLMs, we don't build them)
 - OpenAI API — allowed (same reason)
-- Hetzner (bare metal hosting) — allowed (we are not building a bare-metal provider)
+- Vultr (bare metal hosting) — allowed (we are not building a bare-metal provider)
 - Linux distros, PostgreSQL, Redis, nginx, Caddy — allowed (open source foundations)
 - Domain registrars (Namecheap, Porkbun) — allowed
 - DNS providers (Cloudflare DNS is the exception — fine as pure DNS, but never as hosting)
