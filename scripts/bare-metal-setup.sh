@@ -194,6 +194,15 @@ log_ok "ufw: default-deny + 22/53/80/443 allowed"
 header "Step 5/9 — Postgres ${PG_MAJOR}"
 
 if [ ! -s "${PG_DATA_DIR}/PG_VERSION" ]; then
+    # Write password to a temp file that postgres user can read.
+    # (Bash process-substitution <(...) creates /dev/fd/N descriptors
+    # owned by root; sudo -u postgres can't read them, which caused
+    # `initdb: error: could not open file "/dev/fd/63"`.)
+    PWFILE=$(mktemp)
+    printf '%s' "${POSTGRES_CRONTECH_PASSWORD}" > "${PWFILE}"
+    chmod 600 "${PWFILE}"
+    chown postgres:postgres "${PWFILE}"
+
     sudo -u postgres "/usr/lib/postgresql/${PG_MAJOR}/bin/initdb" \
         --pgdata="${PG_DATA_DIR}" \
         --auth-host=scram-sha-256 \
@@ -201,7 +210,9 @@ if [ ! -s "${PG_DATA_DIR}/PG_VERSION" ]; then
         --encoding=UTF8 \
         --locale=C.UTF-8 \
         --username=postgres \
-        --pwfile=<(printf '%s' "${POSTGRES_CRONTECH_PASSWORD}") >/dev/null
+        --pwfile="${PWFILE}" >/dev/null
+
+    rm -f "${PWFILE}"
     log_ok "initdb complete at ${PG_DATA_DIR}"
 else
     log_ok "Existing cluster at ${PG_DATA_DIR} — skipping initdb"
