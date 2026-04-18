@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import app from "./index";
+import { app } from "./index";
 
 // ── Smoke Tests ─────────────────────────────────────────────────────
 // These verify that the API server starts and core endpoints respond.

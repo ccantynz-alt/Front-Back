@@ -180,7 +180,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
         "max-width": "100%",
         outline: "none",
         position: "relative",
-        background: "#000",
+        background: "var(--color-bg)",
         "border-radius": "8px",
         overflow: "hidden",
       }}
@@ -245,7 +245,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
           <span
             style={{
               background: "rgba(0,0,0,0.6)",
-              color: "#0f0",
+              color: "var(--color-success)",
               padding: "2px 8px",
               "border-radius": "4px",
               "font-size": "12px",
@@ -259,7 +259,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
           <span
             style={{
               background: "rgba(0,0,0,0.6)",
-              color: props.backendLabel === "WebGPU" ? "#0ff" : "#ff0",
+              color: props.backendLabel === "WebGPU" ? "var(--color-primary)" : "var(--color-warning)",
               padding: "2px 8px",
               "border-radius": "4px",
               "font-size": "12px",
@@ -297,7 +297,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             width: "100%",
             height: "4px",
             cursor: "pointer",
-            "accent-color": "#6366f1",
+            "accent-color": "var(--color-primary)",
           }}
         />
 
@@ -307,7 +307,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             display: "flex",
             "align-items": "center",
             gap: "8px",
-            color: "#fff",
+            color: "var(--color-text)",
             "font-size": "13px",
           }}
         >
@@ -317,7 +317,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             style={{
               background: "none",
               border: "none",
-              color: "#fff",
+              color: "var(--color-text)",
               cursor: "pointer",
               padding: "4px 8px",
               "font-size": "14px",
@@ -339,7 +339,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             style={{
               background: "none",
               border: "none",
-              color: "#fff",
+              color: "var(--color-text)",
               cursor: "pointer",
               padding: "4px",
               "font-size": "13px",
@@ -354,7 +354,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             step={0.05}
             value={isMuted() ? 0 : volume()}
             onInput={(e) => changeVolume(Number(e.currentTarget.value))}
-            style={{ width: "60px", "accent-color": "#6366f1" }}
+            style={{ width: "60px", "accent-color": "var(--color-primary)" }}
           />
 
           {/* Fullscreen */}
@@ -364,7 +364,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             style={{
               background: "none",
               border: "none",
-              color: "#fff",
+              color: "var(--color-text)",
               cursor: "pointer",
               padding: "4px 8px",
               "font-size": "13px",

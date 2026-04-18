@@ -62,7 +62,7 @@ function RemoteCursor(props: RemoteCursorProps): JSX.Element {
           left: "16px",
           top: "12px",
           background: props.user.color,
-          color: "white",
+          color: "var(--color-text)",
           padding: "2px 6px",
           "border-radius": "4px",
           "font-size": "11px",

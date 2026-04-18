@@ -152,7 +152,7 @@ export function welcomeEmail(userName: string): string {
   Here is what you can do right away:
 </p>
 <ul style="margin:0 0 12px;padding-left:20px;font-size:15px;color:#374151;line-height:1.8;">
-  <li>Build websites with our AI Builder</li>
+  <li>Generate component trees with the Composer</li>
   <li>Edit video with WebGPU-accelerated tools</li>
   <li>Collaborate in real-time with your team and AI agents</li>
 </ul>

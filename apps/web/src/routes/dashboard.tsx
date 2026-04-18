@@ -10,63 +10,65 @@ import { useAuth } from "../stores";
 import { trpc } from "../lib/trpc";
 import { useQuery } from "../lib/use-trpc";
 
-// ── Animated Stat Card ────────────────────────────────────────────────
+// ── Stat Card ────────────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
   value: string;
-  delta?: string;
+  delta?: string | undefined;
   icon: string;
-  accentColor: string;
 }
 
 function StatCard(props: StatCardProps): JSX.Element {
   return (
     <div
-      class="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6 transition-all duration-300 hover:border-white/[0.12] hover:shadow-lg hover:shadow-black/20 group"
+      class="rounded-xl p-5 transition-all duration-200"
       style={{
-        background:
-          "linear-gradient(135deg, rgba(17,17,17,0.9) 0%, rgba(10,10,10,0.95) 100%)",
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-border-strong)";
+        e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-border)";
+        e.currentTarget.style.boxShadow = "none";
       }}
     >
-      {/* Glow accent */}
-      <div
-        class="absolute -top-12 -right-12 h-32 w-32 rounded-full opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-40"
-        style={{ background: props.accentColor }}
-      />
-
-      <div class="relative z-10 flex items-start justify-between">
+      <div class="flex items-start justify-between">
         <div class="flex flex-col gap-1">
-          <span class="text-xs font-medium uppercase tracking-widest text-gray-500">
+          <span
+            class="text-xs font-medium uppercase tracking-widest"
+            style={{ color: "var(--color-text-muted)" }}
+          >
             {props.label}
           </span>
-          <span class="text-3xl font-bold tracking-tight text-white">
+          <span
+            class="text-2xl font-bold tracking-tight"
+            style={{ color: "var(--color-text)" }}
+          >
             {props.value}
           </span>
           <Show when={props.delta}>
-            <span class="mt-1 text-xs font-medium text-emerald-400">
+            <span
+              class="mt-0.5 text-xs font-medium"
+              style={{ color: "var(--color-success)" }}
+            >
               {props.delta}
             </span>
           </Show>
         </div>
         <div
-          class="flex h-10 w-10 items-center justify-center rounded-xl text-lg"
+          class="flex h-9 w-9 items-center justify-center rounded-lg text-base"
           style={{
-            background: `linear-gradient(135deg, ${props.accentColor}22, ${props.accentColor}44)`,
-            color: props.accentColor,
+            background: "var(--color-primary-light)",
+            color: "var(--color-primary-text)",
           }}
         >
           {props.icon}
         </div>
       </div>
-
-      {/* Bottom shimmer line */}
-      <div
-        class="absolute bottom-0 left-0 h-[2px] w-full opacity-60"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${props.accentColor}, transparent)`,
-        }}
-      />
     </div>
   );
 }
@@ -80,42 +82,70 @@ interface QuickActionProps {
   label: string;
   badge?: string | undefined;
   icon: string;
-  gradient: string;
 }
 
 function QuickAction(props: QuickActionProps): JSX.Element {
   return (
-    <div class="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d0d] p-5 transition-all duration-300 hover:border-white/[0.12] hover:shadow-xl hover:shadow-black/30">
-      {/* Subtle gradient hover overlay */}
-      <div
-        class="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{
-          background: `linear-gradient(135deg, ${props.gradient}08, transparent 70%)`,
-        }}
-      />
-
-      <div class="relative z-10 flex flex-col gap-3">
+    <div
+      class="rounded-xl p-5 transition-all duration-200"
+      style={{
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-border-strong)";
+        e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-border)";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    >
+      <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <span class="text-xl">{props.icon}</span>
-            <span class="text-sm font-semibold text-white">{props.title}</span>
+            <span class="text-lg">{props.icon}</span>
+            <span
+              class="text-sm font-semibold"
+              style={{ color: "var(--color-text)" }}
+            >
+              {props.title}
+            </span>
           </div>
           <Show when={props.badge}>
             <span
               class="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
               style={{
-                background: `${props.gradient}20`,
-                color: props.gradient,
+                background: "var(--color-primary-light)",
+                color: "var(--color-primary-text)",
               }}
             >
               {props.badge}
             </span>
           </Show>
         </div>
-        <p class="text-xs leading-relaxed text-gray-500">{props.description}</p>
+        <p
+          class="text-xs leading-relaxed"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {props.description}
+        </p>
         <A href={props.href}>
           <button
-            class="mt-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-xs font-medium text-gray-300 transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
+            class="mt-1 rounded-lg px-4 py-2 text-xs font-medium transition-colors duration-150"
+            style={{
+              border: "1px solid var(--color-border)",
+              background: "var(--color-bg-subtle)",
+              color: "var(--color-text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "var(--color-border-strong)";
+              e.currentTarget.style.color = "var(--color-text)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--color-border)";
+              e.currentTarget.style.color = "var(--color-text-secondary)";
+            }}
             type="button"
           >
             {props.label}
@@ -133,47 +163,88 @@ interface ActivityItemProps {
   title: string;
   description: string;
   time: string;
-  accentColor: string;
+  href?: string | undefined;
 }
 
 function ActivityItem(props: ActivityItemProps): JSX.Element {
-  return (
-    <div class="flex items-start gap-4 rounded-xl border border-transparent px-4 py-3 transition-all duration-200 hover:border-white/[0.04] hover:bg-white/[0.02]">
+  const inner = (
+    <div
+      class="flex items-start gap-4 rounded-lg px-4 py-3 transition-colors duration-150"
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--color-bg-subtle)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+      }}
+    >
       <div
         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm"
         style={{
-          background: `${props.accentColor}15`,
-          color: props.accentColor,
+          background: "var(--color-primary-light)",
+          color: "var(--color-primary-text)",
         }}
       >
         {props.icon}
       </div>
       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span class="text-sm font-medium text-gray-200">{props.title}</span>
-        <span class="text-xs text-gray-500">{props.description}</span>
+        <span
+          class="text-sm font-medium"
+          style={{ color: "var(--color-text)" }}
+        >
+          {props.title}
+        </span>
+        <span
+          class="text-xs"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {props.description}
+        </span>
       </div>
-      <span class="shrink-0 text-[11px] text-gray-600">{props.time}</span>
+      <span
+        class="shrink-0 text-[11px]"
+        style={{ color: "var(--color-text-faint)" }}
+      >
+        {props.time}
+      </span>
     </div>
+  );
+
+  return (
+    <Show when={props.href} fallback={inner}>
+      <A href={props.href!}>{inner}</A>
+    </Show>
   );
 }
 
-// ── Mini Chart (Sparkline Placeholder) ────────────────────────────────
+// ── Usage Metric Row ──────────────────────────────────────────────────
 
-function MiniChart(props: { color: string }): JSX.Element {
-  const bars = [40, 65, 35, 80, 55, 90, 70, 85, 60, 95, 75, 88];
+function UsageMetric(props: { label: string; value: string }): JSX.Element {
   return (
-    <div class="flex items-end gap-[3px]" style={{ height: "48px" }}>
-      <For each={bars}>
-        {(h) => (
-          <div
-            class="w-[6px] rounded-t-sm transition-all duration-500"
-            style={{
-              height: `${h}%`,
-              background: `linear-gradient(to top, ${props.color}40, ${props.color})`,
-            }}
-          />
-        )}
-      </For>
+    <div
+      class="flex items-center justify-between rounded-lg px-4 py-3"
+      style={{
+        background: "var(--color-bg-subtle)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      <div class="flex items-center gap-3">
+        <span
+          class="h-2 w-2 rounded-full"
+          style={{ background: "var(--color-primary)" }}
+        />
+        <span
+          class="text-xs"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {props.label}
+        </span>
+      </div>
+      <span
+        class="font-mono text-sm font-semibold"
+        style={{ color: "var(--color-text)" }}
+      >
+        {props.value}
+      </span>
     </div>
   );
 }
@@ -198,6 +269,10 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
     return name.split(" ")[0] ?? "builder";
   });
 
+  const health = useQuery(() =>
+    trpc.health.query().catch(() => ({ status: "error" as const })),
+  );
+
   const usage = useQuery(() =>
     trpc.analytics.getUsageStats.query().catch(() => ({
       pageViews: 0,
@@ -206,126 +281,48 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       recentEvents: [],
     })),
   );
+
   const unread = useQuery(() =>
     trpc.notifications.getUnread.query().catch(() => [] as unknown[]),
   );
+
   const userList = useQuery(() =>
     trpc.users.list
       .query({ limit: 1 })
       .catch(() => ({ items: [], total: 0, nextCursor: null })),
   );
 
+  const products = useQuery(() =>
+    trpc.products.list.query().catch(() => []),
+  );
+
   const fmt = (n: number | undefined): string =>
     n === undefined ? "--" : n.toLocaleString();
 
+  const apiIndicator = createMemo(() => {
+    if (health.loading()) return { status: "Checking\u2026", color: "var(--color-text-muted)" };
+    if (health.data()?.status === "ok") return { status: "Online", color: "var(--color-success)" };
+    return { status: "Degraded", color: "var(--color-danger)" };
+  });
+
+  const hasProducts = createMemo(
+    () => !products.loading() && (products.data() ?? []).length > 0,
+  );
+
+  const getStartedItems: ActivityItemProps[] = [
+    { icon: "\u{2795}", title: "Create your first project", description: "Set up a new site, app, or API project", time: "Step 1", href: "/builder" },
+    { icon: "\u{2728}", title: "Try the Composer", description: "Generate a component tree from a prompt", time: "Step 2", href: "/builder" },
+    { icon: "\u{26A1}", title: "Open Claude Chat", description: "Direct API access \u2014 your key, your data, your control", time: "Step 3", href: "/chat" },
+    { icon: "\u{1F511}", title: "Configure API keys", description: "Add your OpenAI, Anthropic, or other provider keys", time: "Step 4", href: "/settings" },
+    { icon: "\u{1F4CB}", title: "Browse templates", description: "Start from a battle-tested blueprint and customize", time: "Step 5", href: "/templates" },
+  ];
+
   const quickActions: QuickActionProps[] = [
-    {
-      title: "AI Website Builder",
-      description:
-        "Describe what you want. Ship it in minutes. Validated component trees, zero boilerplate.",
-      href: "/builder",
-      label: "Open builder",
-      badge: "Popular",
-      icon: "\u{1F680}",
-      gradient: "#8b5cf6",
-    },
-    {
-      title: "Video Editor",
-      description:
-        "GPU-accelerated editing straight in the browser. Effects, transitions, encoding -- all on-device.",
-      href: "/video",
-      label: "Open editor",
-      badge: "WebGPU",
-      icon: "\u{1F3AC}",
-      gradient: "#f43f5e",
-    },
-    {
-      title: "Real-Time Collaboration",
-      description:
-        "Start a session. Invite your team. Let AI agents co-author alongside them.",
-      href: "/collab",
-      label: "Start session",
-      icon: "\u{1F91D}",
-      gradient: "#06b6d4",
-    },
-    {
-      title: "AI Playground",
-      description:
-        "Test prompts, swap models, tune agents. Ship from notebook to production in one click.",
-      href: "/ai-playground",
-      label: "Open playground",
-      icon: "\u{1F9EA}",
-      gradient: "#10b981",
-    },
-    {
-      title: "Claude Chat",
-      description:
-        "Direct Anthropic API access. No subscriptions. Your key, your data, your control.",
-      href: "/chat",
-      label: "Open chat",
-      icon: "\u{26A1}",
-      gradient: "#f97316",
-    },
-    {
-      title: "Repositories",
-      description:
-        "Your repos, PRs, branches, issues, and CI status. All in one command center.",
-      href: "/repos",
-      label: "View repos",
-      icon: "\u{1F4BB}",
-      gradient: "#a78bfa",
-    },
-    {
-      title: "Templates",
-      description:
-        "Start from a battle-tested blueprint. Clone, customize, deploy in under five minutes.",
-      href: "/templates",
-      label: "Browse templates",
-      icon: "\u{1F4CB}",
-      gradient: "#f59e0b",
-    },
-    {
-      title: "Docs & Guides",
-      description:
-        "Learn the platform like the pros. Architecture deep-dives, recipes, and API reference.",
-      href: "/docs",
-      label: "Read docs",
-      icon: "\u{1F4D6}",
-      gradient: "#6366f1",
-    },
-  ];
-
-  // System status indicators
-  const systemIndicators = [
-    { label: "API", status: "Operational", color: "#10b981" },
-    { label: "Edge Network", status: "330+ cities", color: "#10b981" },
-    { label: "AI Inference", status: "Active", color: "#8b5cf6" },
-    { label: "WebGPU", status: "Ready", color: "#06b6d4" },
-  ];
-
-  // Default activity items for the feed
-  const defaultActivity: ActivityItemProps[] = [
-    {
-      icon: "\u{1F916}",
-      title: "AI model cache warmed",
-      description: "SmolLM2 360M ready for client-side inference",
-      time: "Just now",
-      accentColor: "#8b5cf6",
-    },
-    {
-      icon: "\u{26A1}",
-      title: "Edge workers deployed",
-      description: "Global distribution across 330+ Cloudflare locations",
-      time: "2m ago",
-      accentColor: "#f59e0b",
-    },
-    {
-      icon: "\u{1F6E1}\uFE0F",
-      title: "Sentinel monitoring active",
-      description: "Tracking 12 competitor repos and 8 npm packages",
-      time: "5m ago",
-      accentColor: "#06b6d4",
-    },
+    { title: "Component Composer", description: "Generate validated SolidJS component trees from a prompt. Three-tier routing, zero boilerplate.", href: "/builder", label: "Open Composer", badge: "Popular", icon: "\u{1F680}" },
+    { title: "Claude Chat", description: "Direct Anthropic API access. No subscriptions. Your key, your data, your control.", href: "/chat", label: "Open chat", icon: "\u{26A1}" },
+    { title: "Repositories", description: "Your repos, PRs, branches, issues, and CI status. All in one command center.", href: "/repos", label: "View repos", icon: "\u{1F4BB}" },
+    { title: "Templates", description: "Start from a battle-tested blueprint. Clone, customize, deploy in under five minutes.", href: "/templates", label: "Browse templates", icon: "\u{1F4CB}" },
+    { title: "Ops Theatre", description: "Live build runs, CI status, and deployment logs. Full observability.", href: "/ops", label: "Open ops", icon: "\u{25B6}" },
   ];
 
   return (
@@ -333,56 +330,77 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       <OnboardingWizard />
       <Title>Dashboard — Crontech</Title>
 
-      <div class="min-h-screen bg-[#060606]">
+      <div style={{ background: "var(--color-bg)" }}>
         <div class="mx-auto max-w-[1400px] px-6 py-8 lg:px-8">
           {/* ── Header ──────────────────────────────────────────────── */}
           <div class="mb-8 flex flex-col gap-1">
-            <span class="text-xs font-medium uppercase tracking-widest text-gray-600">
+            <span
+              class="text-xs font-medium uppercase tracking-widest"
+              style={{ color: "var(--color-text-faint)" }}
+            >
               {new Date().toLocaleDateString(undefined, {
                 weekday: "long",
                 month: "long",
                 day: "numeric",
               })}
             </span>
-            <h1 class="text-3xl font-bold tracking-tight text-white">
+            <h1
+              class="text-3xl font-bold tracking-tight"
+              style={{ color: "var(--color-text)" }}
+            >
               {greeting()},{" "}
-              <span
-                class="bg-clip-text text-transparent"
-                style={{
-                  "background-image":
-                    "linear-gradient(135deg, #8b5cf6, #06b6d4)",
-                }}
-              >
+              <span style={{ color: "var(--color-primary)" }}>
                 {firstName()}
               </span>
             </h1>
-            <p class="text-sm text-gray-500">
+            <p
+              class="text-sm"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               Your command center. Everything you need, one click away.
             </p>
           </div>
 
           {/* ── System Status Bar ───────────────────────────────────── */}
-          <div class="mb-8 flex flex-wrap items-center gap-4 rounded-xl border border-white/[0.04] bg-white/[0.02] px-5 py-3">
-            <span class="text-xs font-semibold uppercase tracking-widest text-gray-500">
+          <div
+            class="mb-8 flex flex-wrap items-center gap-4 rounded-lg px-5 py-3"
+            style={{
+              border: "1px solid var(--color-border)",
+              background: "var(--color-bg-elevated)",
+            }}
+          >
+            <span
+              class="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               System Status
             </span>
-            <div class="h-4 w-px bg-white/[0.08]" />
-            <For each={systemIndicators}>
-              {(indicator) => (
-                <div class="flex items-center gap-2">
-                  <div
-                    class="h-1.5 w-1.5 rounded-full"
-                    style={{ background: indicator.color }}
-                  />
-                  <span class="text-xs text-gray-400">
-                    {indicator.label}:{" "}
-                    <span class="font-medium text-gray-300">
-                      {indicator.status}
-                    </span>
-                  </span>
-                </div>
-              )}
-            </For>
+            <div
+              class="h-4 w-px"
+              style={{ background: "var(--color-border)" }}
+            />
+            <div class="flex items-center gap-2">
+              <div
+                class="h-1.5 w-1.5 rounded-full"
+                style={{ background: apiIndicator().color }}
+              />
+              <span
+                class="text-xs"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                API:{" "}
+                <span class="font-medium" style={{ color: "var(--color-text)" }}>
+                  {apiIndicator().status}
+                </span>
+              </span>
+            </div>
+            <A
+              href="/status"
+              class="ml-auto text-xs transition-colors"
+              style={{ color: "var(--color-primary-text)" }}
+            >
+              Full service status →
+            </A>
           </div>
 
           {/* ── Stats Grid ──────────────────────────────────────────── */}
@@ -390,23 +408,22 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
             <StatCard
               label="Total Projects"
               value={userList.loading() ? "--" : fmt(userList.data()?.total)}
-              delta="+12% this month"
               icon="\u{1F4C1}"
-              accentColor="#8b5cf6"
             />
             <StatCard
               label="Deployments"
               value={usage.loading() ? "--" : fmt(usage.data()?.featureUsage)}
-              delta="3 active"
               icon="\u{1F680}"
-              accentColor="#06b6d4"
             />
             <StatCard
               label="AI Generations"
               value={usage.loading() ? "--" : fmt(usage.data()?.aiGenerations)}
-              delta={`${fmt(usage.data()?.pageViews)} page views`}
+              delta={
+                usage.data()?.pageViews
+                  ? `${fmt(usage.data()?.pageViews)} page views`
+                  : undefined
+              }
               icon="\u{1F916}"
-              accentColor="#10b981"
             />
             <StatCard
               label="Unread Alerts"
@@ -416,75 +433,130 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                   : String((unread.data() ?? []).length)
               }
               icon="\u{1F514}"
-              accentColor="#f59e0b"
             />
           </div>
 
-          {/* ── Main Grid: Activity + Charts ────────────────────────── */}
+          {/* ── Main Grid: Activity + Usage ─────────────────────────── */}
           <div class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Recent Activity */}
-            <div class="lg:col-span-2 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d0d]">
-              <div class="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+            <div
+              class="lg:col-span-2 overflow-hidden rounded-xl"
+              style={{
+                background: "var(--color-bg-elevated)",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              <div
+                class="flex items-center justify-between px-6 py-4"
+                style={{ "border-bottom": "1px solid var(--color-border)" }}
+              >
                 <div class="flex items-center gap-3">
-                  <div class="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                  <span class="text-sm font-semibold text-white">
-                    Recent Activity
+                  <div
+                    class="h-2 w-2 animate-pulse rounded-full"
+                    style={{ background: "var(--color-success)" }}
+                  />
+                  <span
+                    class="text-sm font-semibold"
+                    style={{ color: "var(--color-text)" }}
+                  >
+                    <Show when={hasProducts()} fallback="Get Started">
+                      Recent Activity
+                    </Show>
                   </span>
                 </div>
-                <A href="/settings" class="text-xs text-gray-500 hover:text-gray-400 transition-colors">
+                <A
+                  href="/settings"
+                  class="text-xs transition-colors"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   View all
                 </A>
               </div>
-              <div class="divide-y divide-white/[0.03] p-2">
-                <For each={defaultActivity}>
-                  {(item) => (
-                    <ActivityItem
-                      icon={item.icon}
-                      title={item.title}
-                      description={item.description}
-                      time={item.time}
-                      accentColor={item.accentColor}
-                    />
-                  )}
-                </For>
+              <div class="p-2">
+                <Show
+                  when={hasProducts()}
+                  fallback={
+                    <For each={getStartedItems}>
+                      {(item) => (
+                        <ActivityItem
+                          icon={item.icon}
+                          title={item.title}
+                          description={item.description}
+                          time={item.time}
+                          href={item.href}
+                        />
+                      )}
+                    </For>
+                  }
+                >
+                  <For each={(usage.data()?.recentEvents ?? []).slice(0, 5)}>
+                    {(evt) => (
+                      <ActivityItem
+                        icon={
+                          evt.category === "ai_generation"
+                            ? "\u{1F916}"
+                            : evt.category === "feature_usage"
+                              ? "\u{26A1}"
+                              : evt.category === "page_view"
+                                ? "\u{1F4C4}"
+                                : "\u{1F4CB}"
+                        }
+                        title={evt.event}
+                        description={evt.category.replace(/_/g, " ")}
+                        time={new Date(evt.timestamp).toLocaleTimeString(
+                          undefined,
+                          { hour: "2-digit", minute: "2-digit" },
+                        )}
+                      />
+                    )}
+                  </For>
+                </Show>
               </div>
             </div>
 
-            {/* Performance Charts Area */}
-            <div class="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d0d]">
-              <div class="border-b border-white/[0.06] px-6 py-4">
-                <span class="text-sm font-semibold text-white">
-                  AI Usage (7d)
+            <div
+              class="overflow-hidden rounded-xl"
+              style={{
+                background: "var(--color-bg-elevated)",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              <div
+                class="flex items-center justify-between px-6 py-4"
+                style={{ "border-bottom": "1px solid var(--color-border)" }}
+              >
+                <span
+                  class="text-sm font-semibold"
+                  style={{ color: "var(--color-text)" }}
+                >
+                  Usage summary
+                </span>
+                <span
+                  class="text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ color: "var(--color-text-faint)" }}
+                >
+                  all-time
                 </span>
               </div>
-              <div class="flex flex-col gap-6 p-6">
-                <div>
-                  <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs text-gray-500">Generations</span>
-                    <span class="text-xs font-semibold text-emerald-400">
-                      +24%
-                    </span>
-                  </div>
-                  <MiniChart color="#10b981" />
-                </div>
-                <div>
-                  <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs text-gray-500">Tokens</span>
-                    <span class="text-xs font-semibold text-violet-400">
-                      +18%
-                    </span>
-                  </div>
-                  <MiniChart color="#8b5cf6" />
-                </div>
-                <div>
-                  <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs text-gray-500">Edge Requests</span>
-                    <span class="text-xs font-semibold text-cyan-400">
-                      +31%
-                    </span>
-                  </div>
-                  <MiniChart color="#06b6d4" />
-                </div>
+              <div class="flex flex-col gap-3 p-6">
+                <UsageMetric
+                  label="AI generations"
+                  value={usage.loading() ? "\u2026" : fmt(usage.data()?.aiGenerations)}
+                />
+                <UsageMetric
+                  label="Page views"
+                  value={usage.loading() ? "\u2026" : fmt(usage.data()?.pageViews)}
+                />
+                <UsageMetric
+                  label="Feature events"
+                  value={usage.loading() ? "\u2026" : fmt(usage.data()?.featureUsage)}
+                />
+                <p
+                  class="mt-2 text-[11px] leading-relaxed"
+                  style={{ color: "var(--color-text-faint)" }}
+                >
+                  Time-series charts arrive with the analytics rollup service.
+                  These are aggregate counts from your analytics events.
+                </p>
               </div>
             </div>
           </div>
@@ -492,10 +564,16 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
           {/* ── Quick Actions ───────────────────────────────────────── */}
           <div class="mb-8">
             <div class="mb-4 flex items-center gap-3">
-              <span class="text-sm font-semibold text-white">
+              <span
+                class="text-sm font-semibold"
+                style={{ color: "var(--color-text)" }}
+              >
                 Quick Actions
               </span>
-              <div class="h-px flex-1 bg-white/[0.04]" />
+              <div
+                class="h-px flex-1"
+                style={{ background: "var(--color-border)" }}
+              />
             </div>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <For each={quickActions}>
@@ -507,7 +585,6 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                     label={action.label}
                     badge={action.badge}
                     icon={action.icon}
-                    gradient={action.gradient}
                   />
                 )}
               </For>
@@ -517,16 +594,31 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
           <ProgressTracker />
 
           {/* ── Account Card ────────────────────────────────────────── */}
-          <div class="mt-8 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d0d] p-6">
+          <div
+            class="mt-8 rounded-xl p-6"
+            style={{
+              background: "var(--color-bg-elevated)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
             <div class="mb-4 flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-cyan-600/20 text-sm font-bold text-white">
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold"
+                style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
+              >
                 {firstName().charAt(0).toUpperCase()}
               </div>
               <div class="flex flex-col">
-                <span class="text-sm font-semibold text-white">
+                <span
+                  class="text-sm font-semibold"
+                  style={{ color: "var(--color-text)" }}
+                >
                   {auth.currentUser()?.displayName ?? "Unknown"}
                 </span>
-                <span class="text-xs text-gray-500">
+                <span
+                  class="text-xs"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   {auth.currentUser()?.email ?? "--"}
                 </span>
               </div>
@@ -534,7 +626,10 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                 {auth.currentUser()?.role ?? "member"}
               </Badge>
             </div>
-            <div class="flex items-center gap-6 text-xs text-gray-500">
+            <div
+              class="flex items-center gap-6 text-xs"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               <span>
                 Member since{" "}
                 {auth.currentUser()?.createdAt
@@ -545,7 +640,8 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
               </span>
               <A
                 href="/settings"
-                class="font-medium text-violet-400 hover:text-violet-300 transition-colors"
+                class="font-medium transition-colors"
+                style={{ color: "var(--color-primary-text)" }}
               >
                 Manage account
               </A>

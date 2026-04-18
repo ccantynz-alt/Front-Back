@@ -2,6 +2,26 @@
 
 export type Runtime = "nextjs" | "bun";
 
+export type DeployStatus =
+  | "queued"
+  | "cloning"
+  | "detecting"
+  | "installing"
+  | "building"
+  | "starting"
+  | "running"
+  | "stopped"
+  | "failed"
+  | "rolling_back";
+
+export type FrameworkType =
+  | "solidstart"
+  | "nextjs"
+  | "vite"
+  | "astro"
+  | "static"
+  | "bun";
+
 export interface DeployRequest {
   appName: string;
   repoUrl: string;
@@ -18,7 +38,7 @@ export interface DeployResult {
   appName: string;
   domain: string;
   url: string;
-  status: "running" | "failed";
+  status: string;
   healthCheck: "pass" | "fail" | "pending";
 }
 
@@ -26,7 +46,7 @@ export interface AppStatus {
   name: string;
   containerId: string;
   image: string;
-  status: "running" | "stopped" | "restarting" | "exited" | "unknown";
+  status: DeployStatus;
   port: number;
   domain: string;
   healthUrl: string | null;
@@ -34,7 +54,57 @@ export interface AppStatus {
   createdAt: string;
 }
 
-// ── Docker API Types ──────────────────────────────────────────────────
+export interface FrameworkDetection {
+  framework: FrameworkType;
+  buildCommand: string;
+  startCommand: string;
+  outputDir: string;
+  needsServer: boolean;
+}
+
+export interface AppDeployment {
+  appName: string;
+  repoUrl: string;
+  branch: string;
+  domain: string;
+  subdomain: string | undefined;
+  port: number;
+  runtime: Runtime;
+  framework: FrameworkDetection;
+  envVars: Record<string, string>;
+  status: DeployStatus;
+  pid: number | undefined;
+  appDir: string;
+  createdAt: string;
+  updatedAt: string;
+  previousBuildDir: string | undefined;
+}
+
+export interface LogEntry {
+  timestamp: string;
+  stream: "stdout" | "stderr" | "system";
+  message: string;
+}
+
+export interface PortAllocation {
+  port: number;
+  appName: string;
+  allocatedAt: string;
+}
+
+export interface DeploymentsManifest {
+  version: number;
+  apps: Record<string, AppDeployment>;
+}
+
+// ── Static File Server Config ────────────────────────────────────────
+
+export interface StaticServerConfig {
+  port: number;
+  rootDir: string;
+}
+
+// ── Docker API Types (legacy, kept for backward compat) ──────────────
 
 export interface ContainerConfig {
   Image: string;

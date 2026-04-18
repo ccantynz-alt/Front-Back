@@ -21,12 +21,12 @@ on:
   issues:
     types: [opened, assigned]
 
+# Workflow-wide baseline: read-only. The single `claude` job below
+# elevates to write on the scopes Claude actually needs (contents,
+# pull-requests, issues, id-token). Any new jobs added here default
+# back to contents: read unless they opt in explicitly.
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  id-token: write
-  actions: read
+  contents: read
 
 concurrency:
   group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
@@ -34,6 +34,15 @@ concurrency:
 
 jobs:
   claude:
+    # Job-level permissions: Claude writes commits, updates PRs, comments
+    # on issues, and needs id-token for OIDC flows. actions: read lets it
+    # inspect prior workflow runs when debugging CI failures.
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
     # Only run if @claude is actually mentioned in the comment/body.
     # The claude-code-action handles this check internally, but we
     # short-circuit here to save a runner spin-up on unrelated events.
@@ -51,6 +60,10 @@ jobs:
           fetch-depth: 0
 
       - name: Run Claude Code
+        # TODO(sha-pin): replace @v1 with specific SHA after verifying
+        # upstream release. Third-party action (non github/ org) — must
+        # be SHA-pinned per supply-chain hardening guidance. Tracking in
+        # commit msg for batch-resolution.
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}

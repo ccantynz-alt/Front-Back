@@ -3,6 +3,12 @@
 // Uses the user's stored API key (from userProviderKeys) or falls
 // back to the server's ANTHROPIC_API_KEY env var.
 // Streaming via Vercel AI SDK streamText() for consistent interface.
+//
+// TODO(BLK-020 Phase B): port to `@anthropic-ai/sdk`'s native
+// `client.messages.stream()` and hand-roll the SSE text stream. This
+// call site is only deferred because it shares the `LanguageModel`
+// abstraction with the site-builder agent via `getAnthropicModel()`;
+// once providers.ts is ported in Phase B, this flips with it.
 
 import { Hono } from "hono";
 import { streamText, type ModelMessage } from "ai";

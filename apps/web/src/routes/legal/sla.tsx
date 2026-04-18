@@ -71,19 +71,19 @@ export default function SLAPage(): JSX.Element {
             <div class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
-                  <tr class="border-b border-white/10">
-                    <th class="py-2 pr-4 font-semibold text-white/90">Tier</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Monthly Uptime</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Max Monthly Downtime</th>
+                  <tr class="border-b border-[var(--color-border)]">
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Tier</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Monthly Uptime</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Max Monthly Downtime</th>
                   </tr>
                 </thead>
-                <tbody class="text-white/70">
-                  <tr class="border-b border-white/5">
+                <tbody class="text-[var(--color-text-muted)]">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
                     <td class="py-2 pr-4">Pro</td>
                     <td class="py-2 pr-4">99.9%</td>
                     <td class="py-2 pr-4">43 minutes 49 seconds</td>
                   </tr>
-                  <tr class="border-b border-white/5">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
                     <td class="py-2 pr-4">Team</td>
                     <td class="py-2 pr-4">99.9%</td>
                     <td class="py-2 pr-4">43 minutes 49 seconds</td>
@@ -111,7 +111,7 @@ export default function SLAPage(): JSX.Element {
             <Text variant="body">
               Monthly Uptime Percentage is calculated using the following formula:
             </Text>
-            <div class="bg-white/5 rounded-lg p-4 font-mono text-sm text-white/80">
+            <div class="bg-[var(--color-bg-subtle)] rounded-lg p-4 font-mono text-sm text-[var(--color-text-secondary)]">
               <Text variant="body" class="font-mono">
                 Monthly Uptime % = ((Total Minutes in Month - Downtime Minutes) / Total Minutes in Month) x 100
               </Text>
@@ -195,17 +195,17 @@ export default function SLAPage(): JSX.Element {
             <div class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
-                  <tr class="border-b border-white/10">
-                    <th class="py-2 pr-4 font-semibold text-white/90">Monthly Uptime %</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Service Credit</th>
+                  <tr class="border-b border-[var(--color-border)]">
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Monthly Uptime %</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Service Credit</th>
                   </tr>
                 </thead>
-                <tbody class="text-white/70">
-                  <tr class="border-b border-white/5">
+                <tbody class="text-[var(--color-text-muted)]">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
                     <td class="py-2 pr-4">99.0% to &lt; 99.9% (or &lt; 99.99% for Enterprise)</td>
                     <td class="py-2 pr-4">10% of monthly subscription fee</td>
                   </tr>
-                  <tr class="border-b border-white/5">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
                     <td class="py-2 pr-4">95.0% to &lt; 99.0%</td>
                     <td class="py-2 pr-4">25% of monthly subscription fee</td>
                   </tr>
@@ -312,28 +312,28 @@ export default function SLAPage(): JSX.Element {
             <div class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
-                  <tr class="border-b border-white/10">
-                    <th class="py-2 pr-4 font-semibold text-white/90">Severity</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Enterprise</th>
-                    <th class="py-2 pr-4 font-semibold text-white/90">Team</th>
-                    <th class="py-2 font-semibold text-white/90">Pro</th>
+                  <tr class="border-b border-[var(--color-border)]">
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Severity</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Enterprise</th>
+                    <th class="py-2 pr-4 font-semibold text-[var(--color-text)]">Team</th>
+                    <th class="py-2 font-semibold text-[var(--color-text)]">Pro</th>
                   </tr>
                 </thead>
-                <tbody class="text-white/70">
-                  <tr class="border-b border-white/5">
-                    <td class="py-2 pr-4 font-semibold text-white/80">Critical</td>
+                <tbody class="text-[var(--color-text-muted)]">
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
+                    <td class="py-2 pr-4 font-semibold text-[var(--color-text-secondary)]">Critical</td>
                     <td class="py-2 pr-4">1 hour (24/7)</td>
                     <td class="py-2 pr-4">4 hours</td>
                     <td class="py-2">24 hours</td>
                   </tr>
-                  <tr class="border-b border-white/5">
-                    <td class="py-2 pr-4 font-semibold text-white/80">High</td>
+                  <tr class="border-b border-[var(--color-bg-subtle)]">
+                    <td class="py-2 pr-4 font-semibold text-[var(--color-text-secondary)]">High</td>
                     <td class="py-2 pr-4">4 hours</td>
                     <td class="py-2 pr-4">8 hours</td>
                     <td class="py-2">48 hours</td>
                   </tr>
                   <tr>
-                    <td class="py-2 pr-4 font-semibold text-white/80">Medium</td>
+                    <td class="py-2 pr-4 font-semibold text-[var(--color-text-secondary)]">Medium</td>
                     <td class="py-2 pr-4">24 hours</td>
                     <td class="py-2 pr-4">48 hours</td>
                     <td class="py-2">5 business days</td>
@@ -376,8 +376,8 @@ export default function SLAPage(): JSX.Element {
             <Text variant="body">
               Scheduled maintenance is performed during our preferred maintenance window:
             </Text>
-            <div class="bg-white/5 rounded-lg p-4">
-              <Text variant="body" weight="semibold" class="text-white/90">
+            <div class="bg-[var(--color-bg-subtle)] rounded-lg p-4">
+              <Text variant="body" weight="semibold" class="text-[var(--color-text)]">
                 Preferred Window: Sundays, 02:00 - 06:00 UTC
               </Text>
             </div>
@@ -488,6 +488,114 @@ export default function SLAPage(): JSX.Element {
                 priority support channel provided during onboarding.
               </Text>
             </Stack>
+          </Stack>
+        </Card>
+
+        {/* Section 13: Additional Protections - DRAFT */}
+        <Card padding="md">
+          <Stack direction="vertical" gap="sm">
+            <Text variant="h4" weight="semibold">
+              13. Additional Protections (DRAFT &mdash; requires attorney review)
+            </Text>
+            <Text variant="body">
+              DRAFT &mdash; requires attorney review. Nothing in this SLA waives,
+              diminishes, or otherwise limits any protection, disclaimer,
+              limitation of liability, indemnification, class-action waiver,
+              binding-arbitration clause, AS-IS / AS-AVAILABLE disclaimer,
+              no-consequential-damages exclusion, governing-law choice,
+              export-controls clause, 18+ age requirement, or 30-day notice
+              provision set forth in the Terms of Service.
+            </Text>
+            <Text variant="body">
+              Service credits as described in this SLA are the sole and
+              exclusive remedy for any failure to meet the uptime commitment.
+              Crontech's total aggregate liability remains capped per the
+              Terms of Service at the greater of (a) fees paid in the twelve
+              (12) months preceding the claim or (b) one hundred U.S. dollars
+              ($100), subject to the lower $50 cap during any beta or early
+              access phase per the Beta Disclaimer.
+            </Text>
+            <Text variant="body">
+              No Consequential Damages. Crontech is not liable for lost
+              profits, lost revenue, lost data, lost goodwill, business
+              interruption, or any indirect, incidental, special,
+              consequential, exemplary, or punitive damages arising from
+              Downtime, service degradation, or any SLA dispute, even if
+              advised of the possibility.
+            </Text>
+            <Text variant="body">
+              AS-IS / AS-AVAILABLE. The Service, including uptime monitoring,
+              service credit calculations, and incident communications, is
+              provided AS-IS and AS-AVAILABLE without warranties of any kind.
+            </Text>
+            <Text variant="body">
+              AI Output Disclaimer. AI features that participate in the
+              Service are informational only and are not a substitute for
+              professional advice. You are responsible for independent
+              verification. Downtime of AI features is excluded from uptime
+              calculations to the extent caused by third-party AI model
+              provider outages (see Section 4.4).
+            </Text>
+            <Text variant="body">
+              Customer Indemnification. You agree to indemnify Crontech for
+              any claim arising from your use of the Service, your content,
+              your code, your configurations, your integrations, and any
+              service-credit claim submitted in bad faith.
+            </Text>
+            <Text variant="body">
+              Unilateral Suspension and Termination. Crontech reserves the
+              right to suspend or terminate the Service or your account,
+              unilaterally, for any reason, with notice where reasonably
+              practicable. SLA obligations do not survive suspension or
+              termination for cause.
+            </Text>
+            <Text variant="body">
+              Reverse Engineering Prohibited. You may not reverse engineer
+              the Service's monitoring, uptime-measurement, or
+              incident-communication infrastructure, except where such
+              prohibition is unenforceable under applicable law.
+            </Text>
+            <Text variant="body">
+              Force Majeure. Force majeure events (as defined in Section 4.2
+              above and in the Terms of Service) are excluded from Downtime
+              and from Crontech's liability.
+            </Text>
+            <Text variant="body">
+              Binding Individual Arbitration and Class-Action Waiver.
+              Disputes relating to this SLA, including disputes over whether
+              a service credit is owed, are subject to the binding
+              individual arbitration clause and class-action waiver in the
+              Terms of Service, including the 30-day opt-out and
+              small-claims carve-out. We intend these disputes to be heard
+              by AAA or JAMS.
+            </Text>
+            <Text variant="body">
+              Governing Law: New Zealand. We intend that this SLA be
+              governed by the laws of New Zealand, subject to mandatory
+              local law and to the US-facing carve-outs advised by counsel.
+            </Text>
+            <Text variant="body">
+              Export Controls / US Sanctions. You represent that you are
+              not located in, and will not access the Service from, any
+              jurisdiction under comprehensive US economic sanctions, and
+              that you are not on any US government restricted-party list.
+            </Text>
+            <Text variant="body">
+              Age Requirement: 18+. You must be at least eighteen (18)
+              years of age to subscribe to a paid plan covered by this SLA.
+            </Text>
+            <Text variant="body">
+              30-Day Notice for Terms Changes. Reaffirming Section 11: we
+              intend to provide at least 30 days' notice for any material
+              change to this SLA.
+            </Text>
+            <Text variant="body">
+              Severability and Entire Agreement. If any provision of this
+              SLA is unenforceable, the remainder remains in full force.
+              This SLA, together with the Terms of Service and incorporated
+              policies, constitutes the entire agreement with respect to
+              uptime commitments and service credits.
+            </Text>
           </Stack>
         </Card>
       </Stack>

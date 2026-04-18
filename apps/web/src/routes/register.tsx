@@ -1,10 +1,31 @@
 import { Title } from "@solidjs/meta";
-import { A, useNavigate } from "@solidjs/router";
+import { A, useNavigate, useSearchParams } from "@solidjs/router";
 import { Show, createSignal, createMemo, onMount } from "solid-js";
 import { Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 
 type Mode = "choose" | "guest" | "email-passkey" | "email-password" | "creating";
+
+const PENDING_PLAN_KEY = "btf_pending_plan";
+
+type PendingPlan = "pro" | "enterprise" | "free";
+
+function resolvePostSignupDestination(defaultPath: string): string {
+  if (typeof window === "undefined") return defaultPath;
+  try {
+    const pending = window.localStorage.getItem(PENDING_PLAN_KEY);
+    if (pending === "pro") {
+      window.localStorage.removeItem(PENDING_PLAN_KEY);
+      return "/billing?upgrade=pro";
+    }
+    if (pending === "enterprise" || pending === "free") {
+      window.localStorage.removeItem(PENDING_PLAN_KEY);
+    }
+  } catch {
+    // localStorage unavailable — fall through to default.
+  }
+  return defaultPath;
+}
 
 interface PasswordStrengthInfo {
   score: number;
@@ -13,7 +34,7 @@ interface PasswordStrengthInfo {
 }
 
 function getPasswordStrength(password: string): PasswordStrengthInfo {
-  if (!password) return { score: 0, label: "", color: "#e5e7eb" };
+  if (!password) return { score: 0, label: "", color: "var(--color-bg-muted)" };
 
   let score = 0;
   if (password.length >= 8) score++;
@@ -32,17 +53,17 @@ function getPasswordStrength(password: string): PasswordStrengthInfo {
   };
 
   const colors: Record<number, string> = {
-    0: "#ef4444",
-    1: "#f97316",
-    2: "#eab308",
-    3: "#22c55e",
-    4: "#06b6d4",
+    0: "var(--color-danger)",
+    1: "var(--color-warning)",
+    2: "var(--color-warning)",
+    3: "var(--color-success)",
+    4: "var(--color-primary)",
   };
 
   return {
     score: finalScore,
     label: labels[finalScore] ?? "Very weak",
-    color: colors[finalScore] ?? "#ef4444",
+    color: colors[finalScore] ?? "var(--color-danger)",
   };
 }
 
@@ -57,6 +78,7 @@ function validatePasswordRequirements(password: string): string[] {
 export default function RegisterPage(): ReturnType<typeof Stack> {
   const auth = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [mode, setMode] = createSignal<Mode>("choose");
   const [email, setEmail] = createSignal("");
   const [name, setName] = createSignal("");
@@ -66,9 +88,40 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
   const [progress, setProgress] = createSignal(0);
   const [localError, setLocalError] = createSignal<string | null>(null);
 
-  // Handle OAuth callback tokens on mount
+  const selectedPlan = createMemo((): PendingPlan | null => {
+    const raw = searchParams.plan;
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    if (value === "pro" || value === "enterprise" || value === "free") {
+      return value;
+    }
+    return null;
+  });
+
+  const selectedBilling = createMemo((): "monthly" | "annual" => {
+    const raw = searchParams.billing;
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    return value === "annual" ? "annual" : "monthly";
+  });
+
+  const proPriceLabel = createMemo((): string =>
+    selectedBilling() === "annual" ? "$24/month (billed annually)" : "$29/month",
+  );
+
+  // Handle OAuth callback tokens on mount; persist intended plan for post-signup routing.
   onMount(() => {
     auth.handleOAuthCallback();
+    if (typeof window !== "undefined") {
+      const plan = selectedPlan();
+      try {
+        if (plan === "pro" || plan === "enterprise") {
+          window.localStorage.setItem(PENDING_PLAN_KEY, plan);
+        } else if (plan === "free") {
+          window.localStorage.removeItem(PENDING_PLAN_KEY);
+        }
+      } catch {
+        // localStorage unavailable — callout still renders, post-signup falls back to default.
+      }
+    }
   });
 
   const passwordStrength = createMemo((): PasswordStrengthInfo =>
@@ -100,7 +153,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
       setProgress(90);
       window.setTimeout(() => {
         setProgress(100);
-        navigate("/dashboard?tour=1", { replace: true });
+        navigate(resolvePostSignupDestination("/dashboard?tour=1"), { replace: true });
       }, 300);
     } catch {
       setLocalError("Something went wrong. Try again — it usually works the second time.");
@@ -121,7 +174,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
     try {
       await auth.register(e, n);
       setProgress(100);
-      navigate("/dashboard?tour=1", { replace: true });
+      navigate(resolvePostSignupDestination("/dashboard?tour=1"), { replace: true });
     } catch {
       setLocalError("We couldn't sign you up just now. Try a different method.");
       setMode("email-passkey");
@@ -161,7 +214,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
     try {
       await auth.registerWithPassword(e, p, n);
       setProgress(100);
-      navigate("/dashboard?tour=1", { replace: true });
+      navigate(resolvePostSignupDestination("/dashboard?tour=1"), { replace: true });
     } catch {
       setLocalError("Registration failed. Please try again.");
       setMode("email-password");
@@ -170,8 +223,13 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
 
   const handleGoogleSignUp = async (): Promise<void> => {
     setLocalError(null);
+    const plan = selectedPlan();
+    // Google bounces the user through an OAuth redirect, so we pass the
+    // intended destination directly. The localStorage key is a belt-and-braces
+    // fallback for the email flows that stay on this page.
+    const redirectTo = plan === "pro" ? "/billing?upgrade=pro" : "/dashboard?tour=1";
     try {
-      await auth.loginWithGoogle("/dashboard?tour=1");
+      await auth.loginWithGoogle(redirectTo);
     } catch {
       // Error is set in auth store
     }
@@ -190,6 +248,52 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
           <Text variant="body" align="center" class="text-muted">
             Create your account in seconds.
           </Text>
+
+          <Show when={selectedPlan() === "pro"}>
+            <div
+              class="plan-callout plan-callout-pro"
+              style={{
+                width: "100%",
+                "border-radius": "12px",
+                border: "1px solid color-mix(in oklab, var(--color-primary) 25%, transparent)",
+                background:
+                  "linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 8%, transparent), color-mix(in oklab, var(--color-primary-light) 8%, transparent))",
+                padding: "14px 16px",
+              }}
+            >
+              <Text variant="body" weight="semibold">
+                You're signing up for Pro — {proPriceLabel()}.
+              </Text>
+              <Text variant="caption" class="text-muted">
+                We'll take you to checkout right after you create your account.
+              </Text>
+            </div>
+          </Show>
+
+          <Show when={selectedPlan() === "enterprise"}>
+            <div
+              class="plan-callout plan-callout-enterprise"
+              style={{
+                width: "100%",
+                "border-radius": "12px",
+                border: "1px solid color-mix(in oklab, var(--color-primary-light) 25%, transparent)",
+                background:
+                  "linear-gradient(135deg, color-mix(in oklab, var(--color-primary-light) 8%, transparent), color-mix(in oklab, var(--color-primary) 5%, transparent))",
+                padding: "14px 16px",
+              }}
+            >
+              <Text variant="body" weight="semibold">
+                Interested in Enterprise? Let's talk.
+              </Text>
+              <Text variant="caption" class="text-muted">
+                Create your account, then{" "}
+                <A href="/support?topic=enterprise" class="link">
+                  contact sales
+                </A>{" "}
+                and we'll tailor a plan to your organisation.
+              </Text>
+            </div>
+          </Show>
 
           <Show when={displayError()}>
             <div class="alert alert-error">
@@ -249,7 +353,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                   style={{
                     flex: "1",
                     height: "1px",
-                    background: "var(--border-color, #e5e7eb)",
+                    background: "var(--color-border)",
                   }}
                 />
                 <Text variant="caption" class="text-muted">
@@ -259,7 +363,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                   style={{
                     flex: "1",
                     height: "1px",
-                    background: "var(--border-color, #e5e7eb)",
+                    background: "var(--color-border)",
                   }}
                 />
               </div>
@@ -328,7 +432,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    color: "var(--text-muted, #6b7280)",
+                    color: "var(--color-text-muted)",
                     "font-size": "13px",
                   }}
                 >
@@ -355,7 +459,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                           background:
                             i < passwordStrength().score
                               ? passwordStrength().color
-                              : "var(--border-color, #e5e7eb)",
+                              : "var(--color-bg-muted)",
                           transition: "background 0.2s ease",
                         }}
                       />
@@ -395,7 +499,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
               />
 
               <Show when={!passwordsMatch() && confirmPassword().length > 0}>
-                <Text variant="caption" style={{ color: "#ef4444" }}>
+                <Text variant="caption" style={{ color: "var(--color-danger)" }}>
                   Passwords do not match
                 </Text>
               </Show>
@@ -466,7 +570,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                 style={{
                   width: "240px",
                   height: "8px",
-                  background: "#e5e7eb",
+                  background: "var(--color-bg-muted)",
                   "border-radius": "9999px",
                   overflow: "hidden",
                 }}
@@ -475,7 +579,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                   style={{
                     width: `${progress()}%`,
                     height: "100%",
-                    background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
+                    background: "var(--color-primary)",
                     transition: "width 0.3s ease",
                   }}
                 />

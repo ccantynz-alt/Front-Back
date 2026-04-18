@@ -135,6 +135,23 @@ const sections: Section[] = [
       "We will respond to cookie-related inquiries within 10 business days.",
     ],
   },
+  {
+    title: "12. Additional Protections (DRAFT \u2014 requires attorney review)",
+    content: [
+      "DRAFT \u2014 requires attorney review. Nothing in this Cookie Policy waives, diminishes, or otherwise limits any protection, disclaimer, limitation of liability, indemnification, class-action waiver, binding-arbitration clause, AS-IS / AS-AVAILABLE disclaimer, no-consequential-damages exclusion, governing-law choice, export-controls clause, 18+ age requirement, or 30-day notice provision set forth in the Terms of Service. All such Terms of Service provisions apply in full force to any dispute relating to cookies or similar technologies.",
+      "Liability Cap. Any claim arising from cookie usage is capped per the main Terms of Service (greater of fees paid in the prior 12 months or $100), subject to the $50 beta-phase cap while beta is in effect.",
+      "AS-IS / AS-AVAILABLE. Cookie-based functionality is provided AS-IS and AS-AVAILABLE with no warranties of any kind.",
+      "Customer Indemnification. You agree to indemnify Crontech for any claim arising from your interaction with cookie consent flows, your misrepresentation of consent on behalf of other users, or your configuration of browser or device settings that conflict with your stated preferences.",
+      "Suspension / Termination. We reserve the right to suspend or terminate access, unilaterally, with notice where reasonably practicable, including where cookie-consent-bypass attempts are detected.",
+      "Reverse Engineering Prohibited. You may not reverse engineer the cookie-consent infrastructure, consent-record cryptography, or related systems, except where such prohibition is unenforceable under applicable law.",
+      "Export Controls / US Sanctions. Use of the Service, including the cookie consent flow, is subject to the export-controls and US-sanctions representation in the Terms of Service.",
+      "Governing Law: New Zealand. We intend that this Cookie Policy be governed by the laws of New Zealand, subject to mandatory local law (including GDPR and ePrivacy Directive) that grants rights that cannot be contracted away. Counsel to confirm.",
+      "Force Majeure, Severability, Entire Agreement. Force majeure, severability, and entire-agreement provisions of the Terms of Service apply.",
+      "Age Requirement: 18+. You must be at least 18 years of age to use the Service and to grant or withdraw cookie consent.",
+      "30-Day Notice for Terms Changes. We intend to provide at least 30 days' notice for any material change to this Cookie Policy.",
+      "Binding Individual Arbitration and Class-Action Waiver. Disputes relating to cookies are subject to the binding individual arbitration clause and class-action waiver in the Terms of Service, including the 30-day opt-out and small-claims carve-out.",
+    ],
+  },
 ];
 
 export default function CookiesPage(): JSX.Element {
@@ -145,14 +162,14 @@ export default function CookiesPage(): JSX.Element {
         description="Learn how Crontech uses cookies to provide, protect, and improve our service. No third-party advertising. No cross-site tracking. Privacy-first."
         path="/legal/cookies"
       />
-      <div class="min-h-screen bg-[#0a0a0a] text-white">
+      <div class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
         <div class="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:py-24">
           <Stack direction="vertical" gap="lg">
             <Stack direction="vertical" gap="sm">
               <Text variant="h1" weight="bold" class="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                 Cookie Policy
               </Text>
-              <Text variant="caption" class="text-gray-500">
+              <Text variant="caption" style={{ color: "var(--color-text-faint)" }}>
                 Last updated: April 9, 2026 | Effective: April 9, 2026
               </Text>
             </Stack>
@@ -166,7 +183,7 @@ export default function CookiesPage(): JSX.Element {
                     </Text>
                     <For each={section.content}>
                       {(paragraph) => (
-                        <Text variant="body" class="text-gray-400 leading-relaxed">
+                        <Text variant="body" class="leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
                           {paragraph}
                         </Text>
                       )}

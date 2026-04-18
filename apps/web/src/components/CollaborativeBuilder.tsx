@@ -111,7 +111,7 @@ export function CollaborativeBuilder(props: CollaborativeBuilderProps): JSX.Elem
       roomId: props.roomId,
       user: {
         id: `ai-agent-${Date.now()}`,
-        name: "AI Builder",
+        name: "Composer Agent",
         color: aiColor,
         isAI: true,
       },
@@ -120,7 +120,7 @@ export function CollaborativeBuilder(props: CollaborativeBuilderProps): JSX.Elem
     const aiAgent = createAIParticipant({
       agent: {
         id: `ai-agent-${Date.now()}`,
-        name: "AI Builder",
+        name: "Composer Agent",
         color: aiColor,
         isAI: true,
       },

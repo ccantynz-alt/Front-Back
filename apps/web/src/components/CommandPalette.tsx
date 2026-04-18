@@ -24,7 +24,6 @@ const PAGES: { id: string; title: string; subtitle: string; href: string }[] = [
   { id: "page-dashboard", title: "Dashboard", subtitle: "Your main workspace", href: "/dashboard" },
   { id: "page-templates", title: "Templates", subtitle: "Pre-built starter projects", href: "/templates" },
   { id: "page-builder", title: "Builder", subtitle: "Visual website builder", href: "/builder" },
-  { id: "page-ai", title: "AI Playground", subtitle: "Experiment with AI", href: "/ai-playground" },
   { id: "page-chat", title: "Claude Chat", subtitle: "Anthropic API direct chat", href: "/chat" },
   { id: "page-repos", title: "Repositories", subtitle: "GitHub repos, PRs, CI status", href: "/repos" },
   { id: "page-billing", title: "Billing", subtitle: "Plans and payment", href: "/billing" },
@@ -160,7 +159,7 @@ export function CommandPalette(): ReturnType<typeof Show> {
           onClick={(e) => e.stopPropagation()}
           style={{
             width: "min(640px, 90vw)",
-            background: "white",
+            background: "var(--color-bg-elevated)",
             "border-radius": "12px",
             "box-shadow": "0 20px 60px rgba(0,0,0,0.3)",
             overflow: "hidden",
@@ -176,7 +175,7 @@ export function CommandPalette(): ReturnType<typeof Show> {
               width: "100%",
               padding: "16px 20px",
               border: "none",
-              "border-bottom": "1px solid #e5e7eb",
+              "border-bottom": "1px solid var(--color-border)",
               "font-size": "16px",
               outline: "none",
               "box-sizing": "border-box",
@@ -186,7 +185,7 @@ export function CommandPalette(): ReturnType<typeof Show> {
             <Show
               when={items().length > 0}
               fallback={
-                <div style={{ padding: "24px", "text-align": "center", color: "#6b7280" }}>
+                <div style={{ padding: "24px", "text-align": "center", color: "var(--color-text-muted)" }}>
                   No matches. Try a different search.
                 </div>
               }
@@ -202,12 +201,12 @@ export function CommandPalette(): ReturnType<typeof Show> {
                     style={{
                       padding: "12px 20px",
                       cursor: "pointer",
-                      background: selectedIndex() === i() ? "#f3f4f6" : "white",
-                      "border-left": selectedIndex() === i() ? "3px solid #6366f1" : "3px solid transparent",
+                      background: selectedIndex() === i() ? "var(--color-bg-subtle)" : "var(--color-bg-elevated)",
+                      "border-left": selectedIndex() === i() ? "3px solid var(--color-primary)" : "3px solid transparent",
                     }}
                   >
-                    <div style={{ "font-weight": "500", color: "#111827" }}>{item.title}</div>
-                    <div style={{ "font-size": "13px", color: "#6b7280" }}>{item.subtitle}</div>
+                    <div style={{ "font-weight": "500", color: "var(--color-text)" }}>{item.title}</div>
+                    <div style={{ "font-size": "13px", color: "var(--color-text-muted)" }}>{item.subtitle}</div>
                   </div>
                 )}
               </For>
@@ -216,9 +215,9 @@ export function CommandPalette(): ReturnType<typeof Show> {
           <div
             style={{
               padding: "8px 20px",
-              "border-top": "1px solid #e5e7eb",
+              "border-top": "1px solid var(--color-border)",
               "font-size": "12px",
-              color: "#6b7280",
+              color: "var(--color-text-muted)",
               display: "flex",
               "justify-content": "space-between",
             }}

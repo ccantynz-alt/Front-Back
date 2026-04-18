@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { desc, sql, eq } from "drizzle-orm";
-import { router, protectedProcedure, middleware } from "../init";
+import { router, adminProcedure } from "../init";
 import {
   users,
   subscriptions,
@@ -14,35 +14,6 @@ import {
   isFeatureEnabled,
 } from "../../feature-flags";
 import { auditMiddleware } from "../../middleware/audit";
-
-// ── Admin Middleware ──────────────────────────────────────────────────
-
-const enforceAdmin = middleware(async ({ ctx, next }) => {
-  if (!ctx.userId) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "Authentication required.",
-    });
-  }
-
-  const result = await ctx.db
-    .select({ role: users.role })
-    .from(users)
-    .where(eq(users.id, ctx.userId))
-    .limit(1);
-
-  const user = result[0];
-  if (!user || user.role !== "admin") {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Admin role required.",
-    });
-  }
-
-  return next({ ctx });
-});
-
-const adminProcedure = protectedProcedure.use(enforceAdmin);
 
 // ── Admin Router ─────────────────────────────────────────────────────
 
@@ -154,4 +125,47 @@ export const adminRouter = router({
       timestamp: new Date().toISOString(),
     };
   }),
+
+  /** Set a user's role. Admin only. Cannot demote yourself. */
+  setUserRole: adminProcedure
+    .use(auditMiddleware("admin.setUserRole"))
+    .input(
+      z.object({
+        userId: z.string().min(1),
+        role: z.enum(["admin", "editor", "viewer"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Prevent admins from demoting themselves
+      if (input.userId === ctx.userId && input.role !== "admin") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot change your own admin role. Another admin must do this.",
+        });
+      }
+
+      const existing = await ctx.db
+        .select({ id: users.id, role: users.role })
+        .from(users)
+        .where(eq(users.id, input.userId))
+        .limit(1);
+
+      if (existing.length === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found.",
+        });
+      }
+
+      await ctx.db
+        .update(users)
+        .set({ role: input.role })
+        .where(eq(users.id, input.userId));
+
+      return {
+        userId: input.userId,
+        previousRole: existing[0]!.role,
+        newRole: input.role,
+      };
+    }),
 });

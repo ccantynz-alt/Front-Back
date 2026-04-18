@@ -28,9 +28,9 @@ export function HelpBubble(props: HelpBubbleProps): ReturnType<typeof Show> {
             width: "18px",
             height: "18px",
             "border-radius": "9999px",
-            border: "1px solid #c7d2fe",
-            background: "#eef2ff",
-            color: "#4338ca",
+            border: "1px solid var(--color-border)",
+            background: "var(--color-bg-elevated)",
+            color: "var(--color-primary)",
             "font-size": "12px",
             "font-weight": "700",
             cursor: "pointer",
@@ -50,9 +50,9 @@ export function HelpBubble(props: HelpBubbleProps): ReturnType<typeof Show> {
               left: "0",
               "z-index": "5000",
               width: "240px",
-              background: "white",
-              color: "#111",
-              border: "1px solid #e5e7eb",
+              background: "var(--color-bg-elevated)",
+              color: "var(--color-text)",
+              border: "1px solid var(--color-border)",
               "border-radius": "8px",
               padding: "0.625rem 0.75rem",
               "box-shadow": "0 8px 24px rgba(0,0,0,0.15)",
@@ -64,7 +64,7 @@ export function HelpBubble(props: HelpBubbleProps): ReturnType<typeof Show> {
             <Show when={props.title}>
               <div style={{ "font-weight": "600", "margin-bottom": "0.25rem" }}>{props.title}</div>
             </Show>
-            <div style={{ color: "#374151" }}>{props.text}</div>
+            <div style={{ color: "var(--color-text-secondary)" }}>{props.text}</div>
             <Show when={props.docsHref || props.videoHref}>
               <div
                 style={{
@@ -75,12 +75,12 @@ export function HelpBubble(props: HelpBubbleProps): ReturnType<typeof Show> {
                 }}
               >
                 <Show when={props.docsHref}>
-                  <a href={props.docsHref} style={{ color: "#4338ca" }}>
+                  <a href={props.docsHref} style={{ color: "var(--color-primary)" }}>
                     Read more
                   </a>
                 </Show>
                 <Show when={props.videoHref}>
-                  <a href={props.videoHref} style={{ color: "#4338ca" }}>
+                  <a href={props.videoHref} style={{ color: "var(--color-primary)" }}>
                     Watch video
                   </a>
                 </Show>

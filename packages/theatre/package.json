@@ -1,0 +1,23 @@
+{
+  "name": "@back-to-the-future/theatre",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@back-to-the-future/db": "workspace:*",
+    "drizzle-orm": "^0.45",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^6",
+    "@types/bun": "^1.2.0"
+  }
+}

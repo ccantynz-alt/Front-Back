@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Workflow-wide baseline: read-only access. Individual jobs may expand
+# scope explicitly if they need it. Anything that doesn't override stays
+# least-privilege, matching GitHub hardening guidance.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -29,11 +35,6 @@ jobs:
 
       - name: Type check all packages
         run: bun run check
-        continue-on-error: true
-
-      - name: Type check (tsc --noEmit)
-        run: bunx tsc --noEmit --skipLibCheck
-        continue-on-error: true
 
       - name: Check links
         run: bun run check-links
@@ -102,7 +103,7 @@ jobs:
   ci-status:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [lint-and-check, build, test]
+    needs: [lint-and-check, build, test, gatetest]
     if: always()
     steps:
       - name: Report CI status
@@ -114,6 +115,7 @@ jobs:
           echo "| Lint & Type Check | ${{ needs.lint-and-check.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GateTest | ${{ needs.gatetest.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Quality Gates" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -127,6 +129,7 @@ jobs:
           echo "| Build | \`bun run build\` | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Bundle Size | \`bun run check-bundle\` | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Tests | \`bun run test\` | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GateTest | \`npx gatetest@latest --suite quick\` | ${{ needs.gatetest.result }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Fail if any job failed
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
@@ -136,6 +139,11 @@ jobs:
     name: GateTest Quality Gate
     runs-on: ubuntu-latest
     needs: test  # only run if native tests pass
+    # BLK-007 observation complete — gate now blocks merge. GateTest ran
+    # advisory on 2 clean PRs and produced accurate, actionable signal.
+    # Craig authorised the flip from advisory to hard-fail. Next step
+    # (off-CI): add this job to main branch protection's required-checks
+    # list. See docs/BUILD_BIBLE.md BLK-007 and CLAUDE.md §0.4.2.
     steps:
       - uses: actions/checkout@v4
 
@@ -144,9 +152,19 @@ jobs:
           node-version: '22'
 
       - name: Run GateTest quality gate
-        run: npx gatetest@latest --suite quick
+        # --suite full runs all 22 modules including visual, accessibility,
+        # liveCrawler, aiReview, and fakeFixDetector — the modules that
+        # catch the exact class of bugs (bunched nav, clipped badges,
+        # unstyled CTAs, silent "I fixed it" lies) that slipped through
+        # before BLK-007. ANTHROPIC_API_KEY powers the aiReview module.
+        #
+        # Install path: GateTest is not published to npm yet; we install
+        # directly from the ccantynz-alt/GateTest repo via npx's git
+        # support. No `|| true` — if the tool genuinely fails to execute
+        # we want to see the failure in the job log, not paper over it.
+        # The job-level `continue-on-error: true` above keeps this
+        # advisory during the BLK-007 observation sprint regardless.
+        run: npx --yes github:ccantynz-alt/GateTest --suite full --sarif
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    # GateTest is advisory for now — reports findings but does not block merge.
-    # Flip continue-on-error to false once GateTest is correctly configured and stable.
-    continue-on-error: true
+          GATETEST_FAIL_ON: critical,high

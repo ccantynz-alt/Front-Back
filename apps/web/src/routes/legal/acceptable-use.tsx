@@ -366,6 +366,127 @@ export default function AcceptableUsePage(): JSX.Element {
             </Text>
           </Stack>
         </Card>
+
+        {/* Section 7: Additional Protections - DRAFT */}
+        <Card padding="md">
+          <Stack direction="vertical" gap="sm">
+            <Text variant="h4" weight="semibold">
+              7. Additional Protections (DRAFT &mdash; requires attorney review)
+            </Text>
+            <Text variant="body">
+              DRAFT &mdash; requires attorney review. Nothing in this AUP
+              waives, diminishes, or otherwise limits any protection,
+              disclaimer, limitation of liability, indemnification,
+              class-action waiver, binding-arbitration clause, AS-IS /
+              AS-AVAILABLE disclaimer, no-consequential-damages exclusion,
+              governing-law choice, export-controls clause, 18+ age
+              requirement, or 30-day notice provision set forth in the Terms
+              of Service. AUP enforcement actions (including suspension,
+              termination, content removal, and referral to law enforcement)
+              are in addition to any other remedy available to Crontech,
+              and do not create any rights or remedies in favor of the
+              user beyond the appeal process described in Section 5.5.
+            </Text>
+            <Text variant="body">
+              Liability Cap. Crontech's total aggregate liability arising
+              from any dispute over AUP enforcement, content removal, or
+              account suspension is capped per the Terms of Service at the
+              greater of (a) fees paid in the twelve (12) months preceding
+              the claim or (b) one hundred U.S. dollars ($100), subject to
+              the lower $50 cap during any beta or early-access phase per
+              the Beta Disclaimer.
+            </Text>
+            <Text variant="body">
+              No Consequential Damages. Crontech is not liable for lost
+              profits, lost revenue, lost data, lost goodwill, business
+              interruption, or any indirect, incidental, special,
+              consequential, exemplary, or punitive damages arising from
+              AUP enforcement actions, even if advised of the possibility.
+            </Text>
+            <Text variant="body">
+              AS-IS / AS-AVAILABLE. The Service, including content-moderation
+              systems, automated safety filters, and abuse-detection
+              tooling, is provided AS-IS and AS-AVAILABLE without warranties
+              of any kind.
+            </Text>
+            <Text variant="body">
+              AI Output Disclaimer. AI-based moderation, abuse detection,
+              and safety classification may produce incorrect or incomplete
+              results. We intend that moderation decisions be reviewed by
+              humans where material rights are affected. You remain solely
+              responsible for the content you upload and the actions you
+              take on the Service.
+            </Text>
+            <Text variant="body">
+              Customer Indemnification. You agree to indemnify, defend, and
+              hold harmless Crontech for any claim arising from your
+              violation of this AUP, your content, your code, your outputs,
+              and any third-party claim based on your use of the Service.
+            </Text>
+            <Text variant="body">
+              Unilateral Suspension and Termination. Reaffirming Section 5:
+              Crontech reserves the right to suspend or terminate access to
+              the Service, unilaterally, for any reason or no reason,
+              with notice where reasonably practicable. For severe
+              violations (Section 5.3), no prior notice is required.
+            </Text>
+            <Text variant="body">
+              Reverse Engineering Prohibited. Reaffirming Section 2.2: you
+              may not reverse engineer, decompile, disassemble, or otherwise
+              attempt to derive the source code, model weights, detection
+              rules, or internal architecture of the Service, its
+              moderation systems, or its AUP-enforcement infrastructure,
+              except where such prohibition is unenforceable under
+              applicable law.
+            </Text>
+            <Text variant="body">
+              Force Majeure. Crontech is not liable for failures to
+              enforce this AUP caused by events beyond reasonable control,
+              including natural disasters, war, pandemics, government
+              actions, internet disruptions, or cyberattacks.
+            </Text>
+            <Text variant="body">
+              Severability and Entire Agreement. If any provision of this
+              AUP is unenforceable, the remainder remains in full force.
+              This AUP, together with the Terms of Service and incorporated
+              policies, constitutes the entire agreement with respect to
+              acceptable use of the Service.
+            </Text>
+            <Text variant="body">
+              Binding Individual Arbitration and Class-Action Waiver.
+              Disputes over AUP enforcement, including appeals under
+              Section 5.5, are subject to the binding individual
+              arbitration clause and class-action waiver in the Terms of
+              Service (AAA or JAMS), including the 30-day opt-out and
+              small-claims carve-out.
+            </Text>
+            <Text variant="body">
+              Governing Law: New Zealand. We intend that this AUP be
+              governed by the laws of New Zealand, subject to mandatory
+              local law and to US-specific carve-outs advised by counsel.
+            </Text>
+            <Text variant="body">
+              Export Controls / US Sanctions. Reaffirming Section 1.1: you
+              represent that you are not located in, and will not access
+              the Service from, any jurisdiction under comprehensive US
+              economic sanctions (Cuba, Iran, North Korea, Syria, Crimea,
+              Donetsk, Luhansk), and that you are not on any US government
+              restricted-party list (OFAC SDN, BIS Entity List, or
+              equivalent).
+            </Text>
+            <Text variant="body">
+              Age Requirement: 18+. You must be at least eighteen (18)
+              years of age to use the Service. The age-13 / age-16-EEA
+              language in the Terms of Service addresses child-privacy
+              statutory obligations and does not authorize under-18 use.
+            </Text>
+            <Text variant="body">
+              30-Day Notice for Terms Changes. We intend to provide at
+              least thirty (30) days' notice by email and in-Service
+              banner for any material change to this AUP.
+            </Text>
+          </Stack>
+        </Card>
       </Stack>
     </>
   );

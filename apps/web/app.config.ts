@@ -1,16 +1,20 @@
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "@solidjs/start/config";
 
-// Nitro preset is selected via SERVER_PRESET env var so local dev can keep
-// the default node-server while CI can force `cloudflare-pages` for deploy.
-// Pages needs the cloudflare-pages preset to produce `_worker.js` inside
-// .output/public, otherwise the deploy becomes a static-assets-only dump
-// with every SSR route returning 404.
-const preset = process.env.SERVER_PRESET ?? "node-server";
+const preset = process.env.SERVER_PRESET ?? "bun";
+const isCloudflare = preset === "cloudflare-pages";
+const rollupExternals = isCloudflare ? ["node:async_hooks"] : [];
 
 export default defineConfig({
   server: {
     preset,
+    ...(isCloudflare
+      ? { output: { dir: "{{ rootDir }}/dist" } }
+      : {}),
+    rollupConfig: {
+      external: rollupExternals,
+    },
+    compatibilityDate: "2024-12-01",
   },
   vite: {
     plugins: [tailwindcss()],

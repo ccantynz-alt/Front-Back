@@ -73,7 +73,7 @@ const sections: Section[] = [
     content: [
       "By accessing or using the Service during the beta period, you expressly acknowledge that you have read, understood, and agree to be bound by these Beta Terms in addition to the main Terms of Service (/legal/terms), Privacy Policy (/legal/privacy), Cookie Policy (/legal/cookies), and Acceptable Use Policy (/legal/acceptable-use).",
       "Your continued use of the Service after any modification to these Beta Terms constitutes your acceptance of the modified terms. If you do not agree with any changes, you must discontinue use of the Service.",
-      "You acknowledge that you are using the beta Service at your own risk and that Crontech's total liability to you for any claims arising from or related to your use of beta features shall be limited to the greater of (a) the amount you paid for the Service in the twelve (12) months preceding the claim, or (b) fifty U.S. dollars ($50.00).",
+      "DRAFT — requires attorney sign-off on enforceability. You acknowledge that you are using the beta Service at your own risk and that Crontech's total liability to you for any claims arising from or related to your use of beta features shall be limited to the greater of (a) the amount you paid for the Service in the twelve (12) months preceding the claim, or (b) fifty U.S. dollars ($50.00). This $50 cap is explicitly set as a pre-launch limit BELOW the $100 cap in the main Terms of Service, reflecting the experimental, unstable, and pre-production nature of the beta phase. See Section 12 for the conflict-resolution rule.",
     ],
   },
   {
@@ -102,6 +102,32 @@ const sections: Section[] = [
       "We will respond to beta-related inquiries within five (5) business days.",
     ],
   },
+  {
+    title: "12. Conflict With Main Terms (DRAFT \u2014 requires attorney review)",
+    content: [
+      "DRAFT \u2014 requires attorney review. In case of conflict between this Beta Disclaimer and the Terms of Service during the pre-launch phase, the Beta Disclaimer's lower liability cap ($50) controls over the main Terms' cap ($100). This is by design: beta use is riskier than GA use, so the cap is intentionally lower. Upon general availability, the main Terms' $100 cap governs and the $50 beta cap retires automatically without further notice.",
+      "Cross-reference: the main Terms of Service (Section 10) cap total aggregate liability at the greater of (a) the amount you paid in the twelve (12) months preceding the claim, or (b) one hundred U.S. dollars ($100). During the beta phase, the Beta Disclaimer's $50 floor applies instead. On all other points (class-action waiver, binding arbitration, AS-IS / AS-AVAILABLE disclaimer, no-consequential-damages, customer indemnification, reverse-engineering prohibition, export controls, governing law, age requirement, 30-day notice for terms changes), the main Terms of Service apply with full force during beta.",
+    ],
+  },
+  {
+    title: "13. Additional Protections During Beta (DRAFT \u2014 requires attorney review)",
+    content: [
+      "DRAFT \u2014 requires attorney review. The following protections apply during the beta period in addition to all provisions of the main Terms of Service:",
+      "Binding Individual Arbitration and Class-Action Waiver. We intend to require that all disputes arising from beta use be resolved through binding individual arbitration before the American Arbitration Association (AAA) or JAMS. No class, consolidated, or representative actions. You may opt out of arbitration within thirty (30) days of first accepting these Beta Terms by emailing legal@crontech.dev. Small claims court remains available for qualifying individual claims.",
+      "No Consequential Damages. We intend that Crontech shall not be liable for any lost profits, lost data, business interruption, goodwill loss, or any indirect, incidental, special, consequential, exemplary, or punitive damages arising from beta use, even if we have been advised of the possibility of such damages.",
+      "AS-IS / AS-AVAILABLE. The beta Service is provided AS-IS and AS-AVAILABLE with no warranties of any kind, express, implied, or statutory, including but not limited to merchantability, fitness for a particular purpose, non-infringement, accuracy, or uninterrupted operation.",
+      "AI Output Disclaimer. AI features are informational only and are not legal, medical, financial, tax, engineering, or safety-critical advice. You are solely responsible for independent verification before acting on any AI output.",
+      "Customer Indemnification. You agree to indemnify, defend, and hold harmless Crontech for any claim arising from your use of the beta Service, your content, your code, your outputs, and your violation of these Beta Terms or applicable law.",
+      "Suspension / Termination. We reserve the right to suspend or terminate beta access, unilaterally, for any reason or no reason, with notice where reasonably practicable.",
+      "Reverse Engineering Prohibited. You may not reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code, model weights, or internal architecture of the Service, except to the extent such restriction is prohibited by applicable law.",
+      "Force Majeure. We are not liable for failures caused by events beyond our reasonable control, including natural disasters, war, epidemics, government actions, internet disruptions, cyberattacks, or third-party outages.",
+      "Severability and Entire Agreement. If any provision of these Beta Terms is unenforceable, the remainder remains in full force. These Beta Terms, together with the main Terms of Service and incorporated policies, constitute the entire agreement.",
+      "Governing Law: New Zealand. We intend that these Beta Terms be governed by the laws of New Zealand, without regard to conflict-of-laws principles. Counsel to confirm enforceability against non-NZ users and to advise on US-specific carve-outs.",
+      "Export Controls / US Sanctions. You represent that you are not located in, and will not access or use the Service from, any jurisdiction subject to comprehensive US economic sanctions (including but not limited to Cuba, Iran, North Korea, Syria, and the Crimea, Donetsk, and Luhansk regions), and that you are not on any US government restricted-party list (OFAC SDN, BIS Entity List, or equivalent).",
+      "Age Requirement: 18+. You must be at least 18 years of age to access or use the beta Service. Where the main Terms of Service permit use at age 13 (or 16 EEA/UK), the beta phase restricts access to 18+ only. If you are under 18, do not access the beta.",
+      "30-Day Notice for Terms Changes. We intend to provide at least 30 days' notice by email and in-Service notification for any material change to these Beta Terms.",
+    ],
+  },
 ];
 
 export default function BetaDisclaimerPage(): JSX.Element {
@@ -112,14 +138,14 @@ export default function BetaDisclaimerPage(): JSX.Element {
         description="Understand the terms of using Crontech during the beta and early access period. AI features are provided as-is. Features may change without notice."
         path="/legal/beta-disclaimer"
       />
-      <div class="min-h-screen bg-[#0a0a0a] text-white">
+      <div class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
         <div class="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:py-24">
           <Stack direction="vertical" gap="lg">
             <Stack direction="vertical" gap="sm">
               <Text variant="h1" weight="bold" class="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                 Beta & Early Access Disclaimer
               </Text>
-              <Text variant="caption" class="text-gray-500">
+              <Text variant="caption" style={{ color: "var(--color-text-faint)" }}>
                 Last updated: April 9, 2026 | Effective: April 9, 2026
               </Text>
             </Stack>
@@ -133,7 +159,7 @@ export default function BetaDisclaimerPage(): JSX.Element {
                     </Text>
                     <For each={section.content}>
                       {(paragraph) => (
-                        <Text variant="body" class="text-gray-400 leading-relaxed">
+                        <Text variant="body" class="leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
                           {paragraph}
                         </Text>
                       )}

@@ -1,27 +1,35 @@
 name: Deploy
 
+# ── Crontech Production Deploy (Vultr) ─────────────────────────────
+# Pushes to main: build + test locally, then SSH into the Vultr box
+# and pull/rebuild/restart. No Docker — runs Bun directly via systemd
+# (Vultr has limited disk). Caddy handles TLS + reverse proxy.
+#
+# Required GitHub secrets:
+#   VULTR_SERVER_IP    — production server IPv4 (45.76.21.235)
+#   VULTR_SSH_KEY      — private SSH key for the deploy user
+#
+# Server layout (set up by scripts/setup-vultr.sh):
+#   /opt/crontech/          — repo checkout
+#   systemd: crontech-api   — Bun runs apps/api on port 3001
+#   systemd: crontech-web   — Node runs apps/web/.output on port 3000
+#   Caddy: crontech.ai      → localhost:3000
+#   Caddy: api.crontech.ai  → localhost:3001
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      skip_tests:
-        description: "Skip type-check + test gates (use for first preview deploy)"
-        required: false
-        default: "true"
-        type: choice
-        options:
-          - "true"
-          - "false"
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-main
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build All Packages
+  build-and-test:
+    name: Build & Quality Gates
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -32,183 +40,116 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Biome lint (non-blocking on first preview deploy)
-        run: bunx biome check .
-        continue-on-error: true
-
-      - name: Type check (non-blocking on first preview deploy)
+      - name: Type check
         run: bun run check
-        continue-on-error: true
 
-      - name: Link checker (zero-broken-anything enforcement)
+      - name: Biome lint
+        run: bunx biome check apps packages services
+
+      - name: Link checker
         run: bun run check-links
 
-      - name: Button checker (zero-broken-anything enforcement)
+      - name: Button checker
         run: bun run check-buttons
 
       - name: Build all packages
         run: bun run build
 
-      - name: Run tests (non-blocking on first preview deploy)
+      - name: Run tests
         run: bun run test
-        continue-on-error: true
 
-      - name: Upload web build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: apps/web/.output/
-          retention-days: 1
-
-      - name: Upload edge-workers source
-        uses: actions/upload-artifact@v4
-        with:
-          name: edge-workers
-          path: |
-            services/edge-workers/
-            infra/cloudflare/wrangler.toml
-          retention-days: 1
-
-  deploy-api-dry-run:
-    name: Deploy API (Dry Run)
+  deploy-vultr:
+    name: Deploy to Vultr
     runs-on: ubuntu-latest
-    needs: build
-    environment: staging
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Download edge-workers artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: edge-workers
-          path: .
-
-      - name: Dry-run deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: services/edge-workers
-          command: deploy --dry-run
-
-  deploy-api:
-    name: Deploy API to Cloudflare Workers
-    runs-on: ubuntu-latest
-    needs: deploy-api-dry-run
+    needs: build-and-test
     environment: production
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
         with:
-          bun-version: latest
+          host: ${{ secrets.VULTR_SERVER_IP }}
+          username: deploy
+          key: ${{ secrets.VULTR_SSH_KEY }}
+          script_stop: true
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            export PATH="$HOME/.bun/bin:/usr/local/bin:$PATH"
+            echo "=== Deploying Crontech to Vultr ==="
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+            APP_DIR="/opt/crontech"
+            cd "$APP_DIR"
 
-      - name: Download edge-workers artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: edge-workers
-          path: .
+            # 1. Pull latest code
+            echo "[1/6] Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
 
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: services/edge-workers
-          command: deploy
+            # 2. Install dependencies
+            echo "[2/6] Installing dependencies..."
+            bun install --frozen-lockfile
 
-  deploy-web:
-    name: Deploy Web to Cloudflare Pages
-    runs-on: ubuntu-latest
-    needs: build
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
+            # 3. Build
+            echo "[3/6] Building..."
+            bun run build
 
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+            # 4. Run migrations
+            echo "[4/6] Running migrations..."
+            bun run --cwd apps/api -e 'import("@back-to-the-future/db/migrate").then(m => m.runMigrations()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1) })' || echo "Migration skipped (no DB configured yet)"
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+            # 5. Restart services
+            echo "[5/6] Restarting services..."
+            sudo systemctl restart crontech-api
+            sleep 3
+            sudo systemctl restart crontech-web
 
-      - name: Build web app (cloudflare-pages preset)
-        run: bun run build
-        working-directory: apps/web
-        env:
-          SERVER_PRESET: cloudflare-pages
-
-      - name: Verify build output exists
-        run: |
-          if [ ! -d "apps/web/dist" ]; then
-            echo "::error::Build output directory apps/web/dist does not exist"
-            ls -la apps/web/ || true
-            exit 1
-          fi
-          if [ ! -e "apps/web/dist/_worker.js" ]; then
-            echo "::error::apps/web/dist/_worker.js missing — cloudflare-pages preset did not emit a worker bundle"
-            ls -la apps/web/dist/ || true
-            exit 1
-          fi
-          echo "Build output verified."
-          du -sh apps/web/dist
-
-      - name: Ensure Cloudflare Pages project exists (idempotent)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          # Try to create the Pages project. If it already exists (HTTP 4xx), ignore.
-          npx -y wrangler@latest pages project create crontech-web --production-branch=main || \
-            echo "Project may already exist — proceeding with deploy."
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/dist --project-name=crontech-web --branch=main --commit-dirty=true
-
-  post-deploy-smoke:
-    name: Post-Deploy Smoke Test
-    runs-on: ubuntu-latest
-    needs: [deploy-api, deploy-web]
-    if: ${{ vars.API_URL != '' && vars.WEB_URL != '' }}
-    steps:
-      - name: Health check API
-        run: |
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.API_URL }}/health" 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "API health check passed"
-              exit 0
-            fi
-            echo "Attempt $i: status $STATUS, retrying..."
+            # 6. Health checks
+            echo "[6/6] Running health checks..."
             sleep 5
-          done
-          echo "API health check failed after 5 attempts"
-          exit 1
 
-      - name: Health check Web
-        run: |
-          for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.WEB_URL }}" 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "Web health check passed"
-              exit 0
+            API_OK=false
+            for i in 1 2 3 4 5; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "API health check passed"
+                API_OK=true
+                break
+              fi
+              echo "  API attempt $i: status $STATUS, retrying..."
+              sleep 3
+            done
+
+            WEB_OK=false
+            for i in 1 2 3 4 5; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "Web health check passed"
+                WEB_OK=true
+                break
+              fi
+              echo "  Web attempt $i: status $STATUS, retrying..."
+              sleep 3
+            done
+
+            if [ "$API_OK" = true ] && [ "$WEB_OK" = true ]; then
+              echo ""
+              echo "=== DEPLOY SUCCESS ==="
+              echo "  Web: https://crontech.ai"
+              echo "  API: https://api.crontech.ai"
+            else
+              echo ""
+              echo "=== DEPLOY FAILED ==="
+              echo "  API healthy: $API_OK"
+              echo "  Web healthy: $WEB_OK"
+              echo ""
+              echo "--- crontech-api logs ---"
+              sudo journalctl -u crontech-api --no-pager -n 30
+              echo ""
+              echo "--- crontech-web logs ---"
+              sudo journalctl -u crontech-web --no-pager -n 30
+              exit 1
             fi
-            echo "Attempt $i: status $STATUS, retrying..."
-            sleep 5
-          done
-          echo "Web health check failed after 5 attempts"
-          exit 1

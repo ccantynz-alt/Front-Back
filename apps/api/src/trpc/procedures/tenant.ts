@@ -15,29 +15,7 @@ import { createProjectBranch } from "@back-to-the-future/db/neon-provisioning";
 import { fileExists } from "@back-to-the-future/storage/client";
 import { enqueueTenantProvision } from "@back-to-the-future/queue";
 import { auditMiddleware } from "../../middleware/audit";
-
-// ── Orchestrator Client ─────────────────────────────────────────────
-const ORCHESTRATOR_URL = process.env["ORCHESTRATOR_URL"] ?? "http://127.0.0.1:9000";
-
-async function orchestratorFetch<T>(
-  path: string,
-  options?: RequestInit,
-): Promise<T> {
-  const res = await fetch(`${ORCHESTRATOR_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-    signal: AbortSignal.timeout(120_000),
-  });
-  const data: unknown = await res.json();
-  if (!res.ok) {
-    const errMsg = (data as { error?: string }).error ?? `Orchestrator error ${res.status}`;
-    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: errMsg });
-  }
-  return data as T;
-}
+import { orchestratorFetch } from "../../deploy/orchestrator-client";
 
 // ── Admin Middleware ──────────────────────────────────────────────────
 

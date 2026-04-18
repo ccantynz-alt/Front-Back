@@ -96,7 +96,7 @@ export function CollaborativeCursors(props: CollaborativeCursorsProps): JSX.Elem
                   height: "20px",
                   "border-radius": "50%",
                   background: cursor.user.color,
-                  border: "2px solid white",
+                  border: "2px solid var(--color-text)",
                   "box-shadow": `0 0 8px ${cursor.user.color}, 0 2px 4px rgba(0,0,0,0.3)`,
                   animation: "pulse-cursor 1.5s ease-in-out infinite",
                 }}
@@ -118,7 +118,7 @@ export function CollaborativeCursors(props: CollaborativeCursorsProps): JSX.Elem
                 left: cursor.isAI ? "24px" : "16px",
                 top: cursor.isAI ? "2px" : "12px",
                 background: cursor.user.color,
-                color: "white",
+                color: "var(--color-text)",
                 padding: "2px 8px",
                 "border-radius": "4px",
                 "font-size": "11px",

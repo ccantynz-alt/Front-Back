@@ -4,27 +4,35 @@
     "config:recommended",
     ":pinVersions",
     ":automergeMinor",
-    ":automergePatch",
-    "group:allNonMajor"
+    ":automergePatch"
+  ],
+  "schedule": ["before 6am on monday"],
+  "timezone": "America/New_York",
+  "postUpdateOptions": ["bunlock"],
+  "ignoreDeps": [],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.turbo/**"
   ],
   "packageRules": [
     {
-      "matchUpdateTypes": ["patch"],
+      "description": "Group all non-major (patch + minor) updates into a single weekly PR",
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "non-major dependencies",
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true
     },
     {
-      "matchUpdateTypes": ["minor"],
-      "automerge": true,
-      "automergeType": "pr",
-      "platformAutomerge": true
-    },
-    {
+      "description": "Each major update gets its own PR — requires human review",
       "matchUpdateTypes": ["major"],
       "automerge": false
+    },
+    {
+      "description": "Ignore workspace-internal packages (monorepo uses apps/*, packages/*, services/*)",
+      "matchPackagePatterns": ["^@back-to-the-future/"],
+      "enabled": false
     }
-  ],
-  "schedule": ["every weekday"],
-  "timezone": "America/New_York"
+  ]
 }

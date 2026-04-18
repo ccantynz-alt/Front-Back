@@ -115,7 +115,7 @@ export function NotificationCenter(): JSX.Element {
           cursor: "pointer",
           "font-size": "18px",
           padding: "6px",
-          color: "var(--text-color, inherit)",
+          color: "var(--color-text)",
         }}
       >
         <span aria-hidden="true">&#128276;</span>
@@ -125,8 +125,8 @@ export function NotificationCenter(): JSX.Element {
               position: "absolute",
               top: "0",
               right: "0",
-              background: "var(--error-color, #ef4444)",
-              color: "#fff",
+              background: "var(--color-danger)",
+              color: "var(--color-text)",
               "font-size": "10px",
               "font-weight": "bold",
               "border-radius": "50%",
@@ -154,8 +154,8 @@ export function NotificationCenter(): JSX.Element {
             width: "360px",
             "max-height": "420px",
             "overflow-y": "auto",
-            background: "var(--card-bg, #ffffff)",
-            border: "1px solid var(--border-color, #e5e7eb)",
+            background: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-border)",
             "border-radius": "8px",
             "box-shadow": "0 8px 24px rgba(0,0,0,0.12)",
             "z-index": "100",
@@ -167,7 +167,7 @@ export function NotificationCenter(): JSX.Element {
           <div
             style={{
               padding: "12px 16px",
-              "border-bottom": "1px solid var(--border-color, #e5e7eb)",
+              "border-bottom": "1px solid var(--color-border)",
               display: "flex",
               "align-items": "center",
               "justify-content": "space-between",
@@ -196,7 +196,7 @@ export function NotificationCenter(): JSX.Element {
                   <div
                     style={{
                       padding: "12px 16px",
-                      "border-bottom": "1px solid var(--border-color, #e5e7eb)",
+                      "border-bottom": "1px solid var(--color-border)",
                       cursor: "pointer",
                       transition: "background 0.15s ease",
                     }}

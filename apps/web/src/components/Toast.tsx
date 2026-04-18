@@ -36,10 +36,10 @@ export function dismissToast(id: number): void {
 }
 
 const variantStyles: Record<ToastVariant, { bg: string; border: string; color: string; icon: string }> = {
-  success: { bg: "rgba(34, 197, 94, 0.15)", border: "rgba(34, 197, 94, 0.5)", color: "#4ade80", icon: "✓" },
-  error: { bg: "rgba(239, 68, 68, 0.15)", border: "rgba(239, 68, 68, 0.5)", color: "#f87171", icon: "✕" },
-  info: { bg: "rgba(59, 130, 246, 0.15)", border: "rgba(59, 130, 246, 0.5)", color: "#60a5fa", icon: "ℹ" },
-  warning: { bg: "rgba(245, 158, 11, 0.15)", border: "rgba(245, 158, 11, 0.5)", color: "#fbbf24", icon: "⚠" },
+  success: { bg: "rgba(34, 197, 94, 0.15)", border: "rgba(34, 197, 94, 0.5)", color: "var(--color-success)", icon: "✓" },
+  error: { bg: "rgba(239, 68, 68, 0.15)", border: "rgba(239, 68, 68, 0.5)", color: "var(--color-danger)", icon: "✕" },
+  info: { bg: "rgba(59, 130, 246, 0.15)", border: "rgba(59, 130, 246, 0.5)", color: "var(--color-primary)", icon: "ℹ" },
+  warning: { bg: "rgba(245, 158, 11, 0.15)", border: "rgba(245, 158, 11, 0.5)", color: "var(--color-warning)", icon: "⚠" },
 };
 
 export function ToastContainer(): JSX.Element {

@@ -7,7 +7,12 @@ import { Layout } from "./components/Layout";
 import { CommandPalette } from "./components/CommandPalette";
 import { AppErrorBoundary } from "./components/ErrorBoundary";
 import { ToastContainer } from "./components/Toast";
+import { VoiceGlobal } from "./components/VoiceGlobal";
+import { BuildTrack } from "./components/BuildTrack";
+import { LaunchChecklist } from "./components/LaunchChecklist";
+import { PreLaunchBanner } from "./components/PreLaunchBanner";
 import { initAnalytics, stopAnalytics, trackPageView } from "./lib/analytics";
+import { connectLiveUpdates, disconnectLiveUpdates } from "./lib/live-updates";
 import "./app.css";
 
 function AnalyticsTracker(): null {
@@ -16,6 +21,7 @@ function AnalyticsTracker(): null {
   onMount(() => {
     initAnalytics();
     trackPageView(location.pathname);
+    connectLiveUpdates();
   });
 
   createEffect(() => {
@@ -24,6 +30,7 @@ function AnalyticsTracker(): null {
 
   onCleanup(() => {
     stopAnalytics();
+    disconnectLiveUpdates();
   });
 
   return null;
@@ -42,6 +49,10 @@ export default function App() {
                   <AnalyticsTracker />
                   <CommandPalette />
                   <ToastContainer />
+                  <VoiceGlobal />
+                  <BuildTrack />
+                  <LaunchChecklist />
+                  <PreLaunchBanner />
                   <Layout>
                     <Suspense>{props.children}</Suspense>
                   </Layout>

@@ -212,7 +212,7 @@ const userControls: UserControl[] = [
 const complianceFrameworks: string[] = [
   "NIST AI Risk Management Framework (AI RMF 1.0) — We follow the Govern, Map, Measure, and Manage functions to identify and mitigate AI risks across our platform.",
   "EU AI Act transparency requirements — We classify our AI systems by risk level and maintain the documentation, logging, and human oversight obligations required by the regulation.",
-  "Regular bias and safety audits — Independent assessments evaluate our AI systems for demographic bias, safety failures, and unintended behaviors on a recurring schedule.",
+  "DRAFT — requires attorney review. Bias and safety audits — We intend to engage independent AI safety auditors prior to general availability. Until then, internal review is in place but independent third-party audits have not yet commenced. We do not currently have a contracted external audit partner.",
   "AI system documentation — We maintain technical documentation of all AI models deployed on the platform, including their intended purpose, training data provenance (where disclosed by providers), known limitations, and performance metrics.",
   "Human oversight — All destructive AI actions (file deletion, code deployment, data modification) require explicit human approval before execution.",
 ];
@@ -487,6 +487,138 @@ export default function AIDisclosurePage(): JSX.Element {
                   </Text>
                 )}
               </For>
+            </Stack>
+          </Card>
+        </Stack>
+
+        <Separator />
+
+        {/* ---- 8.5 Additional Protections - DRAFT ---- */}
+        <Stack direction="vertical" gap="md">
+          <Text variant="h2" weight="bold">
+            Additional Protections (DRAFT &mdash; requires attorney review)
+          </Text>
+          <Card padding="md">
+            <Stack direction="vertical" gap="xs">
+              <Text variant="body">
+                DRAFT &mdash; requires attorney review. Nothing on this AI
+                Transparency & Disclosure page waives, diminishes, or
+                otherwise limits any protection, disclaimer, limitation of
+                liability, indemnification, class-action waiver,
+                binding-arbitration clause, AS-IS / AS-AVAILABLE
+                disclaimer, no-consequential-damages exclusion,
+                governing-law choice, export-controls clause, 18+ age
+                requirement, or 30-day notice provision set forth in the
+                Terms of Service. All such Terms of Service provisions
+                apply with full force to your use of AI features.
+              </Text>
+              <Text variant="body">
+                AI Output Disclaimer. Reaffirming the AI Limitations
+                section above: AI features are informational only. They
+                are not legal, medical, financial, tax, engineering, or
+                safety-critical advice. You are solely responsible for
+                reviewing, verifying, and validating AI output before
+                acting on it.
+              </Text>
+              <Text variant="body">
+                Liability Cap. Total aggregate liability arising from AI
+                output or AI-feature operation is capped per the Terms of
+                Service at the greater of (a) fees paid in the twelve (12)
+                months preceding the claim or (b) one hundred U.S. dollars
+                ($100), subject to the lower $50 cap during any beta or
+                early access phase per the Beta Disclaimer.
+              </Text>
+              <Text variant="body">
+                No Consequential Damages. Crontech is not liable for lost
+                profits, lost revenue, lost data, lost goodwill, business
+                interruption, or any indirect, incidental, special,
+                consequential, exemplary, or punitive damages arising
+                from AI output or AI-feature failures, even if advised of
+                the possibility.
+              </Text>
+              <Text variant="body">
+                AS-IS / AS-AVAILABLE. All AI features &mdash; client-side,
+                edge, cloud, and any combination thereof &mdash; are
+                provided AS-IS and AS-AVAILABLE without warranties of any
+                kind, express, implied, or statutory, including
+                merchantability, fitness for a particular purpose,
+                non-infringement, accuracy, or uninterrupted operation.
+              </Text>
+              <Text variant="body">
+                Customer Indemnification. You agree to indemnify, defend,
+                and hold harmless Crontech for any claim arising from (a)
+                your use of AI features; (b) AI output you publish,
+                distribute, or rely on; (c) third-party intellectual
+                property claims relating to AI output; and (d) your
+                violation of the Terms of Service or applicable law.
+                Crontech does not indemnify for intellectual property
+                claims arising from AI-generated output.
+              </Text>
+              <Text variant="body">
+                Unilateral Suspension and Termination. Crontech reserves
+                the right to suspend or terminate access to AI features,
+                unilaterally, for any reason or no reason, with notice
+                where reasonably practicable, including for suspected
+                abuse, safety incidents, or third-party model-provider
+                changes.
+              </Text>
+              <Text variant="body">
+                Reverse Engineering Prohibited. You may not reverse
+                engineer, decompile, disassemble, or otherwise attempt to
+                derive the model weights, safety filters, routing logic,
+                or internal architecture of the AI systems, except where
+                such prohibition is unenforceable under applicable law.
+                You may not use AI features or their output to train or
+                develop competing AI models without express written
+                consent (see AUP Section 3.4).
+              </Text>
+              <Text variant="body">
+                Force Majeure. Force majeure events (including third-party
+                AI model provider outages, changes to model availability,
+                and changes to model licensing terms imposed by upstream
+                providers) are excluded from Crontech's liability.
+              </Text>
+              <Text variant="body">
+                Severability and Entire Agreement. If any provision of
+                this page is unenforceable, the remainder remains in full
+                force. This page, together with the Terms of Service and
+                incorporated policies, constitutes the entire agreement
+                with respect to AI transparency and AI-feature usage.
+              </Text>
+              <Text variant="body">
+                Binding Individual Arbitration and Class-Action Waiver.
+                Disputes relating to AI features or AI output are subject
+                to the binding individual arbitration clause and
+                class-action waiver in the Terms of Service (AAA or JAMS),
+                including the 30-day opt-out and small-claims carve-out.
+              </Text>
+              <Text variant="body">
+                Governing Law: New Zealand. We intend that this AI
+                disclosure be governed by the laws of New Zealand, subject
+                to mandatory local law and to the US-specific carve-outs
+                advised by counsel. Counsel to confirm against EU AI Act
+                obligations that are non-waivable.
+              </Text>
+              <Text variant="body">
+                Export Controls / US Sanctions. Access to and use of AI
+                features is subject to the export-controls and
+                US-sanctions representation in the Terms of Service. AI
+                features may be further restricted in jurisdictions where
+                upstream model providers' licensing terms prohibit
+                availability.
+              </Text>
+              <Text variant="body">
+                Age Requirement: 18+. You must be at least eighteen (18)
+                years of age to use AI features.
+              </Text>
+              <Text variant="body">
+                30-Day Notice for Terms Changes. We intend to provide at
+                least thirty (30) days' notice for any material change to
+                this AI disclosure or to the AI feature set. Changes
+                driven by upstream model-provider actions beyond our
+                reasonable control may take effect sooner; we will
+                disclose as promptly as practicable.
+              </Text>
             </Stack>
           </Card>
         </Stack>

@@ -1,0 +1,28 @@
+{
+  "name": "@back-to-the-future/flywheel",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ingest": "./src/ingest.ts",
+    "./redact": "./src/redact.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test",
+    "ingest": "bun run src/cli/ingest.ts",
+    "brief": "bun run src/cli/brief.ts"
+  },
+  "dependencies": {
+    "@back-to-the-future/db": "workspace:*",
+    "@back-to-the-future/theatre": "workspace:*",
+    "drizzle-orm": "^0.45",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^6",
+    "@types/bun": "^1.2.0"
+  }
+}

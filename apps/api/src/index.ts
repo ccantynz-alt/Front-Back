@@ -1,10 +1,12 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
 import { chatStreamRoutes } from "./ai/chat-stream";
-import { wsApp, websocket, sseApp, yjsWsApp } from "./realtime";
+import { wsApp, websocket, sseApp, theatreSseApp, yjsWsApp, liveUpdatesApp } from "./realtime";
+import { terminalApp } from "./terminal/handler";
 import { initTelemetry, httpRequestCount, httpRequestDuration, recordRequest, getMetrics } from "./telemetry";
 import { getAllFlags, isFeatureEnabled } from "./feature-flags";
 import { checkNeonHealth } from "@back-to-the-future/db/neon";
@@ -21,12 +23,19 @@ import {
   listComponents,
 } from "@back-to-the-future/ai-core";
 
-// Initialize OpenTelemetry (no-op if OTEL_EXPORTER_OTLP_ENDPOINT not set)
-initTelemetry();
+// Initialize OpenTelemetry (no-op if OTEL_EXPORTER_OTLP_ENDPOINT not set).
+// Fire-and-forget: `initTelemetry()` is async because it lazy-imports the
+// Node-only `@opentelemetry/sdk-node` package so this file stays Workers-
+// parseable. We do not await it — telemetry is best-effort; a missing SDK
+// should never block the server from booting.
+initTelemetry().catch((err) => {
+  console.warn("[telemetry] init failed:", err);
+});
 
 import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
 import { runDispatcher } from "./webhooks/dispatcher";
+import { gluecronPushApp } from "./webhooks/gluecron-push";
 import { db as defaultDb } from "@back-to-the-future/db";
 import {
   startHealthMonitor,
@@ -36,6 +45,7 @@ import {
 import { getQueueStatus } from "./automation/retry-queue";
 
 import { securityHeaders } from "./middleware/security-headers";
+import { cacheControl } from "./middleware/cache-control";
 import { createRateLimiter, type KvNamespaceLike } from "./middleware/rate-limiter";
 import { csrf } from "./middleware/csrf";
 import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
@@ -49,9 +59,46 @@ const app = new Hono().basePath("/api");
 // ── Subdomain Routing (Multi-Tenant) ────────────────────────────────
 app.use("*", subdomainRouter);
 
+// ── CORS (must be before other middleware so preflight OPTIONS work) ──
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://crontech.ai",
+  "https://www.crontech.ai",
+  // Cloudflare Pages preview/production URLs
+  ...(process.env.CORS_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean) ?? []),
+];
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      if (!origin) return "http://localhost:3000";
+      if (ALLOWED_ORIGINS.includes(origin)) return origin;
+      // Allow any *.pages.dev subdomain for Cloudflare Pages previews
+      if (origin.endsWith(".pages.dev")) return origin;
+      return null as unknown as string;
+    },
+    allowHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Request-ID"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    exposeHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "X-Request-ID"],
+    maxAge: 86400,
+    credentials: true,
+  }),
+);
+
 // ── Security Middleware ──────────────────────────────────────────────
 app.use("*", securityHeaders());
-app.use("*", csrf({ allowedOrigins: ["http://localhost:3000", "http://localhost:3001"] }));
+// ── Cache-Control (prevent stale dynamic content) ───────────────────
+app.use("*", cacheControl());
+app.use("*", csrf({
+  allowedOrigins: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://crontech.ai",
+    "https://www.crontech.ai",
+    ...(process.env.CORS_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean) ?? []),
+  ],
+}));
 // Rate limiter: auto-selects Cloudflare KV when `RATE_LIMIT_KV` is bound to
 // the Worker env, otherwise falls back to the in-memory limiter. This lets the
 // same code run in `bun run dev` locally and on Cloudflare Workers in prod
@@ -108,6 +155,19 @@ app.use("*", async (c, next) => {
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ── Deploy Version Probe ─────────────────────────────────────────────
+// The GitHub Actions deploy workflow polls this after `docker compose up`
+// to confirm the *new* image is serving traffic. GIT_SHA is baked in at
+// image build time via the Dockerfile ARG.
+app.get("/version", (c) => {
+  c.header("Cache-Control", "no-cache, no-store, must-revalidate");
+  return c.json({
+    sha: process.env.GIT_SHA ?? "unknown",
+    service: "crontech-api",
     timestamp: new Date().toISOString(),
   });
 });
@@ -275,6 +335,11 @@ app.post("/webhooks/inbound-email", async (c) => {
   }
 });
 
+// Mount Gluecron push-notification receiver (raw Hono -- bearer auth is
+// handled inside the route, not via the global middleware stack).
+// POST /api/hooks/gluecron/push — see webhooks/gluecron-push.ts.
+app.route("/", gluecronPushApp);
+
 // Mount Google OAuth routes (raw Hono -- needs redirects outside tRPC)
 app.route("/auth", googleOAuthRoutes);
 
@@ -306,6 +371,15 @@ app.route("/", yjsWsApp);
 // Real-Time: SSE + REST endpoints
 app.route("/", sseApp);
 
+// Build Theatre: SSE live log stream for /ops
+app.route("/", theatreSseApp);
+
+// Live Updates: SSE push notifications for data changes
+app.route("/", liveUpdatesApp);
+
+// Terminal: WebSocket PTY at /api/terminal/:projectId
+app.route("/", terminalApp);
+
 // ── Auto-migrate on startup (safe default: only when AUTO_MIGRATE=true) ──
 async function maybeRunMigrations(): Promise<void> {
   const enabled = process.env.AUTO_MIGRATE === "true" || process.env.NODE_ENV !== "production";
@@ -328,43 +402,56 @@ async function maybeRunMigrations(): Promise<void> {
 
 maybeRunMigrations().catch((err) => console.warn("[startup] migration wrapper error:", err));
 
-// ── Start automation loops ─────────────────────────────────────────
-startQueue();
-startHealingLoop();
-startHealthMonitor();
+// ── Bun-only long-lived boot path ──────────────────────────────────
+// Everything below needs a long-running Node/Bun process: in-memory queues,
+// `setInterval` timers, `Bun.serve`. None of it is valid on Cloudflare
+// Workers (no `Bun` global, no persistent intervals between requests). Guard
+// on `typeof Bun !== "undefined"` so Workers imports this module cleanly.
+// Workers uses the `workerHandler` export below for `fetch` + `scheduled`
+// instead.
+if (typeof Bun !== "undefined") {
+  // ── Start automation loops (Bun-only) ────────────────────────────
+  startQueue();
+  startHealingLoop();
+  startHealthMonitor();
 
-// Webhook dispatcher: drains the `webhook_deliveries` queue every minute
-// in long-running server mode (Bun). On Cloudflare Workers, wire the same
-// `runDispatcher` call into a cron trigger via the exported `scheduled`
-// handler below.
-const webhookDispatcherInterval = setInterval(() => {
-  runDispatcher(defaultDb).catch((err) => {
-    console.warn("[webhook-dispatcher] run failed:", err);
+  // Webhook dispatcher: drains the `webhook_deliveries` queue every minute
+  // in long-running server mode (Bun). On Cloudflare Workers, the same
+  // `runDispatcher` call is wired into a cron trigger via the exported
+  // `scheduled` handler below.
+  const webhookDispatcherInterval = setInterval(() => {
+    runDispatcher(defaultDb).catch((err) => {
+      console.warn("[webhook-dispatcher] run failed:", err);
+    });
+  }, 60_000);
+  // Unref so the interval does not keep a test process alive.
+  if (typeof (webhookDispatcherInterval as unknown as { unref?: () => void }).unref === "function") {
+    (webhookDispatcherInterval as unknown as { unref: () => void }).unref();
+  }
+
+  const port = Number(process.env.API_PORT) || 3001;
+
+  Bun.serve({
+    fetch: app.fetch,
+    port,
+    websocket,
   });
-}, 60_000);
-// Unref so the interval does not keep a test process alive.
-if (typeof (webhookDispatcherInterval as unknown as { unref?: () => void }).unref === "function") {
-  (webhookDispatcherInterval as unknown as { unref: () => void }).unref();
+
+  console.log(`API server running on http://localhost:${port}`);
+  console.log(`  WebSocket: ws://localhost:${port}/api/ws`);
+  console.log(`  SSE: http://localhost:${port}/api/realtime/events/:roomId`);
+  console.log(`  Terminal: ws://localhost:${port}/api/terminal/:projectId`);
 }
 
-const port = Number(process.env.API_PORT) || 3001;
-
-Bun.serve({
-  fetch: app.fetch,
-  port,
-  websocket,
-});
-
-console.log(`API server running on http://localhost:${port}`);
-console.log(`  WebSocket: ws://localhost:${port}/api/ws`);
-console.log(`  SSE: http://localhost:${port}/api/realtime/events/:roomId`);
-
 // ── Cloudflare Workers entry point ─────────────────────────────────
-// `default export = app` stays for compatibility with existing importers
-// (bun scripts, tests). The `workerHandler` export below is the shape
-// Workers expects for `fetch` + `scheduled` cron triggers. Wire
-// `wrangler.toml` `[triggers] crons = ["*/1 * * * *"]` to the
-// `workerHandler.scheduled` path.
+// The default export is the ModuleWorker shape Cloudflare expects for
+// both `fetch` AND `scheduled` cron triggers. `wrangler.toml`'s
+// `[triggers] crons = ["*/1 * * * *"]` routes the webhook dispatcher
+// through `workerHandler.scheduled`. The raw Hono `app` is still
+// exported as a named export so existing tests that call
+// `app.request(...)` keep working unchanged.
+export { app };
+
 export const workerHandler = {
   fetch: app.fetch,
   async scheduled(
@@ -386,4 +473,5 @@ export const workerHandler = {
   },
 };
 
-export default app;
+// default export removed — Bun auto-serve conflicts with explicit Bun.serve()
+// on self-hosted deployments. Re-add for Cloudflare Workers if needed.

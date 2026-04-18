@@ -1,12 +1,11 @@
-import { NodeSDK } from "@opentelemetry/sdk-node";
-import { resourceFromAttributes } from "@opentelemetry/resources";
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
-import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
-import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { trace, metrics, SpanStatusCode } from "@opentelemetry/api";
 import type { Span } from "@opentelemetry/api";
+// `@opentelemetry/sdk-node` pulls in Node built-ins (fs, async_hooks, etc.)
+// that Cloudflare Workers cannot parse. Import the type only at the top; the
+// value import happens lazily inside `initTelemetry()` so that Workers can
+// bundle this module without ReferenceErrors. Bun and Node evaluate the
+// dynamic import normally.
+import type { NodeSDK } from "@opentelemetry/sdk-node";
 
 // ── OpenTelemetry Configuration ──────────────────────────────────────
 // Observability across edge, cloud, and client -- including AI agent
@@ -15,7 +14,7 @@ import type { Span } from "@opentelemetry/api";
 const SERVICE_NAME = "back-to-the-future-api";
 const SERVICE_VERSION = "0.0.1";
 
-export function initTelemetry(): NodeSDK | null {
+export async function initTelemetry(): Promise<NodeSDK | null> {
   const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"];
 
   // Skip telemetry initialization if no endpoint configured
@@ -23,6 +22,27 @@ export function initTelemetry(): NodeSDK | null {
     console.log("OpenTelemetry: No OTEL_EXPORTER_OTLP_ENDPOINT set, telemetry disabled");
     return null;
   }
+
+  // Lazy-load every Node-only module so Workers never tries to bundle them.
+  // The dynamic imports only fire when OTEL_EXPORTER_OTLP_ENDPOINT is set,
+  // which is a Node/Bun-only configuration path.
+  const [
+    { NodeSDK },
+    { resourceFromAttributes },
+    { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION },
+    { OTLPTraceExporter },
+    { OTLPMetricExporter },
+    { PeriodicExportingMetricReader },
+    { BatchSpanProcessor },
+  ] = await Promise.all([
+    import("@opentelemetry/sdk-node"),
+    import("@opentelemetry/resources"),
+    import("@opentelemetry/semantic-conventions"),
+    import("@opentelemetry/exporter-trace-otlp-http"),
+    import("@opentelemetry/exporter-metrics-otlp-http"),
+    import("@opentelemetry/sdk-metrics"),
+    import("@opentelemetry/sdk-trace-base"),
+  ]);
 
   const resource = resourceFromAttributes({
     [ATTR_SERVICE_NAME]: SERVICE_NAME,

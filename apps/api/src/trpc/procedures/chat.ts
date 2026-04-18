@@ -6,14 +6,15 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, sql } from "drizzle-orm";
-import { router, protectedProcedure } from "../init";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { router, protectedProcedure, adminProcedure } from "../init";
 import {
   conversations,
   chatMessages,
   userProviderKeys,
 } from "@back-to-the-future/db";
-import { ANTHROPIC_MODELS } from "@back-to-the-future/ai-core";
+import { ANTHROPIC_MODELS, estimateCost } from "@back-to-the-future/ai-core";
+import { emitDataChange } from "../../realtime/live-updates";
 
 // ── IDs ────────────────────────────────────────────────────────────────
 
@@ -21,32 +22,33 @@ function newId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-// ── Encryption helpers ─────────────────────────────────────────────────
-// Simple XOR-based obfuscation with the session secret. This is NOT
-// cryptographic-grade encryption — it prevents plaintext storage and
-// casual exposure. For production, swap to AES-256-GCM with a KMS key.
+// ── Encryption helpers (AES-256-GCM) ──────────────────────────────────
 
-function getEncryptionKey(): string {
-  return process.env["SESSION_SECRET"] ?? "crontech-default-key-change-me";
+import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
+
+function getEncryptionKey(): Buffer {
+  const secret = process.env["SESSION_SECRET"] ?? "crontech-default-key-change-me";
+  return createHash("sha256").update(secret).digest();
 }
 
-function xorEncrypt(plaintext: string, key: string): string {
-  const result: number[] = [];
-  for (let i = 0; i < plaintext.length; i++) {
-    // biome-ignore lint/style/noNonNullAssertion: index always valid
-    result.push(plaintext.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-  }
-  return Buffer.from(result).toString("base64");
+function aesEncrypt(plaintext: string): string {
+  const key = getEncryptionKey();
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString("base64");
 }
 
-function xorDecrypt(encoded: string, key: string): string {
+function aesDecrypt(encoded: string): string {
+  const key = getEncryptionKey();
   const buf = Buffer.from(encoded, "base64");
-  const result: number[] = [];
-  for (let i = 0; i < buf.length; i++) {
-    // biome-ignore lint/style/noNonNullAssertion: index always valid
-    result.push(buf[i]! ^ key.charCodeAt(i % key.length));
-  }
-  return String.fromCharCode(...result);
+  const iv = buf.subarray(0, 12);
+  const tag = buf.subarray(12, 28);
+  const encrypted = buf.subarray(28);
+  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  return decipher.update(encrypted) + decipher.final("utf8");
 }
 
 // ── Input Schemas ──────────────────────────────────────────────────────
@@ -91,6 +93,7 @@ export const chatRouter = router({
         createdAt: now,
         updatedAt: now,
       });
+      emitDataChange("conversations", "conversation created");
       return { id, title: input.title };
     }),
 
@@ -235,13 +238,24 @@ export const chatRouter = router({
         createdAt: new Date(),
       });
 
-      // Update conversation token totals
+      // Update conversation token + cost totals.
+      // Cost is stored in microdollars (1/1,000,000 of a dollar) for
+      // precision — matches the estimateCost() return contract.
       const tokenDelta = (input.inputTokens ?? 0) + (input.outputTokens ?? 0);
-      if (tokenDelta > 0) {
+      const costDelta = input.model
+        ? estimateCost(
+            input.model,
+            input.inputTokens ?? 0,
+            input.outputTokens ?? 0,
+          )
+        : 0;
+
+      if (tokenDelta > 0 || costDelta > 0) {
         await ctx.db
           .update(conversations)
           .set({
             totalTokens: sql`${conversations.totalTokens} + ${tokenDelta}`,
+            totalCost: sql`${conversations.totalCost} + ${costDelta}`,
             updatedAt: new Date(),
           })
           .where(eq(conversations.id, input.conversationId));
@@ -263,14 +277,87 @@ export const chatRouter = router({
     }));
   }),
 
-  // ── Provider Key Management ──────────────────────────────────────
+  /**
+   * Returns current-month usage stats for the caller: total
+   * conversations, total tokens, and cost in microdollars. The
+   * "month" is the calendar month in UTC (first day 00:00).
+   */
+  getUsageStats: protectedProcedure.query(async ({ ctx }) => {
+    const now = new Date();
+    const monthStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0),
+    );
 
-  /** Save or update an API provider key. */
-  saveProviderKey: protectedProcedure
+    // All conversations for this user
+    const allConvs = await ctx.db
+      .select({
+        id: conversations.id,
+        updatedAt: conversations.updatedAt,
+        totalTokens: conversations.totalTokens,
+        totalCost: conversations.totalCost,
+      })
+      .from(conversations)
+      .where(eq(conversations.userId, ctx.userId));
+
+    // Month-bucketed: messages are the source of truth for "what
+    // was spent this month" — conversations.totalCost is lifetime.
+    // Sum cost of messages created in the current calendar month
+    // that belong to this user's conversations.
+    const monthlyRows = await ctx.db
+      .select({
+        conversationId: chatMessages.conversationId,
+        model: chatMessages.model,
+        inputTokens: chatMessages.inputTokens,
+        outputTokens: chatMessages.outputTokens,
+      })
+      .from(chatMessages)
+      .innerJoin(conversations, eq(chatMessages.conversationId, conversations.id))
+      .where(
+        and(
+          eq(conversations.userId, ctx.userId),
+          gte(chatMessages.createdAt, monthStart),
+        ),
+      );
+
+    let monthTokens = 0;
+    let monthCostMicro = 0;
+    for (const row of monthlyRows) {
+      const input = row.inputTokens ?? 0;
+      const output = row.outputTokens ?? 0;
+      monthTokens += input + output;
+      if (row.model) {
+        monthCostMicro += estimateCost(row.model, input, output);
+      }
+    }
+
+    const lifetimeCostMicro = allConvs.reduce(
+      (acc, c) => acc + (c.totalCost ?? 0),
+      0,
+    );
+    const lifetimeTokens = allConvs.reduce(
+      (acc, c) => acc + (c.totalTokens ?? 0),
+      0,
+    );
+
+    return {
+      conversationCount: allConvs.length,
+      lifetimeTokens,
+      lifetimeCostMicro,
+      lifetimeCostDollars: lifetimeCostMicro / 1_000_000,
+      monthTokens,
+      monthCostMicro,
+      monthCostDollars: monthCostMicro / 1_000_000,
+      monthStart: monthStart.toISOString(),
+    };
+  }),
+
+  // ── Provider Key Management (Admin Only) ─────────────────────────
+
+  /** Save or update an API provider key. Admin only. */
+  saveProviderKey: adminProcedure
     .input(SaveProviderKeyInput)
     .mutation(async ({ ctx, input }) => {
-      const key = getEncryptionKey();
-      const encrypted = xorEncrypt(input.apiKey, key);
+      const encrypted = aesEncrypt(input.apiKey);
       const prefix = `${input.apiKey.slice(0, 7)}...${input.apiKey.slice(-4)}`;
 
       // Deactivate existing keys for this provider
@@ -295,11 +382,12 @@ export const chatRouter = router({
         createdAt: new Date(),
       });
 
+      emitDataChange("provider-keys", `${input.provider} key saved`);
       return { id, prefix };
     }),
 
-  /** Get the active provider key info (prefix only, never the full key). */
-  getProviderKey: protectedProcedure
+  /** Get the active provider key info (prefix only, never the full key). Admin only. */
+  getProviderKey: adminProcedure
     .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .query(async ({ ctx, input }) => {
       const rows = await ctx.db
@@ -323,8 +411,8 @@ export const chatRouter = router({
       return rows[0] ?? null;
     }),
 
-  /** Delete a provider key. */
-  deleteProviderKey: protectedProcedure
+  /** Delete a provider key. Admin only. */
+  deleteProviderKey: adminProcedure
     .input(z.object({ provider: z.enum(["anthropic", "openai", "github"]) }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db
@@ -335,6 +423,7 @@ export const chatRouter = router({
             eq(userProviderKeys.provider, input.provider),
           ),
         );
+      emitDataChange("provider-keys", `${input.provider} key deleted`);
       return { success: true };
     }),
 
@@ -357,8 +446,7 @@ export const chatRouter = router({
       const row = rows[0];
       if (!row) return null;
 
-      const key = getEncryptionKey();
-      const decrypted = xorDecrypt(row.encryptedKey, key);
+      const decrypted = aesDecrypt(row.encryptedKey);
 
       // Update last used timestamp
       await ctx.db

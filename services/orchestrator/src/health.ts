@@ -1,13 +1,15 @@
 // ── Health Monitor ────────────────────────────────────────────────────
-// Runs every 30 seconds, checks all deployed apps, and auto-restarts
-// unhealthy containers.
+// Runs every 30 seconds, checks all deployed apps via HTTP health
+// endpoints, and auto-restarts unhealthy processes.
 
 import { listApps } from "./deployer";
-import { restartContainer } from "./docker";
+import { restartProcess, isProcessRunning } from "./process-manager";
+
+const HEALTH_INTERVAL_MS = 30_000;
+const HEALTH_TIMEOUT_MS = 5_000;
 
 let monitorInterval: ReturnType<typeof setInterval> | null = null;
 
-/** Start the background health monitor loop. */
 export function startHealthMonitor(): void {
   if (monitorInterval) {
     console.warn("[HEALTH] Monitor already running");
@@ -21,13 +23,12 @@ export function startHealthMonitor(): void {
       const apps = await listApps();
 
       for (const app of apps) {
-        // Check container state
-        if (app.status !== "running") {
-          console.error(
-            `[HEALTH] ${app.name} is ${app.status} -- attempting restart`,
-          );
+        const running = isProcessRunning(app.name);
+
+        if (!running && app.status === "running") {
+          console.error(`[HEALTH] ${app.name} process died — attempting restart`);
           try {
-            await restartContainer(app.containerId);
+            restartProcess(app.name);
             console.log(`[HEALTH] ${app.name} restart initiated`);
           } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "unknown error";
@@ -36,11 +37,10 @@ export function startHealthMonitor(): void {
           continue;
         }
 
-        // Check HTTP health endpoint if configured
-        if (app.healthUrl) {
+        if (running && app.healthUrl) {
           try {
             const res = await fetch(app.healthUrl, {
-              signal: AbortSignal.timeout(5_000),
+              signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
             });
             if (!res.ok) {
               throw new Error(`HTTP ${res.status}`);
@@ -48,19 +48,17 @@ export function startHealthMonitor(): void {
           } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "unknown error";
             console.error(
-              `[HEALTH] ${app.name} health check failed (${msg}) -- restarting`,
+              `[HEALTH] ${app.name} health check failed (${msg}) — restarting`,
             );
             try {
-              await restartContainer(app.containerId);
+              restartProcess(app.name);
               console.log(`[HEALTH] ${app.name} restart initiated after health failure`);
             } catch (restartErr: unknown) {
               const restartMsg =
                 restartErr instanceof Error
                   ? restartErr.message
                   : "unknown error";
-              console.error(
-                `[HEALTH] ${app.name} restart failed: ${restartMsg}`,
-              );
+              console.error(`[HEALTH] ${app.name} restart failed: ${restartMsg}`);
             }
           }
         }
@@ -69,15 +67,16 @@ export function startHealthMonitor(): void {
       const msg = err instanceof Error ? err.message : "unknown error";
       console.error(`[HEALTH] Monitor cycle failed: ${msg}`);
     }
-  }, 30_000);
+  }, HEALTH_INTERVAL_MS);
 
-  // Unref so the interval does not prevent process exit in tests.
-  if (typeof (monitorInterval as unknown as { unref?: () => void }).unref === "function") {
+  if (
+    typeof (monitorInterval as unknown as { unref?: () => void }).unref ===
+    "function"
+  ) {
     (monitorInterval as unknown as { unref: () => void }).unref();
   }
 }
 
-/** Stop the health monitor. */
 export function stopHealthMonitor(): void {
   if (monitorInterval) {
     clearInterval(monitorInterval);

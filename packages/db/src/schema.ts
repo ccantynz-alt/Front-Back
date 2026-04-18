@@ -367,6 +367,34 @@ export const tenants = sqliteTable("tenants", {
     .$defaultFn(() => new Date()),
 });
 
+// ── Tenant Git Repos (Gluecron push-notification mapping) ────────
+// Maps a git repository (owner/name) to the tenant deploy configuration
+// the /api/hooks/gluecron/push endpoint should invoke. Populated by the
+// tenant admin; read-only from the perspective of the hook.
+
+export const tenantGitRepos = sqliteTable("tenant_git_repos", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  repository: text("repository").notNull().unique(),
+  appName: text("app_name").notNull(),
+  branch: text("branch").notNull().default("main"),
+  domain: text("domain").notNull(),
+  port: integer("port").notNull(),
+  runtime: text("runtime").notNull(),
+  envVars: text("env_vars"),
+  autoDeploy: integer("auto_deploy", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 // ── Feature Flags ─────────────────────────────────────────────────
 
 export const featureFlags = sqliteTable("feature_flags", {
@@ -489,6 +517,283 @@ export const userProviderKeys = sqliteTable("user_provider_keys", {
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Projects (Platform Hosting) ──────────────────────────────────
+// Each project is a deployable application on the Crontech platform.
+
+export const projects = sqliteTable("projects", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  repoUrl: text("repo_url"),
+  repoBranch: text("repo_branch").default("main"),
+  framework: text("framework", {
+    enum: ["solidstart", "nextjs", "remix", "astro", "hono", "static", "docker", "other"],
+  }),
+  buildCommand: text("build_command"),
+  outputDir: text("output_dir"),
+  installCommand: text("install_command").default("bun install"),
+  runtime: text("runtime", {
+    enum: ["bun", "node", "deno", "static"],
+  }).default("bun"),
+  port: integer("port").default(3000),
+  status: text("status", {
+    enum: ["creating", "active", "building", "deploying", "stopped", "error"],
+  })
+    .notNull()
+    .default("creating"),
+  lastDeployedAt: integer("last_deployed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Project Domains ──────────────────────────────────────────────
+
+export const projectDomains = sqliteTable("project_domains", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  domain: text("domain").notNull().unique(),
+  isPrimary: integer("is_primary", { mode: "boolean" }).notNull().default(false),
+  dnsVerified: integer("dns_verified", { mode: "boolean" }).notNull().default(false),
+  dnsVerifiedAt: integer("dns_verified_at", { mode: "timestamp" }),
+  tlsProvisioned: integer("tls_provisioned", { mode: "boolean" }).notNull().default(false),
+  tlsProvisionedAt: integer("tls_provisioned_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Project Environment Variables ────────────────────────────────
+
+export const projectEnvVars = sqliteTable("project_env_vars", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  key: text("key").notNull(),
+  encryptedValue: text("encrypted_value").notNull(),
+  environment: text("environment", {
+    enum: ["production", "preview", "development"],
+  })
+    .notNull()
+    .default("production"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// ── Deployments ──────────────────────────────────────────────────
+
+export const deployments = sqliteTable("deployments", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  commitSha: text("commit_sha"),
+  commitMessage: text("commit_message"),
+  branch: text("branch").default("main"),
+  status: text("status", {
+    enum: ["queued", "building", "deploying", "live", "failed", "rolled_back"],
+  })
+    .notNull()
+    .default("queued"),
+  buildLog: text("build_log"),
+  containerId: text("container_id"),
+  containerImage: text("container_image"),
+  url: text("url"),
+  duration: integer("duration"),
+  isCurrent: integer("is_current", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  finishedAt: integer("finished_at", { mode: "timestamp" }),
+});
+
+// ── Flywheel Memory (BLK-017) ────────────────────────────────────────
+// Every Claude Code session that touches this repo gets persisted here
+// so future sessions can retrieve what was already learned. Source of
+// truth is ~/.claude/projects/**/*.jsonl — packages/flywheel ingests
+// those transcripts on every session-start and upserts into these
+// tables. Content is redacted for secrets before insert.
+
+export const flywheelSessions = sqliteTable("flywheel_sessions", {
+  id: text("id").primaryKey(), // sessionId from the JSONL transcript
+  cwd: text("cwd"),
+  gitBranch: text("git_branch"),
+  entrypoint: text("entrypoint"), // remote_mobile | cli | vscode | etc.
+  version: text("version"),
+  firstUserMessage: text("first_user_message"), // intent signal
+  turnCount: integer("turn_count").notNull().default(0),
+  compactCount: integer("compact_count").notNull().default(0),
+  startedAt: integer("started_at", { mode: "timestamp" }).notNull(),
+  endedAt: integer("ended_at", { mode: "timestamp" }),
+  summary: text("summary"), // distilled by nightly summarizer (follow-on)
+  ingestedAt: integer("ingested_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const flywheelTurns = sqliteTable("flywheel_turns", {
+  id: text("id").primaryKey(), // uuid from the transcript
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => flywheelSessions.id, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(), // order within session
+  role: text("role", {
+    enum: ["user", "assistant", "system", "tool_use", "tool_result"],
+  }).notNull(),
+  content: text("content").notNull(), // redacted text (no secrets)
+  toolName: text("tool_name"),
+  parentUuid: text("parent_uuid"),
+  timestamp: integer("timestamp", { mode: "timestamp" }).notNull(),
+});
+
+export const flywheelLessons = sqliteTable("flywheel_lessons", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id").references(() => flywheelSessions.id, {
+    onDelete: "set null",
+  }),
+  category: text("category", {
+    enum: ["architecture", "doctrine", "bug_fix", "antipattern", "discovery", "decision"],
+  }).notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  tags: text("tags"), // JSON array
+  sourceRefs: text("source_refs"), // JSON array of turn IDs
+  confidence: integer("confidence").notNull().default(50), // 0..100
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// Keystroke logger — opt-in, lean. Populated by editor wrappers and
+// future CLI hooks. Keeps raw content small (char-level deltas, not
+// full file bodies) and leaves large payloads to R2/blob if ever needed.
+export const flywheelKeystrokes = sqliteTable("flywheel_keystrokes", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  sessionId: text("session_id"), // free-form (Claude session OR editor session)
+  filePath: text("file_path"),
+  eventType: text("event_type", {
+    enum: ["keydown", "save", "open", "diff", "cursor", "selection"],
+  }).notNull(),
+  contentDelta: text("content_delta"),
+  metadata: text("metadata"), // JSON
+  timestamp: integer("timestamp", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// Voice dispatch log (BLK-018) — every voice command the user issues
+// lands here so we can replay, audit, and later fine-tune intent parsing.
+export const flywheelVoiceCommands = sqliteTable("flywheel_voice_commands", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  transcript: text("transcript").notNull(),
+  intent: text("intent"), // parsed intent (JSON)
+  action: text("action"), // resolved action (JSON)
+  response: text("response"), // agent's text reply
+  confidence: integer("confidence"), // 0..100
+  status: text("status", {
+    enum: ["parsed", "dispatched", "rejected", "failed"],
+  }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// =============================================================================
+// BLK-019 — Build Theatre (the Vercel-style "what is actually happening"
+// pane). Every long-running op in the platform (deploys, ingests, migrations,
+// CI gates, voice-dispatched AI agents) emits into these three tables so the
+// human operator has a single pane of glass to watch, inspect, and cancel.
+// =============================================================================
+export const buildRuns = sqliteTable("build_runs", {
+  id: text("id").primaryKey(),
+  kind: text("kind", {
+    enum: [
+      "deploy",
+      "ingest",
+      "migration",
+      "gate",
+      "voice",
+      "agent",
+      "sentinel",
+      "other",
+    ],
+  }).notNull(),
+  title: text("title").notNull(),
+  status: text("status", {
+    enum: ["queued", "running", "succeeded", "failed", "cancelled"],
+  })
+    .notNull()
+    .default("queued"),
+  actorUserId: text("actor_user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  actorLabel: text("actor_label"), // "claude-session-xyz", "sentinel", "cron"
+  gitBranch: text("git_branch"),
+  gitSha: text("git_sha"),
+  metadata: text("metadata"), // arbitrary JSON (deploy URL, PR #, etc.)
+  error: text("error"), // top-level error summary when status=failed
+  cancelRequestedAt: integer("cancel_requested_at", { mode: "timestamp" }),
+  startedAt: integer("started_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  endedAt: integer("ended_at", { mode: "timestamp" }),
+});
+
+export const buildSteps = sqliteTable("build_steps", {
+  id: text("id").primaryKey(),
+  runId: text("run_id")
+    .notNull()
+    .references(() => buildRuns.id, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  name: text("name").notNull(),
+  status: text("status", {
+    enum: ["queued", "running", "succeeded", "failed", "skipped"],
+  })
+    .notNull()
+    .default("queued"),
+  exitCode: integer("exit_code"),
+  error: text("error"),
+  startedAt: integer("started_at", { mode: "timestamp" }),
+  endedAt: integer("ended_at", { mode: "timestamp" }),
+});
+
+export const buildLogs = sqliteTable("build_logs", {
+  id: text("id").primaryKey(),
+  runId: text("run_id")
+    .notNull()
+    .references(() => buildRuns.id, { onDelete: "cascade" }),
+  stepId: text("step_id").references(() => buildSteps.id, {
+    onDelete: "cascade",
+  }),
+  seq: integer("seq").notNull(),
+  stream: text("stream", { enum: ["stdout", "stderr", "event"] })
+    .notNull()
+    .default("stdout"),
+  line: text("line").notNull(),
+  timestamp: integer("timestamp", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
 });

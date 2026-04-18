@@ -1,9 +1,54 @@
 // ── tRPC SolidJS helpers ────────────────────────────────────────────
-// Thin wrappers around createResource/createSignal that standardize
-// loading/error handling for tRPC queries and mutations.
+// Smart caching wrappers around createResource/createSignal with:
+// - Stale-while-revalidate (SWR): show cached data while refetching
+// - Auto-refetch on configurable interval
+// - Global invalidation bus: mutations trigger query refreshes
+// - Visibility refetch: refetch when user returns to the tab
 
-import { createResource, createSignal, type Resource } from "solid-js";
+import { createResource, createSignal, onCleanup, type Resource } from "solid-js";
 import { TRPCClientError } from "@trpc/client";
+
+// ── Global Invalidation Bus ────────────────────────────────────────
+// Mutations publish a "key" (e.g. "projects", "chat", "settings") and
+// all active useQuery instances tagged with that key auto-refetch.
+
+type InvalidationCallback = () => void;
+const listeners = new Map<string, Set<InvalidationCallback>>();
+
+function subscribe(key: string, cb: InvalidationCallback): () => void {
+  if (!listeners.has(key)) listeners.set(key, new Set());
+  listeners.get(key)!.add(cb);
+  return () => { listeners.get(key)?.delete(cb); };
+}
+
+/** Invalidate all queries tagged with the given key(s). */
+export function invalidateQueries(...keys: string[]): void {
+  for (const key of keys) {
+    const cbs = listeners.get(key);
+    if (cbs) {
+      for (const cb of cbs) cb();
+    }
+  }
+}
+
+/** Invalidate every active query. */
+export function invalidateAll(): void {
+  for (const cbs of listeners.values()) {
+    for (const cb of cbs) cb();
+  }
+}
+
+// ── useQuery ───────────────────────────────────────────────────────
+
+export interface UseQueryOptions {
+  /** Invalidation key(s). Mutations that call invalidateQueries("projects")
+   *  will cause all useQuery instances with key "projects" to refetch. */
+  key?: string | string[];
+  /** Auto-refetch interval in milliseconds. 0 = disabled. Default: 0. */
+  refetchInterval?: number;
+  /** Refetch when the browser tab regains focus. Default: true. */
+  refetchOnFocus?: boolean;
+}
 
 export interface UseQueryResult<T> {
   data: Resource<T>;
@@ -14,18 +59,66 @@ export interface UseQueryResult<T> {
 }
 
 /**
- * Wrap a tRPC query in a SolidJS resource with standardized state.
- * Usage: const users = useQuery(() => trpc.users.list.query());
+ * Wrap a tRPC query in a SolidJS resource with smart caching.
+ *
+ * Usage:
+ *   const projects = useQuery(
+ *     () => trpc.projects.list.query(),
+ *     { key: "projects", refetchInterval: 30_000 }
+ *   );
  */
-export function useQuery<T>(fn: () => Promise<T>): UseQueryResult<T> {
+export function useQuery<T>(fn: () => Promise<T>, options?: UseQueryOptions): UseQueryResult<T> {
   const [data, { refetch, mutate }] = createResource<T>(fn);
+
+  const doRefetch = (): void => { void refetch(); };
+
+  // Subscribe to invalidation bus
+  const keys = options?.key
+    ? Array.isArray(options.key) ? options.key : [options.key]
+    : [];
+  const unsubscribers: (() => void)[] = [];
+  for (const key of keys) {
+    unsubscribers.push(subscribe(key, doRefetch));
+  }
+
+  // Auto-refetch on interval
+  let intervalId: ReturnType<typeof setInterval> | undefined;
+  if (options?.refetchInterval && options.refetchInterval > 0) {
+    intervalId = setInterval(doRefetch, options.refetchInterval);
+  }
+
+  // Refetch on tab focus (visibility change)
+  const refetchOnFocus = options?.refetchOnFocus !== false;
+  const handleVisibility = (): void => {
+    if (document.visibilityState === "visible") doRefetch();
+  };
+  if (refetchOnFocus && typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", handleVisibility);
+  }
+
+  // Cleanup on component unmount
+  onCleanup(() => {
+    for (const unsub of unsubscribers) unsub();
+    if (intervalId) clearInterval(intervalId);
+    if (refetchOnFocus && typeof document !== "undefined") {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    }
+  });
+
   return {
     data,
-    refetch: () => { void refetch(); },
+    refetch: doRefetch,
     mutate: (v) => mutate(() => v),
     loading: () => data.loading,
     error: () => data.error,
   };
+}
+
+// ── useMutation ────────────────────────────────────────────────────
+
+export interface UseMutationOptions {
+  /** Query keys to invalidate after a successful mutation. */
+  invalidates?: string[];
 }
 
 export interface UseMutationResult<TInput, TOutput> {
@@ -36,14 +129,19 @@ export interface UseMutationResult<TInput, TOutput> {
 }
 
 /**
- * Wrap a tRPC mutation with standardized loading and error signals.
+ * Wrap a tRPC mutation with loading/error signals and auto-invalidation.
+ *
  * Usage:
- *   const create = useMutation((input: {name: string}) =>
- *     trpc.users.create.mutate(input));
- *   await create.mutate({name: "Alice"});
+ *   const create = useMutation(
+ *     (input: {name: string}) => trpc.projects.create.mutate(input),
+ *     { invalidates: ["projects"] }
+ *   );
+ *   await create.mutate({ name: "New Project" });
+ *   // ^ automatically refetches all useQuery({ key: "projects" }) instances
  */
 export function useMutation<TInput, TOutput>(
   fn: (input: TInput) => Promise<TOutput>,
+  options?: UseMutationOptions,
 ): UseMutationResult<TInput, TOutput> {
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<Error | null>(null);
@@ -52,7 +150,12 @@ export function useMutation<TInput, TOutput>(
     setLoading(true);
     setError(null);
     try {
-      return await fn(input);
+      const result = await fn(input);
+      // Auto-invalidate related queries on success
+      if (options?.invalidates?.length) {
+        invalidateQueries(...options.invalidates);
+      }
+      return result;
     } catch (err) {
       const e = err instanceof Error ? err : new Error(String(err));
       setError(e);

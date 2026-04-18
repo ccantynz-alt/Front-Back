@@ -21,6 +21,13 @@ import { productTenantsRouter } from "./procedures/productTenants";
 import { uiRouter } from "./procedures/ui";
 import { storageRouter } from "./procedures/storage";
 import { reposRouter } from "./procedures/repos";
+import { projectsRouter } from "./procedures/projects";
+import { importRouter } from "./procedures/importProject";
+import { aiDeployRouter } from "./procedures/aiDeploy";
+import { theatreRouter } from "./procedures/theatre";
+import { flywheelRouter } from "./procedures/flywheel";
+import { voiceRouter } from "./procedures/voice";
+import { launchRouter } from "./procedures/launch";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -54,6 +61,13 @@ export const appRouter = router({
   ui: uiRouter,
   storage: storageRouter,
   repos: reposRouter,
+  projects: projectsRouter,
+  import: importRouter,
+  aiDeploy: aiDeployRouter,
+  theatre: theatreRouter,
+  flywheel: flywheelRouter,
+  voice: voiceRouter,
+  launch: launchRouter,
 });
 
 export type AppRouter = typeof appRouter;

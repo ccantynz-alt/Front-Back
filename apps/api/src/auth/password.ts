@@ -1,6 +1,9 @@
 // ── Password Authentication ──────────────────────────────────────────
-// Email + password registration and login using Bun's built-in
-// Bun.password API with argon2id for secure hashing.
+// Email + password registration and login using argon2id via the
+// hash-wasm library. We used to use Bun.password but that only exists
+// on the Bun runtime; hash-wasm is a WebAssembly argon2id implementation
+// that runs identically on Bun AND Cloudflare Workers, which is the
+// deploy target as of BLK-020 (Crontech Independence migration).
 //
 // Password complexity: minimum 8 characters, at least one number,
 // at least one special character.
@@ -8,6 +11,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { argon2id, argon2Verify } from "hash-wasm";
 import { users } from "@back-to-the-future/db";
 import { createSession } from "./session";
 
@@ -106,12 +110,29 @@ setInterval(() => {
 }, 60_000);
 
 // ── Password Hashing ────────────────────────────────────────────────
+// argon2id parameters chosen to match the previous Bun.password defaults:
+// 64 MB memory, 3 iterations, parallelism 1, 32-byte output.
+// hash-wasm returns an encoded string ($argon2id$v=19$m=65536,t=3,p=1$…)
+// that argon2Verify can parse back — no need to store parameters
+// separately.
+
+const ARGON2_MEMORY_KB = 65536; // 64 MB
+const ARGON2_ITERATIONS = 3;
+const ARGON2_PARALLELISM = 1;
+const ARGON2_HASH_LENGTH = 32;
+const ARGON2_SALT_LENGTH = 16;
 
 async function hashPassword(password: string): Promise<string> {
-  return Bun.password.hash(password, {
-    algorithm: "argon2id",
-    memoryCost: 65536, // 64 MB
-    timeCost: 3,
+  const salt = new Uint8Array(ARGON2_SALT_LENGTH);
+  crypto.getRandomValues(salt);
+  return argon2id({
+    password,
+    salt,
+    parallelism: ARGON2_PARALLELISM,
+    iterations: ARGON2_ITERATIONS,
+    memorySize: ARGON2_MEMORY_KB,
+    hashLength: ARGON2_HASH_LENGTH,
+    outputType: "encoded",
   });
 }
 
@@ -119,7 +140,7 @@ async function verifyPassword(
   password: string,
   hash: string,
 ): Promise<boolean> {
-  return Bun.password.verify(password, hash);
+  return argon2Verify({ password, hash });
 }
 
 // ── Password Strength Calculation ───────────────────────────────────

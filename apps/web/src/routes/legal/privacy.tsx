@@ -51,10 +51,13 @@ const sections: Section[] = [
     title: "4. Data Sharing and Third Parties",
     content: [
       "We share data only as necessary to provide the Service:",
-      "Infrastructure: Cloudflare, Inc. \u2014 hosting, CDN, edge compute, DDoS protection. Data processed at the nearest edge node.",
-      "Databases: Turso (ChiselStrike, Inc.) \u2014 edge SQLite. Neon, Inc. \u2014 serverless PostgreSQL. Qdrant \u2014 vector search. All under data processing agreements.",
-      "Payments: Stripe, Inc. \u2014 all payment processing. Governed by Stripe's privacy policy and PCI DSS compliance.",
-      "AI Providers: For server-side AI, prompts may be sent to OpenAI, Anthropic, or open-source model endpoints on our GPU infrastructure. All under DPAs; none permitted to use your data for training.",
+      "Infrastructure: Cloudflare, Inc. \u2014 edge compute, CDN, edge storage, DDoS protection. Data processed at the nearest edge node.",
+      "Databases: Turso (ChiselStrike, Inc.) \u2014 primary edge SQLite database. Neon, Inc. \u2014 secondary serverless PostgreSQL. Qdrant \u2014 vector search. All under data processing agreements.",
+      "Payments: Stripe, Inc. \u2014 all payment processing (DISABLED pre-launch; no charges are taken until launch). Governed by Stripe's privacy policy and PCI DSS compliance.",
+      "AI Providers: For server-side AI, prompts may be sent to Anthropic (Claude API) and OpenAI (via AI SDK). All under DPAs; none permitted to use your data for training.",
+      "GPU Compute: Modal \u2014 serverless GPU workers for heavy AI inference. Data is ephemeral and discarded after processing. Under DPA.",
+      "Long-Lived Processes: Fly.io \u2014 runs long-lived server processes (e.g. real-time collaboration relays). Under DPA.",
+      "Email: Resend \u2014 transactional email delivery (sign-in, account notifications, billing). Under DPA.",
       "We do not sell, rent, lease, or trade your personal information to any third party. Period. This applies to all tiers, including Free.",
       "Law Enforcement: We may disclose information if required by law, regulation, or legal process, or to protect rights, property, safety, or prevent fraud.",
       "Business Transfers: In a merger, acquisition, or asset sale, your information may transfer with at least thirty (30) days' notice.",
@@ -152,6 +155,28 @@ const sections: Section[] = [
       "We acknowledge privacy requests within 5 business days and respond within applicable legal timeframes (30 days GDPR, 45 days CCPA).",
     ],
   },
+  {
+    title: "14. Relationship to Sibling Products: GateTest and Gluecron",
+    content: [
+      "Crontech, GateTest, and Gluecron are separately operated products of Crontech Technologies, Inc. This Privacy Policy governs the Crontech platform ONLY. It does not govern GateTest (which has its own privacy practices as a GitHub App) or Gluecron (VS Code extension and CLI).",
+      "Use of GateTest is governed by its own policies, available at the GateTest product surface. Use of Gluecron is governed by its own policy, available at the Gluecron product surface. Each product maintains independent privacy practices.",
+      "The three products do not share a database, auth state, or bundle. Coupling between them is HTTP-only over a signal bus. Any cross-product data flow will be disclosed in the receiving product's own privacy policy at the time the flow is activated.",
+    ],
+  },
+  {
+    title: "15. Additional Protections",
+    content: [
+      "Nothing in this Privacy Policy waives, diminishes, or otherwise limits any protection, disclaimer, limitation of liability, indemnification, class-action waiver, binding-arbitration clause, AS-IS / AS-AVAILABLE disclaimer, no-consequential-damages exclusion, governing-law choice, export-controls clause, 18+ age requirement, or 30-day notice provision set forth in the Terms of Service. All such Terms of Service provisions apply in full force to the collection, use, and disclosure of personal information described here.",
+      "AI Output Disclaimer. AI features are informational only. We intend that AI-generated output is not a substitute for professional advice (legal, medical, financial, tax, engineering, or safety-critical). You are solely responsible for independent verification.",
+      "Customer Indemnification. You agree to indemnify, defend, and hold harmless Crontech for any claim arising from your use of the Service, the content you upload, the code you run, and the outputs you generate.",
+      "Suspension / Termination. We reserve the right to suspend or terminate access to the Service, unilaterally, for any reason or no reason, with notice where reasonably practicable, including to protect the privacy of other users.",
+      "Reverse Engineering Prohibited. You may not reverse engineer, decompile, or otherwise attempt to derive the internal architecture of our privacy, security, or data-protection infrastructure, except where such prohibition is unenforceable under applicable law.",
+      "Export Controls / US Sanctions. You represent that you are not located in, and will not access the Service from, any jurisdiction under comprehensive US economic sanctions, and that you are not on any US government restricted-party list.",
+      "Governing Law: New Zealand. We intend that this Privacy Policy be governed by the laws of New Zealand, without regard to conflict-of-laws principles, except where mandatory local law (including GDPR and CCPA) grants rights that cannot be contracted away. Counsel to confirm.",
+      "Severability and Entire Agreement. If any provision of this Privacy Policy is unenforceable, the remainder remains in full force. This Privacy Policy, together with the Terms of Service and incorporated policies, constitutes the entire agreement with respect to privacy.",
+      "Age Requirement: 18+. You must be at least 18 years of age to use the Service. Children's data provisions in Section 10 above are retained for compliance with child-privacy statutes; they do not authorize under-18 use of the platform.",
+    ],
+  },
 ];
 
 export default function PrivacyPage(): JSX.Element {
@@ -162,14 +187,14 @@ export default function PrivacyPage(): JSX.Element {
         description="How Crontech collects, uses, and protects your personal data. GDPR, CCPA, and international compliance."
         path="/legal/privacy"
       />
-      <div class="min-h-screen bg-[#0a0a0a] text-white">
+      <div class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
         <div class="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:py-24">
           <Stack direction="vertical" gap="lg">
             <Stack direction="vertical" gap="sm">
               <Text variant="h1" weight="bold" class="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                 Privacy Policy
               </Text>
-              <Text variant="caption" class="text-gray-500">
+              <Text variant="caption" style={{ color: "var(--color-text-faint)" }}>
                 Last updated: April 8, 2026 | Effective: April 8, 2026
               </Text>
             </Stack>
@@ -183,7 +208,7 @@ export default function PrivacyPage(): JSX.Element {
                     </Text>
                     <For each={section.content}>
                       {(paragraph) => (
-                        <Text variant="body" class="text-gray-400 leading-relaxed">
+                        <Text variant="body" class="leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
                           {paragraph}
                         </Text>
                       )}

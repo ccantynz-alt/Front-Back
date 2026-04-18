@@ -52,7 +52,20 @@ export async function detectAndSetTier(): Promise<ComputeTier> {
 
 // ── API Configuration ───────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+function getApiUrl(): string {
+  const envUrl = import.meta.env.VITE_PUBLIC_API_URL as string | undefined;
+  if (envUrl) return envUrl;
+
+  if (typeof window !== "undefined") {
+    const { hostname } = window.location;
+    if (hostname === "crontech.ai" || hostname === "www.crontech.ai") {
+      return "https://api.crontech.ai";
+    }
+  }
+  return "http://localhost:3001";
+}
+
+const API_URL = getApiUrl();
 
 // ── Unified Chat Streaming ──────────────────────────────────────────
 

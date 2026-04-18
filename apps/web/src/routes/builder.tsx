@@ -29,7 +29,7 @@ function ChatBubble(props: { message: ChatMessage }): JSX.Element {
   return (
     <div class={`chat-bubble ${isUser() ? "chat-bubble-user" : "chat-bubble-assistant"}`}>
       <Text variant="caption" weight="semibold" class="chat-role">
-        {isUser() ? "You" : "AI Builder"}
+        {isUser() ? "You" : "Composer"}
       </Text>
       <Text variant="body">{props.message.content}</Text>
     </div>
@@ -48,21 +48,21 @@ function tierColor(tier: ComputeTier): { bg: string; border: string; dot: string
   switch (tier) {
     case "client":
       return {
-        bg: "rgba(34, 197, 94, 0.12)",
-        border: "rgba(34, 197, 94, 0.35)",
-        dot: "#22c55e",
+        bg: "color-mix(in oklab, var(--color-success) 12%, transparent)",
+        border: "color-mix(in oklab, var(--color-success) 35%, transparent)",
+        dot: "var(--color-success)",
       };
     case "edge":
       return {
-        bg: "rgba(59, 130, 246, 0.12)",
-        border: "rgba(59, 130, 246, 0.35)",
-        dot: "#3b82f6",
+        bg: "color-mix(in oklab, var(--color-primary) 12%, transparent)",
+        border: "color-mix(in oklab, var(--color-primary) 35%, transparent)",
+        dot: "var(--color-primary)",
       };
     case "cloud":
       return {
-        bg: "rgba(249, 115, 22, 0.12)",
-        border: "rgba(249, 115, 22, 0.35)",
-        dot: "#f97316",
+        bg: "color-mix(in oklab, var(--color-warning) 12%, transparent)",
+        border: "color-mix(in oklab, var(--color-warning) 35%, transparent)",
+        dot: "var(--color-warning)",
       };
   }
 }
@@ -176,8 +176,8 @@ function PreviewPanel(props: { layout: PageLayout | null }): JSX.Element {
                   Preview Area
                 </Text>
                 <Text variant="body" class="text-muted">
-                  Describe your website in the chat and the AI will build it
-                  here.
+                  Describe the UI you want and the composer will render it
+                  here from validated components.
                 </Text>
               </Stack>
             }
@@ -199,8 +199,10 @@ function ConnectionStatus(props: { connected: boolean }): JSX.Element {
         gap: "6px",
         padding: "4px 10px",
         "border-radius": "12px",
-        background: props.connected ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
-        border: `1px solid ${props.connected ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+        background: props.connected
+          ? "color-mix(in oklab, var(--color-success) 10%, transparent)"
+          : "color-mix(in oklab, var(--color-danger) 10%, transparent)",
+        border: `1px solid ${props.connected ? "color-mix(in oklab, var(--color-success) 30%, transparent)" : "color-mix(in oklab, var(--color-danger) 30%, transparent)"}`,
       }}
     >
       <div
@@ -208,7 +210,7 @@ function ConnectionStatus(props: { connected: boolean }): JSX.Element {
           width: "8px",
           height: "8px",
           "border-radius": "50%",
-          background: props.connected ? "#22c55e" : "#ef4444",
+          background: props.connected ? "var(--color-success)" : "var(--color-danger)",
         }}
       />
       <Text variant="caption">
@@ -235,7 +237,7 @@ export default function BuilderPage(): JSX.Element {
       id: "welcome",
       role: "assistant",
       content:
-        "Welcome to the AI Website Builder. Describe the website you want to create, and I will build it for you using validated Crontech components. Every generation shows you exactly which compute tier ran it and what it cost.",
+        "Welcome to the Crontech Component Composer. Describe the UI you want to generate and I will compose it from validated SolidJS components in your project's catalog. Every generation shows you exactly which compute tier ran it and what it cost — ready to copy into your Crontech app.",
       timestamp: Date.now(),
     },
   ]);
@@ -349,7 +351,7 @@ export default function BuilderPage(): JSX.Element {
         <Stack direction="vertical" gap="none" class="builder-chat-inner">
           <div class="builder-chat-header">
             <Stack direction="horizontal" gap="sm" align="center" justify="between">
-              <Text variant="h3" weight="bold">AI Website Builder</Text>
+              <Text variant="h3" weight="bold">Component Composer</Text>
               <Stack direction="horizontal" gap="sm" align="center">
                 <ComputeTierPill
                   tier={computeTier()}
@@ -379,7 +381,7 @@ export default function BuilderPage(): JSX.Element {
             </For>
             <Show when={isGenerating()}>
               <div class="chat-bubble chat-bubble-assistant">
-                <Text variant="caption" weight="semibold" class="chat-role">AI Builder</Text>
+                <Text variant="caption" weight="semibold" class="chat-role">Composer</Text>
                 <Text variant="body" class="text-muted">Composing validated components...</Text>
               </div>
             </Show>
@@ -387,7 +389,7 @@ export default function BuilderPage(): JSX.Element {
           <div class="builder-chat-input">
             <Stack direction="horizontal" gap="sm" align="end">
               <Input
-                placeholder="Describe your website..."
+                placeholder="Describe the UI you want to generate..."
                 value={input()}
                 onInput={(e) => setInput(e.currentTarget.value)}
                 onKeyDown={handleKeyDown}
@@ -417,8 +419,8 @@ export default function BuilderPage(): JSX.Element {
   return (
     <ProtectedRoute>
       <SEOHead
-        title="AI Builder"
-        description="Build websites with AI in real-time. Describe what you want and watch AI compose validated SolidJS components across Crontech's three-tier compute fabric."
+        title="Component Composer"
+        description="Generate validated SolidJS components from a prompt. Compose with Crontech's three-tier compute fabric — client GPU, edge, or cloud — and copy the result straight into your project."
         path="/builder"
       />
       <Show

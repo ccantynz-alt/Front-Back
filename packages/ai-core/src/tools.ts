@@ -1,6 +1,12 @@
 // ── Reusable AI Tools ─────────────────────────────────────────────
 // Tools that AI agents can call during conversations.
 // Each tool has a Zod input schema and a typed execute function.
+//
+// TODO(BLK-020 Phase B): uses Vercel `ai`'s `tool()` helper so the
+// shape is compatible with `streamText`/`generateObject`'s tool-calling
+// contract. When the agents above are ported to raw vendor SDKs, these
+// will be rewritten as plain tool-descriptor objects (Anthropic tools
+// API or OpenAI function-calling schema).
 
 import { tool } from "ai";
 import { z } from "zod";

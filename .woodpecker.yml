@@ -1,0 +1,123 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Crontech — CI Pipeline (Woodpecker CI)
+# ──────────────────────────────────────────────────────────────────────────────
+# Replaces .github/workflows/ci.yml. Runs on every push and pull request.
+# Executes all quality gates from CLAUDE.md §0.4: type check, lint, build,
+# test, link checker, button checker.
+#
+# Agent runs with local backend (no Docker) — steps execute directly on the
+# Vultr VPS as the 'deploy' user, with access to bun, git, and the full
+# system environment.
+# ──────────────────────────────────────────────────────────────────────────────
+
+when:
+  - event: [push, pull_request, manual]
+
+steps:
+  # ── Install dependencies ─────────────────────────────────────────────────
+  install:
+    image: ""
+    commands:
+      - echo "=== Installing dependencies ==="
+      - bun install --frozen-lockfile
+
+  # ── Type check all packages ──────────────────────────────────────────────
+  typecheck:
+    image: ""
+    commands:
+      - echo "=== Type checking all packages ==="
+      - bun run check
+    depends_on:
+      - install
+
+  # ── Biome lint ───────────────────────────────────────────────────────────
+  lint:
+    image: ""
+    commands:
+      - echo "=== Running Biome lint ==="
+      - bunx biome check apps packages services
+    depends_on:
+      - install
+
+  # ── Check links ──────────────────────────────────────────────────────────
+  check-links:
+    image: ""
+    commands:
+      - echo "=== Checking for dead links ==="
+      - bun run check-links
+    depends_on:
+      - install
+
+  # ── Check buttons ────────────────────────────────────────────────────────
+  check-buttons:
+    image: ""
+    commands:
+      - echo "=== Checking for dead buttons ==="
+      - bun run check-buttons
+    depends_on:
+      - install
+
+  # ── Accessibility check ──────────────────────────────────────────────────
+  check-a11y:
+    image: ""
+    commands:
+      - echo "=== Running accessibility checks ==="
+      - bun run check-a11y
+    depends_on:
+      - install
+
+  # ── Build all packages ──────────────────────────────────────────────────
+  build:
+    image: ""
+    commands:
+      - echo "=== Building all packages ==="
+      - bun run build
+      - echo "=== Verifying build artifacts ==="
+      - test -f apps/api/dist/index.js && echo "API build OK" || exit 1
+      - test -d apps/web/.output && echo "Web build OK" || exit 1
+    depends_on:
+      - typecheck
+      - lint
+
+  # ── Bundle size check ───────────────────────────────────────────────────
+  check-bundle:
+    image: ""
+    commands:
+      - echo "=== Checking bundle sizes ==="
+      - bun run check-bundle
+    depends_on:
+      - build
+
+  # ── Run all tests ───────────────────────────────────────────────────────
+  test:
+    image: ""
+    commands:
+      - echo "=== Running all tests ==="
+      - bun run test
+    depends_on:
+      - build
+
+  # ── Final status ────────────────────────────────────────────────────────
+  ci-status:
+    image: ""
+    commands:
+      - echo ""
+      - echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "  CI PASSED — All quality gates green"
+      - echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo ""
+      - echo "  Type check:     PASS"
+      - echo "  Lint:           PASS"
+      - echo "  Links:          PASS"
+      - echo "  Buttons:        PASS"
+      - echo "  Accessibility:  PASS"
+      - echo "  Build:          PASS"
+      - echo "  Bundle size:    PASS"
+      - echo "  Tests:          PASS"
+      - echo ""
+    depends_on:
+      - test
+      - check-links
+      - check-buttons
+      - check-a11y
+      - check-bundle

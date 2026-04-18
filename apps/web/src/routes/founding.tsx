@@ -3,16 +3,19 @@ import { A } from "@solidjs/router";
 import { Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
 
-// Placeholder Founding Member route. A richer version is being built in a
-// parallel worktree (Agent 3) and will supersede this file at merge time.
-// Exists here only so the landing page link resolves and check-links passes.
+// Founding Member landing page. Per docs/POSITIONING.md:
+//   - Audience is UNIVERSAL (no vertical cutoff)
+//   - Tone is POLITE (no competitor names)
+//   - Headline direction is forward-looking, not adversarial
+// This page previously framed Crontech as "compliance-native for AI SaaS",
+// which muddied the positioning. Reframed to match the locked doctrine.
 
 export default function Founding(): JSX.Element {
   return (
     <>
       <SEOHead
         title="Founding Member — Crontech"
-        description="Founding Member cohort for Crontech, the compliance-native developer platform for AI SaaS. First 100 seats only."
+        description="Join the Founding Member cohort for Crontech, the developer platform for the next decade. Limited to the first 100 seats."
         path="/founding"
       />
       <Stack direction="vertical" gap="xl" class="page-padded">
@@ -22,13 +25,15 @@ export default function Founding(): JSX.Element {
             Founding Member cohort.
           </Text>
           <Text variant="body" align="center" class="tagline">
-            Claim an early seat on the compliance-native developer platform for AI SaaS.
+            An early seat on the developer platform for the next decade.
           </Text>
         </Stack>
         <Card padding="lg">
           <Stack direction="vertical" gap="md" align="center">
             <Text variant="body" class="text-muted" align="center">
-              The Founding Member cohort opens with full access to SOC 2-ready primitives, encrypted-at-rest Postgres, hash-chained audit logs, and the polyglot runtime.
+              Founding Members get full access to every layer of Crontech from day one —
+              edge compute, unified data, type-safe APIs, real-time collaboration, the
+              AI runtime, and admin — on one platform with one dashboard and one bill.
             </Text>
             <Stack direction="horizontal" gap="sm" justify="center">
               <A href="/register">

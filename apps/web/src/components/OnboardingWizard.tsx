@@ -74,9 +74,9 @@ function OptionButton(props: OptionButtonProps): JSX.Element {
         width: "100%",
         padding: "16px",
         "text-align": "left",
-        border: props.selected ? "2px solid var(--primary-color, #6366f1)" : "2px solid var(--border-color, #e5e7eb)",
+        border: props.selected ? "2px solid var(--color-primary)" : "2px solid var(--color-border)",
         "border-radius": "8px",
-        background: props.selected ? "var(--primary-bg, rgba(99, 102, 241, 0.1))" : "var(--card-bg, #ffffff)",
+        background: props.selected ? "var(--primary-bg, rgba(99, 102, 241, 0.1))" : "var(--color-bg-elevated)",
         cursor: "pointer",
         transition: "all 0.2s ease",
       }}
@@ -99,8 +99,8 @@ function StepIndicator(props: { current: number; total: number }): JSX.Element {
             height: "8px",
             "border-radius": "50%",
             background: i === props.current
-              ? "var(--primary-color, #6366f1)"
-              : "var(--border-color, #e5e7eb)",
+              ? "var(--color-primary)"
+              : "var(--color-border)",
             transition: "background 0.2s ease",
           }}
         />
@@ -182,7 +182,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
     if (action === "builder") {
       navigate("/builder");
     } else if (action === "video") {
-      navigate("/video");
+      navigate("/builder");
     }
     // "explore" stays on dashboard
   };
@@ -229,7 +229,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
                   border: "none",
                   cursor: "pointer",
                   "font-size": "18px",
-                  color: "var(--text-muted, #6b7280)",
+                  color: "var(--color-text-muted)",
                   padding: "4px",
                 }}
                 aria-label="Dismiss onboarding"
@@ -301,8 +301,8 @@ export function OnboardingWizard(props: OnboardingWizardProps): JSX.Element {
               <Stack direction="vertical" gap="md">
                 <Text variant="h4" weight="semibold">Choose your first action</Text>
                 <OptionButton
-                  label="Open AI Builder"
-                  description="Start building a website with AI assistance."
+                  label="Open Composer"
+                  description="Generate SolidJS component trees from a prompt using the three-tier compute router."
                   selected={firstAction() === "builder"}
                   onClick={() => setFirstAction("builder")}
                 />

@@ -9,10 +9,27 @@ const SESSION_TOKEN_KEY = "btf_session_token";
 const CSRF_TOKEN_KEY = "btf_csrf_token";
 
 function getApiUrl(): string {
+  // 1. Build-time env var (set via VITE_PUBLIC_API_URL in build settings).
+  //    Vite's SSR module runner does NOT support dynamic access on
+  //    `import.meta.env`, so we have to reference the property statically.
+  const envUrl = import.meta.env.VITE_PUBLIC_API_URL as string | undefined;
+  if (envUrl) return envUrl;
+
+  // 2. In the browser, infer from current origin for same-domain deployments
+  //    (e.g. when API is proxied via /api on the same domain or Pages Function)
   if (typeof window !== "undefined") {
-    const meta = import.meta as unknown as Record<string, Record<string, string> | undefined>;
-    return meta.env?.VITE_PUBLIC_API_URL ?? "http://localhost:3001";
+    const { protocol, hostname } = window.location;
+    // Production: API lives on api.crontech.ai or same origin /api proxy
+    if (hostname === "crontech.ai" || hostname === "www.crontech.ai") {
+      return "https://api.crontech.ai";
+    }
+    // Cloudflare Pages preview deployments: use same-origin /api proxy
+    if (hostname.endsWith(".pages.dev")) {
+      return `${protocol}//${hostname}`;
+    }
   }
+
+  // 3. Fallback for local development
   return "http://localhost:3001";
 }
 
