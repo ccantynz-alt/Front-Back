@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Validate migrations
+        run: bun run db:validate
+
       - name: Type check
         run: bun run check
 

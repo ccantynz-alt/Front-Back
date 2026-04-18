@@ -938,3 +938,41 @@ export const dnsRecords = sqliteTable("dns_records", {
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
+
+// =============================================================================
+// BLK-024 — OpenSRS domain registrar integration.
+// `domain_registrations` stores every domain Crontech has sold on a customer's
+// behalf via the Tucows OpenSRS reseller API. We record both wholesale cost
+// and retail markup at sale time (in microdollars to dodge floating-point
+// drift) so revenue can be reported without re-hitting the registrar.
+// `opensrs_handle` is the OpenSRS order id returned from SW_REGISTER — needed
+// for later renewals, status checks, and transfer flows.
+// Additive only: no existing table or column is touched.
+// =============================================================================
+export const domainRegistrations = sqliteTable("domain_registrations", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  domain: text("domain").notNull().unique(),
+  tld: text("tld").notNull(),
+  registeredAt: integer("registered_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  autoRenew: integer("auto_renew", { mode: "boolean" }).notNull().default(false),
+  opensrsHandle: text("opensrs_handle"),
+  costMicrodollars: integer("cost_microdollars").notNull().default(0),
+  markupMicrodollars: integer("markup_microdollars").notNull().default(0),
+  status: text("status", {
+    enum: ["pending", "active", "expired", "transferring", "cancelled"],
+  })
+    .notNull()
+    .default("pending"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
