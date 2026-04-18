@@ -286,10 +286,10 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
     trpc.notifications.getUnread.query().catch(() => [] as unknown[]),
   );
 
-  const userList = useQuery(() =>
-    trpc.users.list
-      .query({ limit: 1 })
-      .catch(() => ({ items: [], total: 0, nextCursor: null })),
+  const projectList = useQuery(() =>
+    trpc.projects.list
+      .query()
+      .catch(() => []),
   );
 
   const products = useQuery(() =>
@@ -407,7 +407,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
           <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="Total Projects"
-              value={userList.loading() ? "--" : fmt(userList.data()?.total)}
+              value={projectList.loading() ? "--" : fmt(projectList.data()?.length)}
               icon="\u{1F4C1}"
             />
             <StatCard
