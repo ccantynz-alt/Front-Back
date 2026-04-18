@@ -19,7 +19,7 @@ import { db } from "@back-to-the-future/db";
 import { userProviderKeys } from "@back-to-the-future/db";
 import { and, eq } from "drizzle-orm";
 import { validateSession } from "../auth/session";
-import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { scrypt } from "crypto";
 import { promisify } from "util";
 
 const scryptAsync = promisify(scrypt);

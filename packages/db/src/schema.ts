@@ -896,3 +896,45 @@ export const buildLogs = sqliteTable("build_logs", {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+// =============================================================================
+// BLK-023 — Self-hosted DNS (replaces Cloudflare DNS).
+// Two tables drive the DNS engine's zone store: `dns_zones` holds the SOA
+// parameters + NS delegation for each authoritative zone, and `dns_records`
+// holds the individual resource records (A/AAAA/CNAME/MX/TXT/NS/SOA/SRV/CAA).
+// Serial numbers are bumped on any record mutation so secondaries can pick up
+// changes via AXFR/IXFR. The DNS engine service reads these tables hot-path,
+// so the zone+name+type composite index is the one that matters.
+// All timestamps are stored as unix-millisecond integers (matches the
+// `ZoneStore` TypeScript contract consumed by services/dns-server).
+// =============================================================================
+export const dnsZones = sqliteTable("dns_zones", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  adminEmail: text("admin_email").notNull(),
+  primaryNs: text("primary_ns").notNull(),
+  secondaryNs: text("secondary_ns"),
+  refreshSeconds: integer("refresh_seconds").notNull().default(3600),
+  retrySeconds: integer("retry_seconds").notNull().default(600),
+  expireSeconds: integer("expire_seconds").notNull().default(604800),
+  minimumTtl: integer("minimum_ttl").notNull().default(300),
+  serial: integer("serial").notNull().default(1),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const dnsRecords = sqliteTable("dns_records", {
+  id: text("id").primaryKey(),
+  zoneId: text("zone_id")
+    .notNull()
+    .references(() => dnsZones.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: text("type", {
+    enum: ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SOA", "SRV", "CAA"],
+  }).notNull(),
+  content: text("content").notNull(),
+  ttl: integer("ttl").notNull().default(300),
+  priority: integer("priority"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
