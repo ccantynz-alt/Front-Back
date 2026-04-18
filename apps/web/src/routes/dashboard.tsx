@@ -10,6 +10,315 @@ import { useAuth } from "../stores";
 import { trpc } from "../lib/trpc";
 import { useQuery } from "../lib/use-trpc";
 
+// ── Types ────────────────────────────────────────────────────────────
+
+type ProjectStatus =
+  | "creating"
+  | "active"
+  | "building"
+  | "deploying"
+  | "stopped"
+  | "error"
+  | null;
+
+interface ProjectRow {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  framework: string | null;
+  runtime: string | null;
+  status: ProjectStatus;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+// ── Skeleton ─────────────────────────────────────────────────────────
+
+function Skeleton(props: { class?: string; height?: string }): JSX.Element {
+  return (
+    <div
+      class={`animate-pulse rounded-md ${props.class ?? ""}`}
+      style={{
+        background: "var(--color-bg-subtle)",
+        height: props.height ?? "1rem",
+      }}
+    />
+  );
+}
+
+// ── Status helpers ───────────────────────────────────────────────────
+
+function statusMeta(status: ProjectStatus): {
+  label: string;
+  color: string;
+  dotPulse: boolean;
+} {
+  switch (status) {
+    case "active":
+      return { label: "Live", color: "var(--color-success)", dotPulse: true };
+    case "building":
+    case "deploying":
+    case "creating":
+      return { label: status === "creating" ? "Creating" : status === "deploying" ? "Deploying" : "Building", color: "var(--color-warning)", dotPulse: true };
+    case "error":
+      return { label: "Error", color: "var(--color-danger)", dotPulse: false };
+    case "stopped":
+      return { label: "Stopped", color: "var(--color-text-faint)", dotPulse: false };
+    default:
+      return { label: "Idle", color: "var(--color-text-faint)", dotPulse: false };
+  }
+}
+
+function formatRelative(value: Date | string): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  const diffMs = Date.now() - d.getTime();
+  const mins = Math.floor(diffMs / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return d.toLocaleDateString();
+}
+
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return "--";
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return s === 0 ? `${m}m` : `${m}m ${s}s`;
+}
+
+function formatCostCents(cents: number): string {
+  if (!cents || cents <= 0) return "$0.00";
+  return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// ── Project Card ─────────────────────────────────────────────────────
+
+interface ProjectCardProps {
+  project: ProjectRow;
+}
+
+function ProjectCard(props: ProjectCardProps): JSX.Element {
+  const meta = createMemo(() => statusMeta(props.project.status));
+  return (
+    <div
+      class="group relative flex flex-col gap-4 overflow-hidden rounded-xl p-5 transition-all duration-200"
+      style={{
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-border-strong)";
+        e.currentTarget.style.boxShadow = "var(--shadow-md)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-border)";
+        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex min-w-0 flex-col gap-1">
+          <span
+            class="truncate text-base font-semibold tracking-tight"
+            style={{ color: "var(--color-text)" }}
+          >
+            {props.project.name}
+          </span>
+          <span
+            class="truncate font-mono text-[11px]"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            {props.project.slug}
+          </span>
+        </div>
+        <div
+          class="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1"
+          style={{
+            background: "var(--color-bg-subtle)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          <span
+            class={`h-2 w-2 rounded-full ${meta().dotPulse ? "animate-pulse" : ""}`}
+            style={{ background: meta().color }}
+          />
+          <span
+            class="text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            {meta().label}
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <Show when={props.project.framework}>
+          <span
+            class="rounded-md px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
+            style={{
+              background: "var(--color-primary-light)",
+              color: "var(--color-primary-text)",
+            }}
+          >
+            {props.project.framework}
+          </span>
+        </Show>
+        <Show when={props.project.runtime}>
+          <span
+            class="rounded-md px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
+            style={{
+              background: "var(--color-bg-subtle)",
+              color: "var(--color-text-muted)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            {props.project.runtime}
+          </span>
+        </Show>
+      </div>
+
+      <div
+        class="flex items-center justify-between pt-3"
+        style={{ "border-top": "1px solid var(--color-border)" }}
+      >
+        <span
+          class="text-[11px]"
+          style={{ color: "var(--color-text-faint)" }}
+        >
+          Updated {formatRelative(props.project.updatedAt)}
+        </span>
+        <A href={`/projects/${props.project.id}`}>
+          <button
+            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-150"
+            style={{
+              background: "var(--color-primary)",
+              color: "var(--color-text)",
+              border: "1px solid var(--color-primary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--color-primary-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--color-primary)";
+            }}
+            type="button"
+            aria-label={`Open project ${props.project.name}`}
+          >
+            Open →
+          </button>
+        </A>
+      </div>
+    </div>
+  );
+}
+
+// ── Project Card Skeleton ────────────────────────────────────────────
+
+function ProjectCardSkeleton(): JSX.Element {
+  return (
+    <div
+      class="flex flex-col gap-4 rounded-xl p-5"
+      style={{
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
+          <Skeleton class="w-2/3" height="1.1rem" />
+          <Skeleton class="w-1/3" height="0.75rem" />
+        </div>
+        <Skeleton class="w-16" height="1.25rem" />
+      </div>
+      <div class="flex gap-2">
+        <Skeleton class="w-16" height="0.9rem" />
+        <Skeleton class="w-12" height="0.9rem" />
+      </div>
+      <div
+        class="flex items-center justify-between pt-3"
+        style={{ "border-top": "1px solid var(--color-border)" }}
+      >
+        <Skeleton class="w-24" height="0.75rem" />
+        <Skeleton class="w-16" height="1.75rem" />
+      </div>
+    </div>
+  );
+}
+
+// ── Empty Projects CTA ───────────────────────────────────────────────
+
+function EmptyProjectsCTA(): JSX.Element {
+  return (
+    <div
+      class="relative overflow-hidden rounded-xl p-8 text-center"
+      style={{
+        background: "var(--color-bg-elevated)",
+        border: "1px dashed var(--color-border-strong)",
+      }}
+    >
+      <div
+        class="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 0%, var(--color-primary-light), transparent 60%)",
+        }}
+      />
+      <div class="relative flex flex-col items-center gap-4">
+        <div
+          class="flex h-14 w-14 items-center justify-center rounded-full text-2xl"
+          style={{
+            background: "var(--color-primary-light)",
+            color: "var(--color-primary-text)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          {"\u{1F680}"}
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3
+            class="text-lg font-bold tracking-tight"
+            style={{ color: "var(--color-text)" }}
+          >
+            Create your first project
+          </h3>
+          <p
+            class="max-w-md text-sm"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Spin up a SolidStart, Next.js, Remix, Astro, or Hono project and
+            deploy to 330+ edge cities in seconds.
+          </p>
+        </div>
+        <A href="/projects/new">
+          <button
+            class="rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors duration-150"
+            style={{
+              background: "var(--color-primary)",
+              color: "var(--color-text)",
+              border: "1px solid var(--color-primary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--color-primary-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--color-primary)";
+            }}
+            type="button"
+          >
+            Create Project →
+          </button>
+        </A>
+      </div>
+    </div>
+  );
+}
+
 // ── Stat Card ────────────────────────────────────────────────────────
 
 interface StatCardProps {
@@ -279,6 +588,10 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       featureUsage: 0,
       aiGenerations: 0,
       recentEvents: [],
+      totalProjects: 0,
+      activeDeployments: 0,
+      avgBuildTime: 0,
+      monthlyAiCost: 0,
     })),
   );
 
@@ -292,10 +605,6 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       .catch(() => []),
   );
 
-  const products = useQuery(() =>
-    trpc.products.list.query().catch(() => []),
-  );
-
   const fmt = (n: number | undefined): string =>
     n === undefined ? "--" : n.toLocaleString();
 
@@ -305,8 +614,12 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
     return { status: "Degraded", color: "var(--color-danger)" };
   });
 
-  const hasProducts = createMemo(
-    () => !products.loading() && (products.data() ?? []).length > 0,
+  const projects = createMemo<ProjectRow[]>(
+    () => (projectList.data() ?? []) as ProjectRow[],
+  );
+
+  const hasProjects = createMemo(
+    () => !projectList.loading() && projects().length > 0,
   );
 
   const getStartedItems: ActivityItemProps[] = [
@@ -407,33 +720,94 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
           <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="Total Projects"
-              value={projectList.loading() ? "--" : fmt(projectList.data()?.length)}
+              value={usage.loading() ? "--" : fmt(usage.data()?.totalProjects)}
               icon="\u{1F4C1}"
             />
             <StatCard
-              label="Deployments"
-              value={usage.loading() ? "--" : fmt(usage.data()?.featureUsage)}
+              label="Active Deployments"
+              value={
+                usage.loading() ? "--" : fmt(usage.data()?.activeDeployments)
+              }
               icon="\u{1F680}"
             />
             <StatCard
-              label="AI Generations"
-              value={usage.loading() ? "--" : fmt(usage.data()?.aiGenerations)}
+              label="Avg Build Time"
+              value={
+                usage.loading()
+                  ? "--"
+                  : formatDuration(usage.data()?.avgBuildTime ?? 0)
+              }
+              icon="\u{23F1}"
+            />
+            <StatCard
+              label="AI Spend (30d)"
+              value={
+                usage.loading()
+                  ? "--"
+                  : formatCostCents(usage.data()?.monthlyAiCost ?? 0)
+              }
               delta={
-                usage.data()?.pageViews
-                  ? `${fmt(usage.data()?.pageViews)} page views`
+                usage.data()?.aiGenerations
+                  ? `${fmt(usage.data()?.aiGenerations)} generations`
                   : undefined
               }
               icon="\u{1F916}"
             />
-            <StatCard
-              label="Unread Alerts"
-              value={
-                unread.loading()
-                  ? "--"
-                  : String((unread.data() ?? []).length)
+          </div>
+
+          {/* ── Your Projects ───────────────────────────────────────── */}
+          <div class="mb-8">
+            <div class="mb-4 flex items-center gap-3">
+              <span
+                class="text-sm font-semibold"
+                style={{ color: "var(--color-text)" }}
+              >
+                Your Projects
+              </span>
+              <Show when={hasProjects()}>
+                <span
+                  class="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                  style={{
+                    background: "var(--color-bg-subtle)",
+                    color: "var(--color-text-muted)",
+                    border: "1px solid var(--color-border)",
+                  }}
+                >
+                  {projects().length}
+                </span>
+              </Show>
+              <div
+                class="h-px flex-1"
+                style={{ background: "var(--color-border)" }}
+              />
+              <Show when={hasProjects()}>
+                <A
+                  href="/projects"
+                  class="text-xs transition-colors"
+                  style={{ color: "var(--color-primary-text)" }}
+                >
+                  View all →
+                </A>
+              </Show>
+            </div>
+            <Show
+              when={!projectList.loading()}
+              fallback={
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <ProjectCardSkeleton />
+                  <ProjectCardSkeleton />
+                  <ProjectCardSkeleton />
+                </div>
               }
-              icon="\u{1F514}"
-            />
+            >
+              <Show when={hasProjects()} fallback={<EmptyProjectsCTA />}>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <For each={projects().slice(0, 6)}>
+                    {(project) => <ProjectCard project={project} />}
+                  </For>
+                </div>
+              </Show>
+            </Show>
           </div>
 
           {/* ── Main Grid: Activity + Usage ─────────────────────────── */}
@@ -458,7 +832,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                     class="text-sm font-semibold"
                     style={{ color: "var(--color-text)" }}
                   >
-                    <Show when={hasProducts()} fallback="Get Started">
+                    <Show when={hasProjects()} fallback="Get Started">
                       Recent Activity
                     </Show>
                   </span>
@@ -473,7 +847,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
               </div>
               <div class="p-2">
                 <Show
-                  when={hasProducts()}
+                  when={hasProjects()}
                   fallback={
                     <For each={getStartedItems}>
                       {(item) => (
