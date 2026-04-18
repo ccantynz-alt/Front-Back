@@ -14,7 +14,16 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { createRoot, createSignal } from "solid-js";
+// The default `solid-js` export resolves to the SSR build in Bun's test
+// runner, where `createRenderEffect` is a no-op. Load the browser
+// bundle directly so reactivity actually fires.
+import type { createRoot as createRootType, createSignal as createSignalType } from "solid-js";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const solidBrowser = require("solid-js/dist/solid.js") as {
+  createRoot: typeof createRootType;
+  createSignal: typeof createSignalType;
+};
+const { createRoot, createSignal } = solidBrowser;
 import { useDeploymentLogStream } from "./useDeploymentLogStream";
 
 // ── Fake EventSource ───────────────────────────────────────────────

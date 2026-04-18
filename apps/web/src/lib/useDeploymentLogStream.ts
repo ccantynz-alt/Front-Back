@@ -10,7 +10,7 @@
 //   <For each={logs.lines()}>{(line) => <LogRow line={line} />}</For>
 
 import {
-  createEffect,
+  createRenderEffect,
   createSignal,
   onCleanup,
   type Accessor,
@@ -238,7 +238,10 @@ export function useDeploymentLogStream(
   }
 
   // React to deploymentId changes — reset everything and reconnect.
-  createEffect(() => {
+  // `createRenderEffect` runs synchronously on the first pass, which
+  // makes the hook immediately open its EventSource (important for
+  // tests that introspect `FakeEventSource.last` right after setup).
+  createRenderEffect(() => {
     const id = deploymentIdAccessor();
     manualClose = false;
     reconnectDelay = BASE_RECONNECT_MS;

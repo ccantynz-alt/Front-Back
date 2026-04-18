@@ -421,7 +421,7 @@ describe("BLK-009 E2E: webhook → build-runner → deploy", () => {
     // Point the project's build command at something that will exit non-zero.
     // `false` is the POSIX no-op-that-fails command — guaranteed to exist,
     // guaranteed to exit 1.
-    await seedUserAndProject({ buildCommand: "false" });
+    const seeded = await seedUserAndProject({ buildCommand: "false" });
     const { app } = buildAppWithCapturedEnqueue();
 
     const body = makePushPayload({});
@@ -435,7 +435,7 @@ describe("BLK-009 E2E: webhook → build-runner → deploy", () => {
     await db
       .update(projects)
       .set({ repoUrl: gitRepoUrl })
-      .where(eq(projects.userId, projects.userId));
+      .where(eq(projects.id, seeded.projectId));
 
     const { deploy, calls } = makeSuccessDeployer();
     const result = await runBuild(json.deploymentId, {
