@@ -473,4 +473,5 @@ export const workerHandler = {
   },
 };
 
-export default workerHandler;
+// default export removed — Bun auto-serve conflicts with explicit Bun.serve()
+// on self-hosted deployments. Re-add for Cloudflare Workers if needed.
