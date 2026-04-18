@@ -50,9 +50,12 @@
     "paths": [
       "node_modules/**",
       ".turbo/**",
+      ".claude/**",
+      ".vercel/**",
       "apps/*/dist/**",
       "apps/*/.output/**",
       "apps/*/.vinxi/**",
+      "apps/*/.vercel/**",
       "packages/*/dist/**",
       "services/*/dist/**",
       "**/*.min.js",

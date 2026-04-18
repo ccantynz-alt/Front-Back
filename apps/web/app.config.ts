@@ -1,7 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "@solidjs/start/config";
 
-const preset = process.env.SERVER_PRESET ?? "cloudflare-pages";
+const preset = process.env.SERVER_PRESET ?? "bun";
 const isCloudflare = preset === "cloudflare-pages";
 const rollupExternals = isCloudflare ? ["node:async_hooks"] : [];
 

@@ -27,11 +27,11 @@
 set -euo pipefail
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-readonly REPO_DIR="/opt/Crontech"
-readonly SERVICE_USER="crontech"
+readonly REPO_DIR="/opt/crontech"
+readonly SERVICE_USER="deploy"
 readonly DOMAIN="crontech.ai"
 readonly WEB_PORT=3000
-readonly API_PORT=4000
+readonly API_PORT=3001
 
 # ── Colors ────────────────────────────────────────────────────────────────────
 readonly RED='\033[0;31m'
@@ -91,11 +91,28 @@ header "Step 2/6 — System User"
 if id "${SERVICE_USER}" &>/dev/null; then
   log_ok "User '${SERVICE_USER}' already exists"
 else
-  useradd --system --no-create-home --shell /usr/sbin/nologin "${SERVICE_USER}"
-  log_ok "Created system user '${SERVICE_USER}'"
+  adduser --disabled-password --gecos "Crontech Deploy" "${SERVICE_USER}"
+  log_ok "Created user '${SERVICE_USER}'"
 fi
 
-# Ensure the crontech user can read the repo and write build artifacts
+# Allow deploy user to restart services without a password
+cat > /etc/sudoers.d/crontech-deploy << SUDOERS
+${SERVICE_USER} ALL=(ALL) NOPASSWD: /bin/systemctl restart crontech-api, /bin/systemctl restart crontech-web, /bin/systemctl restart caddy, /bin/systemctl reload caddy, /bin/journalctl *
+SUDOERS
+chmod 440 /etc/sudoers.d/crontech-deploy
+log_ok "Sudoers configured for ${SERVICE_USER}"
+
+# Set up SSH directory for deploy user (GitHub Actions will SSH in as this user)
+DEPLOY_HOME=$(eval echo "~${SERVICE_USER}")
+mkdir -p "${DEPLOY_HOME}/.ssh"
+chmod 700 "${DEPLOY_HOME}/.ssh"
+touch "${DEPLOY_HOME}/.ssh/authorized_keys"
+chmod 600 "${DEPLOY_HOME}/.ssh/authorized_keys"
+chown -R "${SERVICE_USER}:${SERVICE_USER}" "${DEPLOY_HOME}/.ssh"
+log_ok "SSH directory ready at ${DEPLOY_HOME}/.ssh"
+echo -e "  ${YELLOW}Add your deploy public key to: ${DEPLOY_HOME}/.ssh/authorized_keys${NC}"
+
+# Ensure the deploy user can read the repo and write build artifacts
 chown -R "${SERVICE_USER}:${SERVICE_USER}" "${REPO_DIR}"
 log_ok "Repo ownership set to ${SERVICE_USER}"
 
@@ -104,29 +121,21 @@ log_ok "Repo ownership set to ${SERVICE_USER}"
 # ══════════════════════════════════════════════════════════════════════════════
 header "Step 3/6 — Environment Files"
 
-ENV_TEMPLATE="${REPO_DIR}/.env.production.example"
+ENV_TEMPLATE="${REPO_DIR}/.env.example"
+ENV_FILE="${REPO_DIR}/.env"
 
-create_env_file() {
-  local target="$1"
-  local label="$2"
-
-  if [ -f "${target}" ]; then
-    log_warn "${label} already exists — skipping (edit manually if needed)"
-  else
-    cp "${ENV_TEMPLATE}" "${target}"
-    chown "${SERVICE_USER}:${SERVICE_USER}" "${target}"
-    chmod 600 "${target}"
-    log_ok "Created ${label} from template"
-  fi
-}
-
-create_env_file "${REPO_DIR}/apps/web/.env" "apps/web/.env"
-create_env_file "${REPO_DIR}/apps/api/.env" "apps/api/.env"
+if [ -f "${ENV_FILE}" ]; then
+  log_warn ".env already exists — skipping (edit manually if needed)"
+else
+  cp "${ENV_TEMPLATE}" "${ENV_FILE}"
+  chown "${SERVICE_USER}:${SERVICE_USER}" "${ENV_FILE}"
+  chmod 600 "${ENV_FILE}"
+  log_ok "Created .env from template"
+fi
 
 echo ""
-echo -e "  ${YELLOW}IMPORTANT:${NC} Edit these files with your actual secrets:"
-echo -e "    ${DIM}nano ${REPO_DIR}/apps/web/.env${NC}"
-echo -e "    ${DIM}nano ${REPO_DIR}/apps/api/.env${NC}"
+echo -e "  ${YELLOW}IMPORTANT:${NC} Edit the .env file with your actual secrets:"
+echo -e "    ${DIM}nano ${REPO_DIR}/.env${NC}"
 echo ""
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -137,7 +146,7 @@ header "Step 4/6 — Systemd Services"
 # ── crontech-web.service ─────────────────────────────────────────────────────
 cat > /etc/systemd/system/crontech-web.service << EOF
 [Unit]
-Description=Crontech Web App (SolidStart/Vinxi on Bun)
+Description=Crontech Web App (SolidStart on Bun)
 After=network.target
 Wants=crontech-api.service
 
@@ -145,8 +154,8 @@ Wants=crontech-api.service
 Type=simple
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
-WorkingDirectory=${REPO_DIR}/apps/web
-ExecStart=${BUN_PATH} run start
+WorkingDirectory=${REPO_DIR}
+ExecStart=${BUN_PATH} run --cwd apps/web start
 Restart=always
 RestartSec=5
 
@@ -154,10 +163,9 @@ RestartSec=5
 Environment=HOST=0.0.0.0
 Environment=PORT=${WEB_PORT}
 Environment=NODE_ENV=production
-Environment=SERVER_PRESET=bun
 
-# Load env file if it exists
-EnvironmentFile=-${REPO_DIR}/apps/web/.env
+# Load env file
+EnvironmentFile=-${REPO_DIR}/.env
 
 # Hardening
 NoNewPrivileges=true
@@ -187,18 +195,18 @@ After=network.target
 Type=simple
 User=${SERVICE_USER}
 Group=${SERVICE_USER}
-WorkingDirectory=${REPO_DIR}/apps/api
-ExecStart=${BUN_PATH} run start
+WorkingDirectory=${REPO_DIR}
+ExecStart=${BUN_PATH} run --cwd apps/api start
 Restart=always
 RestartSec=5
 
 # Environment
 Environment=HOST=0.0.0.0
-Environment=PORT=${API_PORT}
+Environment=API_PORT=${API_PORT}
 Environment=NODE_ENV=production
 
-# Load env file if it exists
-EnvironmentFile=-${REPO_DIR}/apps/api/.env
+# Load env file
+EnvironmentFile=-${REPO_DIR}/.env
 
 # Hardening
 NoNewPrivileges=true
@@ -252,28 +260,15 @@ else
   log_ok "Caddy installed: $(caddy version)"
 fi
 
-# ── Caddyfile ────────────────────────────────────────────────────────────────
-# Caddy handles automatic HTTPS via Let's Encrypt / ZeroSSL with zero config.
-# Just point DNS A records to this server's IP and Caddy does the rest.
 cat > /etc/caddy/Caddyfile << EOF
-# ──────────────────────────────────────────────────────────────────────────────
-# Crontech — Caddy Reverse Proxy
-# ──────────────────────────────────────────────────────────────────────────────
-# Caddy automatically provisions and renews TLS certificates via ACME.
-# Just point DNS A records for both domains to this server's IP.
-#
-# To test before DNS is ready, use:
-#   curl -k https://localhost
-# ──────────────────────────────────────────────────────────────────────────────
+# Crontech — Caddy Reverse Proxy (auto-HTTPS via Let's Encrypt)
+# Point DNS A records for both domains to this server's IP.
 
 # Web app — crontech.ai
-${DOMAIN} {
+${DOMAIN}, www.${DOMAIN} {
 	reverse_proxy localhost:${WEB_PORT}
-
-	# Compression
 	encode gzip zstd
 
-	# Security headers
 	header {
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
@@ -282,7 +277,6 @@ ${DOMAIN} {
 		-Server
 	}
 
-	# Logging
 	log {
 		output file /var/log/caddy/crontech-web.log {
 			roll_size 50MiB
@@ -294,13 +288,8 @@ ${DOMAIN} {
 # API — api.crontech.ai
 api.${DOMAIN} {
 	reverse_proxy localhost:${API_PORT}
-
-	# Compression
 	encode gzip zstd
 
-	# CORS is handled by Hono middleware, so Caddy just proxies.
-
-	# Security headers
 	header {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
@@ -308,7 +297,6 @@ api.${DOMAIN} {
 		-Server
 	}
 
-	# Logging
 	log {
 		output file /var/log/caddy/crontech-api.log {
 			roll_size 50MiB
@@ -352,9 +340,8 @@ echo -e "    ${DIM}crontech-web.service${NC}  — SolidStart on port ${WEB_PORT}
 echo -e "    ${DIM}crontech-api.service${NC}  — Hono API on port ${API_PORT}"
 echo -e "    ${DIM}caddy.service${NC}         — Reverse proxy with auto-HTTPS"
 echo ""
-echo -e "  ${BOLD}Environment Files:${NC}"
-echo -e "    ${DIM}${REPO_DIR}/apps/web/.env${NC}"
-echo -e "    ${DIM}${REPO_DIR}/apps/api/.env${NC}"
+echo -e "  ${BOLD}Environment File:${NC}"
+echo -e "    ${DIM}${REPO_DIR}/.env${NC}"
 echo ""
 echo -e "  ${BOLD}Caddy Config:${NC}"
 echo -e "    ${DIM}/etc/caddy/Caddyfile${NC}"
@@ -367,14 +354,11 @@ echo -e "    ${DIM}/var/log/caddy/*.log${NC}            (Caddy access logs)"
 echo ""
 echo -e "  ${YELLOW}${BOLD}Next Steps:${NC}"
 echo ""
-echo -e "  ${BOLD}1.${NC} Edit .env files with your real secrets:"
-echo -e "     ${DIM}nano ${REPO_DIR}/apps/web/.env${NC}"
-echo -e "     ${DIM}nano ${REPO_DIR}/apps/api/.env${NC}"
+echo -e "  ${BOLD}1.${NC} Edit .env with your real secrets:"
+echo -e "     ${DIM}nano ${REPO_DIR}/.env${NC}"
 echo ""
 echo -e "  ${BOLD}2.${NC} Install dependencies and build:"
-echo -e "     ${DIM}cd ${REPO_DIR} && bun install${NC}"
-echo -e "     ${DIM}cd apps/web && SERVER_PRESET=bun bun run build${NC}"
-echo -e "     ${DIM}cd ../api && bun run build${NC}"
+echo -e "     ${DIM}cd ${REPO_DIR} && bun install && bun run build${NC}"
 echo ""
 echo -e "  ${BOLD}3.${NC} Point DNS A records to this server:"
 echo -e "     ${DIM}${DOMAIN}       → ${SERVER_IP}${NC}"
