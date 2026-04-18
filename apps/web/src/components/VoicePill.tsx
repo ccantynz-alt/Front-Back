@@ -225,11 +225,11 @@ export function VoicePill(props: VoicePillProps): JSX.Element {
           <div
             style={{
               background: "rgba(15,15,17,0.92)",
-              border: "1px solid #27272a",
+              border: "1px solid var(--color-border-strong)",
               "border-radius": "999px",
               padding: "0.5rem 0.9rem",
               "font-size": "0.8rem",
-              color: "#e4e4e7",
+              color: "var(--color-text)",
               "max-width": "360px",
               overflow: "hidden",
               "text-overflow": "ellipsis",

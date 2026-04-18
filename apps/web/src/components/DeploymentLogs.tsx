@@ -1,15 +1,20 @@
-import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { Button } from "@back-to-the-future/ui";
+import { useDeploymentLogStream } from "../lib/useDeploymentLogStream";
 
 // ── Types ────────────────────────────────────────────────────────────
 //
 // Terminal-style log viewer for deployment builds. Renders each log line
 // with monospace font, auto-scrolls to the bottom as new lines arrive,
-// and colours stderr red while stdout stays neutral. Designed to be fed
-// by the future `trpc.deployments.getById` live-log stream — for now it
-// accepts a static array of log lines so the UI can ship ahead of the
-// backend.
+// and colours stderr red while stdout stays neutral.
+//
+// Two input modes:
+//   - Live mode (preferred): pass `live={true}` and the component opens
+//     an SSE stream to /api/deployments/:id/logs/stream via the
+//     `useDeploymentLogStream` hook. Lines stream in as the build runs.
+//   - Static mode: pass a `lines` array and the component just renders
+//     it (used in storybook / empty-state fixtures / the placeholder UI).
 
 export type LogStream = "stdout" | "stderr";
 
@@ -21,7 +26,10 @@ export interface DeploymentLogLine {
 
 export interface DeploymentLogsProps {
   readonly deploymentId: string;
-  readonly lines: ReadonlyArray<DeploymentLogLine>;
+  /** Static lines — used when `live` is false/undefined. */
+  readonly lines?: ReadonlyArray<DeploymentLogLine>;
+  /** When true, open an SSE stream and render live log rows instead of `lines`. */
+  readonly live?: boolean;
   readonly streaming?: boolean;
 }
 
@@ -52,11 +60,31 @@ export function DeploymentLogs(props: DeploymentLogsProps): JSX.Element {
   const [autoScroll, setAutoScroll] = createSignal<boolean>(true);
   let containerRef: HTMLDivElement | undefined;
 
+  // Live stream mode — opens an EventSource via the hook and renders the
+  // accumulated lines. When `live` is false the hook receives a null id
+  // so no connection is ever opened.
+  const liveStream = useDeploymentLogStream(
+    () => (props.live === true ? props.deploymentId : null),
+  );
+
+  const effectiveLines = createMemo<ReadonlyArray<DeploymentLogLine>>(() =>
+    props.live === true ? liveStream.lines() : props.lines ?? [],
+  );
+
+  const effectiveStreaming = createMemo<boolean>(() => {
+    if (props.live === true) {
+      const s = liveStream.status();
+      const ended = liveStream.deployment().ended;
+      return !ended && (s === "connecting" || s === "open" || s === "reconnecting");
+    }
+    return props.streaming === true;
+  });
+
   // Auto-scroll whenever the line count changes — but only when the user
   // has not deliberately scrolled up to inspect earlier output.
   createEffect(() => {
     // Track reactivity on the line count.
-    const count = props.lines.length;
+    const count = effectiveLines().length;
     if (!containerRef) return;
     if (!autoScroll()) return;
     // Defer to the next frame so the DOM has painted the new lines first.
@@ -76,7 +104,7 @@ export function DeploymentLogs(props: DeploymentLogsProps): JSX.Element {
 
   function handleDownload(): void {
     if (typeof window === "undefined") return;
-    const text = toPlainText(props.lines);
+    const text = toPlainText(effectiveLines());
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -95,8 +123,14 @@ export function DeploymentLogs(props: DeploymentLogsProps): JSX.Element {
   }
 
   onCleanup(() => {
-    // No external subscriptions to tear down yet — the future tRPC
-    // subscription will unsubscribe here.
+    // Belt-and-braces: the hook owns its own onCleanup, but calling close
+    // explicitly here makes the teardown order deterministic and keeps
+    // the test fixtures from leaking into one another.
+    try {
+      liveStream.close();
+    } catch {
+      // already closed
+    }
   });
 
   return (
@@ -119,11 +153,11 @@ export function DeploymentLogs(props: DeploymentLogsProps): JSX.Element {
           <span
             class="h-2 w-2 rounded-full"
             classList={{
-              "animate-pulse": props.streaming === true,
+              "animate-pulse": effectiveStreaming(),
             }}
             style={{
-              background: props.streaming === true ? "#60a5fa" : "var(--color-text-faint)",
-              "box-shadow": props.streaming === true ? "0 0 8px rgba(96,165,250,0.6)" : "none",
+              background: effectiveStreaming() ? "#60a5fa" : "var(--color-text-faint)",
+              "box-shadow": effectiveStreaming() ? "0 0 8px rgba(96,165,250,0.6)" : "none",
             }}
             aria-hidden="true"
           />
@@ -131,10 +165,10 @@ export function DeploymentLogs(props: DeploymentLogsProps): JSX.Element {
             class="text-xs font-mono uppercase tracking-widest"
             style={{ color: "var(--color-text-muted)" }}
           >
-            {props.streaming === true ? "Streaming logs" : "Build log"}
+            {effectiveStreaming() ? "Streaming logs" : "Build log"}
           </span>
           <span class="text-xs font-mono" style={{ color: "var(--color-text-faint)" }}>
-            · {props.lines.length} line{props.lines.length === 1 ? "" : "s"}
+            · {effectiveLines().length} line{effectiveLines().length === 1 ? "" : "s"}
           </span>
         </div>
         <div class="flex items-center gap-2">
@@ -171,7 +205,7 @@ export function DeploymentLogs(props: DeploymentLogsProps): JSX.Element {
         aria-label={`Deployment ${props.deploymentId} logs`}
       >
         <Show
-          when={props.lines.length > 0}
+          when={effectiveLines().length > 0}
           fallback={
             <div
               class="flex h-full min-h-[160px] items-center justify-center text-center text-xs"
@@ -181,7 +215,7 @@ export function DeploymentLogs(props: DeploymentLogsProps): JSX.Element {
             </div>
           }
         >
-          <For each={props.lines}>
+          <For each={effectiveLines()}>
             {(line) => (
               <div class="whitespace-pre-wrap break-all">
                 <span style={{ color: "#6b7280" }}>

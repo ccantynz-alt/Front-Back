@@ -1,0 +1,6 @@
+# BLK-009 fixture bunfig. Keep this file so `bun install` picks up a
+# deterministic configuration (no registry surprises, no auto-install
+# sneaking in extra behavior). The fixture has zero dependencies so
+# `bun install` is effectively a no-op lockfile creation.
+[install]
+auto = false

@@ -42,6 +42,12 @@ export interface DeploymentCardProps {
   readonly deployment: Deployment;
   readonly onRedeploy?: (deploymentId: string) => void;
   readonly onViewLogs?: (deploymentId: string) => void;
+  /**
+   * When true, the expanded log viewer opens an SSE stream instead of
+   * rendering the static `deployment.logs` array. Leave false for
+   * fixture/preview pages where the backend isn't live.
+   */
+  readonly liveLogs?: boolean;
 }
 
 // ── Status Badge ─────────────────────────────────────────────────────
@@ -301,6 +307,7 @@ export function DeploymentCard(props: DeploymentCardProps): JSX.Element {
           <DeploymentLogs
             deploymentId={props.deployment.id}
             lines={props.deployment.logs}
+            live={props.liveLogs === true}
             streaming={isStreaming()}
           />
           <Show when={props.deployment.liveUrl}>
