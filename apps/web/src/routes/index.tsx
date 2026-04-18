@@ -21,7 +21,7 @@ const features: Feature[] = [
     icon: "zap",
     title: "Edge Compute",
     description:
-      "Cloudflare Workers at the edge. Sub-5ms cold starts across 330+ cities. No containers, no regions, no capacity planning.",
+      "Deploy to the edge with sub-5ms cold starts. No containers, no regions, no capacity planning. Your code runs close to your users.",
     href: "/deployments",
     badge: "Core",
   },
@@ -123,7 +123,7 @@ const techPillars: TechPillar[] = [
     label: "Built on the bleeding edge",
     title: "The fastest stack on the web",
     description:
-      "Cloudflare Workers for sub-5ms cold starts. SolidJS for the fastest reactivity. Bun + Hono for the fastest runtime. Type-safe end to end.",
+      "Sub-5ms cold starts at the edge. SolidJS for the fastest reactivity. Bun + Hono for the fastest runtime. Type-safe end to end.",
   },
   {
     label: "AI-native at every layer",
@@ -142,20 +142,22 @@ function FeatureCard(props: Feature): JSX.Element {
         <div class="flex h-full flex-col gap-5">
           <div class="flex items-start justify-between gap-3">
             <div
-              class="flex h-12 w-12 items-center justify-center rounded-xl"
+              class="flex h-11 w-11 items-center justify-center rounded-xl"
               style={{
-                background: "linear-gradient(135deg, #eef2ff, #e8e0ff)",
+                background: "linear-gradient(135deg, rgba(79,70,229,0.08), rgba(139,92,246,0.08))",
                 color: "#4f46e5",
+                border: "1px solid rgba(79,70,229,0.1)",
               }}
             >
-              <Icon name={props.icon} size={22} />
+              <Icon name={props.icon} size={20} />
             </div>
             <Show when={props.badge}>
               <span
-                class="shrink-0 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
+                class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
                 style={{
-                  background: "#eef2ff",
+                  background: "rgba(79,70,229,0.06)",
                   color: "#4f46e5",
+                  border: "1px solid rgba(79,70,229,0.1)",
                 }}
               >
                 {props.badge}
@@ -163,7 +165,7 @@ function FeatureCard(props: Feature): JSX.Element {
             </Show>
           </div>
 
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-2.5">
             <h3
               class="text-[1.0625rem] font-semibold tracking-tight"
               style={{ color: "var(--color-text)" }}
@@ -171,7 +173,7 @@ function FeatureCard(props: Feature): JSX.Element {
               {props.title}
             </h3>
             <p
-              class="text-[0.9rem] leading-[1.7]"
+              class="text-[0.875rem] leading-[1.75]"
               style={{ color: "var(--color-text-secondary)" }}
             >
               {props.description}
@@ -179,11 +181,11 @@ function FeatureCard(props: Feature): JSX.Element {
           </div>
 
           <div
-            class="mt-auto flex items-center gap-1.5 pt-3 text-sm font-medium"
+            class="mt-auto flex items-center gap-1.5 pt-3 text-sm font-medium transition-colors duration-200 group-hover:opacity-80"
             style={{ color: "#4f46e5" }}
           >
             <span>Learn more</span>
-            <span class="transition-transform duration-200 group-hover:translate-x-1">&#8594;</span>
+            <span class="transition-transform duration-200 group-hover:translate-x-1.5">{"\u2192"}</span>
           </div>
         </div>
       </div>
@@ -195,24 +197,24 @@ function FeatureCard(props: Feature): JSX.Element {
 
 function StepCard(props: Step & { isLast: boolean }): JSX.Element {
   return (
-    <div class="relative flex flex-col items-center gap-5 text-center">
+    <div class="relative flex flex-col items-center gap-6 text-center">
       <div class="relative">
         <div
           class="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl"
           style={{
             background: "var(--color-bg-elevated)",
             border: "1px solid var(--color-border)",
-            "box-shadow": "0 4px 12px rgba(0,0,0,0.06)",
+            "box-shadow": "0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)",
           }}
         >
           {props.icon}
         </div>
         <div
-          class="absolute -top-2.5 -right-2.5 flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold"
+          class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold"
           style={{
-            background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+            background: "linear-gradient(135deg, #4f46e5, #6d5ce7)",
             color: "#fff",
-            "box-shadow": "0 2px 8px rgba(79,70,229,0.4)",
+            "box-shadow": "0 2px 6px rgba(79,70,229,0.3)",
           }}
         >
           {props.number}
@@ -226,7 +228,7 @@ function StepCard(props: Step & { isLast: boolean }): JSX.Element {
         {props.title}
       </h3>
       <p
-        class="max-w-[280px] text-[0.9rem] leading-[1.7]"
+        class="max-w-[280px] text-[0.875rem] leading-[1.75]"
         style={{ color: "var(--color-text-secondary)" }}
       >
         {props.description}
@@ -243,7 +245,7 @@ function StepCard(props: Step & { isLast: boolean }): JSX.Element {
 
 function StatBlock(props: Stat): JSX.Element {
   return (
-    <div class="flex flex-col items-center justify-center gap-2 px-6 py-10 sm:py-12">
+    <div class="flex flex-col items-center justify-center gap-3 px-6 py-10 sm:py-12">
       <span
         class="text-2xl font-extrabold tracking-tight sm:text-3xl"
         style={{ color: "#fff" }}
@@ -251,8 +253,8 @@ function StatBlock(props: Stat): JSX.Element {
         {props.value}
       </span>
       <span
-        class="text-[11px] font-medium uppercase tracking-[0.16em]"
-        style={{ color: "rgba(255,255,255,0.5)" }}
+        class="text-[11px] font-semibold uppercase tracking-[0.16em]"
+        style={{ color: "rgba(255,255,255,0.7)" }}
       >
         {props.label}
       </span>
@@ -266,13 +268,13 @@ function TechPillarCard(props: TechPillar): JSX.Element {
   return (
     <div class="landing-card relative overflow-hidden p-8">
       <div
-        class="absolute top-0 left-0 right-0 h-[3px]"
+        class="absolute top-0 left-0 right-0 h-[2px]"
         style={{
-          background: "linear-gradient(90deg, #4f46e5, #7c3aed, #a78bfa)",
+          background: "linear-gradient(90deg, #4f46e5, #6d5ce7, #a78bfa)",
         }}
       />
       <span
-        class="mb-4 inline-block text-xs font-semibold uppercase tracking-[0.14em]"
+        class="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.16em]"
         style={{ color: "#4f46e5" }}
       >
         {props.label}
@@ -284,7 +286,7 @@ function TechPillarCard(props: TechPillar): JSX.Element {
         {props.title}
       </h3>
       <p
-        class="text-[0.9rem] leading-[1.7]"
+        class="text-[0.875rem] leading-[1.75]"
         style={{ color: "var(--color-text-secondary)" }}
       >
         {props.description}
@@ -313,20 +315,23 @@ export default function Home(): JSX.Element {
             <div class="flex flex-col items-center text-center">
               {/* Announcement badge */}
               <div
-                class="mb-10 inline-flex items-center gap-2.5 rounded-full px-4 py-2"
+                class="mb-10 inline-flex items-center gap-2.5 rounded-full px-5 py-2.5"
                 style={{
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  background: "rgba(255,255,255,0.06)",
-                  "backdrop-filter": "blur(8px)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.04)",
+                  "backdrop-filter": "blur(12px)",
                 }}
               >
                 <div
-                  class="h-2 w-2 rounded-full animate-pulse"
-                  style={{ background: "#34d399" }}
+                  class="h-2 w-2 rounded-full"
+                  style={{
+                    background: "#34d399",
+                    "box-shadow": "0 0 8px rgba(52,211,153,0.6)",
+                  }}
                 />
                 <span
-                  class="text-[0.8125rem] font-medium"
-                  style={{ color: "rgba(255,255,255,0.7)" }}
+                  class="text-[0.8125rem] font-medium tracking-wide"
+                  style={{ color: "rgba(255,255,255,0.8)" }}
                 >
                   Now in early access
                 </span>
@@ -345,8 +350,8 @@ export default function Home(): JSX.Element {
 
               {/* Subheading */}
               <p
-                class="mt-7 max-w-2xl text-[1.0625rem] leading-[1.75] sm:text-lg"
-                style={{ color: "rgba(255,255,255,0.6)" }}
+                class="mt-7 max-w-2xl text-[1.0625rem] leading-[1.8] sm:text-lg"
+                style={{ color: "rgba(255,255,255,0.7)" }}
               >
                 Backend and frontend, joined as one product. Hosting, database,
                 auth, AI, real-time, and billing &mdash; every layer your app
@@ -380,27 +385,27 @@ export default function Home(): JSX.Element {
               </div>
 
               {/* Tech stack strip */}
-              <div class="mt-20 flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
+              <div class="mt-20 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
                 <For
                   each={[
                     "SolidJS",
                     "Bun",
                     "Hono",
                     "tRPC",
-                    "Cloudflare Workers",
+                    "Edge Compute",
                     "Turso",
                     "WebGPU",
                   ]}
                 >
                   {(tech) => (
                     <span
-                      class="text-[0.6875rem] font-medium uppercase tracking-[0.18em] transition-colors duration-200"
-                      style={{ color: "rgba(255,255,255,0.3)" }}
+                      class="text-[0.6875rem] font-medium uppercase tracking-[0.2em] transition-colors duration-300"
+                      style={{ color: "rgba(255,255,255,0.4)" }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "rgba(255,255,255,0.6)";
+                        e.currentTarget.style.color = "rgba(255,255,255,0.75)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "rgba(255,255,255,0.3)";
+                        e.currentTarget.style.color = "rgba(255,255,255,0.4)";
                       }}
                     >
                       {tech}
@@ -420,7 +425,7 @@ export default function Home(): JSX.Element {
                 {(stat, i) => (
                   <div
                     style={{
-                      "border-right": i() < stats.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                      "border-right": i() < stats.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                     }}
                   >
                     <StatBlock value={stat.value} label={stat.label} />
