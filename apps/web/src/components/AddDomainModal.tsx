@@ -354,7 +354,7 @@ export function AddDomainModal(props: AddDomainModalProps): JSX.Element {
                       style={{
                         background: "rgba(16, 185, 129, 0.08)",
                         border: "1px solid rgba(16, 185, 129, 0.25)",
-                        color: "#6ee7b7",
+                        color: "var(--color-success-text)",
                       }}
                     >
                       Domain verified. SSL certificate is being issued.
@@ -366,7 +366,7 @@ export function AddDomainModal(props: AddDomainModalProps): JSX.Element {
                       style={{
                         background: "rgba(239, 68, 68, 0.08)",
                         border: "1px solid rgba(239, 68, 68, 0.25)",
-                        color: "#fca5a5",
+                        color: "var(--color-danger-text)",
                       }}
                     >
                       {(res() as { ok: false; message: string }).message}

@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { A } from "@solidjs/router";
 import { Button } from "@back-to-the-future/ui";
@@ -8,153 +8,135 @@ import {
   type Deployment,
   type DeploymentStatus,
 } from "../components/DeploymentCard";
-import type { DeploymentLogLine } from "../components/DeploymentLogs";
+import { trpc } from "../lib/trpc";
 
-// ── tRPC (scaffolded — procedures not yet implemented server-side) ───
+// ── BLK-009 — live deployments list ──────────────────────────────────
 //
-// These imports point to the tRPC client. The concrete procedures
-// `trpc.deployments.list` and `trpc.deployments.getById` do not exist
-// on the server yet — BLK-009's backend ships them. Once they do, the
-// `loadDeployments()` helper below swaps PLACEHOLDER_DEPLOYMENTS for
-// `await trpc.deployments.list.query(...)` and the card's expand hook
-// switches to `trpc.deployments.getById.query({ id })` for live logs.
-import { trpc as _trpc } from "../lib/trpc";
-// Intentionally referenced to keep the import alive through Biome.
-void _trpc;
+// Loads the authenticated user's projects, then fans out one
+// `deployments.list` query per project and merges the results. Every
+// card expands into a live SSE log stream (see `DeploymentCard` →
+// `DeploymentLogs` → `useDeploymentLogStream`) so the moment the
+// build-runner writes a row into `deployment_logs`, the UI shows it.
 
-// ── Placeholder fixture data ─────────────────────────────────────────
-//
-// Hand-authored deployments that exercise every status variant so the
-// UI is pixel-complete before the backend arrives. Logs are short but
-// representative of the real Wrangler build output.
+// ── tRPC row → UI deployment shape ──────────────────────────────────
 
-const BASE_TIME = Date.now();
-
-function iso(offsetSec: number): string {
-  return new Date(BASE_TIME - offsetSec * 1000).toISOString();
+interface ProjectSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly slug: string;
 }
 
-function buildLogs(
-  kind: "success" | "failure" | "partial"
-): ReadonlyArray<DeploymentLogLine> {
-  const base: DeploymentLogLine[] = [
-    { timestamp: iso(120), stream: "stdout", message: "Cloning repository at commit sha…" },
-    { timestamp: iso(118), stream: "stdout", message: "bun install --frozen-lockfile" },
-    { timestamp: iso(110), stream: "stdout", message: "Resolved 482 dependencies in 2.4s" },
-    { timestamp: iso(108), stream: "stdout", message: "bun run check" },
-    { timestamp: iso(104), stream: "stdout", message: "✓ TypeScript 10/10 packages, 0 errors" },
-    { timestamp: iso(100), stream: "stdout", message: "bun run build" },
-    { timestamp: iso(92), stream: "stdout", message: "▲ Building apps/web with Vinxi…" },
-    { timestamp: iso(82), stream: "stdout", message: "▲ Building apps/api with Bun…" },
-    { timestamp: iso(74), stream: "stdout", message: "▲ Building packages/ui…" },
-    { timestamp: iso(70), stream: "stdout", message: "Bundle size: 47.3 KB (budget 50 KB)" },
-  ];
-  if (kind === "failure") {
-    base.push(
-      { timestamp: iso(68), stream: "stderr", message: "error TS2322: Type 'string' is not assignable to type 'number'." },
-      { timestamp: iso(67), stream: "stderr", message: "    at apps/web/src/routes/checkout.tsx:42:9" },
-      { timestamp: iso(66), stream: "stderr", message: "Build failed in 54s" }
-    );
-    return base;
-  }
-  if (kind === "partial") {
-    base.push(
-      { timestamp: iso(62), stream: "stdout", message: "Uploading bundle to Cloudflare Workers…" },
-      { timestamp: iso(55), stream: "stdout", message: "Pushing static assets to R2…" }
-    );
-    return base;
-  }
-  base.push(
-    { timestamp: iso(60), stream: "stdout", message: "Uploading bundle to Cloudflare Workers…" },
-    { timestamp: iso(54), stream: "stdout", message: "Pushing static assets to R2…" },
-    { timestamp: iso(48), stream: "stdout", message: "Activating new deployment version…" },
-    { timestamp: iso(42), stream: "stdout", message: "✓ Deployment live in 78s" }
-  );
-  return base;
+interface DeploymentListRow {
+  readonly id: string;
+  readonly projectId: string;
+  readonly commitSha: string | null;
+  readonly commitMessage: string | null;
+  readonly commitAuthor: string | null;
+  readonly branch: string | null;
+  readonly status: string;
+  readonly deployUrl: string | null;
+  readonly url: string | null;
+  readonly duration: number | null;
+  readonly buildDuration: number | null;
+  readonly startedAt: Date | string | null;
+  readonly completedAt: Date | string | null;
+  readonly createdAt: Date | string;
 }
 
-const PLACEHOLDER_DEPLOYMENTS: ReadonlyArray<Deployment> = [
-  {
-    id: "dpl_01hx9k2m4r",
-    projectName: "crontech-web",
-    projectSlug: "crontech-web",
-    commitSha: "7a3b9f1c2d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a",
-    commitMessage: "feat(deploy): BLK-009 UI — deployments page, live logs, status cards",
-    branch: "main",
-    author: { name: "craig" },
-    status: "building",
-    durationSeconds: null,
-    createdAt: iso(90),
-    logs: buildLogs("partial"),
-  },
-  {
-    id: "dpl_01hx9j8p2q",
-    projectName: "crontech-web",
-    projectSlug: "crontech-web",
-    commitSha: "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
-    commitMessage: "fix(auth): passkey challenge timeout on slow devices",
-    branch: "main",
-    author: { name: "craig" },
-    status: "deploying",
-    durationSeconds: null,
-    createdAt: iso(380),
-    logs: buildLogs("success"),
-  },
-  {
-    id: "dpl_01hx9h7n1m",
-    projectName: "crontech-api",
-    projectSlug: "crontech-api",
-    commitSha: "c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2",
-    commitMessage: "perf(trpc): batch auth queries on session hydration",
-    branch: "main",
-    author: { name: "claude-agent" },
-    status: "live",
-    durationSeconds: 78,
-    createdAt: iso(1900),
-    liveUrl: "https://api.crontech.ai",
-    logs: buildLogs("success"),
-  },
-  {
-    id: "dpl_01hx9g6k0l",
-    projectName: "crontech-web",
-    projectSlug: "crontech-web",
-    commitSha: "d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1",
-    commitMessage: "chore(deps): bump solid-js to 1.9.3",
-    branch: "renovate/solid-js",
-    author: { name: "renovate-bot" },
-    status: "failed",
-    durationSeconds: 54,
-    createdAt: iso(5400),
-    logs: buildLogs("failure"),
-  },
-  {
-    id: "dpl_01hx9f5j9k",
-    projectName: "crontech-web",
-    projectSlug: "crontech-web",
-    commitSha: "e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0",
-    commitMessage: "feat(composer): AI-native component library v2",
-    branch: "feature/composer-v2",
-    author: { name: "claude-agent" },
-    status: "queued",
-    durationSeconds: null,
-    createdAt: iso(14),
+/** Map the tRPC status enum onto the narrower card-status enum. */
+function toCardStatus(status: string): DeploymentStatus {
+  switch (status) {
+    case "queued":
+    case "building":
+    case "deploying":
+    case "live":
+    case "failed":
+      return status;
+    case "rolled_back":
+    case "cancelled":
+      return "failed";
+    default:
+      return "queued";
+  }
+}
+
+function toIso(value: Date | string | null | undefined): string {
+  if (!value) return new Date().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  // tRPC already serialises Date → string in transit for JSON responses.
+  return value;
+}
+
+function rowToDeployment(
+  row: DeploymentListRow,
+  project: ProjectSummary,
+): Deployment {
+  const status = toCardStatus(row.status);
+  const durationSeconds =
+    row.duration && row.duration > 0 ? Math.round(row.duration / 1_000) : null;
+  const liveUrl = row.deployUrl ?? row.url ?? undefined;
+  const authorName = row.commitAuthor ?? "unknown";
+  return {
+    id: row.id,
+    projectName: project.name,
+    projectSlug: project.slug,
+    commitSha: row.commitSha ?? "0000000",
+    commitMessage: row.commitMessage ?? "(no commit message)",
+    branch: row.branch ?? "main",
+    author: { name: authorName },
+    status,
+    durationSeconds,
+    createdAt: toIso(row.createdAt),
+    ...(liveUrl ? { liveUrl } : {}),
+    // Static logs are empty — the card's live stream populates the UI.
     logs: [],
-  },
-  {
-    id: "dpl_01hx9e4i8j",
-    projectName: "crontech-api",
-    projectSlug: "crontech-api",
-    commitSha: "f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9",
-    commitMessage: "feat(sentinel): add npm registry watcher collector",
-    branch: "main",
-    author: { name: "craig" },
-    status: "live",
-    durationSeconds: 92,
-    createdAt: iso(86400),
-    liveUrl: "https://api.crontech.ai",
-    logs: buildLogs("success"),
-  },
-];
+  };
+}
+
+// ── Loader ───────────────────────────────────────────────────────────
+//
+// Fetches projects first, then — in parallel — a deployments.list page
+// per project. Returns `null` on failure so the empty-state copy can
+// show rather than a raw error.
+
+interface DeploymentsLoad {
+  readonly projects: ReadonlyArray<ProjectSummary>;
+  readonly deployments: ReadonlyArray<Deployment>;
+}
+
+async function loadDeployments(): Promise<DeploymentsLoad | null> {
+  try {
+    const projectRows = await trpc.projects.list.query();
+    const projects: ProjectSummary[] = projectRows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+    }));
+    if (projects.length === 0) {
+      return { projects: [], deployments: [] };
+    }
+    const perProject = await Promise.all(
+      projects.map((p) =>
+        trpc.deployments.list
+          .query({ projectId: p.id, limit: 50 })
+          .catch(() => [] as DeploymentListRow[]),
+      ),
+    );
+    const merged: Deployment[] = [];
+    for (let i = 0; i < projects.length; i += 1) {
+      const project = projects[i];
+      const rows = perProject[i];
+      if (!project || !rows) continue;
+      for (const row of rows) {
+        merged.push(rowToDeployment(row, project));
+      }
+    }
+    merged.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    return { projects, deployments: merged };
+  } catch {
+    return null;
+  }
+}
 
 // ── Filter / Group Helpers ───────────────────────────────────────────
 
@@ -179,7 +161,7 @@ interface ProjectGroup {
 }
 
 function groupByProject(
-  deployments: ReadonlyArray<Deployment>
+  deployments: ReadonlyArray<Deployment>,
 ): ReadonlyArray<ProjectGroup> {
   const map = new Map<string, Deployment[]>();
   for (const d of deployments) {
@@ -200,10 +182,17 @@ function groupByProject(
 
 export default function DeploymentsPage(): JSX.Element {
   const [filter, setFilter] = createSignal<StatusFilter>("all");
-  const [repoConnected] = createSignal<boolean>(true); // flip to false to see empty state
 
-  const deployments = (): ReadonlyArray<Deployment> =>
-    repoConnected() ? PLACEHOLDER_DEPLOYMENTS : [];
+  const [loaded, { refetch }] = createResource<DeploymentsLoad | null>(
+    loadDeployments,
+  );
+
+  const repoConnected = (): boolean => {
+    const data = loaded();
+    return data !== null && data !== undefined && data.projects.length > 0;
+  };
+
+  const deployments = (): ReadonlyArray<Deployment> => loaded()?.deployments ?? [];
 
   const filtered = createMemo<ReadonlyArray<Deployment>>(() => {
     const current = filter();
@@ -212,7 +201,7 @@ export default function DeploymentsPage(): JSX.Element {
   });
 
   const projectGroups = createMemo<ReadonlyArray<ProjectGroup>>(() =>
-    groupByProject(filtered())
+    groupByProject(filtered()),
   );
 
   const totalDeployments = (): number => deployments().length;
@@ -223,25 +212,38 @@ export default function DeploymentsPage(): JSX.Element {
       (d) =>
         d.status === "building" ||
         d.status === "deploying" ||
-        d.status === "queued"
+        d.status === "queued",
     ).length;
 
   function handleConnectRepo(): void {
-    // Future: triggers GitHub App install flow via /api/github/install.
     if (typeof window !== "undefined") {
       window.location.href = "/repos";
     }
   }
 
   function handleRedeploy(deploymentId: string): void {
-    // Future: await trpc.deployments.redeploy.mutate({ id: deploymentId });
-    if (typeof window !== "undefined" && typeof console !== "undefined") {
-      console.info("[deployments] redeploy requested", deploymentId);
-    }
+    if (typeof window === "undefined") return;
+    // Fire and refetch — the server creates a new deployment row and
+    // the SSE stream will take over as soon as the row appears.
+    trpc.deployments.create
+      .mutate({
+        projectId: findProjectIdForDeployment(deploymentId) ?? "",
+      })
+      .then(() => refetch())
+      .catch(() => {
+        // Non-fatal: surfaced to the user via the existing toast system
+        // in future iterations; for now we swallow so the UI stays calm.
+      });
+  }
+
+  function findProjectIdForDeployment(deploymentId: string): string | null {
+    const match = deployments().find((d) => d.id === deploymentId);
+    if (!match) return null;
+    const project = loaded()?.projects.find((p) => p.slug === match.projectSlug);
+    return project?.id ?? null;
   }
 
   function handleViewLogs(deploymentId: string): void {
-    // Future: subscribe to trpc.deployments.logs.subscribe({ id: deploymentId }).
     if (typeof window !== "undefined" && typeof console !== "undefined") {
       console.info("[deployments] viewing logs", deploymentId);
     }
@@ -379,6 +381,7 @@ export default function DeploymentsPage(): JSX.Element {
                               deployment={d}
                               onRedeploy={handleRedeploy}
                               onViewLogs={handleViewLogs}
+                              liveLogs={true}
                             />
                           )}
                         </For>
@@ -545,7 +548,7 @@ interface NoMatchingDeploymentsProps {
 }
 
 function NoMatchingDeployments(
-  props: NoMatchingDeploymentsProps
+  props: NoMatchingDeploymentsProps,
 ): JSX.Element {
   return (
     <div

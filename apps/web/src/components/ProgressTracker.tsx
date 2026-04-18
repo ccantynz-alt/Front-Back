@@ -91,7 +91,7 @@ export function ProgressTracker(): ReturnType<typeof Card> {
           style={{
             width: "100%",
             height: "12px",
-            background: "#e5e7eb",
+            background: "var(--color-border)",
             "border-radius": "999px",
             overflow: "hidden",
           }}

@@ -31,7 +31,7 @@ export function GradientBorder(props: GradientBorderProps): JSX.Element {
   const to = (): string => props.to ?? DEFAULT_TO;
 
   const background = (): string =>
-    `linear-gradient(#0a0a0a,#0a0a0a) padding-box, linear-gradient(135deg, ${from()}, ${via()}, ${to()}) border-box`;
+    `linear-gradient(var(--color-bg),var(--color-bg)) padding-box, linear-gradient(135deg, ${from()}, ${via()}, ${to()}) border-box`;
 
   const style = (): JSX.CSSProperties => {
     const base: JSX.CSSProperties = {

@@ -9,7 +9,7 @@
 // Guest users see nothing — voice is an authenticated feature so the
 // server's protectedProcedure gate holds.
 
-import { Show } from "solid-js";
+import { Show, type JSX } from "solid-js";
 import { useNavigate, useLocation } from "@solidjs/router";
 import { VoicePill } from "./VoicePill";
 import { showToast } from "./Toast";
@@ -52,7 +52,7 @@ type VoiceIntent =
   | AskIntent
   | UnknownIntent;
 
-export function VoiceGlobal() {
+export function VoiceGlobal(): JSX.Element {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

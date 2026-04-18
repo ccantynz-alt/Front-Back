@@ -302,7 +302,7 @@ function DomainRow(props: DomainRowProps): JSX.Element {
           <Match when={props.status === "verifying"}>
             <StatusDetail tone="info">
               <span class="inline-flex items-center gap-2">
-                <PulseDot color="#3b82f6" />
+                <PulseDot color="var(--color-info)" />
                 DNS propagation can take up to 48 hours. We&apos;ll keep
                 checking.
               </span>
@@ -338,11 +338,11 @@ function StatusDot(props: { status: DomainVerificationStatus }): JSX.Element {
   const color = (): string => {
     switch (props.status) {
       case "verified":
-        return "#10b981";
+        return "var(--color-success)";
       case "failed":
-        return "#ef4444";
+        return "var(--color-danger)";
       default:
-        return "#3b82f6";
+        return "var(--color-info)";
     }
   };
   return (
@@ -411,19 +411,19 @@ function StatusDetail(props: {
         return {
           background: "rgba(16, 185, 129, 0.08)",
           border: "1px solid rgba(16, 185, 129, 0.25)",
-          color: "#6ee7b7",
+          color: "var(--color-success-text)",
         };
       case "error":
         return {
           background: "rgba(239, 68, 68, 0.08)",
           border: "1px solid rgba(239, 68, 68, 0.25)",
-          color: "#fca5a5",
+          color: "var(--color-danger-text)",
         };
       default:
         return {
           background: "rgba(59, 130, 246, 0.08)",
           border: "1px solid rgba(59, 130, 246, 0.25)",
-          color: "#93c5fd",
+          color: "var(--color-primary-text)",
         };
     }
   };
