@@ -134,6 +134,35 @@ app.use(
       : { windowMs: 60_000, max: 30 },
   ),
 );
+// ── Rate limits for public read/approval/MCP surfaces ─────────────
+// These endpoints are not behind API-key auth (they power the admin UI and
+// the MCP discovery catalog) — but they must still be protected from
+// unauthenticated flood traffic. Matches §6.4: "Rate limiting on all
+// public endpoints. No endpoint is unprotected."
+app.use(
+  "/api/approvals/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 60, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 60 },
+  ),
+);
+app.use(
+  "/api/mcp/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 60, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 60 },
+  ),
+);
+app.use(
+  "/api/flags/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 120, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 120 },
+  ),
+);
 
 // ── API Key Authentication ──────────────────────────────────────────
 // Allows Bearer btf_sk_... tokens to authenticate against the API keys table.
@@ -152,6 +181,28 @@ app.use("*", async (c, next) => {
     status: c.res.status,
   });
   recordRequest(duration);
+});
+
+// ── Global Error Boundary ────────────────────────────────────────────
+// Hono's default error handler returns the raw Error message and stack to
+// the client. That leaks server internals and gives no correlation id for
+// support tickets. Wrap every unhandled throw into a structured, safe JSON
+// response and log the underlying error to stderr for the observability
+// pipeline to pick up.
+app.onError((err, c) => {
+  const requestId = c.req.header("x-request-id") ?? crypto.randomUUID();
+  const message = err instanceof Error ? err.message : "Unknown error";
+  // Log the full error server-side for debugging, but never return the
+  // stack trace to the client.
+  console.error(`[api:error] ${requestId} ${c.req.method} ${c.req.path}: ${message}`, err);
+  c.header("X-Request-ID", requestId);
+  return c.json(
+    {
+      error: "Internal server error",
+      requestId,
+    },
+    500,
+  );
 });
 
 app.get("/health", (c) => {

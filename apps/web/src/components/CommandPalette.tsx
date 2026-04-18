@@ -157,6 +157,9 @@ export function CommandPalette(): ReturnType<typeof Show> {
       >
         <div
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Command palette"
           style={{
             width: "min(640px, 90vw)",
             background: "var(--color-bg-elevated)",
@@ -171,6 +174,7 @@ export function CommandPalette(): ReturnType<typeof Show> {
             placeholder="Type a command or search... (Esc to close)"
             value={query()}
             onInput={(e) => setQuery(e.currentTarget.value)}
+            aria-label="Search commands"
             style={{
               width: "100%",
               padding: "16px 20px",

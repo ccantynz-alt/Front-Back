@@ -491,6 +491,7 @@ export default function TemplatesPage(): JSX.Element {
                   <input
                     type="text"
                     placeholder="Search templates..."
+                    aria-label="Search templates"
                     value={search()}
                     onInput={(e) =>
                       setSearch(e.currentTarget.value)

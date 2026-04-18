@@ -332,6 +332,7 @@ export default function AIPlayground(): JSX.Element {
                 step="0.1"
                 value={temperature()}
                 onInput={(e) => setTemperature(parseFloat(e.currentTarget.value))}
+                aria-label="Temperature"
                 class="w-full"
                 style={{ height: "4px", "accent-color": "var(--color-primary)" }}
               />
@@ -349,6 +350,7 @@ export default function AIPlayground(): JSX.Element {
                 step="256"
                 value={maxTokens()}
                 onInput={(e) => setMaxTokens(parseInt(e.currentTarget.value, 10))}
+                aria-label="Max tokens"
                 class="w-full"
                 style={{ height: "4px", "accent-color": "var(--color-primary)" }}
               />

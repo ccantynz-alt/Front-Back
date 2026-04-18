@@ -478,6 +478,7 @@ function BulkImportForm(props: {
           value={text()}
           onInput={(e) => setText(e.currentTarget.value)}
           placeholder={"DATABASE_URL=postgres://...\nAPI_KEY=sk-..."}
+          aria-label="Bulk .env content"
           rows={8}
           spellcheck={false}
           class={`${FIELD_CLASS} font-mono`}

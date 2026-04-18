@@ -293,6 +293,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
           step={0.1}
           value={effectiveTime()}
           onInput={(e) => seek(Number(e.currentTarget.value))}
+          aria-label="Seek video"
           style={{
             width: "100%",
             height: "4px",
@@ -314,6 +315,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
           <button
             type="button"
             onClick={togglePlay}
+            aria-label={effectivePlaying() ? "Pause" : "Play"}
             style={{
               background: "none",
               border: "none",
@@ -336,6 +338,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
           <button
             type="button"
             onClick={toggleMute}
+            aria-label={isMuted() || volume() === 0 ? "Unmute" : "Mute"}
             style={{
               background: "none",
               border: "none",
@@ -354,6 +357,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
             step={0.05}
             value={isMuted() ? 0 : volume()}
             onInput={(e) => changeVolume(Number(e.currentTarget.value))}
+            aria-label="Volume"
             style={{ width: "60px", "accent-color": "var(--color-primary)" }}
           />
 
@@ -361,6 +365,7 @@ export function VideoPlayer(props: VideoPlayerProps): JSX.Element {
           <button
             type="button"
             onClick={toggleFullscreen}
+            aria-label={isFullscreen() ? "Exit fullscreen" : "Enter fullscreen"}
             style={{
               background: "none",
               border: "none",
