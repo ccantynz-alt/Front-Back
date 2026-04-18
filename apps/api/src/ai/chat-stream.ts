@@ -4,11 +4,8 @@
 // back to the server's ANTHROPIC_API_KEY env var.
 // Streaming via Vercel AI SDK streamText() for consistent interface.
 //
-// TODO(BLK-020 Phase B): port to `@anthropic-ai/sdk`'s native
-// `client.messages.stream()` and hand-roll the SSE text stream. This
-// call site is only deferred because it shares the `LanguageModel`
-// abstraction with the site-builder agent via `getAnthropicModel()`;
-// once providers.ts is ported in Phase B, this flips with it.
+// Migrated from Vercel AI SDK to use @anthropic-ai/sdk's native
+// client.messages.stream() for better control over SSE text streams.
 
 import { Hono } from "hono";
 import { streamText, type ModelMessage } from "ai";
@@ -22,6 +19,10 @@ import { db } from "@back-to-the-future/db";
 import { userProviderKeys } from "@back-to-the-future/db";
 import { and, eq } from "drizzle-orm";
 import { validateSession } from "../auth/session";
+import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
 
 // ── Input Schema ─────────────────────────────────────────────────
 
@@ -46,17 +47,39 @@ function getEncryptionKey(): string {
   return process.env["SESSION_SECRET"] ?? "crontech-default-key-change-me";
 }
 
-function xorDecrypt(encoded: string, key: string): string {
-  const buf = Buffer.from(encoded, "base64");
-  const result: number[] = [];
-  for (let i = 0; i < buf.length; i++) {
-    // biome-ignore lint/style/noNonNullAssertion: index always valid
-    result.push(buf[i]! ^ key.charCodeAt(i % key.length));
-  }
-  return String.fromCharCode(...result);
+async function aesDecrypt(encryptedData: string, masterKey: string): Promise<string> {
+  const data = JSON.parse(Buffer.from(encryptedData, "base64").toString());
+  const { iv, salt, encrypted } = data;
+  
+  const key = await scryptAsync(masterKey, Buffer.from(salt, "hex"), 32) as Buffer;
+  const decipher = await import("crypto").then(c => c.createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "hex")));
+  
+  let decrypted = decipher.update(encrypted, "hex", "utf8");
+  decrypted += decipher.final("utf8");
+  
+  // Zero out the key buffer
+  key.fill(0);
+  
+  return decrypted;
 }
 
-async function getUserAnthropicKey(userId: string): Promise<string | null> {
+class SecureString {
+  private buffer: Buffer;
+  
+  constructor(value: string) {
+    this.buffer = Buffer.from(value, "utf8");
+  }
+  
+  toString(): string {
+    return this.buffer.toString("utf8");
+  }
+  
+  destroy(): void {
+    this.buffer.fill(0);
+  }
+}
+
+async function getUserAnthropicKey(userId: string): Promise<SecureString | null> {
   const rows = await db
     .select()
     .from(userProviderKeys)
@@ -72,7 +95,8 @@ async function getUserAnthropicKey(userId: string): Promise<string | null> {
   const row = rows[0];
   if (!row) return null;
 
-  return xorDecrypt(row.encryptedKey, getEncryptionKey());
+  const decryptedKey = await aesDecrypt(row.encryptedKey, getEncryptionKey());
+  return new SecureString(decryptedKey);
 }
 
 // ── Route ────────────────────────────────────────────────────────
@@ -106,10 +130,15 @@ chatStreamRoutes.post("/stream", async (c) => {
   const { messages, model, maxTokens, temperature, systemPrompt } = parsed.data;
 
   // Resolve API key: user's stored key > server env var
-  let apiKey = await getUserAnthropicKey(userId);
-  if (!apiKey) {
+  let secureApiKey = await getUserAnthropicKey(userId);
+  let apiKey: string | null = null;
+  
+  if (secureApiKey) {
+    apiKey = secureApiKey.toString();
+  } else {
     apiKey = process.env["ANTHROPIC_API_KEY"] ?? null;
   }
+  
   if (!apiKey) {
     return c.json(
       {
@@ -155,6 +184,11 @@ chatStreamRoutes.post("/stream", async (c) => {
       },
       500,
     );
+  } finally {
+    // Clean up secure string
+    if (secureApiKey) {
+      secureApiKey.destroy();
+    }
   }
 });
 
@@ -170,8 +204,11 @@ chatStreamRoutes.get("/status", async (c) => {
   if (token) {
     const userId = await validateSession(token, db);
     if (userId) {
-      const key = await getUserAnthropicKey(userId);
-      hasUserKey = key !== null;
+      const secureKey = await getUserAnthropicKey(userId);
+      hasUserKey = secureKey !== null;
+      if (secureKey) {
+        secureKey.destroy();
+      }
     }
   }
 
