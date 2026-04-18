@@ -311,7 +311,7 @@ export default function Home(): JSX.Element {
       <div>
         {/* ── Hero (dark) ──────────────────────────────────────── */}
         <section class="landing-hero">
-          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-28 pb-24 lg:px-8 lg:pt-44 lg:pb-36">
+          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-32 pb-28 lg:px-8 lg:pt-44 lg:pb-40">
             <div class="flex flex-col items-center text-center">
               {/* Announcement badge */}
               <div
@@ -385,7 +385,7 @@ export default function Home(): JSX.Element {
               </div>
 
               {/* Tech stack strip */}
-              <div class="mt-20 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+              <div class="mt-24 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
                 <For
                   each={[
                     "SolidJS",
@@ -462,7 +462,7 @@ export default function Home(): JSX.Element {
               </p>
             </div>
 
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <For each={features}>
                 {(feature) => (
                   <FeatureCard

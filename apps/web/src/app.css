@@ -218,9 +218,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 2rem;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-elevated);
+  background: color-mix(in oklab, var(--color-bg-elevated) 80%, transparent);
+  backdrop-filter: blur(12px) saturate(1.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
   position: sticky;
   top: 0;
   z-index: var(--z-dropdown);
@@ -461,25 +463,47 @@ body {
 .hero {
   min-height: calc(100vh - 60px);
   text-align: center;
-  padding: 2rem;
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+    var(--color-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
 }
 
 .heading {
-  font-size: 3.5rem;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  font-size: 4rem;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  max-width: 900px;
 }
 
 .tagline {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: 1.375rem;
+  font-weight: 400;
   color: var(--color-text-secondary);
+  max-width: 700px;
+  line-height: 1.5;
 }
 
 .description {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   color: var(--color-text-muted);
-  max-width: 600px;
+  max-width: 620px;
+  line-height: 1.7;
 }
 
 /* ── Auth Card ────────────────────────────────────────────────────── */
@@ -1789,6 +1813,15 @@ textarea:focus-visible {
 
 .landing-stats-section {
   background: linear-gradient(180deg, #101d30 0%, #0c1525 30%, #0a0e17 100%);
+  padding: 4rem 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+@media (min-width: 1024px) {
+  .landing-stats-section {
+    padding: 5rem 0;
+  }
 }
 
 .landing-hero-btn-primary {
@@ -1934,7 +1967,14 @@ textarea:focus-visible {
 }
 
 .hero-gradient {
-  background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #6366f1 100%);
+  background: linear-gradient(135deg, var(--color-text) 0%, #818cf8 40%, #6366f1 60%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html.dark .hero-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 35%, #818cf8 60%, #6366f1 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
