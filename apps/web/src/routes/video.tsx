@@ -250,6 +250,7 @@ export default function VideoPage(): JSX.Element {
                       max={duration() || 120}
                       value={currentTime()}
                       onInput={(e) => setCurrentTime(Number(e.currentTarget.value))}
+                      aria-label="Timeline scrubber"
                       class="timeline-scrubber"
                     />
                   </Stack>
@@ -400,6 +401,7 @@ export default function VideoPage(): JSX.Element {
                 <input
                   type="text"
                   placeholder={`Comment at ${formatTime(currentTime())}...`}
+                  aria-label="Add comment at current time"
                   value={newComment()}
                   onInput={(e) => setNewComment(e.currentTarget.value)}
                   onKeyDown={(e) => e.key === "Enter" && addComment()}
@@ -437,6 +439,7 @@ export default function VideoPage(): JSX.Element {
                 <input
                   type="text"
                   placeholder="Ask AI: add transition, generate subtitles, apply color grading..."
+                  aria-label="Ask AI video assistant"
                   value={chatInput()}
                   onInput={(e) => setChatInput(e.currentTarget.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}

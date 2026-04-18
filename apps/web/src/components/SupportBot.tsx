@@ -346,7 +346,16 @@ export function SupportBot(): ReturnType<typeof Show> {
                 "justify-content": "space-between",
                 cursor: "pointer",
               }}
+              role="button"
+              tabindex="0"
+              aria-label={minimized() ? "Expand help" : "Minimize help"}
               onClick={() => setMinimized(!minimized())}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setMinimized(!minimized());
+                }
+              }}
             >
               <div style={{ "font-weight": "600", "font-size": "14px" }}>
                 Help &mdash; {hints().title}
@@ -502,6 +511,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                     value={input()}
                     onInput={(e) => setInput(e.currentTarget.value)}
                     placeholder="Ask me anything..."
+                    aria-label="Ask the support bot"
                     style={{
                       flex: "1",
                       padding: "0.5rem 0.75rem",

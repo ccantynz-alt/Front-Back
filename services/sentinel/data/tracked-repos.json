@@ -10,7 +10,7 @@
       "defaultBranch": "canary",
       "lastKnownRelease": "v16.3.0-canary.1",
       "lastKnownReleaseAt": "2026-04-17T23:45:49Z",
-      "lastCommitCheckAt": "2026-04-18T17:23:11.471Z",
+      "lastCommitCheckAt": "2026-04-18T18:23:12.940Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -49,7 +49,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "eslint-plugin-qwik@2.0.0-beta.32",
       "lastKnownReleaseAt": "2026-04-13T21:55:28Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:40.123Z",
+      "lastCommitCheckAt": "2026-04-18T18:23:16.200Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -60,8 +60,8 @@
       "category": "framework",
       "description": "Content-focused web framework. Islands architecture for partial hydration.",
       "defaultBranch": "main",
-      "lastKnownRelease": "astro@6.1.7",
-      "lastKnownReleaseAt": "2026-04-15T18:07:56Z",
+      "lastKnownRelease": "astro@6.1.8",
+      "lastKnownReleaseAt": "2026-04-18T10:02:03Z",
       "lastCommitCheckAt": "2026-04-18T17:33:37.963Z",
       "baselineCommitsPerWeek": 47
     },
@@ -75,7 +75,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.14",
       "lastKnownReleaseAt": "2026-04-15T06:15:10Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:35.543Z",
+      "lastCommitCheckAt": "2026-04-18T18:23:13.128Z",
       "baselineCommitsPerWeek": 6
     },
     {
@@ -153,7 +153,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v1.5.0",
       "lastKnownReleaseAt": "2023-05-23T17:46:18Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:38.368Z",
+      "lastCommitCheckAt": "2026-04-18T18:23:14.101Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -205,7 +205,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "43.123.5",
       "lastKnownReleaseAt": "2026-04-15T23:58:58Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:41.692Z",
+      "lastCommitCheckAt": "2026-04-18T18:23:16.572Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -218,8 +218,8 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v4.37.3",
       "lastKnownReleaseAt": "2026-04-15T00:28:12Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:41.921Z",
-      "baselineCommitsPerWeek": 9
+      "lastCommitCheckAt": "2026-04-18T18:23:16.727Z",
+      "baselineCommitsPerWeek": 10
     },
     {
       "owner": "netlify",
@@ -244,7 +244,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "15.0.0",
       "lastKnownReleaseAt": "2026-04-02T01:26:35Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:42.088Z",
+      "lastCommitCheckAt": "2026-04-18T18:23:17.283Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -257,7 +257,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v4.4.7",
       "lastKnownReleaseAt": "2025-07-17T14:30:19Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:42.336Z",
+      "lastCommitCheckAt": "2026-04-18T18:23:17.955Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -270,8 +270,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v1.1304.0",
       "lastKnownReleaseAt": "2026-04-09T11:40:07Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:39.163Z",
-      "baselineCommitsPerWeek": 29
+      "lastCommitCheckAt": "2026-04-18T18:23:15.739Z",
+      "baselineCommitsPerWeek": 30
     },
     {
       "owner": "openai",
@@ -283,7 +283,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v20250625",
       "lastKnownReleaseAt": "2025-06-26T01:06:09Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:39.736Z",
+      "lastCommitCheckAt": "2026-04-18T18:23:15.967Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -300,6 +300,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-18T17:33:42.336Z",
+  "lastUpdated": "2026-04-18T18:23:17.956Z",
   "schemaVersion": 1
 }

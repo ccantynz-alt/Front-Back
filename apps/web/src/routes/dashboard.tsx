@@ -1,14 +1,22 @@
 import { Title } from "@solidjs/meta";
 import { A } from "@solidjs/router";
-import { For, Show, createMemo } from "solid-js";
+import { For, Show, Suspense, createMemo, lazy } from "solid-js";
 import type { JSX } from "solid-js";
 import { Badge } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
-import { OnboardingWizard } from "../components/OnboardingWizard";
 import { ProgressTracker } from "../components/ProgressTracker";
 import { useAuth } from "../stores";
 import { trpc } from "../lib/trpc";
 import { useQuery } from "../lib/use-trpc";
+
+// OnboardingWizard is a first-time-user overlay that renders nothing
+// once `btf_onboarding_complete` is set in localStorage — so for every
+// returning user it is dead weight in the dashboard chunk. Defer it.
+const OnboardingWizard = lazy(() =>
+  import("../components/OnboardingWizard").then((m) => ({
+    default: m.OnboardingWizard,
+  })),
+);
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -640,7 +648,9 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
 
   return (
     <ProtectedRoute>
-      <OnboardingWizard />
+      <Suspense>
+        <OnboardingWizard />
+      </Suspense>
       <Title>Dashboard — Crontech</Title>
 
       <div style={{ background: "var(--color-bg)" }}>

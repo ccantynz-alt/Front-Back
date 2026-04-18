@@ -1,9 +1,17 @@
 import type { JSX } from "solid-js";
-import { Show, For, createSignal, createEffect, onCleanup } from "solid-js";
+import { Show, For, Suspense, createSignal, createEffect, lazy, onCleanup } from "solid-js";
 import { A, useLocation } from "@solidjs/router";
 import { Button } from "@back-to-the-future/ui";
 import { useAuth, useTheme } from "../stores";
-import { NotificationCenter } from "./NotificationCenter";
+
+// NotificationCenter is only rendered once the user is authenticated,
+// so pushing it out of the initial bundle shrinks the anonymous-visitor
+// payload (CLAUDE.md §6.6 — initial JS < 50KB).
+const NotificationCenter = lazy(() =>
+  import("./NotificationCenter").then((m) => ({
+    default: m.NotificationCenter,
+  })),
+);
 
 // ── Sidebar nav items definition ─────────────────────────────────────
 
@@ -419,7 +427,9 @@ export function Layout(props: LayoutProps): JSX.Element {
           <div class="flex items-center gap-2">
             <ThemeToggle />
             <Show when={auth.isAuthenticated()}>
-              <NotificationCenter />
+              <Suspense>
+                <NotificationCenter />
+              </Suspense>
             </Show>
             <Show
               when={auth.isAuthenticated()}

@@ -260,6 +260,7 @@ export default function FlywheelPage(): JSX.Element {
                 value={query()}
                 onInput={(e) => setQuery(e.currentTarget.value)}
                 placeholder="Search every past session… (min 2 chars)"
+                aria-label="Search past sessions"
                 style={{
                   width: "100%",
                   padding: "0.6rem 0.8rem",

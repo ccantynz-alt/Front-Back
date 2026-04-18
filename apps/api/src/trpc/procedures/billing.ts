@@ -3,10 +3,15 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { db } from "@back-to-the-future/db";
 import { plans, subscriptions } from "@back-to-the-future/db/schema";
-import { router, publicProcedure, protectedProcedure } from "../init";
+import { router, publicProcedure, protectedProcedure, adminProcedure } from "../init";
 import { createCheckoutSession, createPortalSession } from "../../stripe/checkout";
 import { auditMiddleware } from "../../middleware/audit";
 import { sendEmail } from "../../email/client";
+import {
+  reportUsageForUser,
+  reportAllPendingUsage,
+} from "../../billing/usage-reporter";
+import { currentBillingMonth } from "../../billing/usage-meter";
 
 // ── Pre-launch guard ────────────────────────────────────────────────
 // Authorised by Craig on 16 Apr 2026. Stripe activation is ENV-DRIVEN.
@@ -168,5 +173,36 @@ export const billingRouter = router({
     .mutation(async ({ input }) => {
       assertBillingEnabled();
       return createPortalSession({ customerId: input.customerId });
+    }),
+
+  // ── Usage reporter (admin-only) ──────────────────────────────────
+  // Pushes aggregated usage_events → Stripe for a single user OR every
+  // active subscription. Intended for:
+  //   - nightly cron (reportAllPendingUsage)
+  //   - manual triage when Craig wants to flush a specific user's meter
+  //
+  // Both variants respect the STRIPE_ENABLED pre-launch guard upstream
+  // in usage-reporter.ts, so calling this in pre-launch is a clean
+  // no-op rather than a thrown error. Admin-only because it touches the
+  // revenue path and Stripe API quota.
+  reportUsage: adminProcedure
+    .input(
+      z
+        .object({
+          userId: z.string().optional(),
+          month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+        })
+        .default({}),
+    )
+    .use(auditMiddleware("billing.reportUsage"))
+    .mutation(async ({ input }) => {
+      assertBillingEnabled();
+      const month = input.month ?? currentBillingMonth();
+      if (input.userId) {
+        const outcome = await reportUsageForUser(input.userId, month);
+        return { mode: "single" as const, month, outcome };
+      }
+      const summary = await reportAllPendingUsage(month);
+      return { mode: "all" as const, month, summary };
     }),
 });

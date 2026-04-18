@@ -607,12 +607,13 @@ export default function ReposPage(): JSX.Element {
               value={search()}
               onInput={(e) => setSearch(e.currentTarget.value)}
               placeholder="Search repos..."
+              aria-label="Search repositories"
               class="flex-1 bg-transparent text-xs outline-none"
               style={{ color: "var(--color-text)" }}
             />
             <Show when={search()}>
-              <button type="button" onClick={() => setSearch("")} style={{ color: "var(--color-text-faint)" }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button type="button" onClick={() => setSearch("")} aria-label="Clear search" style={{ color: "var(--color-text-faint)" }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
               </button>

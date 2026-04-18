@@ -784,6 +784,43 @@ export const usageEvents = sqliteTable("usage_events", {
 });
 
 // =============================================================================
+// BLK-010 — Usage Reports (Stripe usage-record ledger).
+// Tracks what we've ALREADY pushed to Stripe for a given
+// (userId, billingMonth, eventType). The reporter reads the current
+// aggregate from usage_events, subtracts the quantity we last reported,
+// and pushes the DELTA to Stripe as an incremental usage record. This
+// makes the reporter idempotent and resumable — re-running the reporter
+// never double-bills the customer, and a crashed reporter can be safely
+// re-run on the next cron tick.
+//
+// Uniqueness is on (userId, billingMonth, eventType). Each row is
+// updated in-place every report cycle; we keep the last stripe record
+// id + timestamp for audit / debugging.
+// =============================================================================
+export const usageReports = sqliteTable("usage_reports", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  billingMonth: text("billing_month").notNull(), // YYYY-MM, UTC
+  eventType: text("event_type", {
+    enum: ["build", "request", "ai_tokens", "storage"],
+  }).notNull(),
+  /** Cumulative quantity we've pushed to Stripe this billing month. */
+  reportedQuantity: integer("reported_quantity").notNull().default(0),
+  /** Subscription-item id at Stripe the usage was pushed against. */
+  stripeSubscriptionItemId: text("stripe_subscription_item_id").notNull(),
+  /** Most recent Stripe usage record id (idempotency / debugging handle). */
+  lastStripeUsageRecordId: text("last_stripe_usage_record_id"),
+  lastReportedAt: integer("last_reported_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// =============================================================================
 // BLK-019 — Build Theatre (the Vercel-style "what is actually happening"
 // pane). Every long-running op in the platform (deploys, ingests, migrations,
 // CI gates, voice-dispatched AI agents) emits into these three tables so the
