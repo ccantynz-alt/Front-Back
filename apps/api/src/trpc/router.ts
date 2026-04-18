@@ -30,6 +30,7 @@ import { theatreRouter } from "./procedures/theatre";
 import { flywheelRouter } from "./procedures/flywheel";
 import { voiceRouter } from "./procedures/voice";
 import { launchRouter } from "./procedures/launch";
+import { usageRouter } from "./procedures/usage";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -72,6 +73,7 @@ export const appRouter = router({
   flywheel: flywheelRouter,
   voice: voiceRouter,
   launch: launchRouter,
+  usage: usageRouter,
 });
 
 export type AppRouter = typeof appRouter;

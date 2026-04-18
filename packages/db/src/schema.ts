@@ -756,6 +756,34 @@ export const flywheelVoiceCommands = sqliteTable("flywheel_voice_commands", {
 });
 
 // =============================================================================
+// BLK-010 — Usage Metering (Stripe metered billing).
+// Every billable event — build minute consumed, edge request served, AI
+// token generated, storage byte held — lands here first. A downstream
+// reporter (not this file) aggregates rows by (userId, billingMonth,
+// eventType) and pushes the totals to Stripe's usage record API. Keeping
+// Stripe out of the hot path means we never drop usage if Stripe is down.
+// =============================================================================
+export const usageEvents = sqliteTable("usage_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  projectId: text("project_id").references(() => projects.id, {
+    onDelete: "set null",
+  }),
+  eventType: text("event_type", {
+    enum: ["build", "request", "ai_tokens", "storage"],
+  }).notNull(),
+  quantity: integer("quantity").notNull(),
+  unit: text("unit").notNull(), // "minutes" | "requests" | "tokens" | "bytes"
+  metadata: text("metadata"), // arbitrary JSON
+  occurredAt: integer("occurred_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  billingMonth: text("billing_month").notNull(), // YYYY-MM, UTC
+});
+
+// =============================================================================
 // BLK-019 — Build Theatre (the Vercel-style "what is actually happening"
 // pane). Every long-running op in the platform (deploys, ingests, migrations,
 // CI gates, voice-dispatched AI agents) emits into these three tables so the
