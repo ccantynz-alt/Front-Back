@@ -36,6 +36,7 @@ import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
 import { runDispatcher } from "./webhooks/dispatcher";
 import { gluecronPushApp } from "./webhooks/gluecron-push";
+import { inboundSmsApp } from "./sms/inbound";
 import { githubWebhookApp } from "./github/webhook";
 import { deploymentLogsStreamApp } from "./deploy/logs-stream";
 import { db as defaultDb } from "@back-to-the-future/db";
@@ -387,6 +388,12 @@ app.post("/webhooks/inbound-email", async (c) => {
     return c.json({ received: true });
   }
 });
+
+// Mount inbound SMS webhook (raw Hono -- HMAC verification uses the raw
+// body, so the signature check MUST run before any middleware that
+// would consume or rewrite the request body).
+// POST /api/sms/inbound — see sms/inbound.ts.
+app.route("/", inboundSmsApp);
 
 // Mount Gluecron push-notification receiver (raw Hono -- bearer auth is
 // handled inside the route, not via the global middleware stack).

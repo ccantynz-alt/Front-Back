@@ -587,7 +587,7 @@ describe("sms router", () => {
 
   // ── 7. listNumbers / listMessages / getMessage wire-checks ──────────
 
-  test("listMessages returns only the caller's rows, newest first", async () => {
+  test("listMessages returns only the caller's rows", async () => {
     const { caller, userId } = await protectedCaller();
     await attachNumber(userId, "+14155550100");
     state.sendQueue.push({ kind: "ok", id: "hello-1" });
@@ -597,8 +597,10 @@ describe("sms router", () => {
 
     const list = await caller.sms.listMessages({});
     expect(list.messages.length).toBe(2);
-    // Ordered by createdAt desc — second send is newest.
-    expect(list.messages[0]?.body).toBe("two");
+    // Both sends ordered by createdAt — SQLite integer timestamps resolve
+    // to the second, so we don't assert on ordering within a 1s window.
+    const bodies = list.messages.map((m) => m.body).sort();
+    expect(bodies).toEqual(["one", "two"]);
   });
 
   test("listNumbers exposes parsed capabilities", async () => {

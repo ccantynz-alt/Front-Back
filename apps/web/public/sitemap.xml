@@ -31,6 +31,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>http://localhost:3000/esim</loc>
+    <lastmod>2026-04-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>http://localhost:3000/flywheel</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>monthly</changefreq>

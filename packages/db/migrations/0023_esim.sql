@@ -1,9 +1,10 @@
--- BLK-029 Airalo eSIM reseller — `esim_orders` + `esim_packages_cache`.
+-- BLK-029 eSIM reseller — `esim_orders` + `esim_packages_cache`.
 -- Persists every eSIM data plan Crontech has sold on a customer's behalf
--- via the Airalo Partner API. Wholesale cost + retail markup are captured
--- at sale time (microdollars) so revenue reporting never re-queries Airalo.
--- `esim_packages_cache` is an additive, lightweight read-through cache of
--- the Airalo package catalogue used by the public pricing pages.
+-- via the upstream eSIM provider. Wholesale cost + retail markup are
+-- captured at sale time (microdollars) so revenue reporting never
+-- re-queries the provider. `esim_packages_cache` is an additive,
+-- lightweight read-through cache of the provider catalogue used by the
+-- public pricing pages.
 -- Additive only: no existing table or column is touched or dropped.
 --
 -- See packages/db/src/schema.ts (esimOrders, esimPackagesCache) for the
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `esim_orders` (
   `id` text PRIMARY KEY NOT NULL,
   `user_id` text NOT NULL,
   `package_id` text NOT NULL,
-  `airalo_order_id` text NOT NULL,
+  `provider_order_id` text NOT NULL,
   `country_code` text,
   `data_gb` integer DEFAULT 0 NOT NULL,
   `validity_days` integer DEFAULT 0 NOT NULL,
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `esim_orders` (
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `esim_orders_user_idx` ON `esim_orders` (`user_id`);
 --> statement-breakpoint
-CREATE INDEX IF NOT EXISTS `esim_orders_airalo_idx` ON `esim_orders` (`airalo_order_id`);
+CREATE INDEX IF NOT EXISTS `esim_orders_provider_idx` ON `esim_orders` (`provider_order_id`);
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `esim_orders_status_idx` ON `esim_orders` (`status`);
 --> statement-breakpoint
@@ -40,7 +41,7 @@ CREATE INDEX IF NOT EXISTS `esim_orders_country_idx` ON `esim_orders` (`country_
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `esim_packages_cache` (
   `id` text PRIMARY KEY NOT NULL,
-  `airalo_package_id` text NOT NULL,
+  `provider_package_id` text NOT NULL,
   `country_code` text,
   `name` text NOT NULL,
   `data_gb` integer DEFAULT 0 NOT NULL,
@@ -49,6 +50,6 @@ CREATE TABLE IF NOT EXISTS `esim_packages_cache` (
   `last_synced_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `esim_packages_cache_airalo_id_unique` ON `esim_packages_cache` (`airalo_package_id`);
+CREATE UNIQUE INDEX IF NOT EXISTS `esim_packages_cache_provider_id_unique` ON `esim_packages_cache` (`provider_package_id`);
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `esim_packages_cache_country_idx` ON `esim_packages_cache` (`country_code`);

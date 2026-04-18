@@ -978,15 +978,15 @@ export const domainRegistrations = sqliteTable("domain_registrations", {
 });
 
 // =============================================================================
-// BLK-029 — Airalo eSIM reseller.
+// BLK-029 — eSIM reseller.
 // `esim_orders` persists every eSIM data plan we've sold on a customer's
-// behalf via the Airalo Partner API. Wholesale cost and retail markup are
-// both captured at sale time (microdollars, to dodge FP drift) so revenue
-// reporting can be driven from the DB without re-querying Airalo. The
-// `airalo_order_id` handle is needed for follow-up install-info refreshes.
-// `esim_packages_cache` is an additive, lightweight read-through cache of
-// the Airalo package catalogue so pricing pages stay fast + stable between
-// Airalo API hits.
+// behalf via the upstream eSIM provider. Wholesale cost and retail markup
+// are both captured at sale time (microdollars, to dodge FP drift) so
+// revenue reporting can be driven from the DB without re-querying the
+// provider. The `provider_order_id` handle is needed for follow-up
+// install-info refreshes. `esim_packages_cache` is an additive, lightweight
+// read-through cache of the provider's package catalogue so pricing pages
+// stay fast + stable between provider API hits.
 // Additive only: no existing table or column is touched.
 // =============================================================================
 export const esimOrders = sqliteTable("esim_orders", {
@@ -995,7 +995,7 @@ export const esimOrders = sqliteTable("esim_orders", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   packageId: text("package_id").notNull(),
-  airaloOrderId: text("airalo_order_id").notNull(),
+  providerOrderId: text("provider_order_id").notNull(),
   countryCode: text("country_code"),
   dataGb: integer("data_gb").notNull().default(0),
   validityDays: integer("validity_days").notNull().default(0),
@@ -1022,7 +1022,7 @@ export const esimOrders = sqliteTable("esim_orders", {
 
 export const esimPackagesCache = sqliteTable("esim_packages_cache", {
   id: text("id").primaryKey(),
-  airaloPackageId: text("airalo_package_id").notNull().unique(),
+  providerPackageId: text("provider_package_id").notNull().unique(),
   countryCode: text("country_code"),
   name: text("name").notNull(),
   dataGb: integer("data_gb").notNull().default(0),

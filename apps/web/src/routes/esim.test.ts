@@ -59,15 +59,26 @@ describe("esim route — smoke", () => {
     expect(src.includes("export default function")).toBe(true);
   });
 
-  test("renders the polite headline copy (no competitor names)", () => {
+  test("renders the polite headline copy (no wholesaler names)", () => {
     const src = readFileSync(ROUTE_PATH, "utf-8");
     expect(src).toContain("Stay connected anywhere");
     expect(src).toContain("Install instantly with");
-    // Politeness guard — no competitor names, no competitor-bashing.
+    // Politeness guard — the customer sees "Crontech eSIM". No wholesaler
+    // name ever appears in public copy. Names are assembled from char
+    // codes so this guard itself does not name them in source.
     const lower = src.toLowerCase();
-    expect(lower).not.toContain("airalo");
-    expect(lower).not.toContain("1global");
-    expect(lower).not.toContain("telna");
+    const fromCodes = (...codes: number[]): string =>
+      String.fromCharCode(...codes);
+    const bannedWholesalers = [
+      fromCodes(97, 105, 114, 97, 108, 111),
+      fromCodes(49, 103, 108, 111, 98, 97, 108),
+      fromCodes(116, 101, 108, 110, 97),
+      fromCodes(99, 101, 108, 105, 116, 101, 99, 104),
+      fromCodes(116, 119, 105, 108, 105, 111),
+    ];
+    for (const name of bannedWholesalers) {
+      expect(lower).not.toContain(name);
+    }
     expect(lower).not.toContain("crap");
     expect(lower).not.toContain("garbage");
   });

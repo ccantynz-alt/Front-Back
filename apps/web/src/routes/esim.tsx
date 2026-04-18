@@ -4,9 +4,8 @@
 // "Buy" button that deep-links into the checkout flow. Pricing shows
 // retail (markup already baked in by the API).
 //
-// Polite copy only — we never name other eSIM providers in public copy,
-// even though the problem we solve is that installing a physical SIM
-// in a new country is painful. Tone rules: helpful, reassuring, concise.
+// Polite copy only — the customer sees "Crontech eSIM". No wholesaler
+// name appears in public copy. Tone rules: helpful, reassuring, concise.
 
 import {
   createResource,

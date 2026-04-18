@@ -1,8 +1,8 @@
 // ── BLK-029 — eSIM reseller procedures ────────────────────────────────
-// tRPC surface for Crontech's eSIM reseller (Airalo Partner API). Customers
-// browse data plans by country/region/size, an admin places the purchase
-// (v1 — until Stripe wiring lands in a later block), the install bundle
-// (QR + LPA string) gets surfaced back for the customer to scan.
+// tRPC surface for Crontech's eSIM reseller. Customers browse data plans
+// by country/region/size, an admin places the purchase (v1 — until Stripe
+// wiring lands in a later block), the install bundle (QR + LPA string)
+// gets surfaced back for the customer to scan.
 //
 // Procedures exposed:
 //   • listPackages({ countryCode?, region?, dataGb? })    — public
@@ -13,7 +13,7 @@
 //
 // Non-scope (owned by other blocks):
 //   • Stripe checkout wiring — revenue-affecting is a separate block.
-//   • Live-hitting Airalo in tests — the test file injects a fake client.
+//   • Live-hitting the upstream in tests — the test file injects a fake.
 //   • SMS / domain / DNS work — orthogonal agents.
 
 import { z } from "zod";
@@ -28,23 +28,23 @@ import {
 } from "../init";
 import type { TRPCContext } from "../context";
 import {
-  AiraloClient,
-  AiraloError,
+  CelitechClient,
+  CelitechError,
   applyMarkup,
   configFromEnv,
   dollarsToMicrodollars,
   markupPercentFromEnv,
-  type AiraloClientDeps,
-  type AiraloConfig,
-} from "../../esim/airalo-client";
-import type { AiraloPackageSummary } from "../../esim/airalo-types";
+  type CelitechClientDeps,
+  type CelitechConfig,
+} from "../../esim/celitech-client";
+import type { EsimPackageSummary } from "../../esim/celitech-types";
 
 // ── Client factory (dependency-injected for tests) ────────────────────
 
 type ClientFactory = (
-  config?: AiraloConfig,
-  deps?: AiraloClientDeps,
-) => AiraloClient;
+  config?: CelitechConfig,
+  deps?: CelitechClientDeps,
+) => CelitechClient;
 
 interface RouterTestHooks {
   clientFactory: ClientFactory | undefined;
@@ -56,7 +56,7 @@ const testHooks: RouterTestHooks = {
   markupPercent: undefined,
 };
 
-/** Test-only: swap the Airalo client factory (e.g. to mock fetch). */
+/** Test-only: swap the eSIM provider client factory (e.g. to mock fetch). */
 export function __setEsimTestHooks(hooks: {
   clientFactory?: ClientFactory;
   markupPercent?: number;
@@ -71,9 +71,9 @@ export function __resetEsimTestHooks(): void {
   testHooks.markupPercent = undefined;
 }
 
-function makeClient(): AiraloClient {
+function makeClient(): CelitechClient {
   if (testHooks.clientFactory) return testHooks.clientFactory();
-  return new AiraloClient(configFromEnv());
+  return new CelitechClient(configFromEnv());
 }
 
 function currentMarkupPercent(): number {
@@ -86,8 +86,8 @@ function newOrderId(): string {
   return `esim_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function translateAiraloError(err: unknown, fallbackMessage: string): never {
-  if (err instanceof AiraloError) {
+function translateProviderError(err: unknown, fallbackMessage: string): never {
+  if (err instanceof CelitechError) {
     throw new TRPCError({
       code: "BAD_GATEWAY",
       message: err.message,
@@ -104,7 +104,7 @@ function translateAiraloError(err: unknown, fallbackMessage: string): never {
 
 /** True when `summary.countryCode` or any operator hint matches `code`. */
 function matchesCountry(
-  summary: AiraloPackageSummary,
+  summary: EsimPackageSummary,
   code: string | undefined,
 ): boolean {
   if (!code) return true;
@@ -114,7 +114,7 @@ function matchesCountry(
 
 /** True when `summary.type` equals the requested region classifier. */
 function matchesRegion(
-  summary: AiraloPackageSummary,
+  summary: EsimPackageSummary,
   region: string | undefined,
 ): boolean {
   if (!region) return true;
@@ -123,7 +123,7 @@ function matchesRegion(
 
 /** Approximate data-size match — customers asking "5 GB" want ≥ 5 GB. */
 function matchesDataGb(
-  summary: AiraloPackageSummary,
+  summary: EsimPackageSummary,
   dataGb: number | undefined,
 ): boolean {
   if (dataGb === undefined) return true;
@@ -148,7 +148,7 @@ export interface PackageView {
 }
 
 function toPackageView(
-  summary: AiraloPackageSummary,
+  summary: EsimPackageSummary,
   markupPercent: number,
 ): PackageView {
   const wholesaleMicrodollars = dollarsToMicrodollars(summary.priceUsd);
@@ -204,17 +204,18 @@ export const esimRouter = router({
   /**
    * Public: list buyable eSIM packages with markup applied. Filter by
    * two-letter country code, region (global | local), or minimum data
-   * volume. Airalo's list endpoint is already tree-shaped by operator;
-   * the client flattens it so we can filter per-package here.
+   * volume. The client flattens the upstream catalogue so we can filter
+   * per-package here.
    */
   listPackages: publicProcedure
     .input(ListPackagesInputSchema)
     .query(async ({ input }) => {
       const client = makeClient();
       const markupPercent = currentMarkupPercent();
-      const filter: { type?: "global" | "local"; country?: string } = {};
-      if (input.region) filter.type = input.region;
-      if (input.countryCode) filter.country = input.countryCode;
+      const filter: { countryCode?: string; region?: string; dataGb?: number } = {};
+      if (input.region) filter.region = input.region;
+      if (input.countryCode) filter.countryCode = input.countryCode;
+      if (input.dataGb !== undefined) filter.dataGb = input.dataGb;
       try {
         const summaries = await client.listPackages(filter);
         const filtered = summaries
@@ -227,7 +228,7 @@ export const esimRouter = router({
           .map((s) => toPackageView(s, markupPercent));
         return { packages: filtered };
       } catch (err) {
-        translateAiraloError(err, "Failed to list eSIM packages.");
+        translateProviderError(err, "Failed to list eSIM packages.");
       }
     }),
 
@@ -247,14 +248,14 @@ export const esimRouter = router({
         }
         return toPackageView(summary, markupPercent);
       } catch (err) {
-        translateAiraloError(err, "Failed to fetch the eSIM package.");
+        translateProviderError(err, "Failed to fetch the eSIM package.");
       }
     }),
 
   /**
-   * Admin-only: submit a purchase order to Airalo, persist the sale with
-   * wholesale + markup microdollars, and return the new row id. The
-   * customer then calls `getInstallInfo` to collect their QR + LPA.
+   * Admin-only: submit a purchase to the upstream provider, persist the
+   * sale with wholesale + markup microdollars, and return the new row id.
+   * The customer then calls `getInstallInfo` to collect their QR + LPA.
    */
   purchase: adminProcedure
     .input(PurchaseInputSchema)
@@ -263,11 +264,11 @@ export const esimRouter = router({
       const markupPercent = currentMarkupPercent();
 
       // 1. Look up the package so we persist the correct wholesale figure.
-      let summary: AiraloPackageSummary | null;
+      let summary: EsimPackageSummary | null;
       try {
         summary = await client.getPackage(input.packageId);
       } catch (err) {
-        translateAiraloError(err, "Failed to fetch the eSIM package before purchase.");
+        translateProviderError(err, "Failed to fetch the eSIM package before purchase.");
       }
       if (!summary) {
         throw new TRPCError({
@@ -282,26 +283,30 @@ export const esimRouter = router({
         markupPercent,
       );
 
-      // 2. Place the order at Airalo.
-      let airaloOrderId: string;
+      // 2. Place the purchase upstream.
+      let providerOrderId: string;
       let iccid: string | null = null;
       let lpaString: string | null = null;
       let qrCodeDataUrl: string | null = null;
       try {
-        const order = await client.submitOrder({
+        const purchase = await client.createPurchase({
           packageId: input.packageId,
           quantity: 1,
-          description: `Crontech sale to ${input.customerEmail}`,
         });
-        airaloOrderId = String(order.id);
-        const first = order.esims?.[0];
-        if (first) {
-          iccid = first.iccid ?? null;
-          lpaString = first.lpa_code ?? first.lpa ?? null;
-          qrCodeDataUrl = first.qrcode ?? first.qrcode_url ?? null;
+        providerOrderId = String(purchase.id);
+        const esim = purchase.esim;
+        if (esim) {
+          iccid = esim.iccid ?? null;
+          lpaString = esim.lpaString ?? esim.lpa ?? esim.activationCode ?? null;
+          qrCodeDataUrl = esim.qrCode ?? esim.qrCodeUrl ?? null;
+        } else {
+          iccid = purchase.iccid ?? null;
+          lpaString =
+            purchase.lpaString ?? purchase.lpa ?? purchase.activationCode ?? null;
+          qrCodeDataUrl = purchase.qrCode ?? purchase.qrCodeUrl ?? null;
         }
       } catch (err) {
-        translateAiraloError(err, "Airalo rejected the eSIM purchase.");
+        translateProviderError(err, "The eSIM provider rejected the purchase.");
       }
 
       // 3. Persist the sale.
@@ -310,7 +315,7 @@ export const esimRouter = router({
         id: newOrderId(),
         userId: input.userId ?? ctx.userId,
         packageId: input.packageId,
-        airaloOrderId,
+        providerOrderId,
         countryCode: summary.countryCode,
         dataGb: summary.dataGb,
         validityDays: summary.validityDays,
@@ -326,7 +331,7 @@ export const esimRouter = router({
 
       return {
         id: row.id,
-        airaloOrderId,
+        providerOrderId,
         packageId: input.packageId,
         customerEmail: input.customerEmail,
         wholesaleMicrodollars,
@@ -341,7 +346,7 @@ export const esimRouter = router({
 
   /**
    * Authenticated: list every eSIM order belonging to the caller, newest
-   * first. We never leak Airalo order IDs belonging to other users.
+   * first. We never leak upstream order IDs belonging to other users.
    */
   listMyEsims: protectedProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db
@@ -352,7 +357,7 @@ export const esimRouter = router({
     return rows.map((r) => ({
       id: r.id,
       packageId: r.packageId,
-      airaloOrderId: r.airaloOrderId,
+      providerOrderId: r.providerOrderId,
       countryCode: r.countryCode,
       dataGb: r.dataGb,
       validityDays: r.validityDays,
@@ -367,7 +372,7 @@ export const esimRouter = router({
   /**
    * Authenticated: fetch the install bundle (QR code + LPA string) for a
    * given order row. If the row is stale / missing the bundle, we refresh
-   * from Airalo and persist. Only the order's owner can read it.
+   * from the provider and persist. Only the order's owner can read it.
    */
   getInstallInfo: protectedProcedure
     .input(InstallInfoInputSchema)
@@ -402,11 +407,12 @@ export const esimRouter = router({
 
       const client = makeClient();
       try {
-        const info = await client.getInstallInfo(row.airaloOrderId);
+        const info = await client.getInstallInfo(row.providerOrderId);
         if (!info) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Airalo has not provisioned this eSIM yet. Try again shortly.",
+            message:
+              "The eSIM is still being provisioned. Please try again shortly.",
           });
         }
         await ctx.db
@@ -425,7 +431,7 @@ export const esimRouter = router({
           qrCodeDataUrl: info.qrCodeDataUrl,
         };
       } catch (err) {
-        translateAiraloError(err, "Failed to fetch the eSIM install info.");
+        translateProviderError(err, "Failed to fetch the eSIM install info.");
       }
     }),
 });

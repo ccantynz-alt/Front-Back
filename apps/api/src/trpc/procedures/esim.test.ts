@@ -1,16 +1,18 @@
 // ── BLK-029 — eSIM router tests ───────────────────────────────────────
 // Exercises the tRPC `esim` router against the test sqlite DB with a
-// mocked Airalo client so we never hit the real partner API. Per the
+// mocked provider client so we never hit the real upstream API. Per the
 // BLK-029 brief the coverage contract is:
 //
 //   1. listPackages — filters by country + region + dataGb and applies
 //      the configured markup percentage to every returned row.
 //   2. purchase — admin-gated, fetches wholesale, applies markup,
-//      calls /orders, and writes a row with correct cost/markup.
+//      calls the provider, and writes a row with correct cost/markup.
 //   3. Markup math — retail = wholesale * (1 + markup%) within µ$ prec.
-//   4. Airalo API failure — submitOrder failure bubbles up as
+//   4. Provider API failure — purchase failure bubbles up as
 //      BAD_GATEWAY and no row is written.
 //   5. Admin-only purchase — viewers get FORBIDDEN.
+//   6. listMyEsims — returns only the caller's own rows.
+//   7. getInstallInfo — returns the stored QR + LPA for the caller.
 //
 // We mock at the client-method level (not raw fetch) so router logic is
 // what's under test. The HTTP + Zod decoding for the client itself lives
@@ -32,12 +34,12 @@ import {
   __setEsimTestHooks,
   __resetEsimTestHooks,
 } from "./esim";
-import type { AiraloClient } from "../../esim/airalo-client";
+import type { CelitechClient } from "../../esim/celitech-client";
 import type {
-  AiraloInstallInfo,
-  AiraloOrder,
-  AiraloPackageSummary,
-} from "../../esim/airalo-types";
+  CelitechPurchase,
+  EsimInstallInfo,
+  EsimPackageSummary,
+} from "../../esim/celitech-types";
 
 // ── Test harness ──────────────────────────────────────────────────────
 
@@ -68,87 +70,94 @@ async function cleanupUser(userId: string): Promise<void> {
   await db.delete(users).where(eq(users.id, userId));
 }
 
-// ── Fake Airalo client ────────────────────────────────────────────────
+// ── Fake provider client ──────────────────────────────────────────────
 
 interface FakeClientState {
-  packages: AiraloPackageSummary[];
-  submitOrderResult:
-    | { kind: "ok"; value: AiraloOrder }
+  packages: EsimPackageSummary[];
+  purchaseResult:
+    | { kind: "ok"; value: CelitechPurchase }
     | { kind: "err"; error: Error }
     | null;
-  installInfo: AiraloInstallInfo | null;
-  submitOrderCalls: Array<{
+  installInfo: EsimInstallInfo | null;
+  purchaseCalls: Array<{
     packageId: string;
     quantity?: number;
-    description?: string;
+    networkBrand?: string;
   }>;
-  listPackagesCalls: Array<{ type?: string; country?: string }>;
+  listPackagesCalls: Array<{
+    countryCode?: string;
+    region?: string;
+    dataGb?: number;
+  }>;
 }
 
 function emptyState(): FakeClientState {
   return {
     packages: [],
-    submitOrderResult: null,
+    purchaseResult: null,
     installInfo: null,
-    submitOrderCalls: [],
+    purchaseCalls: [],
     listPackagesCalls: [],
   };
 }
 
-function makeFakeClient(state: FakeClientState): AiraloClient {
+function makeFakeClient(state: FakeClientState): CelitechClient {
   const impl = {
     async getAccessToken(): Promise<string> {
       return "fake-token";
     },
-    async listPackages(filter: {
-      type?: "global" | "local";
-      country?: string;
-    } = {}): Promise<AiraloPackageSummary[]> {
-      const call: { type?: string; country?: string } = {};
-      if (filter.type !== undefined) call.type = filter.type;
-      if (filter.country !== undefined) call.country = filter.country;
+    async listPackages(
+      filter: { countryCode?: string; region?: string; dataGb?: number } = {},
+    ): Promise<EsimPackageSummary[]> {
+      const call: { countryCode?: string; region?: string; dataGb?: number } = {};
+      if (filter.countryCode !== undefined) call.countryCode = filter.countryCode;
+      if (filter.region !== undefined) call.region = filter.region;
+      if (filter.dataGb !== undefined) call.dataGb = filter.dataGb;
       state.listPackagesCalls.push(call);
       return state.packages.filter((p) => {
-        if (filter.country && p.countryCode) {
-          if (p.countryCode.toLowerCase() !== filter.country.toLowerCase()) {
+        if (filter.countryCode && p.countryCode) {
+          if (p.countryCode.toLowerCase() !== filter.countryCode.toLowerCase()) {
             return false;
           }
         }
-        if (filter.type && p.type.toLowerCase() !== filter.type.toLowerCase()) {
+        if (filter.region && p.type.toLowerCase() !== filter.region.toLowerCase()) {
           return false;
         }
         return true;
       });
     },
-    async getPackage(id: string): Promise<AiraloPackageSummary | null> {
+    async getPackage(id: string): Promise<EsimPackageSummary | null> {
       return state.packages.find((p) => p.id === id) ?? null;
     },
-    async submitOrder(input: {
+    async createPurchase(input: {
       packageId: string;
       quantity?: number;
-      description?: string;
-    }): Promise<AiraloOrder> {
+      networkBrand?: string;
+    }): Promise<CelitechPurchase> {
       const call: {
         packageId: string;
         quantity?: number;
-        description?: string;
+        networkBrand?: string;
       } = { packageId: input.packageId };
       if (input.quantity !== undefined) call.quantity = input.quantity;
-      if (input.description !== undefined) call.description = input.description;
-      state.submitOrderCalls.push(call);
-      const r = state.submitOrderResult;
-      if (!r) return { id: "stub-order" };
+      if (input.networkBrand !== undefined) call.networkBrand = input.networkBrand;
+      state.purchaseCalls.push(call);
+      const r = state.purchaseResult;
+      if (!r) return { id: "stub-purchase" };
       if (r.kind === "err") throw r.error;
       return r.value;
     },
-    async listOrders(): Promise<AiraloOrder[]> {
+    async listPurchases(): Promise<CelitechPurchase[]> {
       return [];
     },
-    async getInstallInfo(): Promise<AiraloInstallInfo | null> {
+    async getPurchase(): Promise<CelitechPurchase | null> {
+      return null;
+    },
+    async getInstallInfo(): Promise<EsimInstallInfo | null> {
       return state.installInfo;
     },
   };
-  return impl as unknown as AiraloClient;
+  return impl as unknown as CelitechClient;
 }
 
 // ── Suite ─────────────────────────────────────────────────────────────
@@ -194,7 +203,7 @@ describe("esim router", () => {
       {
         id: "pkg-us-1",
         title: "USA 1GB / 7 days",
-        operatorTitle: "Change",
+        operatorTitle: "Crontech eSIM",
         countryCode: "US",
         dataGb: 1,
         validityDays: 7,
@@ -205,7 +214,7 @@ describe("esim router", () => {
       {
         id: "pkg-global-10",
         title: "Global 10GB / 30 days",
-        operatorTitle: "Discover Global",
+        operatorTitle: "Crontech eSIM",
         countryCode: null,
         dataGb: 10,
         validityDays: 30,
@@ -234,7 +243,7 @@ describe("esim router", () => {
       {
         id: "pkg-us-1",
         title: "US 1GB",
-        operatorTitle: "Change",
+        operatorTitle: "Crontech eSIM",
         countryCode: "US",
         dataGb: 1,
         validityDays: 7,
@@ -245,7 +254,7 @@ describe("esim router", () => {
       {
         id: "pkg-us-10",
         title: "US 10GB",
-        operatorTitle: "Change",
+        operatorTitle: "Crontech eSIM",
         countryCode: "US",
         dataGb: 10,
         validityDays: 30,
@@ -256,7 +265,7 @@ describe("esim router", () => {
       {
         id: "pkg-global-10",
         title: "Global 10GB",
-        operatorTitle: "Discover Global",
+        operatorTitle: "Crontech eSIM",
         countryCode: null,
         dataGb: 10,
         validityDays: 30,
@@ -275,10 +284,10 @@ describe("esim router", () => {
     expect(us5plus.packages).toHaveLength(1);
     expect(us5plus.packages[0]?.id).toBe("pkg-us-10");
 
-    // Confirm we forwarded the right filter to Airalo for caching efficiency.
+    // Confirm we forwarded the right filter upstream for caching efficiency.
     const lastCall = state.listPackagesCalls.at(-1);
-    expect(lastCall?.country).toBe("US");
-    expect(lastCall?.type).toBe("local");
+    expect(lastCall?.countryCode).toBe("US");
+    expect(lastCall?.region).toBe("local");
   });
 
   // ── 2. Markup math (explicit case) ──────────────────────────────────
@@ -288,7 +297,7 @@ describe("esim router", () => {
       {
         id: "pkg-1",
         title: "Test",
-        operatorTitle: "Op",
+        operatorTitle: "Crontech eSIM",
         countryCode: "JP",
         dataGb: 3,
         validityDays: 15,
@@ -311,12 +320,12 @@ describe("esim router", () => {
 
   // ── 3. purchase — admin happy path ──────────────────────────────────
 
-  test("purchase fetches the wholesale price, calls Airalo, and writes a row", async () => {
+  test("purchase fetches the wholesale price, calls the provider, and writes a row", async () => {
     state.packages = [
       {
         id: "pkg-us-10",
         title: "US 10GB",
-        operatorTitle: "Change",
+        operatorTitle: "Crontech eSIM",
         countryCode: "US",
         dataGb: 10,
         validityDays: 30,
@@ -325,17 +334,15 @@ describe("esim router", () => {
         type: "local",
       },
     ];
-    state.submitOrderResult = {
+    state.purchaseResult = {
       kind: "ok",
       value: {
-        id: "airalo-order-123",
-        esims: [
-          {
-            iccid: "8900000000000000001",
-            qrcode: "LPA:1$smdp.airalo.com$ABCDEF",
-            lpa_code: "LPA:1$smdp.airalo.com$ABCDEF",
-          },
-        ],
+        id: "provider-order-123",
+        esim: {
+          iccid: "8900000000000000001",
+          qrCode: "LPA:1$smdp.example$ABCDEF",
+          lpaString: "LPA:1$smdp.example$ABCDEF",
+        },
       },
     };
 
@@ -345,17 +352,17 @@ describe("esim router", () => {
       customerEmail: "buyer@example.com",
     });
 
-    expect(out.airaloOrderId).toBe("airalo-order-123");
+    expect(out.providerOrderId).toBe("provider-order-123");
     expect(out.wholesaleMicrodollars).toBe(20_000_000);
     expect(out.markupMicrodollars).toBe(5_000_000);
     expect(out.retailMicrodollars).toBe(25_000_000);
     expect(out.iccid).toBe("8900000000000000001");
-    expect(out.lpaString).toBe("LPA:1$smdp.airalo.com$ABCDEF");
+    expect(out.lpaString).toBe("LPA:1$smdp.example$ABCDEF");
 
     const rows = await db
       .select()
       .from(esimOrders)
-      .where(eq(esimOrders.airaloOrderId, "airalo-order-123"));
+      .where(eq(esimOrders.providerOrderId, "provider-order-123"));
     expect(rows).toHaveLength(1);
     const row = rows[0];
     expect(row?.packageId).toBe("pkg-us-10");
@@ -365,19 +372,19 @@ describe("esim router", () => {
     expect(row?.costMicrodollars).toBe(20_000_000);
     expect(row?.markupMicrodollars).toBe(5_000_000);
     expect(row?.status).toBe("active");
-    expect(state.submitOrderCalls).toHaveLength(1);
-    expect(state.submitOrderCalls[0]?.packageId).toBe("pkg-us-10");
-    expect(state.submitOrderCalls[0]?.quantity).toBe(1);
+    expect(state.purchaseCalls).toHaveLength(1);
+    expect(state.purchaseCalls[0]?.packageId).toBe("pkg-us-10");
+    expect(state.purchaseCalls[0]?.quantity).toBe(1);
   });
 
-  // ── 4. Airalo API failure ───────────────────────────────────────────
+  // ── 4. Provider API failure ─────────────────────────────────────────
 
-  test("purchase surfaces an Airalo failure as BAD_GATEWAY and writes no row", async () => {
+  test("purchase surfaces a provider failure as BAD_GATEWAY and writes no row", async () => {
     state.packages = [
       {
         id: "pkg-fail",
         title: "Fail",
-        operatorTitle: "Op",
+        operatorTitle: "Crontech eSIM",
         countryCode: "US",
         dataGb: 1,
         validityDays: 7,
@@ -386,12 +393,12 @@ describe("esim router", () => {
         type: "local",
       },
     ];
-    const { AiraloError } = await import("../../esim/airalo-client");
-    state.submitOrderResult = {
+    const { CelitechError } = await import("../../esim/celitech-client");
+    state.purchaseResult = {
       kind: "err",
-      error: new AiraloError(
+      error: new CelitechError(
         "Insufficient partner balance.",
-        "submitOrder",
+        "createPurchase",
         402,
       ),
     };
@@ -424,7 +431,7 @@ describe("esim router", () => {
       {
         id: "pkg-forbidden",
         title: "Forbidden",
-        operatorTitle: "Op",
+        operatorTitle: "Crontech eSIM",
         countryCode: "US",
         dataGb: 1,
         validityDays: 7,
@@ -459,7 +466,7 @@ describe("esim router", () => {
       {
         id: "pkg-mine",
         title: "Mine",
-        operatorTitle: "Op",
+        operatorTitle: "Crontech eSIM",
         countryCode: "JP",
         dataGb: 5,
         validityDays: 15,
@@ -468,11 +475,15 @@ describe("esim router", () => {
         type: "local",
       },
     ];
-    state.submitOrderResult = {
+    state.purchaseResult = {
       kind: "ok",
       value: {
         id: "mine-1",
-        esims: [{ iccid: "89001", qrcode: "LPA:1$smdp$MINE", lpa_code: "LPA:1$smdp$MINE" }],
+        esim: {
+          iccid: "89001",
+          qrCode: "LPA:1$smdp$MINE",
+          lpaString: "LPA:1$smdp$MINE",
+        },
       },
     };
     const caller = await adminCaller();
@@ -484,7 +495,7 @@ describe("esim router", () => {
     const list = await caller.esim.listMyEsims();
     expect(list).toHaveLength(1);
     expect(list[0]?.packageId).toBe("pkg-mine");
-    expect(list[0]?.airaloOrderId).toBe("mine-1");
+    expect(list[0]?.providerOrderId).toBe("mine-1");
     expect(list[0]?.status).toBe("active");
   });
 
@@ -495,7 +506,7 @@ describe("esim router", () => {
       {
         id: "pkg-install",
         title: "Install",
-        operatorTitle: "Op",
+        operatorTitle: "Crontech eSIM",
         countryCode: "JP",
         dataGb: 5,
         validityDays: 15,
@@ -504,17 +515,15 @@ describe("esim router", () => {
         type: "local",
       },
     ];
-    state.submitOrderResult = {
+    state.purchaseResult = {
       kind: "ok",
       value: {
         id: "install-1",
-        esims: [
-          {
-            iccid: "89001",
-            qrcode: "LPA:1$smdp$INSTALL",
-            lpa_code: "LPA:1$smdp$INSTALL",
-          },
-        ],
+        esim: {
+          iccid: "89001",
+          qrCode: "LPA:1$smdp$INSTALL",
+          lpaString: "LPA:1$smdp$INSTALL",
+        },
       },
     };
     const caller = await adminCaller();
