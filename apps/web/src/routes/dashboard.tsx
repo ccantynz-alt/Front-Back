@@ -310,11 +310,11 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
   );
 
   const getStartedItems: ActivityItemProps[] = [
-    { icon: "\u{2795}", title: "Create your first project", description: "Set up a new site, app, or API project", time: "Step 1", href: "/builder" },
-    { icon: "\u{2728}", title: "Try the Composer", description: "Generate a component tree from a prompt", time: "Step 2", href: "/builder" },
-    { icon: "\u{26A1}", title: "Open Claude Chat", description: "Direct API access \u2014 your key, your data, your control", time: "Step 3", href: "/chat" },
-    { icon: "\u{1F511}", title: "Configure API keys", description: "Add your OpenAI, Anthropic, or other provider keys", time: "Step 4", href: "/settings" },
-    { icon: "\u{1F4CB}", title: "Browse templates", description: "Start from a battle-tested blueprint and customize", time: "Step 5", href: "/templates" },
+    { icon: "\u{1F4C1}", title: "Create your first project", description: "Set up a project with a name, framework, and deploy target.", time: "Step 1", href: "/projects/new" },
+    { icon: "\u{1F5C4}", title: "Configure your database", description: "Connect Turso or Neon. Your data layer is ready in seconds.", time: "Step 2", href: "/database" },
+    { icon: "\u{1F511}", title: "Set up authentication", description: "Passkeys, OAuth, or email+password. Auth is built in.", time: "Step 3", href: "/docs" },
+    { icon: "\u{1F680}", title: "Deploy to the edge", description: "Push to deploy. Sub-5ms cold starts across 330+ cities.", time: "Step 4", href: "/deployments" },
+    { icon: "\u{1F4CA}", title: "Monitor your app", description: "Real-time health, usage analytics, and AI inference metrics.", time: "Step 5", href: "/status" },
   ];
 
   const quickActions: QuickActionProps[] = [

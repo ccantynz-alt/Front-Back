@@ -24,6 +24,7 @@ import {
 } from "../../auth/password";
 import { buildGoogleAuthUrl } from "../../auth/google-oauth";
 import { auditMiddleware } from "../../middleware/audit";
+import { autoProvisionUser } from "../../automation/auto-provision";
 
 // In-memory challenge store with TTL cleanup.
 // In production, replace with Redis or a DB-backed store.
@@ -239,6 +240,24 @@ export const authRouter = router({
         // Create session
         const token = await createSession(userId, ctx.db);
 
+        // Fire-and-forget auto-provisioning (non-blocking)
+        const userRow = await ctx.db
+          .select({ email: users.email, displayName: users.displayName })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+        const provisionUser = userRow[0];
+        if (provisionUser) {
+          autoProvisionUser({
+            userId,
+            email: provisionUser.email,
+            displayName: provisionUser.displayName,
+          }).catch(() => {
+            // Provisioning failures are logged internally and queued for retry.
+            // Never block the registration response.
+          });
+        }
+
         return {
           verified: true,
           token,
@@ -428,6 +447,17 @@ export const authRouter = router({
       requireCsrfToken(ctx.csrfToken);
 
       const result = await registerWithPassword(input, ctx.db);
+
+      // Fire-and-forget auto-provisioning (non-blocking)
+      autoProvisionUser({
+        userId: result.userId,
+        email: input.email,
+        displayName: input.displayName,
+      }).catch(() => {
+        // Provisioning failures are logged internally and queued for retry.
+        // Never block the registration response.
+      });
+
       return {
         userId: result.userId,
         token: result.token,
