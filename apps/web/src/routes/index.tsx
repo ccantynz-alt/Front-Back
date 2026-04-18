@@ -311,7 +311,7 @@ export default function Home(): JSX.Element {
       <div>
         {/* ── Hero (dark) ──────────────────────────────────────── */}
         <section class="landing-hero">
-          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-32 pb-28 lg:px-8 lg:pt-44 lg:pb-40">
+          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-36 pb-36 lg:px-8 lg:pt-48 lg:pb-48">
             <div class="flex flex-col items-center text-center">
               {/* Announcement badge */}
               <div
@@ -360,7 +360,7 @@ export default function Home(): JSX.Element {
               </p>
 
               {/* CTAs */}
-              <div class="mt-12 flex flex-col items-center gap-4 sm:flex-row">
+              <div class="mt-14 flex flex-col items-center gap-5 sm:flex-row">
                 <A href="/register">
                   <button class="landing-hero-btn-primary" type="button">
                     Start building &#8594;
@@ -385,7 +385,7 @@ export default function Home(): JSX.Element {
               </div>
 
               {/* Tech stack strip */}
-              <div class="mt-24 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+              <div class="mt-28 flex flex-wrap items-center justify-center gap-x-12 gap-y-5">
                 <For
                   each={[
                     "SolidJS",
@@ -437,9 +437,9 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Platform layers ───────────────────────────────────── */}
-        <section class="landing-dark-section py-28 lg:py-36">
+        <section class="landing-dark-section py-32 lg:py-44">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
-            <div class="mb-16 flex flex-col items-center text-center">
+            <div class="mb-20 flex flex-col items-center text-center">
               <div class="landing-section-label">
                 <div
                   class="h-1.5 w-1.5 rounded-full"
@@ -462,7 +462,7 @@ export default function Home(): JSX.Element {
               </p>
             </div>
 
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
               <For each={features}>
                 {(feature) => (
                   <FeatureCard
@@ -479,9 +479,9 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── How it works ──────────────────────────────────────── */}
-        <section class="landing-dark-section-alt py-28 lg:py-36">
+        <section class="landing-dark-section-alt py-32 lg:py-44">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
-            <div class="mb-16 flex flex-col items-center text-center">
+            <div class="mb-20 flex flex-col items-center text-center">
               <div class="landing-section-label">
                 <div
                   class="h-1.5 w-1.5 rounded-full"
@@ -521,7 +521,7 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Tech pillars ──────────────────────────────────────── */}
-        <section class="landing-dark-section py-28 lg:py-36">
+        <section class="landing-dark-section py-32 lg:py-44">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
               <For each={techPillars}>
@@ -539,7 +539,7 @@ export default function Home(): JSX.Element {
 
         {/* ── Bottom CTA (dark) ─────────────────────────────────── */}
         <section class="landing-cta-section">
-          <div class="relative z-10 mx-auto max-w-[800px] px-6 py-28 text-center lg:px-8 lg:py-36">
+          <div class="relative z-10 mx-auto max-w-[800px] px-6 py-36 text-center lg:px-8 lg:py-48">
             <h2
               class="text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem] lg:text-[2.75rem]"
               style={{ color: "#fff" }}
