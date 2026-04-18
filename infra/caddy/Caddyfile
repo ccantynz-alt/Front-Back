@@ -131,12 +131,51 @@ api.crontech.ai {
 	}
 }
 
-# ── *.crontech.app -> Deployer (customer project subdomains) ─────────
-# Placeholder for BLK-009. The deployer service does not exist yet.
-# When it ships, uncomment this block and wire it to the deployer
-# container on port 8080.
+# ── gluecron.crontech.ai -> Gluecron (self-hosted git + CI) ──────────
+# Gluecron runs on the host network at port 3000. The ecosystem
+# cornerstone: once live, it hosts source for Crontech / AlecRae /
+# itself, replacing GitHub. See Gluecron.com/DEPLOY.md.
 
-# *.crontech.app {
+gluecron.crontech.ai {
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		-Server
+	}
+
+	reverse_proxy host.docker.internal:3000 {
+		health_uri /
+		health_interval 30s
+		health_timeout 5s
+
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	log {
+		output file /var/log/caddy/gluecron.log {
+			roll_size 50mb
+			roll_keep 5
+			roll_keep_for 168h
+		}
+		format json
+		level INFO
+	}
+}
+
+# ── *.crontech.ai -> Customer project deployer (BLK-009) ─────────────
+# Wildcard block. Any subdomain NOT matched by a specific block above
+# (gluecron, www, api) falls through here and routes to the deployer
+# service based on the project slug. Enabled when the deployer
+# container is running on port 8080.
+
+# *.crontech.ai {
 # 	encode gzip zstd
 #
 # 	header {
