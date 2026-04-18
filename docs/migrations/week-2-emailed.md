@@ -8,7 +8,7 @@
 
 - [ ] Week 1 (MarcoReid) complete and stable for ≥72h
 - [ ] Stripe live mode working end-to-end on Crontech (test purchase → webhook → DB update)
-- [ ] Turso primary + embedded replica wired to the Hetzner box
+- [ ] Turso primary + embedded replica wired to the Vultr box
 - [ ] Auth module (`packages/auth`) feature-complete for email/password + passkeys
 - [ ] Backup plan documented (current emailed users should NOT lose data)
 

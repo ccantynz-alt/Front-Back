@@ -149,7 +149,7 @@ export const LAUNCH_PHASES: readonly ChecklistPhase[] = [
   {
     id: "C",
     title: "Phase C",
-    subtitle: "DNS cutover off Hetzner",
+    subtitle: "DNS cutover off Vultr",
     items: [
       { id: "C1", label: "crontech.ai → Pages custom domain" },
       { id: "C2", label: "www.crontech.ai → Pages custom domain" },
@@ -181,11 +181,11 @@ export const LAUNCH_PHASES: readonly ChecklistPhase[] = [
   {
     id: "E",
     title: "Phase E",
-    subtitle: "Retire Hetzner",
+    subtitle: "Retire Vultr",
     items: [
       { id: "E1", label: "24h warm standby on old box" },
-      { id: "E2", label: "Power down Hetzner server" },
-      { id: "E3", label: "Cancel Hetzner subscription" },
+      { id: "E2", label: "Power down Vultr server" },
+      { id: "E3", label: "Cancel Vultr subscription" },
     ],
   },
 ];

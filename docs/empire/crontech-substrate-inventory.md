@@ -116,7 +116,7 @@ Tonight's session fixed 2 of the 7 ship blockers. The remaining 5 are ranked bel
 
 | # | Issue | Fix | Effort |
 |---|---|---|---|
-| M1 | No Hetzner bare-metal deploy (doctrine claims it) | Build self-host deploy pipeline when ready. Not urgent — Cloudflare is fine for now. | L |
+| M1 | No self-hosted bare-metal deploy (doctrine claims it) | Build self-host deploy pipeline when ready. Not urgent — Cloudflare is fine for now. | L |
 | M2 | No Yjs/CRDT despite collaboration router | Wire `@yjs/provider` when real-time collab is needed. Stub is fine until then. | L |
 | M3 | No WebGPU video pipeline (doctrine claims it) | Defer until video is actually needed. The doctrine is aspirational here. | XL |
 | M4 | Sentinel: collectors exist, analysis not wired | Wire LangGraph agents to analyze Sentinel data. Lower priority than revenue features. | M |
@@ -148,7 +148,7 @@ When CI pipeline matures: add `.github/workflows/gatetest.yml` as required check
 
 ## Open Questions (TBD — Craig to confirm)
 
-1. **Hetzner timeline: when does Cloudflare → self-host happen?** The doctrine says Phase 0 Week 0, but Cloudflare is working fine. Craig to decide if self-hosting is still the plan.
+1. **Self-host timeline: when does Cloudflare → self-host happen?** The doctrine says Phase 0 Week 0, but Cloudflare is working fine. Craig to decide if self-hosting is still the plan.
 2. **Stale imports (products, productTenants, idempotency, aiCache, uiComponents): create or delete?** Check which session declared them and whether the code ever shipped.
 3. **Does Crontech need inbound email (IMAP/SMTP receiving)?** If no, remove the Resend inbound webhook stub.
 4. **WebGPU video pipeline: is this still a priority?** Doctrine says yes but code is 0%. Honest assessment: this is a multi-month effort that doesn't generate revenue.

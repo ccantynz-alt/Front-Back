@@ -7,12 +7,12 @@
 ## SESSION_LOG 2026-04-15 (branch: claude/admin-custom-ai-api-pDjEV)
 
 ### Block advanced
-- **BLK-020 Crontech Independence** — near-shipped. Deploy #59 green on Cloudflare (api Worker + web Pages). Only DNS cutover, secrets, smoke tests, and Hetzner decom remain.
+- **BLK-020 Crontech Independence** — near-shipped. Deploy #59 green on Cloudflare (api Worker + web Pages). Only DNS cutover, secrets, smoke tests, and Vultr decom remain.
 
 ### Shipped this session
 - **Commit `c1c50e5`**: Lazy Proxy for libsql client in `packages/db/src/client.ts` — fixes Deploy #57 `URL_SCHEME_NOT_SUPPORTED` by deferring `createClient()` until first property access. All 89+ `db.X` call sites work unchanged.
 - **Commit `3acb974`**: Regenerated `bun.lock` after Dependabot PR #66/#65 drift (npm-based bumps never regenerate bun.lock → `--frozen-lockfile` CI fails).
-- **Commit `c388d22`**: LaunchChecklist HUD — floating top-right admin-only HUD with 5 phases (A: CI green, B: secrets, C: DNS, D: smoke, E: Hetzner decom). Big bold green text + glowing ✓ for done items. Phase A pre-seeded done (6 items). localStorage: `btf:launch:done`, `btf:launch:collapsed`, `btf:launch:force`.
+- **Commit `c388d22`**: LaunchChecklist HUD — floating top-right admin-only HUD with 5 phases (A: CI green, B: secrets, C: DNS, D: smoke, E: Vultr decom). Big bold green text + glowing ✓ for done items. Phase A pre-seeded done (6 items). localStorage: `btf:launch:done`, `btf:launch:collapsed`, `btf:launch:force`.
 
 ### Files touched
 - `packages/db/src/client.ts` (lazy Proxy)
@@ -36,9 +36,9 @@ PR #66 and PR #65 both required manual intervention: npm-based Dependabot bumps 
 ### Open threads for next agent
 - **PR #101 for commit `c388d22`** (LaunchChecklist) — github MCP tools disconnected mid-session; needs re-auth + `create_pull_request` retry.
 - **Phase B of launch:** 12 Cloudflare Worker secrets to set. See `apps/api/wrangler.toml` and the `set-worker-secrets.yml` workflow if it was added this session.
-- **Phase C:** DNS cutover from Hetzner `204.168.251.243` to Cloudflare Pages (`crontech.ai`, `www.crontech.ai`) + Workers route (`api.crontech.ai`).
+- **Phase C:** DNS cutover from Vultr `204.168.251.243` to Cloudflare Pages (`crontech.ai`, `www.crontech.ai`) + Workers route (`api.crontech.ai`).
 - **Phase D:** smoke tests against the deployed Cloudflare stack.
-- **Phase E:** 24h Hetzner warm-standby then power down, then cancel.
+- **Phase E:** 24h Vultr warm-standby then power down, then cancel.
 
 ### Doctrine state
 - `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md` are locked. No locked-block modifications without Craig's in-chat auth.
@@ -52,7 +52,7 @@ Re-auth github MCP and open PR #101 for commit `c388d22`, then move to Phase B s
 
 ### BLK-020 Crontech Independence — merge into assigned branch
 
-Prior session on `claude/continue-work-X7reL` pivoted the stack off Hetzner/SSH/Docker entirely and onto **Cloudflare Workers (API) + Cloudflare Pages (web)**. This sub-session merged that work into the assigned branch `claude/admin-custom-ai-api-pDjEV` (merge commit `38c1018`, nothing rebased, no force-push).
+Prior session on `claude/continue-work-X7reL` pivoted the stack off Vultr/SSH/Docker entirely and onto **Cloudflare Workers (API) + Cloudflare Pages (web)**. This sub-session merged that work into the assigned branch `claude/admin-custom-ai-api-pDjEV` (merge commit `38c1018`, nothing rebased, no force-push).
 
 ### What landed on this branch
 - Live **Build Track HUD** with deploy-drift probe (`658c43f`)
@@ -64,11 +64,11 @@ Prior session on `claude/continue-work-X7reL` pivoted the stack off Hetzner/SSH/
 - `apps/web` ported to Cloudflare Pages Nitro preset (`e8a3a32`)
 - `@ai-sdk/*` Vercel wrappers dropped → native `@anthropic-ai/sdk` + `openai` SDKs (`b1ad504`)
 - Sentinel intelligence snapshot refresh (`1e8d827`)
-- Obsolete `.github/workflows/hetzner-recon.yml` removed (`38c1018`)
+- Obsolete `.github/workflows/server-recon.yml` removed (`38c1018`)
 
 ### Files touched (net result of merge)
 - `.github/workflows/deploy.yml` — Cloudflare-native rewrite
-- `.github/workflows/hetzner-recon.yml` — deleted
+- `.github/workflows/server-recon.yml` — deleted
 - `apps/api/package.json` · `apps/api/src/ai/*` · `apps/api/src/auth/password.ts` · `apps/api/src/index*.ts` · `apps/api/src/smoke.test.ts` · `apps/api/src/telemetry.ts` · `apps/api/src/trpc/procedures/voice.ts` · `apps/api/wrangler.toml`
 - `apps/web/app.config.ts` · `apps/web/public/sitemap.xml` · `apps/web/src/app.tsx` · `apps/web/src/components/BuildTrack.tsx`
 - `bun.lock` · `packages/ai-core/**`
@@ -99,4 +99,4 @@ Both are SCHEMA-ADDITIVE only (no destructive migrations) so safe to cherry-pick
 ## SESSION_LOG 2026-04-15 — `claude/admin-custom-ai-api-pDjEV` (earliest)
 
 - Scoped BLK-020 Admin Claude Console, added `chat.getUsageStats` + totalCost fix. Committed as `7e2959b`. Paused UI work on Craig's pivot to website-first.
-- Discovered the 403 problem during pivot diagnosis (since resolved by retiring Hetzner entirely).
+- Discovered the 403 problem during pivot diagnosis (since resolved by retiring Vultr entirely).

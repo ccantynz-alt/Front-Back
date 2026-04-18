@@ -51,7 +51,7 @@ Same box, separate everything else.
 └─────────────────────────┬───────────────────────────────────────┘
                           │
                ┌──────────▼──────────┐
-               │   HETZNER METAL     │
+               │    VULTR METAL      │
                │   (Commodity only)  │
                │   CX32 — €8/month   │
                └─────────────────────┘
@@ -98,7 +98,7 @@ Both platforms are built on the identical foundation:
 
 ---
 
-## The Hetzner Box (Single Server, Both Platforms)
+## The Vultr Box (Single Server, Both Platforms)
 
 ```
 Caddy (reverse proxy + auto-HTTPS via Let's Encrypt)
@@ -153,7 +153,7 @@ Either path:
 
 | Dependency | Why it stays | Replaceable? |
 |------------|-------------|--------------|
-| **Hetzner** | Commodity hardware provider, not a competitor | Could use any VPS provider |
+| **Vultr** | Commodity hardware provider, not a competitor | Could use any VPS provider |
 | **Stripe** | Payment processing regulatory compliance | Not practically replaceable |
 | **Let's Encrypt** | Free SSL certificates (non-profit) | N/A — it's free and open |
 | **OpenSRS/eNom** | Domain registration reseller API | Become ICANN registrar long-term |
@@ -181,7 +181,7 @@ No Upstash. No Modal. No platform competitors anywhere in the stack.
 
 | Service | What AlecRae uses it for |
 |---------|--------------------------|
-| Hetzner Phase-0 | Hosting infrastructure |
+| Vultr Phase-0 | Hosting infrastructure |
 | MinIO storage | Attachment and asset storage |
 | Grafana/LGTM | Observability dashboards |
 | Qdrant vectors | Semantic email search embeddings |
@@ -207,7 +207,7 @@ No Upstash. No Modal. No platform competitors anywhere in the stack.
 ## Build Priority
 
 ### Phase 1: Launch (This Week)
-- [ ] Deploy both platforms on Hetzner CX32
+- [ ] Deploy both platforms on Vultr CX32
 - [ ] Wire Crontech email through AlecRae MTA
 - [ ] Point crontech.ai + alecrae.com DNS
 - [ ] Shared PostgreSQL + Redis + Qdrant
@@ -219,9 +219,9 @@ No Upstash. No Modal. No platform competitors anywhere in the stack.
 - [ ] AlecRae SDK available from Crontech
 
 ### Phase 3: Independence (This Quarter)
-- [ ] Self-hosted GPU inference (Hetzner GPU box)
+- [ ] Self-hosted GPU inference (Vultr GPU box)
 - [ ] GlueCron MVP (replace GitHub)
-- [ ] Multi-region Hetzner deployment
+- [ ] Multi-region Vultr deployment
 - [ ] PowerDNS authoritative servers (2+ regions)
 
 ### Phase 4: Dominance (Ongoing)
