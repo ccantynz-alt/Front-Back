@@ -9,6 +9,7 @@ import { collabRouter } from "./procedures/collab";
 import { emailRouter } from "./procedures/email";
 import { adminRouter } from "./procedures/admin";
 import { analyticsRouter } from "./procedures/analytics";
+import { analyticsChartsRouter } from "./procedures/analytics-charts";
 import { notificationsRouter } from "./procedures/notifications";
 import { tenantRouter } from "./procedures/tenant";
 import { apiKeysRouter } from "./procedures/apiKeys";
@@ -49,6 +50,7 @@ export const appRouter = router({
   email: emailRouter,
   admin: adminRouter,
   analytics: analyticsRouter,
+  analyticsCharts: analyticsChartsRouter,
   notifications: notificationsRouter,
   tenant: tenantRouter,
   apiKeys: apiKeysRouter,
