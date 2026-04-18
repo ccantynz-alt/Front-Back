@@ -21,26 +21,25 @@
 \set ON_ERROR_STOP on
 
 -- ── Users ─────────────────────────────────────────────────────────────
+-- psql variable substitution (`:'var'`) does NOT penetrate dollar-quoted
+-- PL/pgSQL DO blocks, so we use \gexec to generate the CREATE/ALTER ROLE
+-- statements at psql-client level where :'var' expands correctly.
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'crontech') THEN
-        EXECUTE format('CREATE ROLE crontech LOGIN PASSWORD %L', :'crontech_password');
-    ELSE
-        EXECUTE format('ALTER ROLE crontech WITH LOGIN PASSWORD %L', :'crontech_password');
-    END IF;
-END
-$$;
+SELECT format('CREATE ROLE crontech LOGIN PASSWORD %L', :'crontech_password')
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'crontech')
+\gexec
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'gluecron') THEN
-        EXECUTE format('CREATE ROLE gluecron LOGIN PASSWORD %L', :'gluecron_password');
-    ELSE
-        EXECUTE format('ALTER ROLE gluecron WITH LOGIN PASSWORD %L', :'gluecron_password');
-    END IF;
-END
-$$;
+SELECT format('ALTER ROLE crontech WITH LOGIN PASSWORD %L', :'crontech_password')
+WHERE EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'crontech')
+\gexec
+
+SELECT format('CREATE ROLE gluecron LOGIN PASSWORD %L', :'gluecron_password')
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'gluecron')
+\gexec
+
+SELECT format('ALTER ROLE gluecron WITH LOGIN PASSWORD %L', :'gluecron_password')
+WHERE EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'gluecron')
+\gexec
 
 -- ── Databases ─────────────────────────────────────────────────────────
 -- CREATE DATABASE cannot run inside a DO block, so we gate with \gexec.
