@@ -157,8 +157,49 @@ export default function EsimPage(): JSX.Element {
       />
 
       <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
+        {/* ── Coming Soon banner ────────────────────────────────
+            Public launch is pending the upstream eSIM partner's
+            activation step (BLK-029). The wholesaler is never named
+            in public copy per the anonymity rule at the top of this
+            file — and the same rule holds in code comments, so
+            downstream tests can keep grepping the whole source. The
+            plan browser still renders so trusted beta testers can
+            preview the catalog. */}
+        <section class="mx-auto max-w-4xl px-6 pt-6">
+          <div
+            role="status"
+            aria-live="polite"
+            class="flex flex-wrap items-center gap-3 rounded-xl px-4 py-3 text-sm"
+            style={{
+              background: "var(--color-bg-subtle)",
+              border: "1px dashed var(--color-border)",
+              color: "var(--color-text-muted)",
+            }}
+          >
+            <span
+              class="inline-flex items-center gap-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+              style={{
+                background: "var(--color-bg-elevated)",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-text)",
+              }}
+            >
+              <span
+                class="h-1.5 w-1.5 rounded-full"
+                style={{ background: "#fbbf24" }}
+                aria-hidden="true"
+              />
+              Coming soon
+            </span>
+            <span>
+              Public launch is pending partner activation — plans shown here
+              are a preview, checkout opens the moment we're live.
+            </span>
+          </div>
+        </section>
+
         {/* Hero */}
-        <section class="mx-auto max-w-4xl px-6 pt-20 pb-10">
+        <section class="mx-auto max-w-4xl px-6 pt-10 pb-10">
           <h1
             class="text-center text-4xl font-bold tracking-tight sm:text-5xl"
             style={{ color: "var(--color-text)" }}

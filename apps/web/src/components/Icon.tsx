@@ -1,14 +1,19 @@
 import type { JSX } from "solid-js";
 import {
+  FiCloud,
   FiCpu,
   FiDatabase,
   FiExternalLink,
+  FiGlobe,
+  FiLayers,
   FiLink,
   FiLink2,
   FiLock,
+  FiMessageSquare,
   FiRadio,
   FiShield,
   FiShieldOff,
+  FiSmartphone,
   FiWifi,
   FiZap,
 } from "solid-icons/fi";
@@ -48,6 +53,11 @@ const ICON_MAP = {
   brain: FiCpu,
   sparkles: FiCpu,
   cpu: FiCpu,
+  cloud: FiCloud,
+  globe: FiGlobe,
+  layers: FiLayers,
+  "message-square": FiMessageSquare,
+  smartphone: FiSmartphone,
 } as const satisfies Record<string, IconTypes>;
 
 export type IconName = keyof typeof ICON_MAP;

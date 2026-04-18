@@ -10,7 +10,7 @@
       "defaultBranch": "canary",
       "lastKnownRelease": "v16.3.0-canary.1",
       "lastKnownReleaseAt": "2026-04-17T23:45:49Z",
-      "lastCommitCheckAt": "2026-04-18T20:03:01.708Z",
+      "lastCommitCheckAt": "2026-04-18T21:20:11.435Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -300,6 +300,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-18T20:05:28.503Z",
+  "lastUpdated": "2026-04-18T21:20:11.438Z",
   "schemaVersion": 1
 }
