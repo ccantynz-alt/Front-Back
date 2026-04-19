@@ -311,7 +311,7 @@ export default function Home(): JSX.Element {
       <div>
         {/* ── Hero (dark) ──────────────────────────────────────── */}
         <section class="landing-hero">
-          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-36 pb-36 lg:px-8 lg:pt-48 lg:pb-48">
+          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-40 pb-44 lg:px-8 lg:pt-52 lg:pb-56">
             <div class="flex flex-col items-center text-center">
               {/* Announcement badge */}
               <div
@@ -437,7 +437,7 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Platform layers ───────────────────────────────────── */}
-        <section class="landing-dark-section py-32 lg:py-44">
+        <section class="landing-dark-section py-40 lg:py-52">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="mb-20 flex flex-col items-center text-center">
               <div class="landing-section-label">
@@ -479,7 +479,7 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── How it works ──────────────────────────────────────── */}
-        <section class="landing-dark-section-alt py-32 lg:py-44">
+        <section class="landing-dark-section-alt py-40 lg:py-52">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="mb-20 flex flex-col items-center text-center">
               <div class="landing-section-label">
@@ -521,7 +521,7 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Tech pillars ──────────────────────────────────────── */}
-        <section class="landing-dark-section py-32 lg:py-44">
+        <section class="landing-dark-section py-40 lg:py-52">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
               <For each={techPillars}>
@@ -539,7 +539,7 @@ export default function Home(): JSX.Element {
 
         {/* ── Bottom CTA (dark) ─────────────────────────────────── */}
         <section class="landing-cta-section">
-          <div class="relative z-10 mx-auto max-w-[800px] px-6 py-36 text-center lg:px-8 lg:py-48">
+          <div class="relative z-10 mx-auto max-w-[800px] px-6 py-40 text-center lg:px-8 lg:py-52">
             <h2
               class="text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem] lg:text-[2.75rem]"
               style={{ color: "#fff" }}
