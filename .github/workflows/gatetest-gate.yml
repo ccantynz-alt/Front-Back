@@ -15,9 +15,9 @@ name: GateTest Quality Gate
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, Main]
   pull_request:
-    branches: [main, master]
+    branches: [main, Main]
 
 # Workflow-wide baseline: read-only. The gatetest job below elevates
 # to the write scopes GateTest actually needs (pull-requests for
