@@ -1,0 +1,59 @@
+# infra/caddy/terminal.Caddyfile
+#
+# Caddy site block for the ttyd web terminal.
+# Fronts ttyd (running on 127.0.0.1:7681) with Let's Encrypt TLS + HTTP basic-auth.
+#
+# ---------------------------------------------------------------------------
+# 1. Generate a bcrypt hash of your chosen password:
+#
+#      caddy hash-password --plaintext 'your-strong-password-here'
+#
+#    (Or use the password that install-web-terminal.sh printed.)
+#    Replace {CADDY_TERMINAL_PASSWORD_HASH} below with that hash.
+#    The hash starts with '$2a$' or '$2b$' - keep it quoted if your shell
+#    tries to expand '$'. In a Caddyfile no quoting is needed.
+#
+# 2. Wire into the main Caddyfile. At the TOP of /etc/caddy/Caddyfile add:
+#
+#      import /etc/caddy/sites/terminal.Caddyfile
+#
+#    (and copy this file to /etc/caddy/sites/terminal.Caddyfile)
+#    Then:  sudo caddy validate --config /etc/caddy/Caddyfile
+#           sudo systemctl reload caddy
+#
+# 3. DNS: create an A record  terminal.crontech.ai -> <vultr-box-ip>
+#    Caddy will auto-provision the cert on first request.
+#
+# 4. SECURITY: this exposes a root-equivalent shell over the public internet.
+#    Use a LONG random password. Consider uncommenting the @allowed matcher
+#    below to restrict by source IP, or run behind Tailscale / WireGuard.
+# ---------------------------------------------------------------------------
+
+terminal.crontech.ai {
+	# Optional IP allowlist - uncomment and edit, then change 'respond' to 'abort'
+	# @blocked not remote_ip 203.0.113.10 198.51.100.0/24
+	# respond @blocked "forbidden" 403
+
+	basicauth {
+		admin {CADDY_TERMINAL_PASSWORD_HASH}
+	}
+
+	# ttyd uses websockets; reverse_proxy handles Upgrade automatically.
+	reverse_proxy localhost:7681
+
+	# Strip server fingerprint
+	header -Server
+
+	# Harden browser behaviour
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "DENY"
+		Referrer-Policy           "no-referrer"
+	}
+
+	log {
+		output file /var/log/caddy/terminal.access.log
+		format json
+	}
+}
