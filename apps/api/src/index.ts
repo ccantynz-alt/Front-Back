@@ -39,6 +39,7 @@ import { gluecronPushApp } from "./webhooks/gluecron-push";
 import { inboundSmsApp } from "./sms/inbound";
 import { githubWebhookApp } from "./github/webhook";
 import { deploymentLogsStreamApp } from "./deploy/logs-stream";
+import { createEmpireHealthApp } from "./healthz/empire";
 import { db as defaultDb } from "@back-to-the-future/db";
 import {
   startHealthMonitor,
@@ -251,6 +252,12 @@ app.get("/health/monitor", (c) => {
     queue: getQueueStatus(),
   });
 });
+
+// ── Empire Health Endpoint (GET /api/healthz/empire) ────────────────
+// Single-pane-of-glass self-host probe: postgres, gluecron, gatetest,
+// caddy cert expiry, disk free %. Bearer-token gated to avoid leaking
+// internal infra URLs to drive-by visitors. See src/healthz/empire.ts.
+app.route("/", createEmpireHealthApp());
 
 // ── Metrics Endpoint ────────────────────────────────────────────────
 app.get("/metrics", (c) => {
