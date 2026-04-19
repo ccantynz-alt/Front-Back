@@ -146,7 +146,7 @@ function FeatureCard(props: Feature): JSX.Element {
               class="flex h-11 w-11 items-center justify-center rounded-xl"
               style={{
                 background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))",
-                color: "#a5b4fc",
+                color: "#6366f1",
                 border: "1px solid rgba(99,102,241,0.2)",
               }}
             >
@@ -157,7 +157,7 @@ function FeatureCard(props: Feature): JSX.Element {
                 class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
                 style={{
                   background: "rgba(99,102,241,0.12)",
-                  color: "#a5b4fc",
+                  color: "#6366f1",
                   border: "1px solid rgba(99,102,241,0.2)",
                 }}
               >
@@ -169,13 +169,13 @@ function FeatureCard(props: Feature): JSX.Element {
           <div class="flex flex-col gap-2.5">
             <h3
               class="text-[1.0625rem] font-semibold tracking-tight"
-              style={{ color: "#f0f0f5" }}
+              style={{ color: "#0f172a" }}
             >
               {props.title}
             </h3>
             <p
               class="text-[0.875rem] leading-[1.75]"
-              style={{ color: "rgba(255,255,255,0.55)" }}
+              style={{ color: "#64748b" }}
             >
               {props.description}
             </p>
@@ -183,7 +183,7 @@ function FeatureCard(props: Feature): JSX.Element {
 
           <div
             class="mt-auto flex items-center gap-1.5 pt-3 text-sm font-medium transition-colors duration-200 group-hover:opacity-80"
-            style={{ color: "#818cf8" }}
+            style={{ color: "#6366f1" }}
           >
             <span>Learn more</span>
             <span class="transition-transform duration-200 group-hover:translate-x-1.5">{"\u2192"}</span>
@@ -224,13 +224,13 @@ function StepCard(props: Step & { isLast: boolean }): JSX.Element {
 
       <h3
         class="text-lg font-semibold tracking-tight"
-        style={{ color: "#f0f0f5" }}
+        style={{ color: "#0f172a" }}
       >
         {props.title}
       </h3>
       <p
         class="max-w-[280px] text-[0.875rem] leading-[1.75]"
-        style={{ color: "rgba(255,255,255,0.55)" }}
+        style={{ color: "#64748b" }}
       >
         {props.description}
       </p>
@@ -266,19 +266,19 @@ function TechPillarCard(props: TechPillar): JSX.Element {
       />
       <span
         class="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.16em]"
-        style={{ color: "#818cf8" }}
+        style={{ color: "#6366f1" }}
       >
         {props.label}
       </span>
       <h3
         class="mb-3 text-xl font-bold tracking-tight"
-        style={{ color: "#f0f0f5" }}
+        style={{ color: "#0f172a" }}
       >
         {props.title}
       </h3>
       <p
         class="text-[0.875rem] leading-[1.75]"
-        style={{ color: "rgba(255,255,255,0.55)" }}
+        style={{ color: "#64748b" }}
       >
         {props.description}
       </p>
@@ -313,7 +313,7 @@ export default function Home(): JSX.Element {
               {/* Headline */}
               <h1
                 class="max-w-4xl text-[2.75rem] font-extrabold leading-[1.08] tracking-[-0.03em] sm:text-[3.5rem] lg:text-[4.25rem]"
-                style={{ color: "#fff" }}
+                style={{ color: "#0f172a" }}
               >
                 The developer platform{" "}
                 <span class="landing-gradient-text">
@@ -324,7 +324,7 @@ export default function Home(): JSX.Element {
               {/* Subheading */}
               <p
                 class="mt-7 max-w-2xl text-[1.0625rem] leading-[1.8] sm:text-lg"
-                style={{ color: "rgba(255,255,255,0.7)" }}
+                style={{ color: "#475569" }}
               >
                 Backend and frontend, joined as one product. Hosting, database,
                 auth, AI, real-time, and billing &mdash; every layer your app
@@ -414,13 +414,13 @@ export default function Home(): JSX.Element {
               </div>
               <h2
                 class="max-w-2xl text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem]"
-                style={{ color: "#f0f0f5" }}
+                style={{ color: "#0f172a" }}
               >
                 Every layer your app needs, in one product
               </h2>
               <p
                 class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7]"
-                style={{ color: "rgba(255,255,255,0.5)" }}
+                style={{ color: "#64748b" }}
               >
                 Stop stitching together a dozen services. Crontech is one
                 product with one dashboard and one bill.
@@ -459,13 +459,13 @@ export default function Home(): JSX.Element {
               </div>
               <h2
                 class="max-w-2xl text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem]"
-                style={{ color: "#f0f0f5" }}
+                style={{ color: "#0f172a" }}
               >
                 Move your app to Crontech in three steps
               </h2>
               <p
                 class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7]"
-                style={{ color: "rgba(255,255,255,0.5)" }}
+                style={{ color: "#64748b" }}
               >
                 No rebuild. No long migration. Bring the code you already have,
                 layer Crontech underneath, ship.
@@ -510,7 +510,7 @@ export default function Home(): JSX.Element {
           <div class="relative z-10 mx-auto max-w-[800px] px-6 py-40 text-center lg:px-8 lg:py-52">
             <h2
               class="text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem] lg:text-[2.75rem]"
-              style={{ color: "#fff" }}
+              style={{ color: "#0f172a" }}
             >
               The developer platform{" "}
               <span class="landing-gradient-text">
@@ -519,7 +519,7 @@ export default function Home(): JSX.Element {
             </h2>
             <p
               class="mt-6 text-[1.0625rem] leading-[1.7] sm:text-lg"
-              style={{ color: "rgba(255,255,255,0.6)" }}
+              style={{ color: "#64748b" }}
             >
               One product. Every layer. Built for teams who refuse to settle
               for yesterday&#39;s tools.
