@@ -43,6 +43,12 @@ export interface DeploymentCardProps {
   readonly onRedeploy?: (deploymentId: string) => void;
   readonly onViewLogs?: (deploymentId: string) => void;
   /**
+   * Cancel / rollback an in-flight deployment. When provided, queued or
+   * building deployments expose a "Cancel" button that wires through the
+   * optimistic-undo helper in the parent route.
+   */
+  readonly onRollback?: (deploymentId: string) => void;
+  /**
    * When true, the expanded log viewer opens an SSE stream instead of
    * rendering the static `deployment.logs` array. Leave false for
    * fixture/preview pages where the backend isn't live.
@@ -187,6 +193,11 @@ export function DeploymentCard(props: DeploymentCardProps): JSX.Element {
 
   const canRedeploy = (): boolean =>
     props.deployment.status === "live" || props.deployment.status === "failed";
+  const canRollback = (): boolean =>
+    props.onRollback !== undefined &&
+    (props.deployment.status === "queued" ||
+      props.deployment.status === "building" ||
+      props.deployment.status === "deploying");
   const isStreaming = (): boolean =>
     props.deployment.status === "building" ||
     props.deployment.status === "deploying" ||
@@ -203,6 +214,12 @@ export function DeploymentCard(props: DeploymentCardProps): JSX.Element {
     e.stopPropagation();
     if (!props.onRedeploy) return;
     props.onRedeploy(props.deployment.id);
+  }
+
+  function handleRollback(e: MouseEvent): void {
+    e.stopPropagation();
+    if (!props.onRollback) return;
+    props.onRollback(props.deployment.id);
   }
 
   return (
@@ -277,6 +294,11 @@ export function DeploymentCard(props: DeploymentCardProps): JSX.Element {
 
           {/* Right — actions */}
           <div class="flex flex-shrink-0 items-center gap-2">
+            <Show when={canRollback()}>
+              <Button variant="outline" size="sm" onClick={handleRollback}>
+                Cancel
+              </Button>
+            </Show>
             <Show when={canRedeploy()}>
               <Button variant="outline" size="sm" onClick={handleRedeploy}>
                 Redeploy

@@ -19,6 +19,7 @@
     "@ai-sdk/openai": "^3.0.0",
     "@back-to-the-future/ai-core": "workspace:*",
     "@back-to-the-future/db": "workspace:*",
+    "@back-to-the-future/dns-server": "workspace:*",
     "@back-to-the-future/flywheel": "workspace:*",
     "@back-to-the-future/queue": "workspace:*",
     "@back-to-the-future/schemas": "workspace:*",

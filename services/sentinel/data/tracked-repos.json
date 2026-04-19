@@ -10,7 +10,7 @@
       "defaultBranch": "canary",
       "lastKnownRelease": "v16.3.0-canary.1",
       "lastKnownReleaseAt": "2026-04-17T23:45:49Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:12.940Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:34.038Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -23,7 +23,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "static-middleware@0.4.5",
       "lastKnownReleaseAt": "2026-03-25T23:06:25Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:37.416Z",
+      "lastCommitCheckAt": "2026-04-18T21:27:07.918Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -36,8 +36,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "@sveltejs/kit@2.57.1",
       "lastKnownReleaseAt": "2026-04-09T21:45:47Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:37.702Z",
-      "baselineCommitsPerWeek": 9
+      "lastCommitCheckAt": "2026-04-18T21:27:08.498Z",
+      "baselineCommitsPerWeek": 8
     },
     {
       "owner": "QwikDev",
@@ -49,7 +49,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "eslint-plugin-qwik@2.0.0-beta.32",
       "lastKnownReleaseAt": "2026-04-13T21:55:28Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:16.200Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:38.061Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -62,8 +62,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "astro@6.1.8",
       "lastKnownReleaseAt": "2026-04-18T10:02:03Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:37.963Z",
-      "baselineCommitsPerWeek": 47
+      "lastCommitCheckAt": "2026-04-19T03:44:35.391Z",
+      "baselineCommitsPerWeek": 49
     },
     {
       "owner": "honojs",
@@ -75,7 +75,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.14",
       "lastKnownReleaseAt": "2026-04-15T06:15:10Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:13.128Z",
+      "lastCommitCheckAt": "2026-04-18T21:27:06.787Z",
       "baselineCommitsPerWeek": 6
     },
     {
@@ -88,7 +88,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v2.0.0-beta.0",
       "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
-      "lastCommitCheckAt": "2026-04-18T02:11:29.546Z",
+      "lastCommitCheckAt": "2026-04-18T20:03:02.016Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -101,7 +101,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v11.16.0",
       "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
-      "lastCommitCheckAt": "2026-04-18T02:11:29.696Z",
+      "lastCommitCheckAt": "2026-04-18T20:05:26.344Z",
       "baselineCommitsPerWeek": 2
     },
     {
@@ -114,8 +114,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "ai@5.0.179",
       "lastKnownReleaseAt": "2026-04-17T03:47:01Z",
-      "lastCommitCheckAt": "2026-04-18T02:11:29.999Z",
-      "baselineCommitsPerWeek": 93
+      "lastCommitCheckAt": "2026-04-18T21:27:07.247Z",
+      "baselineCommitsPerWeek": 96
     },
     {
       "owner": "langchain-ai",
@@ -127,7 +127,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "langchain@1.3.3",
       "lastKnownReleaseAt": "2026-04-15T00:22:14Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:38.229Z",
+      "lastCommitCheckAt": "2026-04-18T21:27:08.996Z",
       "baselineCommitsPerWeek": 17
     },
     {
@@ -140,8 +140,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "wrangler@4.83.0",
       "lastKnownReleaseAt": "2026-04-15T09:28:42Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:35.929Z",
-      "baselineCommitsPerWeek": 64
+      "lastCommitCheckAt": "2026-04-19T03:44:34.412Z",
+      "baselineCommitsPerWeek": 65
     },
     {
       "owner": "cloudflare",
@@ -153,7 +153,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v1.5.0",
       "lastKnownReleaseAt": "2023-05-23T17:46:18Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:14.101Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:36.487Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -166,7 +166,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v1.26.04",
       "lastKnownReleaseAt": "2026-04-09T14:38:08Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:36.288Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:34.778Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -192,7 +192,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v0.4.36",
       "lastKnownReleaseAt": "2026-04-16T19:37:55Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:38.534Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:37.009Z",
       "baselineCommitsPerWeek": 17
     },
     {
@@ -205,7 +205,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "43.123.5",
       "lastKnownReleaseAt": "2026-04-15T23:58:58Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:16.572Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:38.507Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -216,9 +216,9 @@
       "category": "backend",
       "description": "Railway PaaS competitor for deploy/runtime story.",
       "defaultBranch": "master",
-      "lastKnownRelease": "v4.37.3",
-      "lastKnownReleaseAt": "2026-04-15T00:28:12Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:16.727Z",
+      "lastKnownRelease": "v4.40.0",
+      "lastKnownReleaseAt": "2026-04-17T16:24:30Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:39.287Z",
       "baselineCommitsPerWeek": 10
     },
     {
@@ -231,8 +231,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v25.0.0",
       "lastKnownReleaseAt": "2026-04-17T14:24:18Z",
-      "lastCommitCheckAt": "2026-04-18T17:33:38.717Z",
-      "baselineCommitsPerWeek": 14
+      "lastCommitCheckAt": "2026-04-19T03:44:37.239Z",
+      "baselineCommitsPerWeek": 15
     },
     {
       "owner": "XeroAPI",
@@ -244,7 +244,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "15.0.0",
       "lastKnownReleaseAt": "2026-04-02T01:26:35Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:17.283Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:39.793Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -257,7 +257,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v4.4.7",
       "lastKnownReleaseAt": "2025-07-17T14:30:19Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:17.955Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:39.966Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -270,8 +270,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v1.1304.0",
       "lastKnownReleaseAt": "2026-04-09T11:40:07Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:15.739Z",
-      "baselineCommitsPerWeek": 30
+      "lastCommitCheckAt": "2026-04-19T03:44:37.611Z",
+      "baselineCommitsPerWeek": 31
     },
     {
       "owner": "openai",
@@ -283,7 +283,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v20250625",
       "lastKnownReleaseAt": "2025-06-26T01:06:09Z",
-      "lastCommitCheckAt": "2026-04-18T18:23:15.967Z",
+      "lastCommitCheckAt": "2026-04-19T03:44:37.833Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -300,6 +300,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-18T18:23:17.956Z",
+  "lastUpdated": "2026-04-19T03:44:39.966Z",
   "schemaVersion": 1
 }

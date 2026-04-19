@@ -1,0 +1,50 @@
+# Crontech — Postgres 16 (bare-metal, self-hosted)
+#
+# Replaces the Ubuntu-default postgresql@16-main unit so that Crontech owns
+# the data dir (/data/postgres) instead of /var/lib/postgresql. This is a
+# wrapper — the official `postgres` binary is supplied by the `postgresql-16`
+# apt package.
+#
+# Installed by scripts/bare-metal-setup.sh. Parse-only; edit the setup
+# script if you need to change paths.
+
+[Unit]
+Description=Crontech Postgres 16 (bare-metal)
+Documentation=https://www.postgresql.org/docs/16/
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=postgres
+Group=postgres
+
+# Data and log locations owned by the Crontech provisioner.
+Environment=PGDATA=/data/postgres/16/main
+Environment=PGPORT=5432
+
+ExecStart=/usr/lib/postgresql/16/bin/postgres \
+    -D /data/postgres/16/main \
+    --config-file=/data/postgres/16/main/postgresql.conf
+
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=5
+
+# Hardening — Postgres still needs to own its data dir, so ProtectSystem
+# is set to `full` (not `strict`) and ReadWritePaths carves out /data.
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/data/postgres /var/log/postgresql /var/run/postgresql
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=postgres
+
+[Install]
+WantedBy=multi-user.target

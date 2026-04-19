@@ -40,6 +40,7 @@ import {
   type OrchestratorDeployInput,
   type OrchestratorDeployResult,
 } from "../deploy/orchestrator-client";
+import { upsertSubdomainRecord } from "./dns-helper";
 
 export type DbClient = typeof defaultDb;
 
@@ -587,6 +588,38 @@ export async function runBuild(
       },
       now(),
     );
+
+    // ── 7b. Create/update the DNS A record for {slug}.crontech.ai ──
+    // Best-effort. A DNS failure here must NOT fail the deploy — the
+    // helper itself swallows errors, but we wrap in try/catch for belt
+    // + braces, and emit an event log so operators can see what
+    // happened without trawling stderr.
+    const deployTargetIp =
+      process.env["DEPLOY_TARGET_IP"] ?? "45.76.21.235";
+    try {
+      await upsertSubdomainRecord(project.slug, deployTargetIp, { db });
+      await writeLog(
+        db,
+        deploymentId,
+        {
+          stream: "event",
+          line: `Created DNS A record ${project.slug}.crontech.ai → ${deployTargetIp}`,
+        },
+        now(),
+      );
+    } catch (dnsErr) {
+      const dnsMsg =
+        dnsErr instanceof Error ? dnsErr.message : String(dnsErr);
+      await writeLog(
+        db,
+        deploymentId,
+        {
+          stream: "event",
+          line: `[build-runner] DNS upsert failed (non-fatal): ${dnsMsg}`,
+        },
+        now(),
+      );
+    }
 
     // ── 8. Finalise → live ─────────────────────────────────────────
     const completedAt = now();

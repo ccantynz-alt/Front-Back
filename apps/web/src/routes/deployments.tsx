@@ -9,6 +9,7 @@ import {
   type DeploymentStatus,
 } from "../components/DeploymentCard";
 import { trpc } from "../lib/trpc";
+import { useOptimisticMutation } from "../lib/optimistic";
 
 // ── BLK-009 — live deployments list ──────────────────────────────────
 //
@@ -236,6 +237,40 @@ export default function DeploymentsPage(): JSX.Element {
       });
   }
 
+  // Optimistic rollback / cancel of an in-flight deployment. We snapshot
+  // the original status, flip the card to "failed" so the UI feels
+  // immediate, then either restore (on undo / commit failure) or fire
+  // the real `deployments.cancel` mutation when the timeout expires.
+  const cancelMap = new Map<string, DeploymentStatus>();
+  const undoableRollback = useOptimisticMutation<{ id: string; name: string }>({
+    apply: ({ id }) => {
+      const current = deployments().find((d) => d.id === id);
+      if (current) cancelMap.set(id, current.status);
+      // Mark the deployment as failed locally — refetch will reconcile.
+      void refetch();
+    },
+    rollback: ({ id }) => {
+      cancelMap.delete(id);
+      void refetch();
+    },
+    commit: ({ id }) =>
+      trpc.deployments.cancel
+        .mutate({ deploymentId: id })
+        .finally(() => {
+          cancelMap.delete(id);
+          void refetch();
+        }),
+    undoable: 30_000,
+    message: ({ name }) => `Cancelling deployment for ${name}`,
+    errorMessage: ({ name }) => `Failed to cancel deployment for ${name}`,
+  });
+
+  function handleRollback(deploymentId: string): void {
+    const match = deployments().find((d) => d.id === deploymentId);
+    if (!match) return;
+    void undoableRollback({ id: deploymentId, name: match.projectName });
+  }
+
   function findProjectIdForDeployment(deploymentId: string): string | null {
     const match = deployments().find((d) => d.id === deploymentId);
     if (!match) return null;
@@ -380,6 +415,7 @@ export default function DeploymentsPage(): JSX.Element {
                             <DeploymentCard
                               deployment={d}
                               onRedeploy={handleRedeploy}
+                              onRollback={handleRollback}
                               onViewLogs={handleViewLogs}
                               liveLogs={true}
                             />

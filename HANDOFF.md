@@ -1,6 +1,61 @@
 # HANDOFF — Next Session Starts Here
 
-**First action:** Review and merge **PR #124** (https://github.com/ccantynz-alt/Crontech/pull/124). It carries **BLK-020 frontend complete + BLK-009 aggregate (real build-runner + Docker sandbox + live-log SSE + E2E test)**. All 6 local quality gates green. Then Craig's in-chat "yes" to flip BLK-020 + BLK-009 from 🟡 → ✅ in `docs/BUILD_BIBLE.md`.
+**First action:** Craig's bare-metal cutover tonight per `docs/TONIGHT_CHEAT_SHEET.md` — start infra services on `45.76.171.37`, run migrate script from old VPS, flip Cloudflare DNS. Then circle back to merge PR #124 + the new polish-wave commits on `claude/review-crontech-handoff-qYEVq`. Locked-block flips (BLK-020, BLK-009 → ✅) still pending Craig's in-chat "yes".
+
+---
+
+## SESSION LOG — 2026-04-19
+
+**Branch:** `claude/review-crontech-handoff-qYEVq`
+**Ended on:** `8fceece feat(ux-polish): aggregate final output from 4 parallel agents`
+
+**Blocks advanced:**
+- BLK-020 Admin Claude Console — shipped this session, unchanged since last handoff
+- BLK-009 Git-push deploy pipeline — shipped this session, unchanged since last handoff
+- UX polish wave (no BLK ID yet — candidates for `docs/PROPOSED_BLOCKS.md`):
+  - Universal Cmd+K palette (17 commands, role-gated, in-house fuzzy, 27 tests)
+  - Optimistic UI + undo toast (3 destructive actions wired, 16 tests)
+  - Keyboard shortcut registry + `?` help + URL-state hook (34 tests)
+  - AI-generated changelog via `scripts/generate-changelog.ts` (35 tests)
+
+**Files touched (this session):**
+- `apps/web/src/lib/{commands,keyboard,url-state,optimistic}.ts` (+ tests)
+- `apps/web/src/components/{CommandPalette,KeyboardHelp,UndoToast,Toast,Layout,DeploymentCard}.tsx`
+- `apps/web/src/routes/{deployments,projects,settings,projects/[id]}.tsx`
+- `apps/web/src/app.tsx`
+- `scripts/generate-changelog.ts` (+ test)
+- `CHANGELOG.md`, `docs/changelog/README.md`
+- `packages/schemas/src/index.ts` (one-line `export { z } from "zod"` — no new dep)
+
+**Locked-block authorization Craig granted verbatim:**
+> "Awesome let's do it all" — authorizing the UX polish wave + legal layer drafting + architecture ideas list. Legal drafting was deferred (see below).
+
+**Legal drafting — NOT done.** `docs/legal/attorney-package.md` (23KB, 2026-04-16) + `pre-launch-audit.md` (11KB) already cover the eight live legal pages at `apps/web/src/routes/legal/*`. Drafting fresh TOS/AUP/Privacy/DMCA files would have duplicated or overwritten attorney-review material — that's a §0.7 HARD GATE risk. Explicit non-action; flagged for Craig to redirect if he wants a different angle.
+
+**Proposed blocks (not yet authorized):** `docs/PROPOSED_BLOCKS.md` to be drafted next session with BLK-031..BLK-045 architecture ideas. Skipped this session in favor of landing the UX polish wave cleanly.
+
+**Gates on `8fceece`:**
+| Gate | Result |
+|---|---|
+| `bun run check` | ✅ 16/16 packages, 0 TS errors |
+| `bun run test` | ✅ 250/250 pass (112 net-new), 605 assertions, 21 files |
+| `bun run build` | ✅ 5/5 tasks |
+| `bunx biome check apps packages services` | ✅ exit 0 |
+| `bun run check-links` | ✅ 0 dead (45 routes, 161 files) |
+| `bun run check-buttons` | ✅ 0 dead (106 files) |
+
+**Open PRs / unmerged:** PR #124 still open against Main (BLK-020 + BLK-009). New polish-wave commits (`cd97979`, `8fceece`) are pushed on `claude/review-crontech-handoff-qYEVq` but not yet PR'd — reason: same branch, same PR will update on next push. Verify PR #124 shows the 2 new commits before merging, or cut a second PR for the polish wave separately so the deploy pipeline landing stays reviewable.
+
+**Next agent should start by:**
+1. Reading `docs/TONIGHT_CHEAT_SHEET.md` to see where Craig is in the cutover
+2. Asking Craig's in-chat "yes" to flip BLK-020 + BLK-009 → ✅ in `docs/BUILD_BIBLE.md`
+3. Drafting `docs/PROPOSED_BLOCKS.md` (BLK-031..BLK-045) for Craig to authorize later
+
+---
+
+## (prior content preserved below)
+
+**First action (previous session):** Review and merge **PR #124** (https://github.com/ccantynz-alt/Crontech/pull/124). It carries **BLK-020 frontend complete + BLK-009 aggregate (real build-runner + Docker sandbox + live-log SSE + E2E test)**. All 6 local quality gates green. Then Craig's in-chat "yes" to flip BLK-020 + BLK-009 from 🟡 → ✅ in `docs/BUILD_BIBLE.md`.
 
 ---
 
@@ -103,3 +158,36 @@ No locked-block modifications this session. CLAUDE.md, POSITIONING.md, BUILD_BIB
 3. Check PR #124 status. If merged, proceed. If not merged, ask Craig to review.
 4. On merge + Craig's "yes": amend `docs/BUILD_BIBLE.md` to flip BLK-020 and BLK-009 to ✅ SHIPPED with commit message citing his authorization.
 5. Then pick up the next priority — likely the signup-readiness hardening block (sandbox-wrap the build-runner's clone+install+build).
+
+---
+
+## POST-GLUECRON-LIVE DIRECTIVE (authorized by Craig 2026-04-19)
+
+> Quote: "Once we are working we need to delete the other products completely from our code and any Claude.MD files or anything that stores that information otherwise Claude is gonna see it as an option and they are competition"
+
+**Trigger:** When gluecron.com is live and actively hosting Crontech + AlecRae git + CI.
+
+**Scope — purge across all three repos (Crontech, Gluecron.com, AlecRae.com):**
+
+Scrub from code, config, env.example, scripts, workflows, CLAUDE.md, BUILD_BIBLE.md, POSITIONING.md, DEPLOY.md, README.md, HANDOFF.md, ALECRAE-BRIEF.md, and any `/docs/**`:
+
+- **Vercel** — all references, config (vercel.json), workflow steps
+- **Cloudflare Workers / Cloudflare Pages / Wrangler** — configs, deploy steps, docs. Keep Cloudflare as DNS/CDN only if still used by Craig; remove all framework/platform mentions.
+- **GitHub Actions as CI/deploy host** — replace with Gluecron CI references. Keep raw git protocol mentions (we still speak git).
+- **Hetzner** — if any residual references exist after PR #115.
+- **Supabase / Convex / Render / AWS Amplify / Netlify / Railway / Fly.io (optional)** — competitor comparison tables, "why we beat them" marketing prose in CLAUDE.md §2, etc.
+- **Competitor comparison tables** — e.g. "Why Vercel loses" rows in CLAUDE.md §2.
+
+**Keep (we use these, not competitors):**
+- Anthropic (Claude), OpenAI (Whisper + embeddings) — our AI providers
+- Neon (our Postgres), Turso (our edge SQLite), Qdrant (our vectors)
+- Vultr (our current host) until replaced by something else we own
+- Bun, Hono, SolidJS, Drizzle, Tailwind, Biome, Yjs — stack tools we depend on
+
+**Execution plan (queued for post-Gluecron-live session):**
+1. Spawn 3 parallel agents, one per repo, briefed with the scrub list above
+2. Each agent: find all references, propose the scrubbed diffs to Craig, wait for explicit per-file approval (CLAUDE.md change protection layer 1)
+3. After approval, commit + open PR for each repo
+4. CODEOWNERS gate (layer 2) catches any bypass
+
+**Doctrine note:** This is a MAJOR CLAUDE.md / doctrine edit across three repos. Requires the per-diff ask-in-chat protocol for every locked file. Do NOT do blanket rewrites — each doctrine file gets a reviewed diff.

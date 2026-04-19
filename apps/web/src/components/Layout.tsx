@@ -3,6 +3,7 @@ import { Show, For, Suspense, createSignal, createEffect, lazy, onCleanup } from
 import { A, useLocation } from "@solidjs/router";
 import { Button } from "@back-to-the-future/ui";
 import { useAuth, useTheme } from "../stores";
+import { UndoToastContainer } from "./UndoToast";
 
 // NotificationCenter is only rendered once the user is authenticated,
 // so pushing it out of the initial bundle shrinks the anonymous-visitor
@@ -515,6 +516,9 @@ export function Layout(props: LayoutProps): JSX.Element {
           </nav>
         </div>
       </footer>
+
+      {/* Global undo toast stack — driven by useOptimisticMutation. */}
+      <UndoToastContainer />
     </div>
   );
 }

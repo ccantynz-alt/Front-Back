@@ -1,5 +1,5 @@
 # Crontech Platform — Production Caddyfile
-# Automatic HTTPS via Let's Encrypt. HTTP/2 + HTTP/3.
+# Automatic HTTPS via Let's Encrypt. HTTP/2 only for now (see note below).
 #
 # This Caddyfile is mounted into the Caddy container by
 # docker-compose.production.yml. All upstreams are Docker-internal
@@ -14,9 +14,15 @@
 # ── Global options ────────────────────────────────────────────────────
 
 {
-	# Enable HTTP/3 (QUIC)
+	# HTTP/2 + HTTP/1.1 only.
+	# HTTP/3 (QUIC, UDP/443) is intentionally disabled: the Vultr host
+	# firewall / docker-compose port mapping currently only exposes
+	# TCP/443, so QUIC handshakes fail and Chrome surfaces
+	# ERR_QUIC_PROTOCOL_ERROR instead of falling back. Re-enable by
+	# adding h3 back here once UDP/443 is confirmed open end-to-end
+	# (Vultr firewall + ports: "443:443/udp" in docker-compose).
 	servers {
-		protocols h1 h2 h2c h3
+		protocols h1 h2 h2c
 	}
 
 	# Let's Encrypt email for certificate notifications
@@ -131,12 +137,95 @@ api.crontech.ai {
 	}
 }
 
-# ── *.crontech.app -> Deployer (customer project subdomains) ─────────
-# Placeholder for BLK-009. The deployer service does not exist yet.
-# When it ships, uncomment this block and wire it to the deployer
-# container on port 8080.
+# ── gluecron.crontech.ai -> Gluecron (self-hosted git + CI) ──────────
+# Gluecron runs as a host systemd service on port 3002 (crontech-web
+# owns 3000, crontech-api owns 3001). Ecosystem cornerstone: once
+# live, hosts source for Crontech / AlecRae / itself, replacing
+# GitHub. Provisioned by scripts/add-gluecron.sh.
 
-# *.crontech.app {
+gluecron.crontech.ai {
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		-Server
+	}
+
+	reverse_proxy localhost:3002 {
+		health_uri /
+		health_interval 30s
+		health_timeout 5s
+
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	log {
+		output file /var/log/caddy/gluecron.log {
+			roll_size 50mb
+			roll_keep 5
+			roll_keep_for 168h
+		}
+		format json
+		level INFO
+	}
+}
+
+# ── gluecron.com (apex) -> Gluecron ─────────────────────────────────
+# Same upstream as gluecron.crontech.ai. Requires:
+#   1. DNS A record gluecron.com -> Vultr host IP
+#   2. DNS A record www.gluecron.com -> Vultr host IP
+# Let's Encrypt issues on first request once DNS resolves.
+
+gluecron.com {
+	encode gzip zstd
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		-Server
+	}
+
+	reverse_proxy localhost:3002 {
+		health_uri /
+		health_interval 30s
+		health_timeout 5s
+
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	log {
+		output file /var/log/caddy/gluecron-apex.log {
+			roll_size 50mb
+			roll_keep 5
+			roll_keep_for 168h
+		}
+		format json
+		level INFO
+	}
+}
+
+www.gluecron.com {
+	redir https://gluecron.com{uri} permanent
+}
+
+# ── *.crontech.ai -> Customer project deployer (BLK-009) ─────────────
+# Wildcard block. Any subdomain NOT matched by a specific block above
+# (gluecron, www, api) falls through here and routes to the deployer
+# service based on the project slug. Enabled when the deployer
+# container is running on port 8080.
+
+# *.crontech.ai {
 # 	encode gzip zstd
 #
 # 	header {

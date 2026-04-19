@@ -6,7 +6,8 @@ import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { SEOHead } from "../../components/SEOHead";
 import { DomainsPanel } from "../../components/DomainsPanel";
 import { trpc } from "../../lib/trpc";
-import { useQuery } from "../../lib/use-trpc";
+import { useQuery, invalidateQueries } from "../../lib/use-trpc";
+import { useOptimisticMutation } from "../../lib/optimistic";
 
 // EnvVarsPanel is a 27KB tab-gated panel (activeTab === "env"). Users
 // land on "overview" by default — most never click into env vars.
@@ -271,6 +272,28 @@ function SettingsTab(props: { project: ProjectData }): JSX.Element {
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = createSignal(false);
 
+  // Optimistic delete: navigate away immediately and surface a 30-second
+  // undo toast. If the user clicks Undo, we never call the tRPC mutation
+  // and pop them back to the project page. Otherwise the commit fires.
+  const undoableDelete = useOptimisticMutation<{ id: string; name: string }>({
+    apply: () => {
+      // The "store" here is the cached project list; invalidating
+      // forces /projects to refetch (the deleted row is now hidden by
+      // the deletion at commit time, but on undo it reappears).
+      navigate("/projects");
+      invalidateQueries("projects", "deployments");
+    },
+    rollback: ({ id }) => {
+      // Pop the user back to the project they tried to delete.
+      navigate(`/projects/${id}`);
+      invalidateQueries("projects", "deployments");
+    },
+    commit: ({ id }) => trpc.projects.delete.mutate({ projectId: id }),
+    undoable: 30_000,
+    message: ({ name }) => `Deleted ${name}`,
+    errorMessage: ({ name }) => `Failed to delete ${name}`,
+  });
+
   return (
     <Stack direction="vertical" gap="lg">
       {/* General Settings */}
@@ -317,14 +340,11 @@ function SettingsTab(props: { project: ProjectData }): JSX.Element {
                       variant="primary"
                       size="sm"
                       onClick={async () => {
-                        try {
-                          await trpc.projects.delete.mutate({
-                            projectId: props.project.id,
-                          });
-                          navigate("/projects");
-                        } catch {
-                          setConfirmDelete(false);
-                        }
+                        setConfirmDelete(false);
+                        await undoableDelete({
+                          id: props.project.id,
+                          name: props.project.name,
+                        });
                       }}
                     >
                       Confirm Delete

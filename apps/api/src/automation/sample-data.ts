@@ -96,7 +96,7 @@ export function createSampleDataBundle(): SampleDataBundle {
 
 // Called automatically when a new user signs up.
 // In a real system this would persist to the database.
-export async function seedNewUser(userId: string): Promise<SampleDataBundle> {
+export async function seedNewUser(_userId: string): Promise<SampleDataBundle> {
   const bundle = createSampleDataBundle();
   return bundle;
 }

@@ -5,6 +5,7 @@ import { Button } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 import { SEOHead } from "../components/SEOHead";
 import { Icon, type IconName } from "../components/Icon";
+import { ProductShowcase } from "../components/ProductShowcase";
 
 // ── Data ────────────────────────────────────────────────────────────
 
@@ -245,19 +246,9 @@ function StepCard(props: Step & { isLast: boolean }): JSX.Element {
 
 function StatBlock(props: Stat): JSX.Element {
   return (
-    <div class="flex flex-col items-center justify-center gap-3 px-6 py-10 sm:py-12">
-      <span
-        class="text-2xl font-extrabold tracking-tight sm:text-3xl"
-        style={{ color: "#fff" }}
-      >
-        {props.value}
-      </span>
-      <span
-        class="text-[11px] font-semibold uppercase tracking-[0.16em]"
-        style={{ color: "rgba(255,255,255,0.7)" }}
-      >
-        {props.label}
-      </span>
+    <div class="landing-stat-block">
+      <span class="landing-stat-value">{props.value}</span>
+      <span class="landing-stat-label">{props.label}</span>
     </div>
   );
 }
@@ -314,27 +305,9 @@ export default function Home(): JSX.Element {
           <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-40 pb-44 lg:px-8 lg:pt-52 lg:pb-56">
             <div class="flex flex-col items-center text-center">
               {/* Announcement badge */}
-              <div
-                class="mb-10 inline-flex items-center gap-2.5 rounded-full px-5 py-2.5"
-                style={{
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  background: "rgba(255,255,255,0.04)",
-                  "backdrop-filter": "blur(12px)",
-                }}
-              >
-                <div
-                  class="h-2 w-2 rounded-full"
-                  style={{
-                    background: "#34d399",
-                    "box-shadow": "0 0 8px rgba(52,211,153,0.6)",
-                  }}
-                />
-                <span
-                  class="text-[0.8125rem] font-medium tracking-wide"
-                  style={{ color: "rgba(255,255,255,0.8)" }}
-                >
-                  Now in early access
-                </span>
+              <div class="landing-hero-badge mb-10">
+                <span class="landing-hero-badge-dot" aria-hidden="true" />
+                <span class="landing-hero-badge-text">Now in early access</span>
               </div>
 
               {/* Headline */}
@@ -385,33 +358,25 @@ export default function Home(): JSX.Element {
               </div>
 
               {/* Tech stack strip */}
-              <div class="mt-28 flex flex-wrap items-center justify-center gap-x-12 gap-y-5">
-                <For
-                  each={[
-                    "SolidJS",
-                    "Bun",
-                    "Hono",
-                    "tRPC",
-                    "Edge Compute",
-                    "Turso",
-                    "WebGPU",
-                  ]}
-                >
-                  {(tech) => (
-                    <span
-                      class="text-[0.6875rem] font-medium uppercase tracking-[0.2em] transition-colors duration-300"
-                      style={{ color: "rgba(255,255,255,0.4)" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "rgba(255,255,255,0.75)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "rgba(255,255,255,0.4)";
-                      }}
-                    >
-                      {tech}
-                    </span>
-                  )}
-                </For>
+              <div class="landing-tech-strip-wrap mt-28">
+                <div class="landing-tech-strip-divider" aria-hidden="true" />
+                <div class="landing-tech-strip">
+                  <For
+                    each={[
+                      "SolidJS",
+                      "Bun",
+                      "Hono",
+                      "tRPC",
+                      "Edge Compute",
+                      "Turso",
+                      "WebGPU",
+                    ]}
+                  >
+                    {(tech) => (
+                      <span class="landing-tech-strip-item">{tech}</span>
+                    )}
+                  </For>
+                </div>
               </div>
             </div>
           </div>
@@ -462,7 +427,7 @@ export default function Home(): JSX.Element {
               </p>
             </div>
 
-            <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="landing-feature-grid grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
               <For each={features}>
                 {(feature) => (
                   <FeatureCard
@@ -477,6 +442,9 @@ export default function Home(): JSX.Element {
             </div>
           </div>
         </section>
+
+        {/* ── Product Ecosystem ─────────────────────────────────── */}
+        <ProductShowcase />
 
         {/* ── How it works ──────────────────────────────────────── */}
         <section class="landing-dark-section-alt py-40 lg:py-52">

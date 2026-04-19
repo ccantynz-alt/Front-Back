@@ -1,11 +1,13 @@
 import { Title } from "@solidjs/meta";
-import { A } from "@solidjs/router";
-import { For, Show } from "solid-js";
+import { A, useNavigate } from "@solidjs/router";
+import { For, Show, createMemo, onCleanup, onMount } from "solid-js";
 import type { JSX } from "solid-js";
 import { Badge, Button, Spinner } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { SEOHead } from "../components/SEOHead";
+import { registerShortcut } from "../lib/keyboard";
 import { trpc } from "../lib/trpc";
+import { useUrlState } from "../lib/url-state";
 import { useQuery } from "../lib/use-trpc";
 
 // ── Status Badge Mapping ────────────────────────────────────────────
@@ -175,6 +177,57 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
     { key: "projects", refetchInterval: 30_000 },
   );
 
+  // ── URL-backed filter ─────────────────────────────────────────────
+  // The text filter and status filter both round-trip through the
+  // query string so a teammate can paste the URL and see exactly the
+  // same view: /projects?filter=api&status=active. Browser back/
+  // forward also walks through filter changes, which is the deep-
+  // linking promise we want to deliver.
+  const [filter, setFilter] = useUrlState("filter", "");
+  const [statusFilter, setStatusFilter] = useUrlState("status", "all");
+
+  const navigate = useNavigate();
+
+  // ── Page-scoped keyboard shortcuts ────────────────────────────────
+  // `c` → create a new project (context-aware: this is the projects
+  // page, so "Create" means new project). `n` cycles through the list.
+  onMount(() => {
+    const offs = [
+      registerShortcut({
+        keys: "c",
+        description: "Create a new project",
+        group: "Project view",
+        action: () => navigate("/projects/new"),
+      }),
+      registerShortcut({
+        keys: "/",
+        description: "Focus the project filter",
+        group: "Project view",
+        action: () => {
+          const el = document.getElementById("projects-filter-input");
+          if (el instanceof HTMLInputElement) el.focus();
+        },
+      }),
+    ];
+    onCleanup(() => {
+      for (const off of offs) off();
+    });
+  });
+
+  const filtered = createMemo(() => {
+    const all = projects.data() ?? [];
+    const q = filter().toLowerCase().trim();
+    const status = statusFilter();
+    return all.filter((p) => {
+      if (status !== "all" && p.status !== status) return false;
+      if (!q) return true;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.framework ?? "").toLowerCase().includes(q)
+      );
+    });
+  });
+
   return (
     <ProtectedRoute>
       <SEOHead
@@ -203,6 +256,43 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
             </A>
           </div>
 
+          {/* ── Filter bar (URL-state backed) ──────────────────────── */}
+          <div class="mb-6 flex flex-wrap items-center gap-3">
+            <input
+              id="projects-filter-input"
+              type="search"
+              placeholder="Filter projects… (press / to focus)"
+              value={filter()}
+              onInput={(e) => setFilter(e.currentTarget.value)}
+              aria-label="Filter projects"
+              class="flex-1 min-w-[220px] rounded-lg px-3 py-2 text-sm"
+              style={{
+                background: "var(--color-bg-elevated)",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-text)",
+              }}
+            />
+            <select
+              value={statusFilter()}
+              onChange={(e) => setStatusFilter(e.currentTarget.value)}
+              aria-label="Filter by status"
+              class="rounded-lg px-3 py-2 text-sm"
+              style={{
+                background: "var(--color-bg-elevated)",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-text)",
+              }}
+            >
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="building">Building</option>
+              <option value="deploying">Deploying</option>
+              <option value="creating">Creating</option>
+              <option value="stopped">Stopped</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+
           {/* ── Content ────────────────────────────────────────────── */}
           <Show
             when={!projects.loading()}
@@ -213,11 +303,23 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
             }
           >
             <Show
-              when={(projects.data() ?? []).length > 0}
-              fallback={<EmptyState />}
+              when={filtered().length > 0}
+              fallback={
+                <Show
+                  when={(projects.data() ?? []).length > 0}
+                  fallback={<EmptyState />}
+                >
+                  <div
+                    class="py-16 text-center text-sm"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    No projects match this filter.
+                  </div>
+                </Show>
+              }
             >
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <For each={projects.data()}>
+                <For each={filtered()}>
                   {(project) => (
                     <ProjectCard
                       id={project.id}

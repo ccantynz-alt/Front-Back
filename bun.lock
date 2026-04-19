@@ -18,6 +18,7 @@
         "@ai-sdk/openai": "^3.0.0",
         "@back-to-the-future/ai-core": "workspace:*",
         "@back-to-the-future/db": "workspace:*",
+        "@back-to-the-future/dns-server": "workspace:*",
         "@back-to-the-future/flywheel": "workspace:*",
         "@back-to-the-future/queue": "workspace:*",
         "@back-to-the-future/schemas": "workspace:*",
@@ -208,6 +209,14 @@
       "devDependencies": {
         "@types/bun": "^1.2.0",
         "typescript": "^6",
+      },
+    },
+    "services/dns-server": {
+      "name": "@back-to-the-future/dns-server",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
       },
     },
     "services/edge-workers": {
@@ -409,6 +418,8 @@
     "@back-to-the-future/config": ["@back-to-the-future/config@workspace:packages/config"],
 
     "@back-to-the-future/db": ["@back-to-the-future/db@workspace:packages/db"],
+
+    "@back-to-the-future/dns-server": ["@back-to-the-future/dns-server@workspace:services/dns-server"],
 
     "@back-to-the-future/edge-workers": ["@back-to-the-future/edge-workers@workspace:services/edge-workers"],
 

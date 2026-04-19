@@ -1,0 +1,51 @@
+# Crontech — Authoritative DNS server, bare-metal edition
+#
+# Binds UDP + TCP port 53 as the unprivileged `dns-server` user via
+# AmbientCapabilities=CAP_NET_BIND_SERVICE. This is the whole reason the
+# bare-metal box has a dedicated systemd unit — on the old VPS the DNS
+# plan was blocked because Docker + port-53 + systemd-resolved collided.
+
+[Unit]
+Description=Crontech Authoritative DNS Server
+Documentation=https://crontech.ai
+After=network.target postgres.service
+Wants=postgres.service
+
+[Service]
+Type=simple
+User=dns-server
+Group=dns-server
+WorkingDirectory=/opt/crontech/services/dns-server
+
+ExecStart=/usr/local/bin/bun run src/index.ts
+Restart=always
+RestartSec=5
+
+Environment=NODE_ENV=production
+Environment=DNS_BIND_HOST=0.0.0.0
+Environment=DNS_BIND_PORT=53
+EnvironmentFile=-/opt/crontech/.env
+
+# The whole point: bind port 53 without root.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+ReadOnlyPaths=/opt/crontech
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dns-server
+
+[Install]
+WantedBy=multi-user.target

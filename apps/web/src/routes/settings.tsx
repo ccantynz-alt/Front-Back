@@ -3,6 +3,7 @@ import { createSignal, createMemo, For, Show, Switch, Match } from "solid-js";
 import type { JSX } from "solid-js";
 import { trpc } from "../lib/trpc";
 import { useQuery, useMutation, invalidateQueries, friendlyError } from "../lib/use-trpc";
+import { useOptimisticMutation } from "../lib/optimistic";
 import { useAuth } from "../stores";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -367,16 +368,37 @@ function ApiKeysTab(): JSX.Element {
     }
   };
 
+  // Optimistic revoke with 30-second undo. We snapshot the key row,
+  // remove it from the local cache immediately, then either restore it
+  // (on undo / commit failure) or fire the real `apiKeys.revoke` tRPC
+  // mutation when the timeout expires.
+  type KeyRow = NonNullable<ReturnType<typeof keys.data>>[number];
+  const readKeys = (): KeyRow[] => Array.from((keys.data() ?? []) as readonly KeyRow[]);
+  const undoableRevoke = useOptimisticMutation<{ id: string; name: string; snapshot: KeyRow | undefined }>({
+    apply: ({ id }) => {
+      keys.mutate(readKeys().filter((k) => k.id !== id));
+    },
+    rollback: ({ snapshot }) => {
+      if (!snapshot) {
+        invalidateQueries("api-keys");
+        return;
+      }
+      keys.mutate([...readKeys(), snapshot]);
+    },
+    commit: ({ id }) => revokeKey.mutate({ id }),
+    undoable: 30_000,
+    message: ({ name }) => `Revoked API key “${name}”`,
+    errorMessage: ({ name }) => `Failed to revoke “${name}”`,
+  });
+
   const handleRevoke = async (id: string): Promise<void> => {
     setError(null);
-    try {
-      await revokeKey.mutate({ id });
-      setConfirmRevoke(null);
-      // Drop the reveal banner if the user just revoked the key they were viewing.
-      if (revealedKey()?.id === id) setRevealedKey(null);
-    } catch (err) {
-      setError(friendlyError(err));
-    }
+    const target = readKeys().find((k) => k.id === id);
+    if (!target) return;
+    setConfirmRevoke(null);
+    // Drop the reveal banner if the user just revoked the key they were viewing.
+    if (revealedKey()?.id === id) setRevealedKey(null);
+    await undoableRevoke({ id, name: target.name, snapshot: target });
   };
 
   return (

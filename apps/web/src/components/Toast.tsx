@@ -1,16 +1,22 @@
 // ── Toast Notification System ─────────────────────────────────────────
 // Global toast notifications with success/error/info/warning variants.
 // Use showToast() from anywhere to give user feedback.
+//
+// The "undo" variant is a thin convenience that delegates to the
+// dedicated UndoToast queue (see ./UndoToast.tsx). It exists so the
+// rest of the codebase can call a single `showToast(... , "undo")`
+// API for undoable destructive actions without importing two modules.
 
 import { createSignal, For, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
+import { enqueueUndo, type UndoToastDescriptor } from "./UndoToast";
 
-export type ToastVariant = "success" | "error" | "info" | "warning";
+export type ToastVariant = "success" | "error" | "info" | "warning" | "undo";
 
 export interface Toast {
   id: number;
   message: string;
-  variant: ToastVariant;
+  variant: Exclude<ToastVariant, "undo">;
   duration: number;
 }
 
@@ -23,6 +29,19 @@ export function showToast(
   duration = 4000,
 ): void {
   if (typeof window === "undefined") return;
+  if (variant === "undo") {
+    // Callers that want full undo semantics should use
+    // `useOptimisticMutation` directly; this convenience path keeps
+    // the API uniform when the caller only needs a no-op undo button
+    // (e.g. surfacing a cosmetic "Undo" affordance from legacy code).
+    showUndoToast({
+      message,
+      durationMs: duration > 0 ? duration : 30_000,
+      onUndo: () => undefined,
+      onTimeout: () => undefined,
+    });
+    return;
+  }
   const id = nextId++;
   const toast: Toast = { id, message, variant, duration };
   setToasts((prev) => [...prev, toast]);
@@ -31,11 +50,16 @@ export function showToast(
   }
 }
 
+/** Push a toast onto the undo queue. Thin re-export of `enqueueUndo`. */
+export function showUndoToast(desc: UndoToastDescriptor): number {
+  return enqueueUndo(desc);
+}
+
 export function dismissToast(id: number): void {
   setToasts((prev) => prev.filter((t) => t.id !== id));
 }
 
-const variantStyles: Record<ToastVariant, { bg: string; border: string; color: string; icon: string }> = {
+const variantStyles: Record<Exclude<ToastVariant, "undo">, { bg: string; border: string; color: string; icon: string }> = {
   success: { bg: "rgba(34, 197, 94, 0.15)", border: "rgba(34, 197, 94, 0.5)", color: "var(--color-success)", icon: "✓" },
   error: { bg: "rgba(239, 68, 68, 0.15)", border: "rgba(239, 68, 68, 0.5)", color: "var(--color-danger)", icon: "✕" },
   info: { bg: "rgba(59, 130, 246, 0.15)", border: "rgba(59, 130, 246, 0.5)", color: "var(--color-primary)", icon: "ℹ" },

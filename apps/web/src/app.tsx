@@ -1,5 +1,5 @@
 import { MetaProvider, Title } from "@solidjs/meta";
-import { Router, useLocation } from "@solidjs/router";
+import { Router, useLocation, useNavigate } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { Suspense, lazy, onMount, createEffect, onCleanup } from "solid-js";
 import { AuthProvider, ThemeProvider, FeatureFlagProvider } from "./stores";
@@ -8,6 +8,8 @@ import { AppErrorBoundary } from "./components/ErrorBoundary";
 import { ToastContainer } from "./components/Toast";
 import { VoiceGlobal } from "./components/VoiceGlobal";
 import { PreLaunchBanner } from "./components/PreLaunchBanner";
+import { KeyboardHelp } from "./components/KeyboardHelp";
+import { registerShortcut } from "./lib/keyboard";
 import { initAnalytics, stopAnalytics, trackPageView } from "./lib/analytics";
 import { connectLiveUpdates, disconnectLiveUpdates } from "./lib/live-updates";
 import "./app.css";
@@ -53,6 +55,42 @@ function AnalyticsTracker(): null {
   return null;
 }
 
+// ── Global Navigation Shortcuts ─────────────────────────────────────
+// Registered once at the root so `g d`, `g p`, `g b` work from any
+// route. Per-page shortcuts (Create, Next deploy, etc.) live in the
+// pages themselves so they automatically scope to their context.
+function GlobalShortcuts(): null {
+  const navigate = useNavigate();
+
+  onMount(() => {
+    const offs = [
+      registerShortcut({
+        keys: "g d",
+        description: "Go to Dashboard",
+        group: "Navigation",
+        action: () => navigate("/dashboard"),
+      }),
+      registerShortcut({
+        keys: "g p",
+        description: "Go to Projects",
+        group: "Navigation",
+        action: () => navigate("/projects"),
+      }),
+      registerShortcut({
+        keys: "g b",
+        description: "Go to Billing",
+        group: "Navigation",
+        action: () => navigate("/billing"),
+      }),
+    ];
+    onCleanup(() => {
+      for (const off of offs) off();
+    });
+  });
+
+  return null;
+}
+
 export default function App() {
   return (
     <Router
@@ -64,6 +102,8 @@ export default function App() {
               <FeatureFlagProvider>
                 <AppErrorBoundary>
                   <AnalyticsTracker />
+                  <GlobalShortcuts />
+                  <KeyboardHelp />
                   <Suspense>
                     <CommandPalette />
                   </Suspense>
