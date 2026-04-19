@@ -38,13 +38,9 @@ async function tryInitBullMQ(): Promise<boolean> {
       await dispatch(job);
     });
 
-    console.log("[retry-queue] BullMQ delegation active (Redis-backed).");
     return true;
   } catch {
     bullmqAvailable = false;
-    console.warn(
-      "[retry-queue] BullMQ unavailable — falling back to in-memory queue.",
-    );
     return false;
   }
 }
@@ -112,8 +108,7 @@ export function enqueue(
       jobId: id,
       attempts: MAX_RETRIES,
       backoff: { type: "exponential", delay: 1000 },
-    }).catch((err: unknown) => {
-      console.warn("[retry-queue] BullMQ enqueue failed, adding to in-memory:", err);
+    }).catch(() => {
       addToInMemory(id, type, payload);
     });
     return id;
@@ -197,9 +192,9 @@ export function startQueue(intervalMs = 30_000): void {
   });
 
   timer = setInterval(() => {
-    processQueue().catch((err) =>
-      console.warn("[retry-queue] processQueue error:", err),
-    );
+    processQueue().catch(() => {
+      /* error in processQueue handled internally */
+    });
   }, intervalMs);
 }
 
