@@ -1,0 +1,31 @@
+[Unit]
+Description=Woodpecker CI Agent (local backend)
+Documentation=https://woodpecker-ci.org/
+After=woodpecker-server.service network-online.target
+Wants=network-online.target
+Requires=woodpecker-server.service
+
+[Service]
+Type=simple
+User=woodpecker
+Group=woodpecker
+EnvironmentFile=/etc/woodpecker/agent.env
+ExecStart=/usr/local/bin/woodpecker-agent
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=/var/lib/woodpecker/agent
+
+# Hardening — local backend runs shell commands, so we keep
+# ProtectSystem=strict but allow writes to the data dir.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/woodpecker
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=woodpecker-agent
+
+[Install]
+WantedBy=multi-user.target

@@ -224,13 +224,13 @@ function StepCard(props: Step & { isLast: boolean }): JSX.Element {
 
       <h3
         class="text-lg font-semibold tracking-tight"
-        style={{ color: "#f0f0f5" }}
+        style={{ color: "#0f172a" }}
       >
         {props.title}
       </h3>
       <p
         class="max-w-[280px] text-[0.875rem] leading-[1.75]"
-        style={{ color: "rgba(255,255,255,0.55)" }}
+        style={{ color: "#64748b" }}
       >
         {props.description}
       </p>
@@ -269,7 +269,7 @@ export default function Home(): JSX.Element {
       <div>
         {/* ── Hero (dark) ──────────────────────────────────────── */}
         <section class="landing-hero">
-          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-36 pb-36 lg:px-8 lg:pt-48 lg:pb-48">
+          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-40 pb-44 lg:px-8 lg:pt-52 lg:pb-56">
             <div class="flex flex-col items-center text-center">
               {/* Announcement badge */}
               <div class="landing-hero-badge mb-10">
@@ -280,7 +280,7 @@ export default function Home(): JSX.Element {
               {/* Headline */}
               <h1
                 class="max-w-4xl text-[2.75rem] font-extrabold leading-[1.08] tracking-[-0.03em] sm:text-[3.5rem] lg:text-[4.25rem]"
-                style={{ color: "#fff" }}
+                style={{ color: "#0f172a" }}
               >
                 The CI/CD{" "}
                 <span class="landing-gradient-text">
@@ -291,7 +291,7 @@ export default function Home(): JSX.Element {
               {/* Subheading */}
               <p
                 class="mt-7 max-w-2xl text-[1.0625rem] leading-[1.8] sm:text-lg"
-                style={{ color: "rgba(255,255,255,0.7)" }}
+                style={{ color: "#475569" }}
               >
                 Compliance-native CI/CD for AI SaaS companies. Every build emits
                 signed, hash-chained audit evidence &mdash; the same artifacts
@@ -368,13 +368,13 @@ export default function Home(): JSX.Element {
               </div>
               <h2
                 class="max-w-2xl text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem]"
-                style={{ color: "#f0f0f5" }}
+                style={{ color: "#0f172a" }}
               >
                 Compliance is a second pipeline you build by hand
               </h2>
               <p
                 class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7]"
-                style={{ color: "rgba(255,255,255,0.5)" }}
+                style={{ color: "#64748b" }}
               >
                 Seed-to-Series-A SaaS teams hit SOC 2 and discover the tooling
                 market has two bad options: roll your own, or paper it over
@@ -451,13 +451,13 @@ export default function Home(): JSX.Element {
               </div>
               <h2
                 class="max-w-2xl text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem]"
-                style={{ color: "#f0f0f5" }}
+                style={{ color: "#0f172a" }}
               >
                 Push, scan, ship &mdash; with a signed trail behind every release
               </h2>
               <p
                 class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7]"
-                style={{ color: "rgba(255,255,255,0.5)" }}
+                style={{ color: "#64748b" }}
               >
                 Three steps. No second pipeline. No evidence-gathering sprint
                 at audit time.
@@ -566,10 +566,10 @@ export default function Home(): JSX.Element {
 
         {/* ── Bottom CTA (dark) ─────────────────────────────────── */}
         <section class="landing-cta-section">
-          <div class="relative z-10 mx-auto max-w-[800px] px-6 py-36 text-center lg:px-8 lg:py-48">
+          <div class="relative z-10 mx-auto max-w-[800px] px-6 py-40 text-center lg:px-8 lg:py-52">
             <h2
               class="text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem] lg:text-[2.75rem]"
-              style={{ color: "#fff" }}
+              style={{ color: "#0f172a" }}
             >
               Ship with the audit trail{" "}
               <span class="landing-gradient-text">
@@ -578,7 +578,7 @@ export default function Home(): JSX.Element {
             </h2>
             <p
               class="mt-6 text-[1.0625rem] leading-[1.7] sm:text-lg"
-              style={{ color: "rgba(255,255,255,0.6)" }}
+              style={{ color: "#64748b" }}
             >
               Connect a repo, push a commit, and watch evidence get produced on
               the same pipeline that ships your code. SOC 2 stops being a

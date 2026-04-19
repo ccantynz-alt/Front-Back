@@ -1,17 +1,33 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# Crontech — CI Pipeline (Woodpecker CI)
+# Crontech — CI Pipeline (Woodpecker CI on Gluecron)
 # ──────────────────────────────────────────────────────────────────────────────
-# Replaces .github/workflows/ci.yml. Runs on every push and pull request.
-# Executes all quality gates from CLAUDE.md §0.4: type check, lint, build,
-# test, link checker, button checker.
+# Runs on every push (non-Main) and every pull_request. Deploy lives in
+# `.woodpecker/deploy.yml` and fires only on pushes to Main.
 #
-# Agent runs with local backend (no Docker) — steps execute directly on the
-# Vultr VPS as the 'deploy' user, with access to bun, git, and the full
-# system environment.
+# Compatibility: this file is driven by Woodpecker receiving webhooks from
+# Gluecron. Gluecron emits GitHub-compatible webhook payloads (per
+# docs/empire/gluecron-spec.md §Webhooks), so the `event` / `branch` filters
+# below apply unchanged whether the source-of-truth is GitHub (transitional)
+# or Gluecron (target state).
+#
+# Executes the quality gates from CLAUDE.md §0.4: lint, type check, tests,
+# build. Plus the Crontech-specific gates (links, buttons, a11y, bundle).
+#
+# Agent runs with the local backend (no Docker) directly on the Vultr VPS
+# as the `deploy` user. Bun, git, Docker, and the full system environment
+# are available. All secrets come from Woodpecker secret references — NEVER
+# hardcoded — see docs/runbooks/woodpecker-setup.md for the secret list.
 # ──────────────────────────────────────────────────────────────────────────────
 
 when:
-  - event: [push, pull_request, manual]
+  # Pull requests: always run the full gate suite.
+  # Pushes to any branch except Main: run gates (deploy.yml handles Main).
+  # Manual: allow re-running a commit from the Woodpecker UI for debugging.
+  - event: pull_request
+  - event: push
+    branch:
+      exclude: [Main, main]
+  - event: manual
 
 steps:
   # ── Install dependencies ─────────────────────────────────────────────────
@@ -21,21 +37,21 @@ steps:
       - echo "=== Installing dependencies ==="
       - bun install --frozen-lockfile
 
+  # ── Biome lint (fast, fails first) ───────────────────────────────────────
+  lint:
+    image: ""
+    commands:
+      - echo "=== Running Biome lint ==="
+      - bunx biome check apps packages services
+    depends_on:
+      - install
+
   # ── Type check all packages ──────────────────────────────────────────────
   typecheck:
     image: ""
     commands:
       - echo "=== Type checking all packages ==="
       - bun run check
-    depends_on:
-      - install
-
-  # ── Biome lint ───────────────────────────────────────────────────────────
-  lint:
-    image: ""
-    commands:
-      - echo "=== Running Biome lint ==="
-      - bunx biome check apps packages services
     depends_on:
       - install
 
@@ -67,10 +83,15 @@ steps:
       - install
 
   # ── Build all packages ──────────────────────────────────────────────────
+  # SERVER_PRESET controls whether we build for the Vercel target or the
+  # bare-metal self-host target. Default on CI is bare-metal because that
+  # is how we deploy now (per docs/INFRASTRUCTURE.md INF-001/002).
   build:
     image: ""
+    environment:
+      SERVER_PRESET: "${SERVER_PRESET:-bare-metal}"
     commands:
-      - echo "=== Building all packages ==="
+      - echo "=== Building all packages (preset=$SERVER_PRESET) ==="
       - bun run build
       - echo "=== Verifying build artifacts ==="
       - test -f apps/api/dist/index.js && echo "API build OK" || exit 1
@@ -88,11 +109,11 @@ steps:
     depends_on:
       - build
 
-  # ── Run all tests ───────────────────────────────────────────────────────
+  # ── Run all tests (unit + integration) ──────────────────────────────────
   test:
     image: ""
     commands:
-      - echo "=== Running all tests ==="
+      - echo "=== Running all tests (unit + integration) ==="
       - bun run test
     depends_on:
       - build
@@ -106,8 +127,8 @@ steps:
       - echo "  CI PASSED — All quality gates green"
       - echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       - echo ""
-      - echo "  Type check:     PASS"
       - echo "  Lint:           PASS"
+      - echo "  Type check:     PASS"
       - echo "  Links:          PASS"
       - echo "  Buttons:        PASS"
       - echo "  Accessibility:  PASS"

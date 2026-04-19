@@ -1,0 +1,62 @@
+# Crontech — Woodpecker CI Caddy front
+# ──────────────────────────────────────────────────────────────────────────────
+# Fronts the bare-metal Woodpecker server (bound to 127.0.0.1:8000 by
+# scripts/install-woodpecker.sh) at https://ci.crontech.ai.
+#
+# How to use:
+#
+#   Option A — import into main Caddyfile (preferred):
+#     Add ONE line to /etc/caddy/Caddyfile (outside any site block):
+#
+#       import /etc/caddy/conf.d/woodpecker.Caddyfile
+#
+#     Then copy this file:
+#
+#       sudo install -D -m 0644 infra/caddy/woodpecker.Caddyfile \
+#         /etc/caddy/conf.d/woodpecker.Caddyfile
+#       sudo systemctl reload caddy
+#
+#   Option B — append the site block below directly to your main
+#     Caddyfile (infra/caddy/Caddyfile) and reload Caddy.
+#
+# DNS: point `ci.crontech.ai` (A/AAAA) at the box running Woodpecker
+# BEFORE reloading Caddy so Let's Encrypt can issue the cert.
+# ──────────────────────────────────────────────────────────────────────────────
+
+ci.crontech.ai {
+	encode gzip zstd
+
+	# Security headers — match the posture of the rest of the platform.
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		-Server
+	}
+
+	# Reverse proxy to the bare-metal Woodpecker server.
+	# The installer binds the HTTP listener to 127.0.0.1:8000 and keeps
+	# gRPC on 127.0.0.1:9000 (agent talks to the server locally only).
+	reverse_proxy 127.0.0.1:8000 {
+		health_uri /healthz
+		health_interval 30s
+		health_timeout 5s
+
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	log {
+		output file /var/log/caddy/woodpecker.log {
+			roll_size 50mb
+			roll_keep 5
+			roll_keep_for 168h
+		}
+		format json
+		level INFO
+	}
+}
