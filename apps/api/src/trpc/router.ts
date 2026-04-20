@@ -37,6 +37,7 @@ import { domainSearchRouter } from "./procedures/domain-search";
 import { domainsRouter } from "./procedures/domains";
 import { esimRouter } from "./procedures/esim";
 import { smsRouter } from "./procedures/sms";
+import { dbInspectorRouter } from "./procedures/db-inspector";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -86,6 +87,7 @@ export const appRouter = router({
   domains: domainsRouter,
   esim: esimRouter,
   sms: smsRouter,
+  dbInspector: dbInspectorRouter,
 });
 
 export type AppRouter = typeof appRouter;
