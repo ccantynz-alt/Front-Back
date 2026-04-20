@@ -1,9 +1,18 @@
 # Crontech Platform — Production Caddyfile
 # Automatic HTTPS via Let's Encrypt. HTTP/2 only for now (see note below).
 #
-# This Caddyfile is mounted into the Caddy container by
-# docker-compose.production.yml. All upstreams are Docker-internal
-# service names (no 127.0.0.1 — Caddy runs inside the compose network).
+# ── Bare-metal deployment notice ──────────────────────────────────────
+# Upstreams below reference localhost:<port> because Caddy runs as a
+# systemd service on the Vultr host, and the app services (crontech-web,
+# crontech-api, gluecron) are also systemd units binding to 0.0.0.0 on
+# the host. Docker service names (web:3000, api:3001) do NOT resolve
+# in this topology.
+#
+# If you switch back to docker-compose where Caddy runs inside the
+# compose network, change these back to service names:
+#   localhost:3000 -> web:3000
+#   localhost:3001 -> api:3001
+# (gluecron on :3002 is host-only either way.)
 #
 # Cache-Control strategy:
 #   /_build/*, /assets/*  -> content-hashed by Vinxi, safe to cache forever
@@ -71,7 +80,7 @@ crontech.ai {
 		-Server
 	}
 
-	reverse_proxy web:3000 {
+	reverse_proxy localhost:3000 {
 		health_uri /
 		health_interval 30s
 		health_timeout 5s
@@ -116,7 +125,7 @@ api.crontech.ai {
 		-Server
 	}
 
-	reverse_proxy api:3001 {
+	reverse_proxy localhost:3001 {
 		health_uri /api/health
 		health_interval 30s
 		health_timeout 5s
