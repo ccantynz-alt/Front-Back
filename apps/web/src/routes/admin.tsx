@@ -3,6 +3,7 @@ import { createSignal, createResource, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { AdminRoute } from "../components/AdminRoute";
+import { PlatformSiblingsWidget } from "../components/PlatformSiblingsWidget";
 import { trpc } from "../lib/trpc";
 import { showToast } from "../components/Toast";
 
@@ -334,6 +335,11 @@ function AdminPageContent(): JSX.Element {
               </>
             )}
           </Show>
+        </div>
+
+        {/* Platform Family - cross-product health across Crontech, Gluecron, GateTest */}
+        <div class="mb-6">
+          <PlatformSiblingsWidget />
         </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
