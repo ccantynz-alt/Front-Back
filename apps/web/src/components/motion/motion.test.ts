@@ -15,7 +15,7 @@
 //      arity (SolidJS components are plain functions of props).
 //   3. The `usePrefersReducedMotion` hook is a callable accessor factory.
 //
-// Render-time behaviour is covered by Playwright/visual tests elsewhere.
+// Render-time behaviour is covered by GateTest visual / accessibility modules.
 // The goal of this file is a regression tripwire on the public shape —
 // if a component is renamed, deleted, or its export signature changes,
 // this file fails.

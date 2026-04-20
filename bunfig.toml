@@ -7,5 +7,5 @@ exact = true
 save = true
 
 [test]
-# Exclude Playwright e2e tests from bun test (run via: bunx playwright test)
-exclude = ["e2e/**"]
+# E2E visual/a11y/link coverage is provided by GateTest (see package.json: test:e2e).
+# No per-directory exclusions required — GateTest runs against the dev server.

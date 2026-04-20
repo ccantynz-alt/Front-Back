@@ -1,7 +1,7 @@
 // Smoke tests for /admin/dns/:zoneId — zone detail page.
 // Static source-contract tests (matches the DNS-UI agent's pattern
 // for sibling admin routes). Route-level interaction behavior is
-// covered at the tRPC layer + E2E once Playwright exists.
+// covered at the tRPC layer + GateTest crawl modules (visual/a11y/links).
 
 import { describe, expect, test } from "bun:test";
 import { readFileSync, existsSync } from "node:fs";
@@ -81,4 +81,4 @@ describe("admin/dns/[zoneId] — static source contract", () => {
 // bun:test cannot resolve SolidJS JSX runtime when dynamically
 // importing a .tsx module. The static source-contract tests above
 // verify the helpers are exported and referenced correctly.
-// E2E interaction coverage arrives with Playwright.
+// E2E interaction coverage arrives via GateTest crawl on the dev server.
