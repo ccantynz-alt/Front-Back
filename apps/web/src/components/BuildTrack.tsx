@@ -81,7 +81,7 @@ export const BUILD_TRACK_BLOCKS: readonly BlockEntry[] = [
   { id: "BLK-017", title: "Flywheel (shipped in #88)", status: "undocumented", note: "needs Bible entry" },
   { id: "BLK-018", title: "Voice dispatcher (shipped in #88)", status: "undocumented", note: "needs Bible entry" },
   { id: "BLK-019", title: "Build Theatre (shipped in #88)", status: "undocumented", note: "needs Bible entry" },
-  { id: "BLK-020", title: "Crontech Independence (kill Hetzner + Vercel SDK)", status: "proposed", note: "Phase A: ~3 working days" },
+  { id: "BLK-020", title: "Crontech Independence (kill Vultr + Vercel SDK)", status: "proposed", note: "Phase A: ~3 working days" },
   { id: "BLK-021", title: "WebGPU draft model (Zoobicon TTFT <100ms)", status: "proposed" },
   { id: "BLK-022", title: "AI Gateway + BYOK", status: "proposed" },
   { id: "BLK-023", title: "Env-var migration in onboarding", status: "proposed" },

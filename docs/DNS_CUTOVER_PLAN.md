@@ -1,6 +1,6 @@
 # Phase C — DNS Cutover Plan
 
-Cut `crontech.ai` from Hetzner (`204.168.251.243`) to Cloudflare Pages (`crontech-web`) + Cloudflare Worker (`crontech-api`).
+Cut `crontech.ai` from Vultr (`204.168.251.243`) to Cloudflare Pages (`crontech-web`) + Cloudflare Worker (`crontech-api`).
 
 **Time:** ~15 min of dashboard work. 5 min–48h DNS propagation (most users resolve within 1h if TTLs were lowered beforehand).
 
@@ -132,10 +132,10 @@ Expect Cloudflare anycast IPs (e.g., `104.x.x.x` / `172.67.x.x`). **NOT** `204.1
 
 ## 5. Rollback Plan
 
-If anything breaks, you need <15 min back to Hetzner.
+If anything breaks, you need <15 min back to Vultr.
 
 **Before you cut:**
-- Screenshot the current Hetzner DNS zone (every record). Save to `~/Desktop/hetzner-dns-backup-$(date +%F).png`.
+- Screenshot the current Vultr DNS zone (every record). Save to `~/Desktop/vultr-dns-backup-$(date +%F).png`.
 - Note the old registrar nameservers (copy to a notes file).
 
 **To roll back (fast path — stay on Cloudflare NS):**
@@ -148,7 +148,7 @@ If anything breaks, you need <15 min back to Hetzner.
 1. Registrar → restore previous nameservers.
 2. Propagation: 1–48h depending on TTL at registrar.
 
-**Do NOT power down Hetzner for at least 24h after cutover.** Warm standby. Hetzner shutdown is Phase E, not Phase C.
+**Do NOT power down Vultr for at least 24h after cutover.** Warm standby. Vultr shutdown is Phase E, not Phase C.
 
 ---
 
@@ -156,7 +156,7 @@ If anything breaks, you need <15 min back to Hetzner.
 
 Nameserver flip replaces the **entire zone**. Anything not migrated into Cloudflare DNS goes dark the moment NS propagate.
 
-**Before flipping NS**, export the Hetzner zone and audit for:
+**Before flipping NS**, export the Vultr zone and audit for:
 
 ### MX records (email)
 If `crontech.ai` receives mail (e.g., `hello@crontech.ai`, Google Workspace, Microsoft 365, Fastmail), copy every `MX` record into Cloudflare DNS. Example Google Workspace:
@@ -179,7 +179,7 @@ Scan the old zone for all of these:
 | `@` containing `sentry-`                  | Sentry verification                      |
 | Any `*._acme-challenge`                   | Let's Encrypt DNS-01 (safe to drop if not in active use) |
 
-**Rule: if Hetzner has it and you don't know what it does, migrate it anyway.** Deleting is cheap; a missing verify TXT can lock you out of Stripe/Google for hours.
+**Rule: if Vultr has it and you don't know what it does, migrate it anyway.** Deleting is cheap; a missing verify TXT can lock you out of Stripe/Google for hours.
 
 ---
 
@@ -190,13 +190,13 @@ Scan the old zone for all of these:
 | Pre-flight checks                     | 5 min        |
 | Add DNS records in Cloudflare         | 3 min        |
 | Wire Pages + Workers custom domains   | 3 min        |
-| Audit + migrate MX/TXT from Hetzner   | 5–10 min     |
+| Audit + migrate MX/TXT from Vultr   | 5–10 min     |
 | Flip NS at registrar                  | 2 min        |
 | **Active work total**                 | **~15–20 min** |
 | DNS propagation (most users)          | 5 min – 1h   |
 | DNS propagation (worst case TTL=48h)  | up to 48h    |
 
-If you haven't lowered TTLs on the old Hetzner zone to ~300s a day ahead, assume worst case. If TTLs were already low, assume <1h for 95% of resolvers.
+If you haven't lowered TTLs on the old Vultr zone to ~300s a day ahead, assume worst case. If TTLs were already low, assume <1h for 95% of resolvers.
 
 ---
 

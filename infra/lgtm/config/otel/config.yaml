@@ -1,6 +1,9 @@
 # ── OTel Collector config ──────────────────────────────────────────
-# Single ingestion point. Receives OTLP from every Crontech service,
-# forwards logs to Loki, traces to Tempo, metrics to Mimir.
+# Single ingestion point. Receives OTLP (gRPC 4317, HTTP 4318) from
+# every Crontech service, fans out:
+#   - logs    → Loki (otlphttp, http://loki:3100/otlp)
+#   - traces  → Tempo (otlphttp, http://tempo:4318)
+#   - metrics → Mimir (prometheusremotewrite, http://mimir:9009/api/v1/push)
 
 receivers:
   otlp:
@@ -28,16 +31,20 @@ processors:
         action: upsert
 
 exporters:
-  otlp/tempo:
-    endpoint: tempo:4317
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
     tls:
       insecure: true
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-  otlphttp/mimir:
-    endpoint: http://mimir:9009/otlp
+  otlphttp/tempo:
+    endpoint: http://tempo:4318
     tls:
       insecure: true
+  prometheusremotewrite:
+    endpoint: http://mimir:9009/api/v1/push
+    tls:
+      insecure: true
+    resource_to_telemetry_conversion:
+      enabled: true
   debug:
     verbosity: normal
 
@@ -51,12 +58,12 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [otlp/tempo]
+      exporters: [otlphttp/tempo]
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [otlphttp/mimir]
+      exporters: [prometheusremotewrite]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [loki]
+      exporters: [otlphttp/loki]

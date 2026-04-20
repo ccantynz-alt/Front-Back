@@ -14,7 +14,7 @@ export function securityHeaders(): MiddlewareHandler {
     );
     c.header(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss: https:;",
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
     );
   };
 }

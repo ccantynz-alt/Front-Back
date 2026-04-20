@@ -207,7 +207,7 @@ Equally important: the moves that LOOK like they would help but actively reduce 
 
 **Correct move:** Admin area gets exactly these pages until $10K MRR:
 1. Empire overview (jobs created, revenue, runway)
-2. Infrastructure status (which Hetzner box, health, uptime)
+2. Infrastructure status (which Vultr server, health, uptime)
 3. Migration status (which app is on Crontech, which is pending)
 4. CFO report viewer (latest monthly report)
 

@@ -3,6 +3,7 @@
 // so they have something to play with from second one. Called on signup.
 
 import { TEMPLATES, type Template } from "@back-to-the-future/schemas";
+import { randomBytes } from "crypto";
 
 export interface SampleProject {
   id: string;
@@ -53,7 +54,7 @@ function projectFromTemplate(id: string, name: string, description: string): Sam
   const t = pickTemplate(id);
   const now = new Date().toISOString();
   return {
-    id: `sample-${id}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `sample-${id}-${randomBytes(3).toString('hex')}`,
     name,
     description,
     templateId: t.id,
@@ -95,10 +96,7 @@ export function createSampleDataBundle(): SampleDataBundle {
 
 // Called automatically when a new user signs up.
 // In a real system this would persist to the database.
-export async function seedNewUser(userId: string): Promise<SampleDataBundle> {
+export async function seedNewUser(_userId: string): Promise<SampleDataBundle> {
   const bundle = createSampleDataBundle();
-  // TODO: persist via Drizzle when DB layer is ready.
-  // For now we just return the bundle so callers can hand it back to the client.
-  console.info(`[sample-data] seeded user ${userId} with ${bundle.projects.length} projects`);
   return bundle;
 }

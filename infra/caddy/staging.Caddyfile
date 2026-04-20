@@ -1,0 +1,43 @@
+# staging.Caddyfile — Crontech staging site blocks.
+#
+# Include from the main Caddyfile with:
+#   import /etc/caddy/staging.Caddyfile
+#
+# Auto-HTTPS is on by default; make sure DNS A records for
+#   staging.crontech.ai
+#   staging-api.crontech.ai
+# point at this box before reloading Caddy, or certificates will fail.
+
+(staging_fwd_headers) {
+	header_up Host {host}
+	header_up X-Real-IP {remote_host}
+	header_up X-Forwarded-For {remote_host}
+	header_up X-Forwarded-Proto {scheme}
+	header_up X-Forwarded-Host {host}
+}
+
+staging.crontech.ai {
+	encode zstd gzip
+
+	log {
+		output file /var/log/caddy/staging.crontech.ai.log
+		format json
+	}
+
+	reverse_proxy localhost:3010 {
+		import staging_fwd_headers
+	}
+}
+
+staging-api.crontech.ai {
+	encode zstd gzip
+
+	log {
+		output file /var/log/caddy/staging-api.crontech.ai.log
+		format json
+	}
+
+	reverse_proxy localhost:3011 {
+		import staging_fwd_headers
+	}
+}

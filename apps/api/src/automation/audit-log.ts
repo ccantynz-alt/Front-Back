@@ -38,8 +38,8 @@ export async function writeAudit(entry: AuditEntry): Promise<void> {
       entryHash,
     });
   } catch (err) {
-    // Never let audit failures break automation - log to console.
-    console.warn("[audit] DB write failed, falling back to console:", err);
-    console.log(`[audit] ${timestamp} ${entry.actorId} ${entry.action} ${entry.resourceType}:${entry.resourceId} ${entry.result}${entry.detail ? " - " + entry.detail : ""}`);
+    // Never let audit failures break automation - log to stderr as fallback.
+    process.stderr.write(`[audit] DB write failed, falling back to stderr: ${err}\n`);
+    process.stderr.write(`[audit] ${timestamp} ${entry.actorId} ${entry.action} ${entry.resourceType}:${entry.resourceId} ${entry.result}${entry.detail ? " - " + entry.detail : ""}\n`);
   }
 }

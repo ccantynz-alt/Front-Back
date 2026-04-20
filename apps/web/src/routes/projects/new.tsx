@@ -1,12 +1,16 @@
 import { Title } from "@solidjs/meta";
-import { A, useNavigate } from "@solidjs/router";
+import { A, useNavigate, useSearchParams } from "@solidjs/router";
 import { createSignal, Show, For } from "solid-js";
 import type { JSX } from "solid-js";
-import { Button, Input, Select } from "@back-to-the-future/ui";
+import { Badge, Button, Input, Select } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { SEOHead } from "../../components/SEOHead";
 import { trpc } from "../../lib/trpc";
 import { useMutation, friendlyError } from "../../lib/use-trpc";
+import {
+  getTemplateById,
+  type ProjectTemplate,
+} from "../../lib/project-templates";
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -144,17 +148,33 @@ function DnsInstructions(props: { domain: string }): JSX.Element {
 
 export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // ── Template (from ?template= query param) ──────────────────────
+  const template = (): ProjectTemplate | undefined => {
+    const raw = searchParams.template;
+    const id = Array.isArray(raw) ? raw[0] : raw;
+    return getTemplateById(id);
+  };
+
+  const initial = template();
 
   // ── Step state ──────────────────────────────────────────────────
   const [step, setStep] = createSignal(0);
 
-  // ── Form state ──────────────────────────────────────────────────
+  // ── Form state (pre-filled from the template when present) ──────
   const [name, setName] = createSignal("");
-  const [description, setDescription] = createSignal("");
-  const [repoUrl, setRepoUrl] = createSignal("");
-  const [framework, setFramework] = createSignal("");
-  const [buildCommand, setBuildCommand] = createSignal("");
-  const [runtime, setRuntime] = createSignal("");
+  const [description, setDescription] = createSignal(
+    initial ? initial.description : "",
+  );
+  const [repoUrl, setRepoUrl] = createSignal(initial ? initial.repoUrl : "");
+  const [framework, setFramework] = createSignal(
+    initial ? initial.framework : "",
+  );
+  const [buildCommand, setBuildCommand] = createSignal(
+    initial ? initial.buildCommand : "",
+  );
+  const [runtime, setRuntime] = createSignal(initial ? initial.runtime : "");
   const [port, setPort] = createSignal("");
   const [customDomain, setCustomDomain] = createSignal("");
 
@@ -259,6 +279,21 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
             <p class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
               Configure and deploy to the Crontech edge network.
             </p>
+            <Show when={template()}>
+              {(t) => (
+                <div class="mt-4 flex items-center gap-2">
+                  <span
+                    class="text-xl"
+                    aria-hidden="true"
+                  >
+                    {t().icon}
+                  </span>
+                  <Badge variant="info" size="sm">
+                    Creating from template: {t().name}
+                  </Badge>
+                </div>
+              )}
+            </Show>
           </div>
 
           {/* ── Step Indicator ───────────────────────────────────── */}

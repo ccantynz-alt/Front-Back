@@ -1,0 +1,37 @@
+[Unit]
+Description=Crontech Sentinel — competitive intelligence one-shot collector
+Documentation=https://github.com/ccantynz-alt/Crontech/blob/main/services/sentinel/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=crontech
+Group=crontech
+WorkingDirectory=/opt/crontech/services/sentinel
+# Optional env file — leading `-` means systemd does NOT fail if absent.
+# Use this to supply SLACK_WEBHOOK_URL, GITHUB_TOKEN, DISCORD_WEBHOOK_URL.
+EnvironmentFile=-/opt/crontech/.env
+ExecStart=/usr/local/bin/bun run src/run-once.ts --alerts
+Restart=on-failure
+RestartSec=30
+
+# Hardening — Sentinel only needs read access to its own workspace plus
+# write access to services/sentinel/data/ (intelligence.json + .last-run).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/opt/crontech/services/sentinel/data
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sentinel
+
+[Install]
+WantedBy=multi-user.target

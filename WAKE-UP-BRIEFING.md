@@ -40,7 +40,7 @@ Non-code documentation work that doesn't overlap with any of the 6 agents. Commi
 - `docs/cfo/templates/QUARTERLY-UPDATE.md` — board-style quarterly update template (13 sections including Succession readiness)
 - `docs/mission/SUCCESSION.md` — the generational succession plan (referenced by doctrine draft §0.10, now its own document)
 - `infra/bootstrap/README.md` — Phase 0 bootstrap documentation with preconditions and exit criteria
-- `infra/bootstrap/phase-0.sh` — idempotent Hetzner provisioning script, ready to run the moment you hand over the IP
+- `infra/bootstrap/phase-0.sh` — idempotent Vultr provisioning script, ready to run the moment you hand over the IP
 - `WAKE-UP-BRIEFING.md` — this file
 
 ## 4. Still blocked on you (no rush — Simmer Protocol respected)
@@ -48,7 +48,7 @@ Non-code documentation work that doesn't overlap with any of the 6 agents. Commi
 Nothing below is urgent. These are the items I can't unlock without you. The autonomous work above avoided all of these gates.
 
 1. **CLAUDE.md PIN** — to integrate §0.9 (Employment Mission), §0.10 (Simmer Protocol + Generational Plan), §0.11 (Competitor-Free Stack Rule) drafts from `docs/doctrine-drafts/CLAUDE-SECTIONS.md`.
-2. **Hetzner IP** — once I have it, `infra/bootstrap/phase-0.sh` runs and Phase 0 goes live.
+2. **Vultr IP** — once I have it, `infra/bootstrap/phase-0.sh` runs and Phase 0 goes live.
 3. **Stripe live account confirmation** — so the `/founding` page CTA can be wired to a real Checkout Session.
 4. **NZ independent chartered accountant engaged** — compliance-only package, ~$400-800/month. Discovery call script is in `docs/strategy/BURNOUT-PROTECTION.md` §5.
 5. **Competitive positioning confirmation** for two empire projects: `emailed` and `AI-Immigration-Compliance`. Their entries in `docs/strategy/COMPETITOR-FREE-STACK.md` are flagged "awaiting Craig confirmation."

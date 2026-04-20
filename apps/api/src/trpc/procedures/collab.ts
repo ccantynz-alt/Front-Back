@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "../init";
+import { router, protectedProcedure } from "../init";
 
 // In-memory room store (production would use Durable Objects / DB)
 const rooms = new Map<string, { id: string; name: string; users: string[]; createdAt: string }>();
@@ -19,11 +19,11 @@ export const collabRouter = router({
       return room;
     }),
 
-  getRooms: publicProcedure.query(() => {
+  getRooms: protectedProcedure.query(() => {
     return [...rooms.values()];
   }),
 
-  getRoomUsers: publicProcedure
+  getRoomUsers: protectedProcedure
     .input(z.object({ roomId: z.string() }))
     .query(({ input }) => {
       const room = rooms.get(input.roomId);

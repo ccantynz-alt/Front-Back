@@ -1,4 +1,4 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as tursoSchema from "./schema";
 
@@ -11,7 +11,12 @@ export { tursoSchema };
 
 // ── Neon Client Factory ──────────────────────────────────────────────
 
-export function createNeonClient(databaseUrl?: string) {
+type NeonDb = ReturnType<typeof drizzle>;
+
+export function createNeonClient(databaseUrl?: string): {
+  db: NeonDb;
+  sql: NeonQueryFunction<false, false>;
+} {
   const url = databaseUrl ?? process.env["NEON_DATABASE_URL"];
   if (!url) {
     throw new Error(

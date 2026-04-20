@@ -46,19 +46,148 @@
     "reason": "BLK-007 observation sprint. Flip to 'strict' in the PR that adds GateTest to main branch protection's required-checks list.",
     "flipTo": "strict"
   },
+  "triggers": {
+    "pullRequest": {
+      "enabled": true,
+      "branchPatterns": [
+        "main",
+        "master",
+        "Main",
+        "claude/*",
+        "claude/**",
+        "gatetest/*",
+        "gatetest/**"
+      ],
+      "reason": "Every PR opened from agent branch prefixes (claude/*, gatetest/*) must be auto-scanned. Targets main/master/Main on Crontech (default branch is capitalised Main)."
+    },
+    "push": {
+      "enabled": true,
+      "branchPatterns": ["main", "master", "Main"]
+    },
+    "schedule": [
+      {
+        "name": "empire-smoke",
+        "cron": "*/5 * * * *",
+        "command": "bun run integrations/smoke/empire-smoke.ts",
+        "reason": "Runs the cross-repo smoke harness every 5 minutes. Surfaces cert / DNS / response-code regressions before a human notices. Owned by agent 6 — ensure integrations/smoke/empire-smoke.ts exists before flipping schedule to required.",
+        "severity": "error",
+        "timeoutSeconds": 180,
+        "allowMissing": true
+      }
+    ]
+  },
+  "rules": {
+    "caddyfileValidate": {
+      "enabled": true,
+      "severity": "error",
+      "when": {
+        "pathsChanged": ["infra/caddy/**"]
+      },
+      "setup": [
+        {
+          "name": "install-caddy",
+          "run": "curl -fsSL https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_amd64.tar.gz | tar -xz -C /tmp caddy && sudo mv /tmp/caddy /usr/local/bin/caddy && caddy version"
+        }
+      ],
+      "command": "caddy validate --config infra/caddy/Caddyfile --adapter caddyfile",
+      "blocksMerge": true,
+      "reason": "Caddyfile syntax errors have taken prod down before; validate via the real caddy binary whenever infra/caddy/** changes. Failure blocks merge."
+    },
+    "schemaRegressionGate": {
+      "enabled": true,
+      "severity": "error",
+      "when": {
+        "pathsChanged": [
+          "packages/*/src/**/*.ts",
+          "packages/*/src/**/*.tsx",
+          "services/*/src/db/**",
+          "services/*/drizzle/**",
+          "apps/*/src/server/db/**",
+          "**/schema.ts",
+          "**/schema.prisma",
+          "**/*.types.ts",
+          "**/types/**/*.ts"
+        ]
+      },
+      "command": "bun run typecheck",
+      "scope": "dependents",
+      "reason": "When exported types or DB schemas move, re-typecheck every dependent package so the ripple doesn't land silently."
+    },
+    "secretLeak": {
+      "enabled": true,
+      "severity": "error",
+      "scanEveryPR": true,
+      "patterns": [
+        "\\.env(\\..+)?$",
+        "\\.env\\.local$",
+        "\\.env\\.production$",
+        ".*\\.pem$",
+        ".*\\.key$",
+        "(^|/)id_rsa$",
+        "(^|/)id_ed25519$",
+        "(^|/)\\.pgpass$",
+        "(^|/)credentials\\.json$",
+        "(^|/)service-account.*\\.json$"
+      ],
+      "contentPatterns": [
+        "AKIA[0-9A-Z]{16}",
+        "ghp_[A-Za-z0-9]{36,}",
+        "gho_[A-Za-z0-9]{36,}",
+        "github_pat_[A-Za-z0-9_]{80,}",
+        "sk-ant-[A-Za-z0-9_-]{40,}",
+        "sk-[A-Za-z0-9]{40,}",
+        "xox[baprs]-[A-Za-z0-9-]{10,}",
+        "-----BEGIN (RSA |OPENSSH |EC |DSA |PGP )?PRIVATE KEY-----"
+      ],
+      "reason": "Verify .env / *.pem / id_rsa / hardcoded tokens don't slip through. Overlaps with secrets module above — this is the path-level belt-and-braces gate."
+    },
+    "releaseNotesValidator": {
+      "enabled": true,
+      "severity": "warn",
+      "blocksMerge": false,
+      "when": {
+        "labels": ["user-visible", "feature", "breaking"],
+        "pathsChanged": [
+          "apps/**",
+          "packages/web/**",
+          "packages/ui/**"
+        ]
+      },
+      "require": {
+        "anyOf": [
+          "CHANGELOG.md",
+          "docs/CHANGELOG.md",
+          "apps/*/CHANGELOG.md"
+        ]
+      },
+      "message": "User-visible change detected but no CHANGELOG.md entry. This is a soft warn — merge is not blocked.",
+      "reason": "Soft reminder: PRs tagged user-visible / feature / breaking should touch a CHANGELOG. Warn only, never block."
+    }
+  },
   "ignore": {
     "paths": [
-      "node_modules/**",
-      ".turbo/**",
+      "**/node_modules/**",
+      "**/.turbo/**",
+      ".claude/**",
+      "**/.vercel/**",
+      "**/.output/**",
+      "**/.vinxi/**",
+      "**/dist/**",
+      "**/build/**",
+      "apps/web/.output/**",
+      "apps/web/public/_build/**",
       "apps/*/dist/**",
       "apps/*/.output/**",
       "apps/*/.vinxi/**",
+      "apps/*/.vercel/**",
       "packages/*/dist/**",
       "services/*/dist/**",
       "**/*.min.js",
+      "**/*.min.css",
       "**/*.map",
       "coverage/**",
       "docs/**/*.md",
+      "bun.lock",
       "HANDOFF.md"
     ],
     "rules": {

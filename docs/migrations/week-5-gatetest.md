@@ -115,7 +115,7 @@ Rollback procedure:
 ## Risks unique to GateTest
 
 - **Security tool supply chain.** GateTest scans other people's code. Any compromise of GateTest = compromise of its users. Signing and provenance matter.
-- **Performance.** Static analysis is CPU-heavy. The Hetzner CX32 may not be enough if scan volume is high — scale the worker pool to a second box if needed.
+- **Performance.** Static analysis is CPU-heavy. The Vultr server may not be enough if scan volume is high — scale the worker pool to a second box if needed.
 - **False positive rate.** If the new stack produces different findings than the old one, users will lose trust fast. Parallel-run data must match.
 - **Customer webhooks.** If GateTest webhooks their customers' CI pipelines, a webhook URL change breaks everyone.
 

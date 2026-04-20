@@ -1,16 +1,24 @@
-import { For, Show, createSignal, onMount } from "solid-js";
+import { For, Show, Suspense, createSignal, lazy, onMount } from "solid-js";
 import type { JSX } from "solid-js";
 import { useSearchParams, useNavigate } from "@solidjs/router";
 import { SEOHead } from "../components/SEOHead";
 import { Button, Card, Input, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
-import { CollaborativeBuilder } from "../components/CollaborativeBuilder";
 import type { ComponentNode } from "../collab/collaborative-doc";
 import type { PageLayout } from "@back-to-the-future/ai-core";
 import type { ComputeTier } from "@back-to-the-future/ai-core";
 import { PageLayoutRenderer } from "../components/PageLayoutRenderer";
 import { trpc } from "../lib/trpc";
 import { computeTier, tierReason, detectAndSetTier } from "../lib/ai-client";
+
+// CollaborativeBuilder drags in yjs + y-websocket (~70KB raw). The
+// builder route only renders it when a room is joined (`isCollaborative`),
+// so lazy-load it to keep the solo builder path lean. CLAUDE.md §6.6.
+const CollaborativeBuilder = lazy(() =>
+  import("../components/CollaborativeBuilder").then((m) => ({
+    default: m.CollaborativeBuilder,
+  })),
+);
 
 // ── Chat Message Type ─────────────────────────────────────────────────
 
@@ -427,14 +435,16 @@ export default function BuilderPage(): JSX.Element {
         when={isCollaborative()}
         fallback={builderContent}
       >
-        <CollaborativeBuilder
-          roomId={roomId()!}
-          userId={userId}
-          userName={userName}
-          onTreeChange={handleTreeChange}
-        >
-          {builderContent}
-        </CollaborativeBuilder>
+        <Suspense fallback={builderContent}>
+          <CollaborativeBuilder
+            roomId={roomId()!}
+            userId={userId}
+            userName={userName}
+            onTreeChange={handleTreeChange}
+          >
+            {builderContent}
+          </CollaborativeBuilder>
+        </Suspense>
       </Show>
     </ProtectedRoute>
   );

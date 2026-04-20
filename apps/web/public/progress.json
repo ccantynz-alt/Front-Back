@@ -272,45 +272,9 @@
     {
       "id": "infrastructure",
       "title": "Infrastructure & Phase 0 Bootstrap",
-      "subtitle": "Hetzner bare-metal + LGTM observability",
+      "subtitle": "Self-hosted infrastructure + LGTM observability",
       "icon": "server",
       "entries": [
-        {
-          "id": "hetzner-provision",
-          "title": "Hetzner box provisioning",
-          "description": "Provision the Phase 0 Hetzner bare-metal box. Install base OS, firewall, SSH hardening.",
-          "status": "blocked",
-          "priority": "p0",
-          "commit": null,
-          "branch": null,
-          "docLink": "infra/phase-0.sh",
-          "blockedReason": "Requires Craig to create the Hetzner account and share SSH access",
-          "tags": ["infra", "phase-0"]
-        },
-        {
-          "id": "phase-0-script",
-          "title": "Phase 0 bootstrap script authored",
-          "description": "infra/phase-0.sh — idempotent Hetzner bootstrap. Hardens OS, creates crontech user, installs Docker + Bun + Caddy, creates /srv/crontech layout, deploys LGTM stack. 262 lines, bash -n clean.",
-          "status": "completed",
-          "priority": "p0",
-          "commit": "0c8dc20",
-          "branch": "claude/fix-tracked-repos-types-LYo16",
-          "docLink": "infra/phase-0.sh",
-          "blockedReason": null,
-          "tags": ["infra", "phase-0"]
-        },
-        {
-          "id": "phase-0-bootstrap",
-          "title": "Phase 0 bootstrap script execution",
-          "description": "Run phase-0.sh on the Hetzner box to install Docker, Bun, Caddy, and the core runtime.",
-          "status": "blocked",
-          "priority": "p0",
-          "commit": null,
-          "branch": null,
-          "docLink": "infra/README.md",
-          "blockedReason": "Requires Hetzner box + SSH access",
-          "tags": ["infra", "phase-0"]
-        },
         {
           "id": "lgtm-stack-authored",
           "title": "LGTM observability stack authored",
@@ -321,18 +285,6 @@
           "branch": "claude/fix-tracked-repos-types-LYo16",
           "docLink": "infra/lgtm/docker-compose.yml",
           "blockedReason": null,
-          "tags": ["infra", "observability"]
-        },
-        {
-          "id": "lgtm-deploy",
-          "title": "LGTM observability stack deployment",
-          "description": "docker compose up on Hetzner box. Auto-provisioning wires Loki/Tempo/Mimir into Grafana on first start.",
-          "status": "blocked",
-          "priority": "p1",
-          "commit": null,
-          "branch": null,
-          "docLink": "infra/lgtm/docker-compose.yml",
-          "blockedReason": "Requires Hetzner box online",
           "tags": ["infra", "observability"]
         },
         {
@@ -414,18 +366,6 @@
           "docLink": "docs/migrations/README.md",
           "blockedReason": null,
           "tags": ["migration", "docs"]
-        },
-        {
-          "id": "week-0-bootstrap",
-          "title": "Week 0: Bootstrap exit criteria",
-          "description": "Hetzner box live, LGTM green, Stripe live, auth working, deploy pipeline working.",
-          "status": "in_progress",
-          "priority": "p0",
-          "commit": null,
-          "branch": null,
-          "docLink": "docs/migrations/README.md",
-          "blockedReason": null,
-          "tags": ["migration", "week-0"]
         },
         {
           "id": "week-1-marcoreid",

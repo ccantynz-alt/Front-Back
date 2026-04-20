@@ -1,0 +1,10 @@
+{
+  "name": "blk009-hello-world-fixture",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Minimal fixture repo used by the BLK-009 E2E test. bun install + bun run build must succeed without network access.",
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun"
+  }
+}

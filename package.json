@@ -6,6 +6,9 @@
     "packages/*",
     "services/*"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
@@ -22,7 +25,9 @@
     "check-a11y": "bun run scripts/a11y-check.ts",
     "generate-sitemap": "bun run scripts/generate-sitemap.ts",
     "prebuild": "bun run scripts/generate-sitemap.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:status": "bun run scripts/db-status.ts",
+    "db:validate": "bun run scripts/db-validate.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",

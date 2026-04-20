@@ -203,8 +203,12 @@ export function NotificationCenter(): JSX.Element {
                     onClick={() => handleMarkRead(notif.id)}
                     role="button"
                     tabIndex={0}
+                    aria-label={`Mark notification "${notif.title}" as read`}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleMarkRead(notif.id);
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleMarkRead(notif.id);
+                      }
                     }}
                   >
                     <Stack direction="vertical" gap="xs">

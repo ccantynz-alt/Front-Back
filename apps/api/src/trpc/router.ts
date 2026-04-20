@@ -9,6 +9,7 @@ import { collabRouter } from "./procedures/collab";
 import { emailRouter } from "./procedures/email";
 import { adminRouter } from "./procedures/admin";
 import { analyticsRouter } from "./procedures/analytics";
+import { analyticsChartsRouter } from "./procedures/analytics-charts";
 import { notificationsRouter } from "./procedures/notifications";
 import { tenantRouter } from "./procedures/tenant";
 import { apiKeysRouter } from "./procedures/apiKeys";
@@ -22,12 +23,21 @@ import { uiRouter } from "./procedures/ui";
 import { storageRouter } from "./procedures/storage";
 import { reposRouter } from "./procedures/repos";
 import { projectsRouter } from "./procedures/projects";
+import { deploymentsRouter } from "./procedures/deployments";
 import { importRouter } from "./procedures/importProject";
 import { aiDeployRouter } from "./procedures/aiDeploy";
 import { theatreRouter } from "./procedures/theatre";
 import { flywheelRouter } from "./procedures/flywheel";
 import { voiceRouter } from "./procedures/voice";
 import { launchRouter } from "./procedures/launch";
+import { usageRouter } from "./procedures/usage";
+import { dnsImportRouter } from "./procedures/dns-import";
+import { dnsRouter } from "./procedures/dns";
+import { domainSearchRouter } from "./procedures/domain-search";
+import { domainsRouter } from "./procedures/domains";
+import { esimRouter } from "./procedures/esim";
+import { smsRouter } from "./procedures/sms";
+import { dbInspectorRouter } from "./procedures/db-inspector";
 
 export const appRouter = router({
   health: publicProcedure.query(() => {
@@ -49,6 +59,7 @@ export const appRouter = router({
   email: emailRouter,
   admin: adminRouter,
   analytics: analyticsRouter,
+  analyticsCharts: analyticsChartsRouter,
   notifications: notificationsRouter,
   tenant: tenantRouter,
   apiKeys: apiKeysRouter,
@@ -62,12 +73,21 @@ export const appRouter = router({
   storage: storageRouter,
   repos: reposRouter,
   projects: projectsRouter,
+  deployments: deploymentsRouter,
   import: importRouter,
   aiDeploy: aiDeployRouter,
   theatre: theatreRouter,
   flywheel: flywheelRouter,
   voice: voiceRouter,
   launch: launchRouter,
+  usage: usageRouter,
+  dnsImport: dnsImportRouter,
+  dns: dnsRouter,
+  domainSearch: domainSearchRouter,
+  domains: domainsRouter,
+  esim: esimRouter,
+  sms: smsRouter,
+  dbInspector: dbInspectorRouter,
 });
 
 export type AppRouter = typeof appRouter;

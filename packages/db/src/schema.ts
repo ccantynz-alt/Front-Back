@@ -610,9 +610,10 @@ export const deployments = sqliteTable("deployments", {
     .references(() => users.id),
   commitSha: text("commit_sha"),
   commitMessage: text("commit_message"),
+  commitAuthor: text("commit_author"),
   branch: text("branch").default("main"),
   status: text("status", {
-    enum: ["queued", "building", "deploying", "live", "failed", "rolled_back"],
+    enum: ["queued", "building", "deploying", "live", "failed", "rolled_back", "cancelled"],
   })
     .notNull()
     .default("queued"),
@@ -620,12 +621,45 @@ export const deployments = sqliteTable("deployments", {
   containerId: text("container_id"),
   containerImage: text("container_image"),
   url: text("url"),
+  /** Canonical public deployment URL — alias for BLK-009 naming (`deployUrl`). */
+  deployUrl: text("deploy_url"),
   duration: integer("duration"),
+  /** Build-only duration in milliseconds (excludes deploy + queue time). */
+  buildDuration: integer("build_duration"),
+  errorMessage: text("error_message"),
+  triggeredBy: text("triggered_by", {
+    enum: ["manual", "webhook", "api", "scheduled"],
+  })
+    .notNull()
+    .default("manual"),
   isCurrent: integer("is_current", { mode: "boolean" }).notNull().default(false),
+  startedAt: integer("started_at", { mode: "timestamp" }),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  cancelRequestedAt: integer("cancel_requested_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
   finishedAt: integer("finished_at", { mode: "timestamp" }),
+});
+
+// ── Deployment Logs (BLK-009) ────────────────────────────────────────
+// Line-by-line build output for a deployment. Populated by
+// `apps/api/src/automation/build-runner.ts` as it runs
+// git-clone / install / build steps. Streamed to the UI by the deploy
+// SSE channel.
+
+export const deploymentLogs = sqliteTable("deployment_logs", {
+  id: text("id").primaryKey(),
+  deploymentId: text("deployment_id")
+    .notNull()
+    .references(() => deployments.id, { onDelete: "cascade" }),
+  stream: text("stream", { enum: ["stdout", "stderr", "event"] })
+    .notNull()
+    .default("stdout"),
+  line: text("line").notNull(),
+  timestamp: integer("timestamp", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 // ── Flywheel Memory (BLK-017) ────────────────────────────────────────
@@ -722,6 +756,71 @@ export const flywheelVoiceCommands = sqliteTable("flywheel_voice_commands", {
 });
 
 // =============================================================================
+// BLK-010 — Usage Metering (Stripe metered billing).
+// Every billable event — build minute consumed, edge request served, AI
+// token generated, storage byte held — lands here first. A downstream
+// reporter (not this file) aggregates rows by (userId, billingMonth,
+// eventType) and pushes the totals to Stripe's usage record API. Keeping
+// Stripe out of the hot path means we never drop usage if Stripe is down.
+// =============================================================================
+export const usageEvents = sqliteTable("usage_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  projectId: text("project_id").references(() => projects.id, {
+    onDelete: "set null",
+  }),
+  eventType: text("event_type", {
+    enum: ["build", "request", "ai_tokens", "storage"],
+  }).notNull(),
+  quantity: integer("quantity").notNull(),
+  unit: text("unit").notNull(), // "minutes" | "requests" | "tokens" | "bytes"
+  metadata: text("metadata"), // arbitrary JSON
+  occurredAt: integer("occurred_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  billingMonth: text("billing_month").notNull(), // YYYY-MM, UTC
+});
+
+// =============================================================================
+// BLK-010 — Usage Reports (Stripe usage-record ledger).
+// Tracks what we've ALREADY pushed to Stripe for a given
+// (userId, billingMonth, eventType). The reporter reads the current
+// aggregate from usage_events, subtracts the quantity we last reported,
+// and pushes the DELTA to Stripe as an incremental usage record. This
+// makes the reporter idempotent and resumable — re-running the reporter
+// never double-bills the customer, and a crashed reporter can be safely
+// re-run on the next cron tick.
+//
+// Uniqueness is on (userId, billingMonth, eventType). Each row is
+// updated in-place every report cycle; we keep the last stripe record
+// id + timestamp for audit / debugging.
+// =============================================================================
+export const usageReports = sqliteTable("usage_reports", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  billingMonth: text("billing_month").notNull(), // YYYY-MM, UTC
+  eventType: text("event_type", {
+    enum: ["build", "request", "ai_tokens", "storage"],
+  }).notNull(),
+  /** Cumulative quantity we've pushed to Stripe this billing month. */
+  reportedQuantity: integer("reported_quantity").notNull().default(0),
+  /** Subscription-item id at Stripe the usage was pushed against. */
+  stripeSubscriptionItemId: text("stripe_subscription_item_id").notNull(),
+  /** Most recent Stripe usage record id (idempotency / debugging handle). */
+  lastStripeUsageRecordId: text("last_stripe_usage_record_id"),
+  lastReportedAt: integer("last_reported_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// =============================================================================
 // BLK-019 — Build Theatre (the Vercel-style "what is actually happening"
 // pane). Every long-running op in the platform (deploys, ingests, migrations,
 // CI gates, voice-dispatched AI agents) emits into these three tables so the
@@ -797,3 +896,217 @@ export const buildLogs = sqliteTable("build_logs", {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+// =============================================================================
+// BLK-023 — Self-hosted DNS (replaces Cloudflare DNS).
+// Two tables drive the DNS engine's zone store: `dns_zones` holds the SOA
+// parameters + NS delegation for each authoritative zone, and `dns_records`
+// holds the individual resource records (A/AAAA/CNAME/MX/TXT/NS/SOA/SRV/CAA).
+// Serial numbers are bumped on any record mutation so secondaries can pick up
+// changes via AXFR/IXFR. The DNS engine service reads these tables hot-path,
+// so the zone+name+type composite index is the one that matters.
+// All timestamps are stored as unix-millisecond integers (matches the
+// `ZoneStore` TypeScript contract consumed by services/dns-server).
+// =============================================================================
+export const dnsZones = sqliteTable("dns_zones", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  adminEmail: text("admin_email").notNull(),
+  primaryNs: text("primary_ns").notNull(),
+  secondaryNs: text("secondary_ns"),
+  refreshSeconds: integer("refresh_seconds").notNull().default(3600),
+  retrySeconds: integer("retry_seconds").notNull().default(600),
+  expireSeconds: integer("expire_seconds").notNull().default(604800),
+  minimumTtl: integer("minimum_ttl").notNull().default(300),
+  serial: integer("serial").notNull().default(1),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const dnsRecords = sqliteTable("dns_records", {
+  id: text("id").primaryKey(),
+  zoneId: text("zone_id")
+    .notNull()
+    .references(() => dnsZones.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: text("type", {
+    enum: ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SOA", "SRV", "CAA"],
+  }).notNull(),
+  content: text("content").notNull(),
+  ttl: integer("ttl").notNull().default(300),
+  priority: integer("priority"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// =============================================================================
+// BLK-024 — OpenSRS domain registrar integration.
+// `domain_registrations` stores every domain Crontech has sold on a customer's
+// behalf via the Tucows OpenSRS reseller API. We record both wholesale cost
+// and retail markup at sale time (in microdollars to dodge floating-point
+// drift) so revenue can be reported without re-hitting the registrar.
+// `opensrs_handle` is the OpenSRS order id returned from SW_REGISTER — needed
+// for later renewals, status checks, and transfer flows.
+// Additive only: no existing table or column is touched.
+// =============================================================================
+export const domainRegistrations = sqliteTable("domain_registrations", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  domain: text("domain").notNull().unique(),
+  tld: text("tld").notNull(),
+  registeredAt: integer("registered_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  autoRenew: integer("auto_renew", { mode: "boolean" }).notNull().default(false),
+  opensrsHandle: text("opensrs_handle"),
+  costMicrodollars: integer("cost_microdollars").notNull().default(0),
+  markupMicrodollars: integer("markup_microdollars").notNull().default(0),
+  status: text("status", {
+    enum: ["pending", "active", "expired", "transferring", "cancelled"],
+  })
+    .notNull()
+    .default("pending"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// =============================================================================
+// BLK-029 — eSIM reseller.
+// `esim_orders` persists every eSIM data plan we've sold on a customer's
+// behalf via the upstream eSIM provider. Wholesale cost and retail markup
+// are both captured at sale time (microdollars, to dodge FP drift) so
+// revenue reporting can be driven from the DB without re-querying the
+// provider. The `provider_order_id` handle is needed for follow-up
+// install-info refreshes. `esim_packages_cache` is an additive, lightweight
+// read-through cache of the provider's package catalogue so pricing pages
+// stay fast + stable between provider API hits.
+// Additive only: no existing table or column is touched.
+// =============================================================================
+export const esimOrders = sqliteTable("esim_orders", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  packageId: text("package_id").notNull(),
+  providerOrderId: text("provider_order_id").notNull(),
+  countryCode: text("country_code"),
+  dataGb: integer("data_gb").notNull().default(0),
+  validityDays: integer("validity_days").notNull().default(0),
+  costMicrodollars: integer("cost_microdollars").notNull().default(0),
+  markupMicrodollars: integer("markup_microdollars").notNull().default(0),
+  status: text("status", {
+    enum: ["pending", "active", "delivered", "expired", "refunded", "cancelled"],
+  })
+    .notNull()
+    .default("pending"),
+  iccid: text("iccid"),
+  lpaString: text("lpa_string"),
+  qrCodeDataUrl: text("qr_code_data_url"),
+  purchasedAt: integer("purchased_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const esimPackagesCache = sqliteTable("esim_packages_cache", {
+  id: text("id").primaryKey(),
+  providerPackageId: text("provider_package_id").notNull().unique(),
+  countryCode: text("country_code"),
+  name: text("name").notNull(),
+  dataGb: integer("data_gb").notNull().default(0),
+  validityDays: integer("validity_days").notNull().default(0),
+  wholesaleMicrodollars: integer("wholesale_microdollars").notNull().default(0),
+  lastSyncedAt: integer("last_synced_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// =============================================================================
+// BLK-030 — Native SMS (Sinch-backed) send/receive infrastructure.
+// `sms_messages` is an append-only log of every inbound + outbound SMS we
+// process on behalf of a customer. Cost + markup live in microdollars
+// (1 USD = 1_000_000 µ$) so the aggregator pipeline can total revenue
+// without floating-point drift. `segments` records the billable part
+// count Sinch charges us for a given body. `sms_numbers` is the pool of
+// phone numbers each customer has leased; `sms_webhook_subscriptions`
+// links a customer's own webhook URL to a specific MSISDN so inbound MO
+// messages are fanned out to their endpoint via the existing webhook
+// engine.
+// Additive only: no existing table or column is touched.
+// =============================================================================
+export const smsMessages = sqliteTable("sms_messages", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  direction: text("direction", { enum: ["send", "receive"] }).notNull(),
+  fromNumber: text("from_number").notNull(),
+  toNumber: text("to_number").notNull(),
+  body: text("body").notNull(),
+  segments: integer("segments").notNull().default(1),
+  status: text("status", {
+    enum: ["queued", "sent", "delivered", "failed", "received"],
+  }).notNull(),
+  providerMessageId: text("provider_message_id"),
+  costMicrodollars: integer("cost_microdollars").notNull().default(0),
+  markupMicrodollars: integer("markup_microdollars").notNull().default(0),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  sentAt: integer("sent_at", { mode: "timestamp" }),
+  deliveredAt: integer("delivered_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const smsNumbers = sqliteTable("sms_numbers", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  e164Number: text("e164_number").notNull().unique(),
+  countryCode: text("country_code").notNull(),
+  sinchNumberId: text("sinch_number_id").notNull(),
+  /** JSON-encoded string array, e.g. ["sms","voice","mms"]. */
+  capabilities: text("capabilities").notNull().default('["sms"]'),
+  monthlyCostMicrodollars: integer("monthly_cost_microdollars")
+    .notNull()
+    .default(0),
+  purchasedAt: integer("purchased_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  releasedAt: integer("released_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const smsWebhookSubscriptions = sqliteTable(
+  "sms_webhook_subscriptions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    e164Number: text("e164_number").notNull(),
+    customerWebhookUrl: text("customer_webhook_url").notNull(),
+    hmacSecret: text("hmac_secret").notNull(),
+    /** JSON-encoded string array, e.g. ["inbound","delivered","failed"]. */
+    events: text("events").notNull().default('["inbound"]'),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+);

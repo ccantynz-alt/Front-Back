@@ -3,6 +3,12 @@ import type { JSX } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { Badge } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
+import {
+  projectTemplates,
+  TEMPLATE_TAG_FILTERS,
+  type ProjectTemplate,
+  type TemplateTag,
+} from "../lib/project-templates";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -274,12 +280,126 @@ function TemplateCard(props: {
   );
 }
 
+// ── Starter Project Card ────────────────────────────────────────────
+
+function StarterProjectCard(props: {
+  template: ProjectTemplate;
+  onUse: (id: string) => void;
+}): JSX.Element {
+  return (
+    <div
+      class="group relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02]"
+      style={{
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      {/* Hero block with icon + framework gradient */}
+      <div
+        class="relative flex h-32 w-full items-center justify-center overflow-hidden"
+        style={{ background: props.template.gradient }}
+      >
+        <div
+          class="absolute inset-0 opacity-10"
+          style={{
+            "background-image":
+              "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+            "background-size": "20px 20px",
+          }}
+        />
+        <span
+          class="relative text-5xl drop-shadow-sm"
+          aria-hidden="true"
+        >
+          {props.template.icon}
+        </span>
+      </div>
+
+      <div class="flex flex-1 flex-col p-5">
+        <div class="flex items-start justify-between gap-2">
+          <span
+            class="text-base font-semibold"
+            style={{ color: "var(--color-text)" }}
+          >
+            {props.template.name}
+          </span>
+          <span
+            class="rounded-md px-2 py-0.5 text-[10px] font-mono uppercase tracking-wide"
+            style={{
+              background: "var(--color-bg-muted)",
+              color: "var(--color-text-faint)",
+            }}
+          >
+            {props.template.framework}
+          </span>
+        </div>
+        <p
+          class="mt-2 text-sm leading-relaxed flex-1"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          {props.template.description}
+        </p>
+
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          <For each={props.template.tags}>
+            {(tag) => (
+              <span
+                class="rounded-md px-2 py-0.5 text-[11px] font-medium"
+                style={{
+                  background:
+                    "color-mix(in oklab, var(--color-primary) 15%, transparent)",
+                  color: "var(--color-primary)",
+                }}
+              >
+                {tag}
+              </span>
+            )}
+          </For>
+        </div>
+
+        <Show when={props.template.envVarsRequired.length > 0}>
+          <p
+            class="mt-3 text-[11px] font-mono"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Needs: {props.template.envVarsRequired.join(", ")}
+          </p>
+        </Show>
+
+        <button
+          type="button"
+          onClick={() => props.onUse(props.template.id)}
+          class="mt-4 w-full rounded-xl py-2.5 text-sm font-semibold transition-all duration-200"
+          style={{
+            background: "var(--color-primary)",
+            color: "var(--color-primary-text)",
+          }}
+        >
+          Use template
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ───────────────────────────────────────────────────────
 
 export default function TemplatesPage(): JSX.Element {
   const navigate = useNavigate();
   const [search, setSearch] = createSignal("");
   const [activeFilter, setActiveFilter] = createSignal("all");
+  const [starterFilter, setStarterFilter] =
+    createSignal<TemplateTag | "all">("all");
+
+  const filteredStarters = createMemo((): readonly ProjectTemplate[] => {
+    const tag = starterFilter();
+    if (tag === "all") return projectTemplates;
+    return projectTemplates.filter((t) => t.tags.includes(tag));
+  });
+
+  const handleUseStarter = (id: string): void => {
+    navigate(`/projects/new?template=${id}`);
+  };
 
   const filtered = createMemo((): TemplateItem[] => {
     let items = TEMPLATE_ITEMS;
@@ -371,6 +491,7 @@ export default function TemplatesPage(): JSX.Element {
                   <input
                     type="text"
                     placeholder="Search templates..."
+                    aria-label="Search templates"
                     value={search()}
                     onInput={(e) =>
                       setSearch(e.currentTarget.value)
@@ -382,6 +503,103 @@ export default function TemplatesPage(): JSX.Element {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ── Starter Projects ───────────────────────────────────── */}
+        <div class="mx-auto max-w-6xl px-6 pb-12">
+          <div class="mb-6 flex flex-col items-center text-center">
+            <Badge variant="success" size="sm">
+              Starter projects
+            </Badge>
+            <h2
+              class="mt-4 text-3xl font-bold tracking-tight sm:text-4xl"
+              style={{ color: "var(--color-text)" }}
+            >
+              Skip the blank page.
+            </h2>
+            <p
+              class="mt-2 max-w-xl text-sm"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              Pre-configured projects with framework, runtime, and build
+              command wired up. One click and you are deploying.
+            </p>
+          </div>
+
+          {/* Tag filter chips */}
+          <div class="mb-6 flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              class="rounded-full px-4 py-2 text-sm font-medium transition-all duration-200"
+              style={{
+                background:
+                  starterFilter() === "all"
+                    ? "var(--color-primary)"
+                    : "var(--color-bg-subtle)",
+                color:
+                  starterFilter() === "all"
+                    ? "var(--color-primary-text)"
+                    : "var(--color-text-secondary)",
+                border:
+                  starterFilter() === "all"
+                    ? "1px solid var(--color-primary-light)"
+                    : "1px solid var(--color-border)",
+              }}
+              onClick={() => setStarterFilter("all")}
+            >
+              All
+            </button>
+            <For each={TEMPLATE_TAG_FILTERS}>
+              {(tag) => (
+                <button
+                  type="button"
+                  class="rounded-full px-4 py-2 text-sm font-medium transition-all duration-200"
+                  style={{
+                    background:
+                      starterFilter() === tag
+                        ? "var(--color-primary)"
+                        : "var(--color-bg-subtle)",
+                    color:
+                      starterFilter() === tag
+                        ? "var(--color-primary-text)"
+                        : "var(--color-text-secondary)",
+                    border:
+                      starterFilter() === tag
+                        ? "1px solid var(--color-primary-light)"
+                        : "1px solid var(--color-border)",
+                  }}
+                  onClick={() => setStarterFilter(tag)}
+                >
+                  {tag}
+                </button>
+              )}
+            </For>
+          </div>
+
+          <Show
+            when={filteredStarters().length > 0}
+            fallback={
+              <div class="flex flex-col items-center justify-center py-10 text-center">
+                <p
+                  class="text-sm"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  No starter projects match that filter.
+                </p>
+              </div>
+            }
+          >
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <For each={filteredStarters()}>
+                {(template) => (
+                  <StarterProjectCard
+                    template={template}
+                    onUse={handleUseStarter}
+                  />
+                )}
+              </For>
+            </div>
+          </Show>
         </div>
 
         {/* ── Filter Bar ─────────────────────────────────────────── */}

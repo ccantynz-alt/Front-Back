@@ -7,7 +7,7 @@ This directory is the single source of truth for every piece of infrastructure C
 ```
 infra/
 ├── README.md              # This file
-├── phase-0.sh             # One-shot Hetzner bootstrap (run as root)
+├── phase-0.sh             # One-shot Vultr bootstrap (run as root)
 ├── cloudflare/            # Wrangler configs for edge workers
 ├── docker/                # App Dockerfiles (web, api)
 └── lgtm/                  # Loki + Grafana + Tempo + Mimir observability stack
@@ -23,18 +23,18 @@ infra/
 
 ## Phase 0: First Box Bootstrap
 
-**Goal:** take a fresh Hetzner box (or any Ubuntu 22.04+ host) from zero to fully-provisioned Crontech substrate in one command.
+**Goal:** take a fresh Vultr box (or any Ubuntu 22.04+ host) from zero to fully-provisioned Crontech substrate in one command.
 
 ### Prerequisites
 
-- Hetzner Cloud account (or equivalent: Vultr, Hivelocity, OVH)
+- Vultr Cloud account (or equivalent: Vultr, Hivelocity, OVH)
 - Box specs (starter): CX32 — 4 vCPU, 8 GB RAM, 80 GB SSD (~€8/month)
 - SSH access as root
 - DNS zone control for `crontech.nz` (or whatever apex domain you use)
 
 ### Steps
 
-1. **Provision the box.** In Hetzner Cloud Console: New Project → Add Server → Ubuntu 22.04 → CX32 → EU region.
+1. **Provision the box.** In Vultr Cloud Console: New Project → Add Server → Ubuntu 22.04 → CX32 → EU region.
 
 2. **SSH in as root.**
 
@@ -120,7 +120,7 @@ infra/
 
 Phase 0 is DONE when all of these are true:
 
-- [ ] Fresh Hetzner box provisioned and reachable
+- [ ] Fresh Vultr box provisioned and reachable
 - [ ] `phase-0.sh` completed without errors
 - [ ] `crontech` user exists with SSH key auth, password auth disabled
 - [ ] `docker ps` shows 5 healthy LGTM containers (loki, tempo, mimir, grafana, otel-collector)
@@ -163,7 +163,7 @@ OTEL_SERVICE_NAME=crontech-api
 
 ### Scaling beyond Phase 0
 
-Single-box LGTM is fine for Phase 0 (one Hetzner CX32 can handle MarcoReid + emailed + Astra traffic). When any of these hit, it's time to scale:
+Single-box LGTM is fine for Phase 0 (one Vultr CX32 can handle MarcoReid + emailed + Astra traffic). When any of these hit, it's time to scale:
 
 - > 50 GB/day log volume
 - > 500 RPS sustained across the fleet
@@ -180,7 +180,7 @@ See `docs/migrations/` for when each scale event is expected to hit.
 
 ## Cloudflare (edge workers)
 
-See `infra/cloudflare/wrangler.toml`. Cloudflare Workers handle the edge layer for Crontech — the static web front-end and lightweight API routes. The Hetzner box handles the stateful core: auth, DB, AI inference, long-running jobs.
+See `infra/cloudflare/wrangler.toml`. Cloudflare Workers handle the edge layer for Crontech — the static web front-end and lightweight API routes. The Vultr box handles the stateful core: auth, DB, AI inference, long-running jobs.
 
 **Doctrine reminder:** per §0.11 (Competitor-Free Stack Rule), we do not deploy the core platform on infrastructure owned by a platform-layer competitor. Cloudflare is acceptable because they compete on CDN/edge, not on full-stack dev platform. Vercel and Netlify are NOT acceptable.
 

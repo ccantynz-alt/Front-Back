@@ -1,102 +1,283 @@
 # HANDOFF — Next Session Starts Here
 
-**First action:** Re-auth the github MCP tools, then open PR #101 for commit `c388d22` (LaunchChecklist HUD). After that, proceed with Phase B — set the 12 Cloudflare Worker secrets (see `apps/api/wrangler.toml` and the `set-worker-secrets.yml` workflow if present).
+**First action (morning of 2026-04-21):** Merge **PR #163** — it now carries **BLK-009 sandbox-wrap + BLK-014 Grafana LGTM + BLK-015 Sentinel live daemon**, all on `claude/build-status-update-VqeIy`, 5 clean commits, 6/6 local gates green. After merge, say "yes" in chat to flip BLK-009, BLK-014, BLK-015 → ✅ SHIPPED in `docs/BUILD_BIBLE.md`. (BLK-020 Admin Claude Console also still pending its 🟡 → ✅ flip from the previous session.)
+
+**Pending your strategic call:** BLK-010 Stripe metered billing (§0.7 HARD GATE — pricing/billing/revenue). Say "go" and the next session spawns a scoped agent that ships schema + webhooks + customer portal plumbing only (no pricing values set — you pick those).
 
 ---
 
-## SESSION_LOG 2026-04-15 (branch: claude/admin-custom-ai-api-pDjEV)
+## SESSION LOG — 2026-04-20
 
-### Block advanced
-- **BLK-020 Crontech Independence** — near-shipped. Deploy #59 green on Cloudflare (api Worker + web Pages). Only DNS cutover, secrets, smoke tests, and Hetzner decom remain.
+**Branch:** `claude/build-status-update-VqeIy`
+**Branch head:** `ec893c9 data(sentinel): tracked-repos collector refresh`
+**PR:** #163 (https://github.com/ccantynz-alt/Crontech/pull/163) — open, awaiting your merge.
 
-### Shipped this session
-- **Commit `c1c50e5`**: Lazy Proxy for libsql client in `packages/db/src/client.ts` — fixes Deploy #57 `URL_SCHEME_NOT_SUPPORTED` by deferring `createClient()` until first property access. All 89+ `db.X` call sites work unchanged.
-- **Commit `3acb974`**: Regenerated `bun.lock` after Dependabot PR #66/#65 drift (npm-based bumps never regenerate bun.lock → `--frozen-lockfile` CI fails).
-- **Commit `c388d22`**: LaunchChecklist HUD — floating top-right admin-only HUD with 5 phases (A: CI green, B: secrets, C: DNS, D: smoke, E: Hetzner decom). Big bold green text + glowing ✓ for done items. Phase A pre-seeded done (6 items). localStorage: `btf:launch:done`, `btf:launch:collapsed`, `btf:launch:force`.
+**Blocks advanced this session:**
 
-### Files touched
-- `packages/db/src/client.ts` (lazy Proxy)
-- `bun.lock` (regenerated)
-- `apps/web/src/components/LaunchChecklist.tsx` (new)
-- `apps/web/src/components/LaunchChecklist.test.ts` (new)
-- `apps/web/src/app.tsx` (mounted `<LaunchChecklist />`)
+| Block | State before | State after this session |
+|---|---|---|
+| BLK-009 Git-push deploy pipeline | 🔵 PLANNED (pre-sandbox P0 flagged) | sandbox P0 closed — install + build run inside Docker, clone stays on host. Ready to flip to ✅ SHIPPED on merge. |
+| BLK-014 Observability (Grafana LGTM) | 🔵 PLANNED | deployable stack — OTel collector → Loki/Tempo/Mimir, 6-panel Crontech Overview dashboard, schema-drift guard test. Ready to flip to ✅ SHIPPED on merge. |
+| BLK-015 Sentinel live service | 🔵 PLANNED | systemd timer (15-min oneshot) + Slack alerter with secret scrub + dead-man's switch via `.last-run` timestamp. Ready to flip to ✅ SHIPPED on merge. |
 
-### Root cause — Deploy #57
-The libsql client at `packages/db/src/client.ts` instantiated eagerly at module load with a `file:local.db` fallback. Cloudflare's Workers libsql bindings reject non-https URLs at deploy-time validation with `URL_SCHEME_NOT_SUPPORTED`. The lazy Proxy pattern defers construction until first property access, so module load in the Workers validator no longer touches the client.
+**Commits on this branch (chronological):**
+1. `a803ddc feat(blk-009): sandbox-wrap build-runner install+build — close the customer-code-on-host P0`
+2. `eb99b9c fix(blk-009): resolve noUncheckedIndexedAccess error in e2e test`
+3. `86e9132 data(sentinel): tracked-repos collector refresh`
+4. `6983d82 feat(blk-014): Grafana LGTM stack + Crontech Overview dashboard`
+5. `fd474f3 feat(blk-015): Sentinel live daemon — systemd timer + Slack alerter + secret scrub`
+6. `ec893c9 data(sentinel): tracked-repos collector refresh`
 
-### Recurring pattern — Dependabot lockfile drift
-PR #66 and PR #65 both required manual intervention: npm-based Dependabot bumps `package.json` but never regenerates `bun.lock`, so `bun install --frozen-lockfile` in CI fails with `lockfile had changes, but lockfile is frozen`. **Fix both times:** merge main, run `bun install`, commit regenerated `bun.lock`. Consider a Dependabot config fix or a bot that auto-regenerates bun.lock on npm-ecosystem PRs.
+**Files touched (this session, consolidated):**
 
-### Craig's in-session authorizations (quoted verbatim)
-- "Yes I'm not sure how to do that but hopefully you can direct me or or do it for me" — re: opening PR #100
-- "Honestly feel free to add more agents this is gonna be a good productive day" — standing parallel-agent green light for the rest of the session
-- "Just remember once gluecon is working that will replace GitHub be self-sufficient" — strategic context: BLK-009 (customer-facing git-push deploy pipeline) is the public productization of the same tech; when Gluecon lands, GitHub Actions dependency for our own deploys goes away, we self-host CI/CD
-- "Can we have a live checklist of what's left on the site with big green text to show what's been done we need to keep it floating on the screen somewhere" — LaunchChecklist HUD spec
+*BLK-009 sandbox-wrap:*
+- `apps/api/src/automation/build-runner.ts` (+162/-81) — install/build routed through `runInSandbox`
+- `apps/api/src/automation/build-runner.test.ts` — new security-invariant test + timeout test
+- `apps/api/test/blk009-e2e.test.ts` — `hostSpawningSandboxRun` adapter for CI (no Docker required)
+- `apps/api/package.json` — `@back-to-the-future/orchestrator` workspace dep
+- `services/orchestrator/package.json` — `exports` → `./sandbox` subpath
 
-### Open threads for next agent
-- **PR #101 for commit `c388d22`** (LaunchChecklist) — github MCP tools disconnected mid-session; needs re-auth + `create_pull_request` retry.
-- **Phase B of launch:** 12 Cloudflare Worker secrets to set. See `apps/api/wrangler.toml` and the `set-worker-secrets.yml` workflow if it was added this session.
-- **Phase C:** DNS cutover from Hetzner `204.168.251.243` to Cloudflare Pages (`crontech.ai`, `www.crontech.ai`) + Workers route (`api.crontech.ai`).
-- **Phase D:** smoke tests against the deployed Cloudflare stack.
-- **Phase E:** 24h Hetzner warm-standby then power down, then cancel.
+*BLK-014 Grafana LGTM:*
+- NEW `apps/api/test/observability.test.ts` — dashboard drift guard (6 tests, 26 assertions)
+- NEW `infra/lgtm/README.md` — 70-line spin-up guide
+- NEW `infra/lgtm/dashboards/crontech-overview.json` — 6 panels, all reference metrics API actually emits
+- MOD `infra/lgtm/docker-compose.yml` + `infra/lgtm/config/{otel,loki,tempo,mimir}/`
 
-### Doctrine state
-- `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md` are locked. No locked-block modifications without Craig's in-chat auth.
+*BLK-015 Sentinel live:*
+- NEW `services/sentinel/src/alerts/slack.ts` + `.test.ts` — 9 tests: no-webhook / 2xx / non-2xx / throw / 4 scrub cases
+- NEW `infra/systemd/sentinel.service` — oneshot, User=crontech
+- NEW `infra/systemd/sentinel.timer` — OnBootSec=2min, OnUnitActiveSec=15min, Persistent=true
+- NEW `infra/systemd/README.md` — install index
+- MOD `services/sentinel/src/{runner,dead-mans-switch}.ts` — touchLastRun() per cycle
+- MOD `.gitignore` — excludes `services/sentinel/data/.last-run`
 
-### Next agent should start by
-Re-auth github MCP and open PR #101 for commit `c388d22`, then move to Phase B secrets.
+**Gates on HEAD (`ec893c9`):**
+
+| Gate | Result |
+|---|---|
+| `bun run check` | ✅ 19/19 packages, 0 TS errors |
+| `bun run test` | ✅ 21/21 packages (350 web + 458 api + 54 sentinel + others) |
+| `bun run build` | ✅ 6/6 packages |
+| `bun run check-links` | ✅ 0 dead (61 routes, 184 files) |
+| `bun run check-buttons` | ✅ 0 dead (116 files) |
+| `bunx biome check apps packages services` | ✅ exit 0 |
+
+**CI on PR #163:** First run had Lint & Type Check red because local turbo cache hid a `noUncheckedIndexedAccess` error in the E2E sandbox adapter. Fixed in `eb99b9c`. GateTest run was red on a SARIF-upload bug in the GateTest service itself (not Crontech code) — BLK-007 is still report-only so it doesn't block merge. Re-run in flight at HEAD.
+
+**Craig's authorization quotes (verbatim):**
+> "Awesome let's smash out as much as we can I apologise for putting the pressure on but I've had so many Claude sessions and the different usernames and hit so many issues lately that's taken about two weeks behind where we're supposed to be"
+
+> "I have to go to sleep now but do you think we could put it quickly put a build plan together to get this finished and completely polished just work out what you wanna do and just go through the night so it's in the morning it's finished can we do that"
+
+This authorized the overnight parallel fan-out on BLK-014 + BLK-015. BLK-010 Stripe explicitly held for his wake-up green-light.
+
+**Polish audits (all clean, no fixes needed):**
+- Grep for `<button>` without `aria-label` / `aria-labelledby` → 0 hits
+- Grep for `<img>` without `alt=` → 0 hits
+- Grep for `.only(` / `.skip(` in test files → 0 hits
+- `any` uses in `packages/db/src/scoped-query.ts` are all `biome-ignore`-annotated principled escape hatches for Drizzle's loose column typing — intentionally left alone (fix risk > reward in multi-tenant query code)
+
+**Doctrine compliance:**
+- `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md` untouched ✅
+- No pricing, auth, route, or top-level-dep changes ✅
+- All parallel agents briefed with scope + non-scope + exit criteria ✅
+- No force-push, no branch delete, no PR merge ✅
+
+**Open PRs:** PR #163 is the only open PR for this branch; it now contains the full night's work. No need to cut a second PR.
+
+**Next agent should start by:**
+1. Read `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md`. Post doctrine-confirmed line.
+2. Check PR #163 CI status. If green, Craig merges. If any CI regressed, diagnose + fix before anything else.
+3. On Craig's in-chat "yes", amend `docs/BUILD_BIBLE.md` to flip BLK-009, BLK-014, BLK-015, BLK-020 → ✅ SHIPPED. Single commit, quote Craig's authorization.
+4. If Craig green-lights BLK-010 Stripe, spawn a scoped agent per the plan in the top of this file.
+5. Smoke-test the sandbox pipeline on the real Vultr box: push a trivial change to a customer fixture repo, confirm `docker inspect crontech-build-*` shows the hardened flags, confirm Caddy route is added.
 
 ---
 
-## SESSION_LOG 2026-04-15 (late) — `claude/admin-custom-ai-api-pDjEV`
+## SESSION LOG — 2026-04-19
 
-### BLK-020 Crontech Independence — merge into assigned branch
+**Branch:** `claude/review-crontech-handoff-qYEVq`
+**Ended on:** `8fceece feat(ux-polish): aggregate final output from 4 parallel agents`
 
-Prior session on `claude/continue-work-X7reL` pivoted the stack off Hetzner/SSH/Docker entirely and onto **Cloudflare Workers (API) + Cloudflare Pages (web)**. This sub-session merged that work into the assigned branch `claude/admin-custom-ai-api-pDjEV` (merge commit `38c1018`, nothing rebased, no force-push).
+**Blocks advanced:**
+- BLK-020 Admin Claude Console — shipped this session, unchanged since last handoff
+- BLK-009 Git-push deploy pipeline — shipped this session, unchanged since last handoff
+- UX polish wave (no BLK ID yet — candidates for `docs/PROPOSED_BLOCKS.md`):
+  - Universal Cmd+K palette (17 commands, role-gated, in-house fuzzy, 27 tests)
+  - Optimistic UI + undo toast (3 destructive actions wired, 16 tests)
+  - Keyboard shortcut registry + `?` help + URL-state hook (34 tests)
+  - AI-generated changelog via `scripts/generate-changelog.ts` (35 tests)
 
-### What landed on this branch
-- Live **Build Track HUD** with deploy-drift probe (`658c43f`)
-- `Bun.password` → **hash-wasm argon2id** for Workers compat (`aa8b1d1`)
-- `apps/api/wrangler.toml` with production/staging envs + stubbed D1/R2/KV/DO bindings (`58cc9fd`)
-- `.github/workflows/deploy.yml` rewritten for Cloudflare Workers + Pages via `cloudflare/wrangler-action@v3` (`3a79d56`)
-- Bun-only code guarded for Workers compat (`a0baf99`)
-- `workerHandler` default export for cron triggers (`aa6a6cc`)
-- `apps/web` ported to Cloudflare Pages Nitro preset (`e8a3a32`)
-- `@ai-sdk/*` Vercel wrappers dropped → native `@anthropic-ai/sdk` + `openai` SDKs (`b1ad504`)
-- Sentinel intelligence snapshot refresh (`1e8d827`)
-- Obsolete `.github/workflows/hetzner-recon.yml` removed (`38c1018`)
+**Files touched (this session):**
+- `apps/web/src/lib/{commands,keyboard,url-state,optimistic}.ts` (+ tests)
+- `apps/web/src/components/{CommandPalette,KeyboardHelp,UndoToast,Toast,Layout,DeploymentCard}.tsx`
+- `apps/web/src/routes/{deployments,projects,settings,projects/[id]}.tsx`
+- `apps/web/src/app.tsx`
+- `scripts/generate-changelog.ts` (+ test)
+- `CHANGELOG.md`, `docs/changelog/README.md`
+- `packages/schemas/src/index.ts` (one-line `export { z } from "zod"` — no new dep)
 
-### Files touched (net result of merge)
-- `.github/workflows/deploy.yml` — Cloudflare-native rewrite
-- `.github/workflows/hetzner-recon.yml` — deleted
-- `apps/api/package.json` · `apps/api/src/ai/*` · `apps/api/src/auth/password.ts` · `apps/api/src/index*.ts` · `apps/api/src/smoke.test.ts` · `apps/api/src/telemetry.ts` · `apps/api/src/trpc/procedures/voice.ts` · `apps/api/wrangler.toml`
-- `apps/web/app.config.ts` · `apps/web/public/sitemap.xml` · `apps/web/src/app.tsx` · `apps/web/src/components/BuildTrack.tsx`
-- `bun.lock` · `packages/ai-core/**`
-- `services/sentinel/data/tracked-repos.json`
+**Locked-block authorization Craig granted verbatim:**
+> "Awesome let's do it all" — authorizing the UX polish wave + legal layer drafting + architecture ideas list. Legal drafting was deferred (see below).
 
-### Craig authorizations granted (that sub-session)
-- "If something needs to be done you just do it" — standing green light used to proceed with Option B (merge migration branch into assigned branch) without a second confirmation.
+**Legal drafting — NOT done.** `docs/legal/attorney-package.md` (23KB, 2026-04-16) + `pre-launch-audit.md` (11KB) already cover the eight live legal pages at `apps/web/src/routes/legal/*`. Drafting fresh TOS/AUP/Privacy/DMCA files would have duplicated or overwritten attorney-review material — that's a §0.7 HARD GATE risk. Explicit non-action; flagged for Craig to redirect if he wants a different angle.
 
-### Background agent worktrees — still unmerged
-- **BLK-009** — GitHub webhook receiver scaffold. Worktree: `.claude/worktrees/agent-a43d05e1`.
-- **BLK-010** — Usage metering scaffold. Worktree: `.claude/worktrees/agent-a1848438`.
+**Proposed blocks (not yet authorized):** `docs/PROPOSED_BLOCKS.md` to be drafted next session with BLK-031..BLK-045 architecture ideas. Skipped this session in favor of landing the UX polish wave cleanly.
 
-Both are SCHEMA-ADDITIVE only (no destructive migrations) so safe to cherry-pick once CF deploy is green and Craig unblocks revenue work.
+**Gates on `8fceece`:**
+| Gate | Result |
+|---|---|
+| `bun run check` | ✅ 16/16 packages, 0 TS errors |
+| `bun run test` | ✅ 250/250 pass (112 net-new), 605 assertions, 21 files |
+| `bun run build` | ✅ 5/5 tasks |
+| `bunx biome check apps packages services` | ✅ exit 0 |
+| `bun run check-links` | ✅ 0 dead (45 routes, 161 files) |
+| `bun run check-buttons` | ✅ 0 dead (106 files) |
 
-### Craig's locked priority order (post-independence)
-1. **BLK-010 — Stripe metered billing** (revenue gate). ~60% done; critical gap = usage metering + dunning.
-2. **BLK-009 — Git-push deploy pipeline for customer repos**. ~20% stub; webhook receiver scaffolded.
-3. **BLK-020 — Admin Claude Console** UI (BYOK builder interface).
-4. **BLK-021 — WebGPU draft model** for Zoobicon TTFT <100ms.
-5. **BLK-022 — AI Gateway + BYOK** caching/fallback layer.
+**Open PRs / unmerged:** PR #124 still open against Main (BLK-020 + BLK-009). New polish-wave commits (`cd97979`, `8fceece`) are pushed on `claude/review-crontech-handoff-qYEVq` but not yet PR'd — reason: same branch, same PR will update on next push. Verify PR #124 shows the 2 new commits before merging, or cut a second PR for the polish wave separately so the deploy pipeline landing stays reviewable.
+
+**Next agent should start by:**
+1. Reading `docs/TONIGHT_CHEAT_SHEET.md` to see where Craig is in the cutover
+2. Asking Craig's in-chat "yes" to flip BLK-020 + BLK-009 → ✅ in `docs/BUILD_BIBLE.md`
+3. Drafting `docs/PROPOSED_BLOCKS.md` (BLK-031..BLK-045) for Craig to authorize later
 
 ---
 
-## SESSION_LOG 2026-04-15 (continued) — earlier
+## (prior content preserved below)
 
-- Merged in BLK-009 + BLK-010 BG-agent worktree commits into their own branches. Main tree clean. Recon diagnostic workflow delivered for 403 (`ac7e039` → `d7c9484`) — now obsolete and removed.
+**First action (previous session):** Review and merge **PR #124** (https://github.com/ccantynz-alt/Crontech/pull/124). It carries **BLK-020 frontend complete + BLK-009 aggregate (real build-runner + Docker sandbox + live-log SSE + E2E test)**. All 6 local quality gates green. Then Craig's in-chat "yes" to flip BLK-020 + BLK-009 from 🟡 → ✅ in `docs/BUILD_BIBLE.md`.
 
-## SESSION_LOG 2026-04-15 — `claude/admin-custom-ai-api-pDjEV` (earliest)
+---
 
-- Scoped BLK-020 Admin Claude Console, added `chat.getUsageStats` + totalCost fix. Committed as `7e2959b`. Paused UI work on Craig's pivot to website-first.
-- Discovered the 403 problem during pivot diagnosis (since resolved by retiring Hetzner entirely).
+## Branch state — `claude/review-crontech-handoff-qYEVq` (7 commits ahead of Main)
+
+```
+df6fca2 fix(blk-009): UI agent final tweaks + sentinel repo data refresh
+55fc4a2 docs(handoff): honest gate status for next session  (this file replaces)
+655816b (intermediate sentinel refresh from origin)
+b715a0b feat(blk-009): aggregate parallel agent output — real build-runner + sandbox + live logs + E2E test
+5d0e46b wip(blk-009): partial output from in-flight parallel agents  (superseded)
+d76e7ac docs(handoff): rewrite for session handover to new chat
+bcf5f6b docs(handoff): rewrite session log for 2026-04-18 BLK-020 completion
+f975386 feat(admin): complete BLK-020 — /admin/claude console + settings + spend tile
+```
+
+---
+
+## Quality gates on HEAD (`df6fca2`) — ALL GREEN
+
+| Gate | Result |
+|------|--------|
+| `bun run build` | ✅ 5/5 packages (web Nitro built clean) |
+| `bun run check` | ✅ 16/16 packages, 0 TS errors |
+| `bun run test` | ✅ 19/19 packages (278 api + 173 web + others) |
+| `bun run check-links` | ✅ 0 dead (45 routes, 150 files scanned) |
+| `bun run check-buttons` | ✅ 0 dead (104 files) |
+| `bunx biome check apps packages services` | ✅ exit 0 |
+
+Note: a mid-session run showed 82 test failures. That was transient — caused by test files running against a stale DB from a previous partial run. `bunfig.toml` preload wipes + migrates per process-start; that works correctly when invoked cleanly (as the final gate run confirmed).
+
+If you see similar flakes: `cd apps/api && rm -f local.db && bun test` should always reproduce clean. For the web build, `rm -rf apps/web/.vinxi apps/web/.output` clears Vinxi state that can get corrupted mid-run.
+
+---
+
+## What's in PR #124
+
+### BLK-020 Admin Claude Console (shipped, ready for SHIPPED flip)
+- `/admin/claude` — admin-only chat console. Streams via `POST /api/chat/stream`. Conversation sidebar + thread pane + model picker + monthly-spend badge + inline missing-key CTA.
+- `/admin/claude/settings` — paste/mask/delete Anthropic key via `chat.saveProviderKey` / `chat.deleteProviderKey`. Default model + system prompt in localStorage.
+- `/admin` — 5th stat tile "Claude spend (this month)" + Claude Console quick-action.
+
+### BLK-009 Git-push deploy pipeline (shipped this session)
+- **Real build-runner** at `apps/api/src/automation/build-runner.ts`. Replaces 372-line stub with 727-line real implementation: Bun.spawn git clone → bun install → bun run build → orchestrator HTTP handoff. Dependency-injected `spawn`/`deploy`/`fs` for tests. 10-minute hard timeout. In-memory concurrency guard. Workspace cleanup in `finally`. 9/9 unit tests pass.
+- **Live log SSE streaming**. `GET /api/deployments/:id/logs/stream` at `apps/api/src/deploy/logs-stream.ts` replays existing rows + polls for new. Closes on terminal status. SolidJS hook `useDeploymentLogStream` at `apps/web/src/lib/` with jittered backoff reconnection. `DeploymentCard`/`DeploymentLogs` accept `liveLogs` prop. `apps/web/src/routes/deployments.tsx` replaced placeholder data with real tRPC fan-out.
+- **E2E integration test** at `apps/api/test/blk009-e2e.test.ts` with fixture repo at `apps/api/test/fixtures/hello-world-repo/` (9.5 KB, buildable). 3 tests: signed webhook → build → live status + logs; build failure path; unsigned payload rejection.
+- **Docker sandbox hardening** in `services/orchestrator/src/{sandbox,docker,deployer,caddy}.ts`. 14 enforced security guarantees: cap-drop=ALL, no-new-privileges, read-only root, tmpfs /tmp+/run, non-root uid 1000, mem 2G, cpus 1, pids 512, nofile 4096, network isolation, 10-min wall timeout, path-traversal rejection on deploymentId, atomic Caddyfile append with rollback, log-line scrub of `*_KEY`/`*_SECRET`/`*_TOKEN`/`*_PASSWORD`/Bearer/PEM. `services/orchestrator/src/index.ts` public API **unchanged byte-for-byte**.
+- **Tactical sweep** (TAC agent): 12 hardcoded hex colors → CSS vars (6 component files), 3 explicit return types added (VoiceGlobal, createClient, createNeonClient).
+
+### Placeholder/mock audit (research only, not committed)
+- **0 pre-launch blockers.** 6 P1 items + 2 P2 items, all honestly documented disabled/waitlist surfaces (notifications+appearance tabs, billing gate on STRIPE_ENABLED, avatar upload pending file-storage pipeline). Report stays in conversation history; see prior turn.
+
+---
+
+## Known security flags (from BR + SEC agents)
+
+1. **Build-runner currently runs customer code on the host, not inside SEC's sandbox.** BR's `build-runner.ts` calls `Bun.spawn` directly against a tmp workspace on the host. SEC's `runInSandbox` exists in `services/orchestrator/src/sandbox.ts` and is wired to the orchestrator's build/install steps — but BR's code clones and installs BEFORE handing off. Before opening signup, the build-runner must either (a) route its clone+install+build through `runInSandbox` instead of raw Bun.spawn, OR (b) ensure the entire runner process runs inside Firecracker/gVisor. Single-tenant v1 is fine; this is the P0 before BLK-009 opens to customers.
+
+2. **Outbound network not fully isolated during build.** Needed for npm install / git fetch. V2 must add egress allowlist (npm, PyPI, target git host) via iptables or Cilium.
+
+3. **Runtime app still runs on host via Bun.spawn.** SEC's sandbox covers build; containerising runtime is a separate block (file it when opening customer signup).
+
+---
+
+## Open strategic decisions for Craig
+
+1. **Merge PR #124** — all gates green, 27 files, ~3600 insertions. His call.
+2. **BUILD_BIBLE amendment** — once PR #124 merges, his in-chat "yes" flips BLK-020 and BLK-009 from their current states to ✅ SHIPPED. Per §Amending-this-file, only Craig can authorize.
+3. **Dependabot PR #102** (setup-node v4→v6) — audited safe. His merge call.
+4. **Schedule BLK-009 signup-readiness hardening block** — the P0 called out above. Probably BLK-019 or next available number.
+
+---
+
+## Craig's in-session authorizations (quoted verbatim)
+
+- "Sorry to bother you I'm just checking in to make sure that we've kicked off and we're running with the ball as many agents as you can put on would be great" — standing parallel-agent directive that carried the session.
+- "I need sleep now can you promise me that you were gonna continue until this is completely finished and writing" + "That's meant to say and wired in" — the BLK-020 end-to-end-wired commitment. Honored.
+- "To be honest you've been going for hours so I expected you to be further along than this" — pace feedback. Triggered BLK-009 6-agent wave that produced `b715a0b`.
+- "Can you write a handover file please so I can start a new coding chat this one is obviously not working" — written.
+- "So you do have other agents working on it I'm just a bit annoyed you've been going for hours and if there's had anything been done" — confirmation that substantial work did land (see above).
+
+No locked-block modifications this session. CLAUDE.md, POSITIONING.md, BUILD_BIBLE.md untouched.
+
+---
+
+## Session-environment notes (for future sessions)
+
+1. **Stop-hook auto-stashes untracked files on session stops.** `git add` new files ASAP. If files disappear, check `git ls-tree -r <stash-commit-sha>` and recover via `git cat-file -p <blob-sha> > <path>`.
+2. **Worktree isolation (`isolation: "worktree"`) is NOT available.** Agents ran concurrently without isolation; non-overlapping file scopes prevented collisions.
+3. **GitHub MCP tools appear/disappear mid-session.** The `authenticate` flow needs the full callback URL pasted as text (not a screenshot; iPad Safari truncates the address bar display).
+4. **Test DB pollution can look like real regressions.** When you see many tests failing with DB errors, `rm -f apps/api/local.db` and retry. The bunfig preload wipes once per process — if two runs overlap or state leaks across package boundaries, transient failures happen.
+5. **Vinxi web build can get into bad cache state.** `rm -rf apps/web/.vinxi apps/web/.output apps/web/.turbo` clears it.
+
+---
+
+## Next agent should start by
+
+1. Read `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md`.
+2. Post the doctrine-confirmation line.
+3. Check PR #124 status. If merged, proceed. If not merged, ask Craig to review.
+4. On merge + Craig's "yes": amend `docs/BUILD_BIBLE.md` to flip BLK-020 and BLK-009 to ✅ SHIPPED with commit message citing his authorization.
+5. Then pick up the next priority — likely the signup-readiness hardening block (sandbox-wrap the build-runner's clone+install+build).
+
+---
+
+## POST-GLUECRON-LIVE DIRECTIVE (authorized by Craig 2026-04-19)
+
+> Quote: "Once we are working we need to delete the other products completely from our code and any Claude.MD files or anything that stores that information otherwise Claude is gonna see it as an option and they are competition"
+
+**Trigger:** When gluecron.com is live and actively hosting Crontech + AlecRae git + CI.
+
+**Scope — purge across all three repos (Crontech, Gluecron.com, AlecRae.com):**
+
+Scrub from code, config, env.example, scripts, workflows, CLAUDE.md, BUILD_BIBLE.md, POSITIONING.md, DEPLOY.md, README.md, HANDOFF.md, ALECRAE-BRIEF.md, and any `/docs/**`:
+
+- **Vercel** — all references, config (vercel.json), workflow steps
+- **Cloudflare Workers / Cloudflare Pages / Wrangler** — configs, deploy steps, docs. Keep Cloudflare as DNS/CDN only if still used by Craig; remove all framework/platform mentions.
+- **GitHub Actions as CI/deploy host** — replace with Gluecron CI references. Keep raw git protocol mentions (we still speak git).
+- **Hetzner** — if any residual references exist after PR #115.
+- **Supabase / Convex / Render / AWS Amplify / Netlify / Railway / Fly.io (optional)** — competitor comparison tables, "why we beat them" marketing prose in CLAUDE.md §2, etc.
+- **Competitor comparison tables** — e.g. "Why Vercel loses" rows in CLAUDE.md §2.
+
+**Keep (we use these, not competitors):**
+- Anthropic (Claude), OpenAI (Whisper + embeddings) — our AI providers
+- Neon (our Postgres), Turso (our edge SQLite), Qdrant (our vectors)
+- Vultr (our current host) until replaced by something else we own
+- Bun, Hono, SolidJS, Drizzle, Tailwind, Biome, Yjs — stack tools we depend on
+
+**Execution plan (queued for post-Gluecron-live session):**
+1. Spawn 3 parallel agents, one per repo, briefed with the scrub list above
+2. Each agent: find all references, propose the scrubbed diffs to Craig, wait for explicit per-file approval (CLAUDE.md change protection layer 1)
+3. After approval, commit + open PR for each repo
+4. CODEOWNERS gate (layer 2) catches any bypass
+
+**Doctrine note:** This is a MAJOR CLAUDE.md / doctrine edit across three repos. Requires the per-diff ask-in-chat protocol for every locked file. Do NOT do blanket rewrites — each doctrine file gets a reviewed diff.

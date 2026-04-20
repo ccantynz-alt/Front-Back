@@ -15,9 +15,9 @@ name: GateTest Quality Gate
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, Main]
   pull_request:
-    branches: [main, master]
+    branches: [main, Main]
 
 # Workflow-wide baseline: read-only. The gatetest job below elevates
 # to the write scopes GateTest actually needs (pull-requests for
@@ -52,7 +52,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 

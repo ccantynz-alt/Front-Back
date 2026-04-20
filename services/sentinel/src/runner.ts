@@ -16,7 +16,7 @@ import {
   sendSlackAlert,
   sendDiscordAlert,
 } from "./alerts/types";
-import { reportSuccess } from "./dead-mans-switch";
+import { reportSuccess, touchLastRun } from "./dead-mans-switch";
 import { storeItems } from "./storage/intelligence-store";
 import type {
   Collector,
@@ -136,6 +136,14 @@ export async function runCycle(
 
   const finishedAt = new Date().toISOString();
   const durationMs = Math.round(performance.now() - startMs);
+
+  // Dead-man's switch liveness proof. Written at the END of the cycle
+  // — a missing/stale file means the daemon never completed its run.
+  // Tests disable with reportLiveness=false to keep tmp dirs clean.
+  if (opts.reportLiveness !== false) {
+    touchLastRun(new Date(finishedAt));
+  }
+
   return {
     itemsCollected: allItems.length,
     itemsStored,

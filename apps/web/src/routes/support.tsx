@@ -253,6 +253,7 @@ export default function SupportPage(): JSX.Element {
                   <input
                     type="text"
                     placeholder="Search for answers..."
+                    aria-label="Search support articles"
                     class="w-full bg-transparent py-4 pl-12 pr-4 outline-none text-sm"
                     style={{ color: "var(--color-text)", "--tw-placeholder-color": "var(--color-text-faint)" } as JSX.CSSProperties}
                   />

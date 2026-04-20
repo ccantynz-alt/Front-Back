@@ -3,6 +3,7 @@ import { createSignal, createResource, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { AdminRoute } from "../components/AdminRoute";
+import { PlatformSiblingsWidget } from "../components/PlatformSiblingsWidget";
 import { trpc } from "../lib/trpc";
 import { showToast } from "../components/Toast";
 
@@ -176,11 +177,15 @@ function AdminPageContent(): JSX.Element {
   const [health, { refetch: refetchHealth }] = createResource(async () =>
     trpc.admin.getSystemHealth.query(),
   );
+  const [claudeUsage, { refetch: refetchClaudeUsage }] = createResource(async () =>
+    trpc.chat.getUsageStats.query(),
+  );
 
   const refreshAll = (): void => {
     refetchStats();
     refetchUsers();
     refetchHealth();
+    refetchClaudeUsage();
   };
 
   const handleChangeRole = async (userId: string, role: UserRole): Promise<void> => {
@@ -285,10 +290,10 @@ function AdminPageContent(): JSX.Element {
         </div>
 
         {/* Stats Row */}
-        <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Show
             when={stats()}
-            fallback={<StatSkeleton count={4} />}
+            fallback={<StatSkeleton count={5} />}
           >
             {(s) => (
               <>
@@ -320,9 +325,21 @@ function AdminPageContent(): JSX.Element {
                   icon="&#9889;"
                   accentColor="var(--color-warning)"
                 />
+                <StatCard
+                  label="Claude spend (this month)"
+                  value={`$${(claudeUsage()?.monthCostDollars ?? 0).toFixed(2)}`}
+                  sublabel="Metered Anthropic API usage"
+                  icon="&#129504;"
+                  accentColor="var(--color-primary)"
+                />
               </>
             )}
           </Show>
+        </div>
+
+        {/* Platform Family - cross-product health across Crontech, Gluecron, GateTest */}
+        <div class="mb-6">
+          <PlatformSiblingsWidget />
         </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -469,6 +486,18 @@ function AdminPageContent(): JSX.Element {
             >
               <h2 class="mb-4 text-lg font-semibold" style={{ color: "var(--color-text)" }}>Quick Actions</h2>
               <div class="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/admin/claude")}
+                  class="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200"
+                  style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)" }}
+                >
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "color-mix(in oklab, var(--color-primary) 10%, transparent)", color: "var(--color-primary)" }}>&#129504;</span>
+                  <div>
+                    <span class="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>Claude Console</span>
+                    <p class="text-[11px]" style={{ color: "var(--color-text-faint)" }}>Admin-only BYOK builder powered by Anthropic</p>
+                  </div>
+                </button>
                 <button
                   type="button"
                   onClick={() => navigate("/admin/support")}

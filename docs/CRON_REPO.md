@@ -142,7 +142,6 @@ When one platform has solved a problem well, others should copy the PATTERN (not
 8. GateTest: live paying customers — confirm Stripe activity?
 9. GateTest: database choice — Neon Postgres or Turso SQLite?
 10. GateTest: npm publish — is `npx gatetest@latest` live?
-11. Crontech: Hetzner self-hosting timeline — still the plan?
 12. Crontech: WebGPU video pipeline — still a priority, or defer?
 
 ---

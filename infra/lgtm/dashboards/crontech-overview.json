@@ -1,0 +1,222 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Crontech empire-wide telemetry. API latency, error rate, AI inference tokens + cost, edge vs cloud split, client GPU hit rate, and live API log stream.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "API request rate (req/s)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum by (service_name) (rate(http_request_count_total[5m]))",
+          "legendFormat": "{{service_name}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "API latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_milliseconds_bucket[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_milliseconds_bucket[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_milliseconds_bucket[5m])))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Error rate (5xx / total)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum(rate(http_request_count_total{http_status_code=~\"5..\"}[5m])) / clamp_min(sum(rate(http_request_count_total[5m])), 1)",
+          "legendFormat": "5xx rate"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "AI tokens used (by model)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "description": "Counter ai.tokens.used, emitted by apps/api/src/telemetry.ts traceAICall(). Label 'model' is attached per inference call.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum by (model) (rate(ai_tokens_used_total[5m]))",
+          "legendFormat": "{{model}}"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "histogram_quantile(0.95, sum by (le, model) (rate(ai_inference_latency_milliseconds_bucket[5m])))",
+          "legendFormat": "p95 latency · {{model}}",
+          "hide": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Request rate — edge vs cloud (by deployment.environment)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "description": "Split by the deployment_environment resource attribute. Edge Workers set it to 'edge'; Bun/Node cloud sets it to the NODE_ENV value.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum by (deployment_environment) (rate(http_request_count_total[5m]))",
+          "legendFormat": "{{deployment_environment}}"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum(ws_connections_active)",
+          "legendFormat": "active WS connections",
+          "hide": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "API log stream (service.name=back-to-the-future-api)",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 16 },
+      "options": {
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true,
+        "enableLogDetails": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{service_name=\"back-to-the-future-api\"} | json",
+          "queryType": "range"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["crontech", "overview", "blk-014"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Crontech Overview",
+  "uid": "crontech-overview",
+  "version": 1,
+  "weekStart": ""
+}

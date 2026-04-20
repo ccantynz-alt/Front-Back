@@ -31,13 +31,13 @@ Each migration proves a specific substrate capability before a paying customer r
 ### Week 0 — Phase 0 infrastructure live
 
 **Preconditions:**
-- Hetzner box provisioned (Craig's action)
+- Vultr box provisioned (Craig's action)
 - Stripe live account confirmed (Craig's action)
 - NZ chartered accountant engaged (Craig's action)
 - Domains pointed at new DNS authority (Claude's action)
 
 **Deliverables:**
-- Base system on Hetzner: Caddy, systemd, backups, firewall, unattended-upgrades
+- Base system on Vultr: Caddy, systemd, backups, firewall, unattended-upgrades
 - Data primitives: Postgres 17 + pgvector, Redis 8, MinIO, Ollama
 - Substrate abstraction layer (`packages/substrate/`)
 - Polyglot runtime host (`packages/substrate/runtime-host/`)
@@ -48,7 +48,7 @@ Each migration proves a specific substrate capability before a paying customer r
 - Admin area skeleton: Empire Overview + Infrastructure panels
 
 **Exit criteria:**
-- A throwaway test app deploys from `git push` → live on Hetzner in under 5 minutes
+- A throwaway test app deploys from `git push` → live on Vultr in under 5 minutes
 - TLS valid, auto-renewing via Caddy
 - Logs visible in Grafana without SSH
 - Rollback command works (under 60s)
@@ -64,7 +64,7 @@ Each migration proves a specific substrate capability before a paying customer r
 - Connect to Crontech's Postgres (managed by substrate layer)
 - Set up `marcoreid.crontech.ai` staging URL
 - Verify end-to-end functionality
-- DNS flip: `marcoreid.com` → Crontech Hetzner box
+- DNS flip: `marcoreid.com` → Crontech Vultr box
 - Kill Vercel deployment after 72 hours of clean logs
 
 **Substrate capabilities proven:**
@@ -89,7 +89,7 @@ Each migration proves a specific substrate capability before a paying customer r
 - Monorepo tenant hosting
 - Webhook ingestion path
 - Email outbound (Resend API proxy)
-- Multi-app coexistence on single Hetzner box
+- Multi-app coexistence on single Vultr box
 
 ### Week 3 — Astra / ledger.ai (polyglot proof #1 + CFO engine)
 
@@ -105,7 +105,7 @@ Each migration proves a specific substrate capability before a paying customer r
 - Stripe credentials stored in secrets management
 - Mailgun outbound email configured
 - Claude API proxy configured
-- DNS flip: `ledger.ai` → Crontech Hetzner box
+- DNS flip: `ledger.ai` → Crontech Vultr box
 
 **Substrate capabilities proven:**
 - Polyglot runtime host works for Python
@@ -235,7 +235,7 @@ This is doctrine §0.4 (Build-Quality Gate) applied to migrations. No exceptions
 ## 6. Dependencies on external factors
 
 The migration plan assumes:
-- Hetzner box is provisioned and healthy
+- Vultr box is provisioned and healthy
 - DNS authority has been transitioned (Cloudflare DNS or Bunny DNS — NOT Vercel's managed DNS)
 - SSL/TLS via Caddy is working
 - NZ chartered accountant is engaged for CFO hands role

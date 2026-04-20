@@ -1,0 +1,16 @@
+[Unit]
+Description=Crontech Sentinel 15-minute collection cycle
+Documentation=https://github.com/ccantynz-alt/Crontech/blob/main/services/sentinel/README.md
+
+[Timer]
+# First run 2 minutes after boot (give network + dependencies time to settle),
+# then every 15 minutes thereafter measured from the last unit activation.
+OnBootSec=2min
+OnUnitActiveSec=15min
+# If the machine was asleep / off when a run should have fired, run once on wake.
+Persistent=true
+Unit=sentinel.service
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

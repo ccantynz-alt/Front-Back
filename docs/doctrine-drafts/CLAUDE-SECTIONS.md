@@ -156,7 +156,7 @@ These tools are NEVER to be used internally, no matter the justification:
 - GitHub (code hosting and CI)
 - Stripe (payments)
 - Claude API, OpenAI API (we use LLMs, we don't build them)
-- Hetzner (bare metal; we don't build a bare-metal provider)
+- Vultr (bare metal; we don't build a bare-metal provider)
 - PostgreSQL, Redis, nginx, Caddy, Linux distros (open-source foundations)
 - Domain registrars, DNS providers (as DNS only, not hosting)
 

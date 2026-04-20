@@ -1,4 +1,5 @@
 # ── Tempo config (single-binary, filesystem backend) ───────────────
+# Dev stack: filesystem storage, 48h retention, OTLP HTTP on 4318.
 
 server:
   http_listen_port: 3200
@@ -18,7 +19,7 @@ ingester:
 
 compactor:
   compaction:
-    block_retention: 168h  # 7 days
+    block_retention: 48h  # dev stack
 
 storage:
   trace:

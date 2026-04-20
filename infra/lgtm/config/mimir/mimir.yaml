@@ -1,4 +1,5 @@
 # ── Mimir config (monolithic single-binary) ────────────────────────
+# Dev stack: filesystem storage, OTLP ingest enabled, single tenant.
 
 multitenancy_enabled: false
 
@@ -35,6 +36,12 @@ distributor:
     instance_addr: 127.0.0.1
     kvstore:
       store: memberlist
+  # Allow OTLP → Prometheus conversion of resource attributes onto
+  # every metric (so service_name / deployment_environment are first
+  # class labels, not nested under target_info).
+  otlp:
+    keep_identifying_resource_attributes: true
+    convert_all_attributes: true
 
 ingester:
   ring:

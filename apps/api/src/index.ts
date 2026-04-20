@@ -36,6 +36,10 @@ import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
 import { runDispatcher } from "./webhooks/dispatcher";
 import { gluecronPushApp } from "./webhooks/gluecron-push";
+import { inboundSmsApp } from "./sms/inbound";
+import { githubWebhookApp } from "./github/webhook";
+import { deploymentLogsStreamApp } from "./deploy/logs-stream";
+import { createEmpireHealthApp } from "./healthz/empire";
 import { db as defaultDb } from "@back-to-the-future/db";
 import {
   startHealthMonitor,
@@ -132,6 +136,35 @@ app.use(
       : { windowMs: 60_000, max: 30 },
   ),
 );
+// ── Rate limits for public read/approval/MCP surfaces ─────────────
+// These endpoints are not behind API-key auth (they power the admin UI and
+// the MCP discovery catalog) — but they must still be protected from
+// unauthenticated flood traffic. Matches §6.4: "Rate limiting on all
+// public endpoints. No endpoint is unprotected."
+app.use(
+  "/api/approvals/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 60, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 60 },
+  ),
+);
+app.use(
+  "/api/mcp/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 60, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 60 },
+  ),
+);
+app.use(
+  "/api/flags/*",
+  createRateLimiter(
+    rateLimitEnv
+      ? { windowMs: 60_000, max: 120, env: rateLimitEnv }
+      : { windowMs: 60_000, max: 120 },
+  ),
+);
 
 // ── API Key Authentication ──────────────────────────────────────────
 // Allows Bearer btf_sk_... tokens to authenticate against the API keys table.
@@ -150,6 +183,28 @@ app.use("*", async (c, next) => {
     status: c.res.status,
   });
   recordRequest(duration);
+});
+
+// ── Global Error Boundary ────────────────────────────────────────────
+// Hono's default error handler returns the raw Error message and stack to
+// the client. That leaks server internals and gives no correlation id for
+// support tickets. Wrap every unhandled throw into a structured, safe JSON
+// response and log the underlying error to stderr for the observability
+// pipeline to pick up.
+app.onError((err, c) => {
+  const requestId = c.req.header("x-request-id") ?? crypto.randomUUID();
+  const message = err instanceof Error ? err.message : "Unknown error";
+  // Log the full error server-side for debugging, but never return the
+  // stack trace to the client.
+  console.error(`[api:error] ${requestId} ${c.req.method} ${c.req.path}: ${message}`, err);
+  c.header("X-Request-ID", requestId);
+  return c.json(
+    {
+      error: "Internal server error",
+      requestId,
+    },
+    500,
+  );
 });
 
 app.get("/health", (c) => {
@@ -197,6 +252,12 @@ app.get("/health/monitor", (c) => {
     queue: getQueueStatus(),
   });
 });
+
+// ── Empire Health Endpoint (GET /api/healthz/empire) ────────────────
+// Single-pane-of-glass self-host probe: postgres, gluecron, gatetest,
+// caddy cert expiry, disk free %. Bearer-token gated to avoid leaking
+// internal infra URLs to drive-by visitors. See src/healthz/empire.ts.
+app.route("/", createEmpireHealthApp());
 
 // ── Metrics Endpoint ────────────────────────────────────────────────
 app.get("/metrics", (c) => {
@@ -335,10 +396,22 @@ app.post("/webhooks/inbound-email", async (c) => {
   }
 });
 
+// Mount inbound SMS webhook (raw Hono -- HMAC verification uses the raw
+// body, so the signature check MUST run before any middleware that
+// would consume or rewrite the request body).
+// POST /api/sms/inbound — see sms/inbound.ts.
+app.route("/", inboundSmsApp);
+
 // Mount Gluecron push-notification receiver (raw Hono -- bearer auth is
 // handled inside the route, not via the global middleware stack).
 // POST /api/hooks/gluecron/push — see webhooks/gluecron-push.ts.
 app.route("/", gluecronPushApp);
+
+// Mount GitHub push webhook receiver (BLK-009) — HMAC-SHA256 verification
+// is performed inside the handler against raw body, so it MUST stay
+// outside global middleware that would rewrite / consume the body.
+// POST /api/webhook/github — see github/webhook.ts.
+app.route("/", githubWebhookApp);
 
 // Mount Google OAuth routes (raw Hono -- needs redirects outside tRPC)
 app.route("/auth", googleOAuthRoutes);
@@ -379,6 +452,10 @@ app.route("/", liveUpdatesApp);
 
 // Terminal: WebSocket PTY at /api/terminal/:projectId
 app.route("/", terminalApp);
+
+// BLK-009: SSE live log stream for deployments at
+// /api/deployments/:id/logs/stream
+app.route("/", deploymentLogsStreamApp);
 
 // ── Auto-migrate on startup (safe default: only when AUTO_MIGRATE=true) ──
 async function maybeRunMigrations(): Promise<void> {
@@ -473,4 +550,5 @@ export const workerHandler = {
   },
 };
 
-export default workerHandler;
+// default export removed — Bun auto-serve conflicts with explicit Bun.serve()
+// on self-hosted deployments. Re-add for Cloudflare Workers if needed.

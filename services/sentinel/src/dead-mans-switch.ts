@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
 import { type AlertMessage, sendSlackAlert, sendDiscordAlert } from "./alerts/types";
 
 interface CollectorStatus {
@@ -7,6 +9,48 @@ interface CollectorStatus {
 }
 
 const collectorStatuses = new Map<string, CollectorStatus>();
+
+/**
+ * Location of the liveness timestamp file. External monitors (systemd
+ * timer health checks, alertmanager probes) read this file's mtime to
+ * confirm Sentinel ran recently. Absence or staleness == dead switch.
+ *
+ * Kept in data/ alongside intelligence.json so the systemd unit only
+ * needs one ReadWritePaths entry.
+ */
+function getDefaultLastRunPath(): string {
+  const baseDir = (import.meta as { dir?: string }).dir ?? process.cwd();
+  return join(baseDir, "..", "data", ".last-run");
+}
+
+let lastRunPath = getDefaultLastRunPath();
+
+/** Override the last-run file path (used by tests for isolation). */
+export function setLastRunPath(path: string): void {
+  lastRunPath = path;
+}
+
+/**
+ * Write an ISO-8601 UTC timestamp to the liveness file. Called at the
+ * end of every successful `runCycle`. A missing or stale `.last-run`
+ * file is the signal to external monitors that Sentinel has gone dark.
+ *
+ * Failures here are logged but never thrown — a disk write error must
+ * not prevent the daemon from completing its cycle.
+ */
+export function touchLastRun(now: Date = new Date()): { path: string; timestamp: string } {
+  const timestamp = now.toISOString();
+  try {
+    const dir = dirname(lastRunPath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(lastRunPath, `${timestamp}\n`, "utf8");
+  } catch (err) {
+    console.error(`[sentinel:dead-mans-switch] failed to touch ${lastRunPath}:`, err);
+  }
+  return { path: lastRunPath, timestamp };
+}
 
 export function reportSuccess(name: string, expectedIntervalMs: number): void {
   collectorStatuses.set(name, {

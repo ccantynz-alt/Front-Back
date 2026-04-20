@@ -58,8 +58,17 @@ function getSessionToken(): string | null {
 
 // ── Markdown-like rendering ─────────────────────────────────────────
 
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderContent(content: string): string {
-  return content
+  return escapeHtml(content)
     .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="my-3 overflow-x-auto rounded-xl p-4" style="background:var(--color-bg-inset);border:1px solid var(--color-border)"><code class="text-xs leading-relaxed" style="color:var(--color-primary-light)">$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code class="rounded px-1.5 py-0.5 text-xs" style="background:var(--color-bg-muted);color:var(--color-primary-light)">$1</code>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold" style="color:var(--color-text)">$1</strong>')

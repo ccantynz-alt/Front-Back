@@ -117,7 +117,7 @@ This is genuine build work, not just config. Options Craig needs to decide:
 
 | Option | What it is | Pros | Cons |
 |---|---|---|---|
-| **B1 — Self-hosted on a Hetzner / DigitalOcean / AWS VPS** | Rent a box, run the orchestrator, have it spin up Docker containers on the same box | Cheapest, simplest | Single point of failure, doesn't scale beyond one box |
+| **B1 — Self-hosted on a Vultr / DigitalOcean / AWS VPS** | Rent a box, run the orchestrator, have it spin up Docker containers on the same box | Cheapest, simplest | Single point of failure, doesn't scale beyond one box |
 | **B2 — Fly.io Machines API** | Use Fly's Machines API as the container substrate; orchestrator calls Fly instead of local Docker | Scales, Fly handles the hard parts, global edge | ~$5-50/tenant/month cost, Fly dependency |
 | **B3 — Cloudflare Containers (beta)** | When available, delegates everything to Cloudflare | Cleanest architecturally, matches the Cloudflare-native doctrine | Still in beta last time checked |
 | **B4 — Kubernetes on managed cluster (EKS/GKE/DOKS)** | Orchestrator uses k8s API to spin up pods per customer | Battle-tested scaling | Heavy ops burden, overkill for MVP |

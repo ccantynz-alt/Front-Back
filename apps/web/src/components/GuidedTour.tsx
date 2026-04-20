@@ -108,7 +108,16 @@ export function GuidedTour(props: GuidedTourProps): ReturnType<typeof Show> {
             inset: "0",
             background: "rgba(0,0,0,0.5)",
           }}
+          role="button"
+          tabindex="0"
+          aria-label="Dismiss guided tour"
           onClick={skip}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+              e.preventDefault();
+              skip();
+            }
+          }}
         />
         <div
           style={{

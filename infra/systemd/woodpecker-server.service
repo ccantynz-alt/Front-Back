@@ -1,0 +1,34 @@
+[Unit]
+Description=Woodpecker CI Server
+Documentation=https://woodpecker-ci.org/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=woodpecker
+Group=woodpecker
+EnvironmentFile=/etc/woodpecker/server.env
+ExecStart=/usr/local/bin/woodpecker-server
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=/var/lib/woodpecker/server
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/lib/woodpecker
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=woodpecker-server
+
+[Install]
+WantedBy=multi-user.target

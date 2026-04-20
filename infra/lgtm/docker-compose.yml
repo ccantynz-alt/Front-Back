@@ -1,22 +1,24 @@
 # Grafana LGTM observability stack
 #
-# Deployed to Hetzner box during Phase 0 bootstrap (step 12).
-# Referenced by infra/bootstrap/phase-0.sh and CLAUDE.md §3 Observability.
+# Dev / single-box deployment. Brings up the full telemetry fabric:
 #
-# Components:
-#   - Loki      -> logs
-#   - Grafana   -> unified visualization
-#   - Tempo     -> distributed traces (OpenTelemetry)
-#   - Mimir     -> metrics (Prometheus-compatible)
-#   - OTel Collector -> single entry point for all telemetry from
-#                       substrate services, app runtimes, and AI agents
+#   OTel Collector ── logs ──▶ Loki   (otlphttp /otlp)
+#                  ── traces ─▶ Tempo  (otlphttp :4318)
+#                  ── metrics ▶ Mimir  (prometheusremotewrite /api/v1/push)
+#   Grafana ─▶ Loki + Tempo + Mimir (auto-provisioned)
 #
-# Credentials: NEVER commit. Set in /etc/default/lgtm on the host,
-# age-decrypted at service start by substrate/secrets/ at runtime.
+# Spin up:
+#     docker compose -f infra/lgtm/docker-compose.yml up -d
 #
-# All services bind to 127.0.0.1 only. External access is via Caddy
-# reverse proxy with TLS + auth. The box's firewall (UFW) only allows
-# 22/80/443 from the outside world.
+# Point app OTel SDKs at:
+#     OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+#
+# Grafana: http://localhost:3000   (admin / admin by default)
+# The Crontech Overview dashboard is pre-provisioned.
+#
+# All services bind to 127.0.0.1 only; production exposure goes
+# through Caddy (TLS + auth). The box firewall (UFW) only allows
+# 22/80/443 in from the outside.
 
 services:
   loki:
@@ -26,9 +28,9 @@ services:
     ports:
       - "127.0.0.1:3100:3100"
     volumes:
-      - ./loki-config.yml:/etc/loki/local-config.yml:ro
-      - loki-data:/loki
-    command: -config.file=/etc/loki/local-config.yml
+      - ./config/loki/local-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/var/loki
+    command: -config.file=/etc/loki/local-config.yaml
     networks:
       - lgtm
 
@@ -37,13 +39,11 @@ services:
     container_name: crontech-tempo
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3200:3200"   # tempo
-      - "127.0.0.1:4317:4317"   # OTLP gRPC receiver
-      - "127.0.0.1:4318:4318"   # OTLP HTTP receiver
+      - "127.0.0.1:3200:3200"   # tempo http
     volumes:
-      - ./tempo-config.yml:/etc/tempo.yml:ro
+      - ./config/tempo/tempo.yaml:/etc/tempo.yaml:ro
       - tempo-data:/var/tempo
-    command: -config.file=/etc/tempo.yml
+    command: -config.file=/etc/tempo.yaml
     networks:
       - lgtm
 
@@ -54,9 +54,9 @@ services:
     ports:
       - "127.0.0.1:9009:9009"
     volumes:
-      - ./mimir-config.yml:/etc/mimir/config.yml:ro
-      - mimir-data:/var/mimir
-    command: -config.file=/etc/mimir/config.yml
+      - ./config/mimir/mimir.yaml:/etc/mimir/config.yaml:ro
+      - mimir-data:/data/mimir
+    command: -config.file=/etc/mimir/config.yaml
     networks:
       - lgtm
 
@@ -65,11 +65,12 @@ services:
     container_name: crontech-otel-collector
     restart: unless-stopped
     ports:
-      - "127.0.0.1:4319:4317"   # OTLP gRPC (external apps)
-      - "127.0.0.1:4320:4318"   # OTLP HTTP (external apps)
+      - "127.0.0.1:4317:4317"   # OTLP gRPC (external apps)
+      - "127.0.0.1:4318:4318"   # OTLP HTTP (external apps)
+      - "127.0.0.1:8888:8888"   # collector self-telemetry
     volumes:
-      - ./otel-collector-config.yml:/etc/otel-collector-config.yml:ro
-    command: ["--config=/etc/otel-collector-config.yml"]
+      - ./config/otel/config.yaml:/etc/otel-collector-config.yaml:ro
+    command: ["--config=/etc/otel-collector-config.yaml"]
     depends_on:
       - loki
       - tempo
@@ -85,14 +86,14 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set via age-decrypted env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-piechart-panel
-      GF_SERVER_ROOT_URL: https://grafana.crontech.ai
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana-provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - loki
       - tempo
@@ -109,28 +110,3 @@ volumes:
 networks:
   lgtm:
     driver: bridge
-
-# ---------------------------------------------------------------------------
-# TODO before production:
-#
-# 1. Write the per-service config files referenced above:
-#      - loki-config.yml
-#      - tempo-config.yml
-#      - mimir-config.yml
-#      - otel-collector-config.yml
-#    These are intentionally NOT committed yet — they will be written
-#    when Phase 0 starts, since their exact settings depend on the
-#    Hetzner box specs and expected load.
-#
-# 2. Write grafana-provisioning/datasources.yml to auto-connect Grafana
-#    to Loki, Tempo, and Mimir on first boot.
-#
-# 3. Write grafana-provisioning/dashboards/crontech-overview.json —
-#    the first empire-wide dashboard.
-#
-# 4. Wire up the dead-man's switch for the Sentinel collectors
-#    (see CLAUDE.md §5.3).
-#
-# 5. Expose grafana.crontech.ai via Caddy with TLS + auth gate that
-#    restricts access to admin users only.
-# ---------------------------------------------------------------------------

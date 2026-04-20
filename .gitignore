@@ -48,6 +48,11 @@ credentials.json
 # Losing it only costs one noisy "initial-detection" pass on next run.
 services/sentinel/data/intelligence.json
 
+# Sentinel liveness file — touched by the runner at end of each cycle
+# so external monitors (systemd timer, alertmanager) can verify the
+# daemon ran recently. Regenerated every 15 minutes in production.
+services/sentinel/data/.last-run
+
 # GateTest local runtime artifacts — regenerated on every run.
 # In CI these are uploaded as workflow artifacts (see .github/workflows/ci.yml);
 # locally they're disposable scan history, HTML/JSON reports, and crawl feedback.

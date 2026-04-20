@@ -13,7 +13,7 @@
 
 | Week | Target | Priority | Playbook |
 |---|---|---|---|
-| 0 | Phase 0 bootstrap (Hetzner + LGTM + Stripe live) | P0 | `../infra/README.md` |
+| 0 | Phase 0 bootstrap (Vultr + LGTM + Stripe live) | P0 | `../infra/README.md` |
 | 1 | **MarcoReid.com** (dress rehearsal, lowest stakes) | P0 | `week-1-marcoreid.md` |
 | 2 | **emailed.io** (first real SaaS workload) | P0 | `week-2-emailed.md` |
 | 3 | **Astra + CFO engine** (accounting vertical) | P0 | `week-3-astra.md` |
@@ -34,7 +34,7 @@ Every migration session MUST honor:
 4. **Rollback plan in writing.** Every playbook has a rollback section. If anything feels wrong, roll back instantly.
 5. **Update the master tracker.** When a week's migration is complete, flip its entry in `apps/web/public/progress.json` to `completed`.
 6. **Commit often, push immediately.** No stockpiling commits. Each logical unit is its own commit.
-7. **Competitor-free stack rule** (§0.11). The migrated property must not depend on Vercel, Netlify, or any platform-layer competitor. Cloudflare edge + Hetzner core is the target shape.
+7. **Competitor-free stack rule** (§0.11). The migrated property must not depend on Vercel, Netlify, or any platform-layer competitor. Cloudflare edge + Vultr core is the target shape.
 
 ## The migration shape
 

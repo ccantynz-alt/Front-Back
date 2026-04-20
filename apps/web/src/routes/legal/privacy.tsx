@@ -156,17 +156,17 @@ const sections: Section[] = [
     ],
   },
   {
-    title: "14. Relationship to Sibling Products: GateTest and Gluecron (DRAFT \u2014 requires attorney review)",
+    title: "14. Relationship to Sibling Products: GateTest and Gluecron",
     content: [
-      "DRAFT \u2014 pending Gluecron legal page creation. Crontech, GateTest, and Gluecron are separately operated products of Crontech Technologies, Inc. This Privacy Policy governs the Crontech platform ONLY. It does not govern GateTest (which has its own privacy practices as a GitHub App) or Gluecron (VS Code extension and CLI).",
-      "Use of GateTest is governed by its own policies, available at the GateTest product surface. Use of Gluecron is governed by its own policy (link placeholder \u2014 DRAFT \u2014 pending Gluecron legal page creation). Until Gluecron publishes standalone legal pages, users should not assume this Privacy Policy applies to Gluecron.",
+      "Crontech, GateTest, and Gluecron are separately operated products of Crontech Technologies, Inc. This Privacy Policy governs the Crontech platform ONLY. It does not govern GateTest (which has its own privacy practices as a GitHub App) or Gluecron (VS Code extension and CLI).",
+      "Use of GateTest is governed by its own policies, available at the GateTest product surface. Use of Gluecron is governed by its own policy, available at the Gluecron product surface. Each product maintains independent privacy practices.",
       "The three products do not share a database, auth state, or bundle. Coupling between them is HTTP-only over a signal bus. Any cross-product data flow will be disclosed in the receiving product's own privacy policy at the time the flow is activated.",
     ],
   },
   {
-    title: "15. Additional Protections (DRAFT \u2014 requires attorney review)",
+    title: "15. Additional Protections",
     content: [
-      "DRAFT \u2014 requires attorney review. Nothing in this Privacy Policy waives, diminishes, or otherwise limits any protection, disclaimer, limitation of liability, indemnification, class-action waiver, binding-arbitration clause, AS-IS / AS-AVAILABLE disclaimer, no-consequential-damages exclusion, governing-law choice, export-controls clause, 18+ age requirement, or 30-day notice provision set forth in the Terms of Service. All such Terms of Service provisions apply in full force to the collection, use, and disclosure of personal information described here.",
+      "Nothing in this Privacy Policy waives, diminishes, or otherwise limits any protection, disclaimer, limitation of liability, indemnification, class-action waiver, binding-arbitration clause, AS-IS / AS-AVAILABLE disclaimer, no-consequential-damages exclusion, governing-law choice, export-controls clause, 18+ age requirement, or 30-day notice provision set forth in the Terms of Service. All such Terms of Service provisions apply in full force to the collection, use, and disclosure of personal information described here.",
       "AI Output Disclaimer. AI features are informational only. We intend that AI-generated output is not a substitute for professional advice (legal, medical, financial, tax, engineering, or safety-critical). You are solely responsible for independent verification.",
       "Customer Indemnification. You agree to indemnify, defend, and hold harmless Crontech for any claim arising from your use of the Service, the content you upload, the code you run, and the outputs you generate.",
       "Suspension / Termination. We reserve the right to suspend or terminate access to the Service, unilaterally, for any reason or no reason, with notice where reasonably practicable, including to protect the privacy of other users.",

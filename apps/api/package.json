@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
     "test": "bun test",
     "check": "tsc --noEmit",
     "lint": "biome check .",
@@ -18,7 +19,9 @@
     "@ai-sdk/openai": "^3.0.0",
     "@back-to-the-future/ai-core": "workspace:*",
     "@back-to-the-future/db": "workspace:*",
+    "@back-to-the-future/dns-server": "workspace:*",
     "@back-to-the-future/flywheel": "workspace:*",
+    "@back-to-the-future/orchestrator": "workspace:*",
     "@back-to-the-future/queue": "workspace:*",
     "@back-to-the-future/schemas": "workspace:*",
     "@back-to-the-future/storage": "workspace:*",

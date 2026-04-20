@@ -26,24 +26,23 @@ export function PreLaunchBanner(): JSX.Element {
     <div
       role="status"
       aria-live="polite"
-      class="sticky top-0 z-[60] w-full border-b border-amber-500/30 bg-amber-500/20 backdrop-blur-md"
+      class="sticky top-0 z-[60] w-full backdrop-blur-xl"
+      style={{
+        background: "rgba(10,15,26,0.85)",
+        "border-bottom": "1px solid rgba(255,255,255,0.06)",
+      }}
     >
-      {/* Top accent line — subtle amber gradient to match brand */}
-      <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
-
-      <div class="mx-auto flex max-w-7xl items-start gap-2 px-3 py-2 sm:items-center sm:gap-3 sm:px-6 sm:py-2.5">
-        {/* Warning glyph */}
-        <span
-          aria-hidden="true"
-          class="mt-0.5 shrink-0 text-sm text-amber-300 sm:mt-0 sm:text-base"
-        >
-          {"\u26A0"}
-        </span>
-
-        {/* Copy — responsive down to 320px */}
-        <p class="flex-1 text-[11px] leading-snug text-amber-100 sm:text-xs sm:leading-normal md:text-sm">
-          <span class="font-semibold text-amber-200">Pre-launch</span>
-          <span class="text-amber-100/90"> — Crontech is in final validation. Customer onboarding opens after launch review. This is not yet a live commercial service.</span>
+      <div class="mx-auto flex max-w-7xl items-center justify-center gap-2 px-3 py-2 sm:gap-3 sm:px-6">
+        <div
+          class="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{
+            background: "#f59e0b",
+            "box-shadow": "0 0 6px rgba(245,158,11,0.5)",
+          }}
+        />
+        <p class="text-[11px] tracking-wide sm:text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+          <span class="font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>Early access</span>
+          <span> — Crontech is in final validation before public launch.</span>
         </p>
       </div>
     </div>

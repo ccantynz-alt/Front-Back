@@ -11,6 +11,8 @@
     "./neon-provisioning": "./src/neon-provisioning.ts",
     "./tenant-manager": "./src/tenant-manager.ts",
     "./migrate": "./src/migrate.ts",
+    "./migration-status": "./src/migration-status.ts",
+    "./migration-lint": "./src/migration-lint.ts",
     "./scoped-query": "./src/scoped-query.ts"
   },
   "scripts": {

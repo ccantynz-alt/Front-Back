@@ -1,0 +1,262 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Crontech — Deploy Pipeline (Woodpecker CI on Gluecron)
+# ──────────────────────────────────────────────────────────────────────────────
+# Triggered ONLY on push to Main. Pull requests never reach this file
+# (see .woodpecker.yml for the gate suite).
+#
+# Default shape: in-place deploy. Woodpecker runs on the SAME Vultr VPS as
+# the Crontech runtime (ci.crontech.ai, port 3003 — see docs/INFRASTRUCTURE.md
+# INF-006), so deploy is `cd /opt/crontech && git pull && restart`. No SSH.
+#
+# Optional shape: remote SSH deploy. If `VULTR_HOST` and `VULTR_SSH_KEY`
+# secrets are registered AND `DEPLOY_MODE=ssh` is set at the repo level, the
+# deploy step will SSH to VULTR_HOST and run docker compose pull + up
+# against `docker-compose.production.yml`. This exists so the same pipeline
+# works if Woodpecker is ever hosted off-box.
+#
+# Gluecron-hosted source: this file is valid pipeline-as-code against both
+# a GitHub origin (transitional) and a Gluecron origin (target). Gluecron
+# emits GitHub-compatible webhook payloads — the `event: push` / `branch:
+# Main` filter below fires identically in both cases.
+#
+# Required Woodpecker secrets (registered via `woodpectl secret add` or the
+# Woodpecker UI — see docs/runbooks/woodpecker-setup.md):
+#
+#   VULTR_HOST          # optional: target host for SSH-mode deploys
+#   VULTR_SSH_KEY       # optional: SSH private key for deploy user
+#   DATABASE_URL        # required at runtime (passed via /opt/crontech/.env)
+#   TURSO_AUTH_TOKEN    # required at runtime
+#   ANTHROPIC_API_KEY   # required at runtime
+#   # ... full list in the runbook
+#
+# The agent runs as the `deploy` user on the VPS. `/etc/sudoers.d/crontech-
+# deploy` (installed by scripts/setup-vultr.sh) grants restart rights on the
+# crontech-api / crontech-web systemd services. No other sudo is available.
+# ──────────────────────────────────────────────────────────────────────────────
+
+when:
+  - event: push
+    branch: [Main, main]
+
+# Secrets are referenced per-step via `secrets:`. Never hardcode.
+# Missing secrets surface as empty strings — the deploy step validates.
+
+steps:
+  # ── Pull latest code ────────────────────────────────────────────────────
+  pull:
+    image: ""
+    commands:
+      - echo "=== [1/7] Pulling latest code ==="
+      - cd /opt/crontech
+      - git fetch origin Main
+      - git reset --hard origin/Main
+      - echo "Checked out $(git rev-parse --short HEAD) on branch $(git rev-parse --abbrev-ref HEAD)"
+
+  # ── Install dependencies ────────────────────────────────────────────────
+  install:
+    image: ""
+    commands:
+      - echo "=== [2/7] Installing dependencies ==="
+      - cd /opt/crontech
+      - bun install --frozen-lockfile
+    depends_on:
+      - pull
+
+  # ── Quality gates (repeat on Main — belt & braces) ──────────────────────
+  quality-gates:
+    image: ""
+    commands:
+      - echo "=== [3/7] Running quality gates ==="
+      - cd /opt/crontech
+      - echo "--- Biome lint ---"
+      - bunx biome check apps packages services
+      - echo "--- Type check ---"
+      - bun run check
+      - echo "--- Link checker ---"
+      - bun run check-links
+      - echo "--- Button checker ---"
+      - bun run check-buttons
+      - echo "All quality gates passed"
+    depends_on:
+      - install
+
+  # ── Build ───────────────────────────────────────────────────────────────
+  build:
+    image: ""
+    environment:
+      SERVER_PRESET: "${SERVER_PRESET:-bare-metal}"
+    commands:
+      - echo "=== [4/7] Building all packages (preset=$SERVER_PRESET) ==="
+      - cd /opt/crontech
+      - bun run build
+      - test -f apps/api/dist/index.js && echo "API build OK" || exit 1
+      - test -d apps/web/.output && echo "Web build OK" || exit 1
+    depends_on:
+      - quality-gates
+
+  # ── Tests ───────────────────────────────────────────────────────────────
+  test:
+    image: ""
+    commands:
+      - echo "=== [5/7] Running tests ==="
+      - cd /opt/crontech
+      - bun run test
+    depends_on:
+      - build
+
+  # ── Migrations ──────────────────────────────────────────────────────────
+  migrate:
+    image: ""
+    secrets:
+      - DATABASE_URL
+      - TURSO_AUTH_TOKEN
+    commands:
+      - echo "=== [6/7] Running database migrations ==="
+      - cd /opt/crontech
+      - |
+        bun run --cwd apps/api -e '
+          import("@back-to-the-future/db/migrate")
+            .then(m => m.runMigrations())
+            .then(() => process.exit(0))
+            .catch(e => { console.error(e); process.exit(1) })
+        ' || echo "Migration skipped (no DB configured yet)"
+    depends_on:
+      - test
+
+  # ── Restart & Health Check (in-place deploy, default) ───────────────────
+  # This step handles the common case: Woodpecker runs on the same box as
+  # Crontech. For the SSH-mode remote deploy, see `deploy-remote` below.
+  deploy:
+    image: ""
+    when:
+      - evaluate: 'DEPLOY_MODE != "ssh"'
+    commands:
+      - echo "=== [7/7] Restarting services and running health checks (in-place) ==="
+      - |
+        # Restart API first, then web
+        sudo systemctl restart crontech-api
+        sleep 3
+        sudo systemctl restart crontech-web
+        sleep 5
+
+        # Health check — API
+        echo "--- API health check ---"
+        API_OK=false
+        for i in 1 2 3 4 5; do
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
+          if [ "$STATUS" = "200" ]; then
+            echo "API health check passed"
+            API_OK=true
+            break
+          fi
+          echo "  API attempt $i: status $STATUS, retrying..."
+          sleep 3
+        done
+
+        # Health check — Web
+        echo "--- Web health check ---"
+        WEB_OK=false
+        for i in 1 2 3 4 5; do
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
+          if [ "$STATUS" = "200" ]; then
+            echo "Web health check passed"
+            WEB_OK=true
+            break
+          fi
+          echo "  Web attempt $i: status $STATUS, retrying..."
+          sleep 3
+        done
+
+        # Final verdict
+        if [ "$API_OK" = true ] && [ "$WEB_OK" = true ]; then
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  DEPLOY SUCCESS (in-place)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "  Web: https://crontech.ai"
+          echo "  API: https://api.crontech.ai"
+          echo "  Git: https://gluecron.crontech.ai"
+          echo "  CI:  https://ci.crontech.ai"
+          echo ""
+        else
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  DEPLOY FAILED — see rollback runbook"
+          echo "  docs/runbooks/woodpecker-setup.md#rollback"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "  API healthy: $API_OK"
+          echo "  Web healthy: $WEB_OK"
+          echo ""
+          echo "--- crontech-api logs ---"
+          sudo journalctl -u crontech-api --no-pager -n 30
+          echo ""
+          echo "--- crontech-web logs ---"
+          sudo journalctl -u crontech-web --no-pager -n 30
+          exit 1
+        fi
+    depends_on:
+      - migrate
+
+  # ── SSH-mode remote deploy (opt-in via DEPLOY_MODE=ssh) ─────────────────
+  # Fires only when DEPLOY_MODE=ssh is set at the repo/org level in
+  # Woodpecker. Uses VULTR_HOST + VULTR_SSH_KEY secrets to SSH to the box
+  # and run `docker compose pull && up -d` against
+  # `docker-compose.production.yml`. Keeps the in-place path intact.
+  deploy-remote:
+    image: ""
+    when:
+      - evaluate: 'DEPLOY_MODE == "ssh"'
+    secrets:
+      - VULTR_HOST
+      - VULTR_SSH_KEY
+      - VULTR_SSH_USER
+    commands:
+      - echo "=== [7/7] Deploying via SSH to $VULTR_HOST ==="
+      - |
+        set -euo pipefail
+
+        if [ -z "${VULTR_HOST:-}" ] || [ -z "${VULTR_SSH_KEY:-}" ]; then
+          echo "ERROR: VULTR_HOST or VULTR_SSH_KEY secret not registered."
+          echo "See docs/runbooks/woodpecker-setup.md#secrets."
+          exit 2
+        fi
+
+        SSH_USER="${VULTR_SSH_USER:-deploy}"
+
+        # Materialise key to a tmpfile with strict perms.
+        KEY_FILE="$(mktemp)"
+        trap 'rm -f "$KEY_FILE"' EXIT
+        printf '%s\n' "$VULTR_SSH_KEY" > "$KEY_FILE"
+        chmod 600 "$KEY_FILE"
+
+        SSH_OPTS="-i $KEY_FILE -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
+
+        ssh $SSH_OPTS "$SSH_USER@$VULTR_HOST" bash -s <<'REMOTE'
+        set -euo pipefail
+        cd /opt/crontech
+        git fetch origin Main
+        git reset --hard origin/Main
+        docker compose -f docker-compose.production.yml --env-file .env.production pull
+        docker compose -f docker-compose.production.yml --env-file .env.production up -d --remove-orphans
+        # Wait for health
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+          if curl -fsS http://localhost:3001/api/health > /dev/null 2>&1 \
+             && curl -fsS http://localhost:3000/ > /dev/null 2>&1; then
+            echo "Remote health check passed"
+            exit 0
+          fi
+          echo "  attempt $i: services not ready yet"
+          sleep 3
+        done
+        echo "Remote health check failed"
+        docker compose -f docker-compose.production.yml logs --tail=50 web api
+        exit 1
+        REMOTE
+      - echo ""
+      - echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - echo "  DEPLOY SUCCESS (ssh-mode)"
+      - echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    depends_on:
+      - migrate

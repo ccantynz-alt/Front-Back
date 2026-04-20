@@ -292,6 +292,7 @@ export default function DocsPage(): JSX.Element {
                   <input
                     type="text"
                     placeholder="Search documentation... (e.g. tRPC, passkeys, WebGPU)"
+                    aria-label="Search documentation"
                     value={searchQuery()}
                     onInput={(e) =>
                       setSearchQuery(e.currentTarget.value)

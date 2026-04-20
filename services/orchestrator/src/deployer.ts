@@ -1,7 +1,12 @@
 // ── Core Deploy Orchestration ─────────────────────────────────────────
 // Manages the full lifecycle of app deployments: clone, detect framework,
 // install deps, build, run via Bun process manager, configure routing.
-// No Docker dependency — uses Bun.spawn for child processes.
+//
+// SECURITY (BLK-009): the install + build steps run inside a Docker
+// sandbox (see `sandbox.ts`) — NOT directly on the host. Customer code
+// (postinstall scripts, build scripts, vite plugins) can do anything, so
+// we treat it as fully untrusted. The clone + route-configuration steps
+// run on the host because they handle our own trusted data.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -16,7 +21,14 @@ import {
   getProcessLogs,
   streamProcessLogs,
 } from "./process-manager";
-import { addRoute, removeRoute } from "./caddy";
+import { addRoute, appendSiteAndReload, removeRoute } from "./caddy";
+import {
+  cleanupWorkspaceDir,
+  ensureWorkspaceDir,
+  resolveWorkspaceDir,
+  runInSandbox,
+  scrubLogLine,
+} from "./sandbox";
 import type {
   DeployRequest,
   DeployResult,
@@ -81,24 +93,15 @@ async function exec(
     timeoutMs?: number;
   } = {},
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const spawnOpts: {
-    cwd?: string;
-    env: Record<string, string | undefined>;
-    stdout: "pipe";
-    stderr: "pipe";
-  } = {
+  const spawnOptions: { cwd?: string; env: Record<string, string | undefined>; stdout: "pipe"; stderr: "pipe" } = {
     env: { ...process.env, ...options.env },
     stdout: "pipe",
     stderr: "pipe",
   };
-
   if (options.cwd) {
-    spawnOpts.cwd = options.cwd;
+    spawnOptions.cwd = options.cwd;
   }
-
-  const proc = Bun.spawn(command, {
-    ...spawnOpts,
-  });
+  const proc = Bun.spawn(command, spawnOptions);
 
   let timedOut = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -131,83 +134,114 @@ async function exec(
 async function cloneRepo(
   repoUrl: string,
   branch: string,
-  appDir: string,
+  targetDir: string,
 ): Promise<void> {
-  if (fs.existsSync(path.join(appDir, ".git"))) {
+  if (fs.existsSync(path.join(targetDir, ".git"))) {
     const { exitCode, stderr } = await exec(
-      ["git", "-C", appDir, "fetch", "origin", branch, "--depth", "1"],
+      ["git", "-C", targetDir, "fetch", "origin", branch, "--depth", "1"],
       { timeoutMs: CLONE_TIMEOUT_MS },
     );
     if (exitCode !== 0) {
-      throw new Error(`git fetch failed: ${stderr}`);
+      throw new Error(`git fetch failed: ${scrubLogLine(stderr)}`);
     }
 
     const { exitCode: resetCode, stderr: resetErr } = await exec(
-      ["git", "-C", appDir, "reset", "--hard", `origin/${branch}`],
+      ["git", "-C", targetDir, "reset", "--hard", `origin/${branch}`],
       { timeoutMs: 30_000 },
     );
     if (resetCode !== 0) {
-      throw new Error(`git reset failed: ${resetErr}`);
+      throw new Error(`git reset failed: ${scrubLogLine(resetErr)}`);
     }
   } else {
-    fs.mkdirSync(appDir, { recursive: true });
+    fs.mkdirSync(targetDir, { recursive: true });
     const { exitCode, stderr } = await exec(
-      ["git", "clone", "--branch", branch, "--depth", "1", repoUrl, appDir],
+      ["git", "clone", "--branch", branch, "--depth", "1", repoUrl, targetDir],
       { timeoutMs: CLONE_TIMEOUT_MS },
     );
     if (exitCode !== 0) {
-      throw new Error(`git clone failed: ${stderr}`);
+      throw new Error(`git clone failed: ${scrubLogLine(stderr)}`);
     }
   }
 }
 
 // ── Build Pipeline ───────────────────────────────────────────────────
 
-async function installDeps(appDir: string): Promise<void> {
-  const lockFile = path.join(appDir, "bun.lockb");
-  const npmLock = path.join(appDir, "package-lock.json");
-  const yarnLock = path.join(appDir, "yarn.lock");
-  const pnpmLock = path.join(appDir, "pnpm-lock.yaml");
-
+/**
+ * Install dependencies INSIDE a sandboxed Docker container.
+ *
+ * Customer code never runs on the host — npm postinstall hooks, pnpm
+ * install scripts, and any other foot-gun fires inside the locked-down
+ * container (see `sandbox.ts`).
+ */
+async function installDeps(
+  deploymentId: string,
+  workspaceDir: string,
+): Promise<void> {
+  const lockFile = path.join(workspaceDir, "bun.lockb");
   let installCmd: string[];
 
   if (fs.existsSync(lockFile)) {
     installCmd = ["bun", "install", "--frozen-lockfile"];
-  } else if (fs.existsSync(pnpmLock)) {
-    installCmd = ["bun", "install"];
-  } else if (fs.existsSync(yarnLock)) {
-    installCmd = ["bun", "install"];
-  } else if (fs.existsSync(npmLock)) {
-    installCmd = ["bun", "install"];
   } else {
+    // pnpm-lock / yarn.lock / npm-lock all fall through to bun install.
     installCmd = ["bun", "install"];
   }
 
-  const { exitCode, stderr } = await exec(installCmd, {
-    cwd: appDir,
-    timeoutMs: INSTALL_TIMEOUT_MS,
-  });
+  const result = await runInSandbox(
+    {
+      deploymentId,
+      workspaceDir,
+      command: installCmd,
+      timeoutMs: INSTALL_TIMEOUT_MS,
+    },
+  );
 
-  if (exitCode !== 0) {
-    throw new Error(`Dependency installation failed: ${stderr}`);
+  if (result.exitCode !== 0) {
+    // Stderr from the sandbox runner is already secret-scrubbed.
+    throw new Error(
+      `Dependency installation failed (exit ${result.exitCode}): ${result.stderr.slice(-2000)}`,
+    );
   }
 }
 
+/**
+ * Run the customer's build command INSIDE the sandbox. Forwards only a
+ * minimal, curated env (NODE_ENV + any caller-supplied vars). The
+ * NODE_ENV=production flag is baked in — callers cannot accidentally
+ * leak dev-only debug flags into the sandbox.
+ */
 async function buildApp(
-  appDir: string,
+  deploymentId: string,
+  workspaceDir: string,
   buildCommand: string,
+  envVars: Record<string, string>,
 ): Promise<void> {
   if (!buildCommand) return;
 
-  const parts = buildCommand.split(" ");
-  const { exitCode, stderr } = await exec(parts, {
-    cwd: appDir,
-    env: { NODE_ENV: "production" },
-    timeoutMs: BUILD_TIMEOUT_MS,
-  });
+  const parts = buildCommand.split(" ").filter((p) => p.length > 0);
+  if (parts.length === 0) return;
 
-  if (exitCode !== 0) {
-    throw new Error(`Build failed: ${stderr}`);
+  const sandboxedEnv: Record<string, string> = {
+    NODE_ENV: "production",
+    // Intentionally forward customer envVars — the app's build may need
+    // them (e.g. NEXT_PUBLIC_*). They're scrubbed from our own logs.
+    ...envVars,
+  };
+
+  const result = await runInSandbox(
+    {
+      deploymentId,
+      workspaceDir,
+      command: parts,
+      env: sandboxedEnv,
+      timeoutMs: BUILD_TIMEOUT_MS,
+    },
+  );
+
+  if (result.exitCode !== 0) {
+    throw new Error(
+      `Build failed (exit ${result.exitCode}): ${result.stderr.slice(-2000)}`,
+    );
   }
 }
 
@@ -358,6 +392,10 @@ function startAppProcess(
 
 export async function deploy(req: DeployRequest): Promise<DeployResult> {
   const appDir = path.join(APPS_DIR, req.appName);
+  // Isolated sandbox workspace for untrusted clone+install+build.
+  // Owned (in production) by an unprivileged user; cleaned up on both
+  // success and failure paths.
+  const sandboxDir = resolveWorkspaceDir(req.appName);
   const now = new Date().toISOString();
 
   console.log(`[deploy] Starting deploy for ${req.appName}...`);
@@ -396,41 +434,59 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
   setDeployment(deployment);
 
   try {
-    // 1. Clone repo
-    console.log(`[deploy] Cloning ${req.repoUrl} (${req.branch})...`);
-    await cloneRepo(req.repoUrl, req.branch, appDir);
+    // 0. Prepare a fresh sandbox workspace.
+    cleanupWorkspaceDir(req.appName);
+    ensureWorkspaceDir(req.appName);
 
-    // 2. Detect framework
+    // 1. Clone repo into the SANDBOX workspace (NOT the host appDir yet).
+    console.log(`[deploy] Cloning ${req.repoUrl} (${req.branch}) into sandbox...`);
+    await cloneRepo(req.repoUrl, req.branch, sandboxDir);
+
+    // 2. Detect framework (reads package.json only — safe on host).
     deployment.status = "detecting";
     deployment.updatedAt = new Date().toISOString();
     setDeployment(deployment);
 
     console.log("[deploy] Detecting framework...");
-    const framework = await detectFramework(appDir);
+    const framework = await detectFramework(sandboxDir);
     deployment.framework = framework;
     console.log(`[deploy] Detected: ${framework.framework} (server: ${framework.needsServer})`);
 
-    // 3. Install dependencies
+    // 3. Install dependencies — SANDBOXED.
     deployment.status = "installing";
     deployment.updatedAt = new Date().toISOString();
     setDeployment(deployment);
 
-    console.log("[deploy] Installing dependencies...");
-    await installDeps(appDir);
+    console.log("[deploy] Installing dependencies (sandboxed)...");
+    await installDeps(req.appName, sandboxDir);
 
-    // 4. Backup previous build output for rollback
-    const previousBackup = backupBuildOutput(appDir, framework.outputDir);
-    deployment.previousBuildDir = previousBackup;
-
-    // 5. Build
+    // 4. Build — SANDBOXED.
     deployment.status = "building";
     deployment.updatedAt = new Date().toISOString();
     setDeployment(deployment);
 
     if (framework.buildCommand) {
-      console.log(`[deploy] Building (${framework.buildCommand})...`);
-      await buildApp(appDir, framework.buildCommand);
+      console.log(`[deploy] Building (${framework.buildCommand}) sandboxed...`);
+      await buildApp(
+        req.appName,
+        sandboxDir,
+        framework.buildCommand,
+        req.envVars ?? {},
+      );
     }
+
+    // 5. Promote the sandbox build output onto the host appDir so the
+    //    runtime process-manager can launch it. We back up the existing
+    //    appDir first to enable rollback.
+    const previousBackup = backupBuildOutput(appDir, framework.outputDir);
+    deployment.previousBuildDir = previousBackup;
+
+    fs.mkdirSync(path.dirname(appDir), { recursive: true });
+    if (fs.existsSync(appDir)) {
+      fs.rmSync(appDir, { recursive: true, force: true });
+    }
+    // cpSync preserves permissions; dereferences symlinks by default.
+    fs.cpSync(sandboxDir, appDir, { recursive: true });
 
     // 6. Stop old process if replacing
     if (isReplace && isProcessRunning(req.appName)) {
@@ -461,13 +517,14 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
       console.warn(`[deploy] Health check failed for ${req.appName}, process may still be starting`);
     }
 
-    // 10. Configure Caddy route
+    // 10. Configure Caddy route via admin API (fast path) and also append
+    //     a durable site block to the Caddyfile so a reboot preserves it.
     console.log(`[deploy] Configuring route: ${req.domain} -> 127.0.0.1:${port}...`);
     try {
       await addRoute(req.domain, `127.0.0.1:${port}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "unknown error";
-      console.warn(`[deploy] Caddy route config failed (non-fatal): ${msg}`);
+      console.warn(`[deploy] Caddy route config failed (non-fatal): ${scrubLogLine(msg)}`);
     }
 
     if (req.subdomain) {
@@ -477,7 +534,17 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
         await addRoute(subFqdn, `127.0.0.1:${port}`);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "unknown error";
-        console.warn(`[deploy] Subdomain route config failed (non-fatal): ${msg}`);
+        console.warn(`[deploy] Subdomain route config failed (non-fatal): ${scrubLogLine(msg)}`);
+      }
+
+      // Append durable site block to Caddyfile. Failure must not nuke
+      // the existing Caddyfile — `appendSiteAndReload` rolls back on
+      // reload failure to keep the running config valid.
+      try {
+        await appendSiteAndReload(req.subdomain, `127.0.0.1:${port}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "unknown error";
+        console.warn(`[deploy] Caddyfile append failed (non-fatal): ${scrubLogLine(msg)}`);
       }
     }
 
@@ -488,6 +555,10 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
 
     const url = `https://${req.domain}`;
     console.log(`[deploy] Deploy complete: ${url} (health: ${healthResult})`);
+
+    // 12. Clean up the sandbox workspace on success. No customer code
+    //     survives past the build step on the host.
+    cleanupWorkspaceDir(req.appName);
 
     return {
       containerId: `pid-${deployment.pid ?? 0}`,
@@ -504,8 +575,12 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
 
     stopProcess(req.appName);
 
+    // Always clean up the sandbox dir — customer code left on disk is
+    // a security and quota liability.
+    cleanupWorkspaceDir(req.appName);
+
     const msg = err instanceof Error ? err.message : "deploy failed";
-    console.error(`[deploy] Failed for ${req.appName}: ${msg}`);
+    console.error(`[deploy] Failed for ${req.appName}: ${scrubLogLine(msg)}`);
     throw err;
   }
 }
@@ -635,10 +710,35 @@ export async function getLogs(
     return "[no logs available — process may not be running]";
   }
   return logs
-    .map((entry: LogEntry) => `[${entry.timestamp}] [${entry.stream}] ${entry.message}`)
+    .map(
+      (entry: LogEntry) =>
+        `[${entry.timestamp}] [${entry.stream}] ${scrubLogLine(entry.message)}`,
+    )
     .join("\n");
 }
 
 export function getLogStream(appName: string): ReadableStream<string> {
-  return streamProcessLogs(appName);
+  // Wrap the upstream stream so any log line leaving this process has its
+  // secrets scrubbed. SSE frames look like `data: {"message":"..."}\n\n` —
+  // we reparse/rewrite each frame to scrub the `message` field.
+  const upstream = streamProcessLogs(appName);
+  return upstream.pipeThrough(new TransformStream<string, string>({
+    transform(chunk, controller) {
+      if (!chunk.startsWith("data: ")) {
+        controller.enqueue(chunk);
+        return;
+      }
+      const jsonPart = chunk.slice(6).trimEnd();
+      try {
+        const parsed = JSON.parse(jsonPart) as { message?: unknown; stream?: unknown; timestamp?: unknown };
+        if (typeof parsed.message === "string") {
+          parsed.message = scrubLogLine(parsed.message);
+        }
+        controller.enqueue(`data: ${JSON.stringify(parsed)}\n\n`);
+      } catch {
+        // Malformed — pass through without scrubbing rather than dropping.
+        controller.enqueue(chunk);
+      }
+    },
+  }));
 }

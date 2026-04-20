@@ -24,5 +24,15 @@ else
   (cd "$GATETEST_CACHE" && git pull --ff-only --depth 1 origin HEAD >/dev/null 2>&1 || true)
 fi
 
-echo "[GateTest] Running quick diff-mode gate before push ..."
-node "$GATETEST_CACHE/bin/gatetest.js" --suite quick --diff --project "$(pwd)"
+GATING_MODE="strict"
+CONFIG_FILE="$(pwd)/gatetest.config.json"
+if [ -f "$CONFIG_FILE" ]; then
+  GATING_MODE=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('$CONFIG_FILE','utf8')).gating?.mode||'strict')}catch{console.log('strict')}")
+fi
+
+echo "[GateTest] Running quick diff-mode gate before push (gating: $GATING_MODE) ..."
+if [ "$GATING_MODE" = "report-only" ]; then
+  node "$GATETEST_CACHE/bin/gatetest.js" --suite quick --diff --project "$(pwd)" || echo "[GateTest] Issues found (report-only mode — push continues)"
+else
+  node "$GATETEST_CACHE/bin/gatetest.js" --suite quick --diff --project "$(pwd)"
+fi
