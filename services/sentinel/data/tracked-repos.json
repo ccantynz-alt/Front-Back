@@ -10,7 +10,7 @@
       "defaultBranch": "canary",
       "lastKnownRelease": "v16.3.0-canary.1",
       "lastKnownReleaseAt": "2026-04-17T23:45:49Z",
-      "lastCommitCheckAt": "2026-04-19T03:44:34.038Z",
+      "lastCommitCheckAt": "2026-04-20T10:35:37.241Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -166,7 +166,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v1.26.04",
       "lastKnownReleaseAt": "2026-04-09T14:38:08Z",
-      "lastCommitCheckAt": "2026-04-19T03:44:34.778Z",
+      "lastCommitCheckAt": "2026-04-20T10:35:37.768Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -203,8 +203,8 @@
       "category": "backend",
       "description": "We use Renovate; track feature evolution for self-evolution pipeline.",
       "defaultBranch": "main",
-      "lastKnownRelease": "43.123.5",
-      "lastKnownReleaseAt": "2026-04-15T23:58:58Z",
+      "lastKnownRelease": "43.132.2",
+      "lastKnownReleaseAt": "2026-04-20T09:39:33Z",
       "lastCommitCheckAt": "2026-04-19T03:44:38.507Z",
       "baselineCommitsPerWeek": 100
     },
@@ -229,8 +229,8 @@
       "category": "backend",
       "description": "Netlify deploy/edge competitor.",
       "defaultBranch": "main",
-      "lastKnownRelease": "v25.0.0",
-      "lastKnownReleaseAt": "2026-04-17T14:24:18Z",
+      "lastKnownRelease": "v25.0.1",
+      "lastKnownReleaseAt": "2026-04-18T14:56:44Z",
       "lastCommitCheckAt": "2026-04-19T03:44:37.239Z",
       "baselineCommitsPerWeek": 15
     },
@@ -244,7 +244,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "15.0.0",
       "lastKnownReleaseAt": "2026-04-02T01:26:35Z",
-      "lastCommitCheckAt": "2026-04-19T03:44:39.793Z",
+      "lastCommitCheckAt": "2026-04-20T10:35:40.397Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -270,7 +270,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v1.1304.0",
       "lastKnownReleaseAt": "2026-04-09T11:40:07Z",
-      "lastCommitCheckAt": "2026-04-19T03:44:37.611Z",
+      "lastCommitCheckAt": "2026-04-20T10:35:39.346Z",
       "baselineCommitsPerWeek": 31
     },
     {
@@ -283,7 +283,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v20250625",
       "lastKnownReleaseAt": "2025-06-26T01:06:09Z",
-      "lastCommitCheckAt": "2026-04-19T03:44:37.833Z",
+      "lastCommitCheckAt": "2026-04-20T10:35:39.506Z",
       "baselineCommitsPerWeek": 1
     },
     {
@@ -300,6 +300,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-19T03:44:39.966Z",
+  "lastUpdated": "2026-04-20T10:35:41.700Z",
   "schemaVersion": 1
 }
