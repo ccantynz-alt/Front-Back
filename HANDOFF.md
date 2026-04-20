@@ -1,6 +1,96 @@
 # HANDOFF — Next Session Starts Here
 
-**First action:** Craig's bare-metal cutover tonight per `docs/TONIGHT_CHEAT_SHEET.md` — start infra services on `45.76.171.37`, run migrate script from old VPS, flip Cloudflare DNS. Then circle back to merge PR #124 + the new polish-wave commits on `claude/review-crontech-handoff-qYEVq`. Locked-block flips (BLK-020, BLK-009 → ✅) still pending Craig's in-chat "yes".
+**First action (morning of 2026-04-21):** Merge **PR #163** — it now carries **BLK-009 sandbox-wrap + BLK-014 Grafana LGTM + BLK-015 Sentinel live daemon**, all on `claude/build-status-update-VqeIy`, 5 clean commits, 6/6 local gates green. After merge, say "yes" in chat to flip BLK-009, BLK-014, BLK-015 → ✅ SHIPPED in `docs/BUILD_BIBLE.md`. (BLK-020 Admin Claude Console also still pending its 🟡 → ✅ flip from the previous session.)
+
+**Pending your strategic call:** BLK-010 Stripe metered billing (§0.7 HARD GATE — pricing/billing/revenue). Say "go" and the next session spawns a scoped agent that ships schema + webhooks + customer portal plumbing only (no pricing values set — you pick those).
+
+---
+
+## SESSION LOG — 2026-04-20
+
+**Branch:** `claude/build-status-update-VqeIy`
+**Branch head:** `ec893c9 data(sentinel): tracked-repos collector refresh`
+**PR:** #163 (https://github.com/ccantynz-alt/Crontech/pull/163) — open, awaiting your merge.
+
+**Blocks advanced this session:**
+
+| Block | State before | State after this session |
+|---|---|---|
+| BLK-009 Git-push deploy pipeline | 🔵 PLANNED (pre-sandbox P0 flagged) | sandbox P0 closed — install + build run inside Docker, clone stays on host. Ready to flip to ✅ SHIPPED on merge. |
+| BLK-014 Observability (Grafana LGTM) | 🔵 PLANNED | deployable stack — OTel collector → Loki/Tempo/Mimir, 6-panel Crontech Overview dashboard, schema-drift guard test. Ready to flip to ✅ SHIPPED on merge. |
+| BLK-015 Sentinel live service | 🔵 PLANNED | systemd timer (15-min oneshot) + Slack alerter with secret scrub + dead-man's switch via `.last-run` timestamp. Ready to flip to ✅ SHIPPED on merge. |
+
+**Commits on this branch (chronological):**
+1. `a803ddc feat(blk-009): sandbox-wrap build-runner install+build — close the customer-code-on-host P0`
+2. `eb99b9c fix(blk-009): resolve noUncheckedIndexedAccess error in e2e test`
+3. `86e9132 data(sentinel): tracked-repos collector refresh`
+4. `6983d82 feat(blk-014): Grafana LGTM stack + Crontech Overview dashboard`
+5. `fd474f3 feat(blk-015): Sentinel live daemon — systemd timer + Slack alerter + secret scrub`
+6. `ec893c9 data(sentinel): tracked-repos collector refresh`
+
+**Files touched (this session, consolidated):**
+
+*BLK-009 sandbox-wrap:*
+- `apps/api/src/automation/build-runner.ts` (+162/-81) — install/build routed through `runInSandbox`
+- `apps/api/src/automation/build-runner.test.ts` — new security-invariant test + timeout test
+- `apps/api/test/blk009-e2e.test.ts` — `hostSpawningSandboxRun` adapter for CI (no Docker required)
+- `apps/api/package.json` — `@back-to-the-future/orchestrator` workspace dep
+- `services/orchestrator/package.json` — `exports` → `./sandbox` subpath
+
+*BLK-014 Grafana LGTM:*
+- NEW `apps/api/test/observability.test.ts` — dashboard drift guard (6 tests, 26 assertions)
+- NEW `infra/lgtm/README.md` — 70-line spin-up guide
+- NEW `infra/lgtm/dashboards/crontech-overview.json` — 6 panels, all reference metrics API actually emits
+- MOD `infra/lgtm/docker-compose.yml` + `infra/lgtm/config/{otel,loki,tempo,mimir}/`
+
+*BLK-015 Sentinel live:*
+- NEW `services/sentinel/src/alerts/slack.ts` + `.test.ts` — 9 tests: no-webhook / 2xx / non-2xx / throw / 4 scrub cases
+- NEW `infra/systemd/sentinel.service` — oneshot, User=crontech
+- NEW `infra/systemd/sentinel.timer` — OnBootSec=2min, OnUnitActiveSec=15min, Persistent=true
+- NEW `infra/systemd/README.md` — install index
+- MOD `services/sentinel/src/{runner,dead-mans-switch}.ts` — touchLastRun() per cycle
+- MOD `.gitignore` — excludes `services/sentinel/data/.last-run`
+
+**Gates on HEAD (`ec893c9`):**
+
+| Gate | Result |
+|---|---|
+| `bun run check` | ✅ 19/19 packages, 0 TS errors |
+| `bun run test` | ✅ 21/21 packages (350 web + 458 api + 54 sentinel + others) |
+| `bun run build` | ✅ 6/6 packages |
+| `bun run check-links` | ✅ 0 dead (61 routes, 184 files) |
+| `bun run check-buttons` | ✅ 0 dead (116 files) |
+| `bunx biome check apps packages services` | ✅ exit 0 |
+
+**CI on PR #163:** First run had Lint & Type Check red because local turbo cache hid a `noUncheckedIndexedAccess` error in the E2E sandbox adapter. Fixed in `eb99b9c`. GateTest run was red on a SARIF-upload bug in the GateTest service itself (not Crontech code) — BLK-007 is still report-only so it doesn't block merge. Re-run in flight at HEAD.
+
+**Craig's authorization quotes (verbatim):**
+> "Awesome let's smash out as much as we can I apologise for putting the pressure on but I've had so many Claude sessions and the different usernames and hit so many issues lately that's taken about two weeks behind where we're supposed to be"
+
+> "I have to go to sleep now but do you think we could put it quickly put a build plan together to get this finished and completely polished just work out what you wanna do and just go through the night so it's in the morning it's finished can we do that"
+
+This authorized the overnight parallel fan-out on BLK-014 + BLK-015. BLK-010 Stripe explicitly held for his wake-up green-light.
+
+**Polish audits (all clean, no fixes needed):**
+- Grep for `<button>` without `aria-label` / `aria-labelledby` → 0 hits
+- Grep for `<img>` without `alt=` → 0 hits
+- Grep for `.only(` / `.skip(` in test files → 0 hits
+- `any` uses in `packages/db/src/scoped-query.ts` are all `biome-ignore`-annotated principled escape hatches for Drizzle's loose column typing — intentionally left alone (fix risk > reward in multi-tenant query code)
+
+**Doctrine compliance:**
+- `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md` untouched ✅
+- No pricing, auth, route, or top-level-dep changes ✅
+- All parallel agents briefed with scope + non-scope + exit criteria ✅
+- No force-push, no branch delete, no PR merge ✅
+
+**Open PRs:** PR #163 is the only open PR for this branch; it now contains the full night's work. No need to cut a second PR.
+
+**Next agent should start by:**
+1. Read `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md`. Post doctrine-confirmed line.
+2. Check PR #163 CI status. If green, Craig merges. If any CI regressed, diagnose + fix before anything else.
+3. On Craig's in-chat "yes", amend `docs/BUILD_BIBLE.md` to flip BLK-009, BLK-014, BLK-015, BLK-020 → ✅ SHIPPED. Single commit, quote Craig's authorization.
+4. If Craig green-lights BLK-010 Stripe, spawn a scoped agent per the plan in the top of this file.
+5. Smoke-test the sandbox pipeline on the real Vultr box: push a trivial change to a customer fixture repo, confirm `docker inspect crontech-build-*` shows the hardened flags, confirm Caddy route is added.
 
 ---
 
