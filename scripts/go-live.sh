@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 # scripts/go-live.sh — Crontech Empire "one paste goes live" master script.
 #
-# Idempotent. Each phase short-circuits if already done. Run as root on Vultr box.
-# Usage:
-#   sudo bash scripts/go-live.sh              # full run
-#   sudo bash scripts/go-live.sh --dry-run    # show what each phase would do
+# BARE-METAL. The stack is systemd, NOT docker:
+#   - Caddy is the apt package (systemctl restart caddy; admin API off)
+#   - crontech-web / crontech-api are systemd services running from /opt/crontech
+#   - Postgres is local systemd
+#   - Build is bun install + bun run build; libsql native binary must be added
 #
-# Required env vars (set before running, script reports missing ones):
-#   DATABASE_URL         — Postgres URL for gluecron (Phase 4)
-#   CF_API_TOKEN         — Cloudflare token for DNS (Phase 3)
-#   GLUECRON_TOKEN       — Gitea/Gluecron API token for mirroring (Phase 5)
-#   HEALTH_CHECK_TOKEN   — optional bearer for /api/healthz/empire (Phase 6)
+# Idempotent. Each phase short-circuits if already done. Run as root on the box.
+# Usage:
+#   sudo -E bash scripts/go-live.sh              # full run
+#   sudo -E bash scripts/go-live.sh --dry-run    # show what each phase would do
+#
+# Env vars (all optional — phases auto-skip if unset):
+#   CF_API_TOKEN         — Cloudflare token for DNS (Phase 6)
+#   GLUECRON_TOKEN       — Gitea/Gluecron API token for mirroring (Phase 7)
+#   HEALTH_CHECK_TOKEN   — optional bearer for /api/healthz/empire (Phase 8)
 #
 set -euo pipefail
 
@@ -18,9 +23,11 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-/opt/crontech}"
 REPO_URL="${REPO_URL:-https://github.com/ccantynz-alt/Crontech.git}"
 REPO_BRANCH="${REPO_BRANCH:-Main}"
-CRONTECH_URL="${CRONTECH_URL:-http://127.0.0.1}"
-GLUECRON_LOCAL_URL="${GLUECRON_LOCAL_URL:-http://127.0.0.1:3002}"
-GLUECRON_PUBLIC_URL="${GLUECRON_PUBLIC_URL:-https://gluecron.com}"
+CADDY_SRC="${CADDY_SRC:-$REPO_DIR/infra/caddy/Caddyfile}"
+CADDY_DST="${CADDY_DST:-/etc/caddy/Caddyfile}"
+CADDY_LOG_DIR="${CADDY_LOG_DIR:-/var/log/caddy}"
+WEB_URL="${WEB_URL:-http://127.0.0.1:3000}"
+API_URL="${API_URL:-http://127.0.0.1:3001}"
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1/api/healthz/empire}"
 MIRROR_REPOS=("crontech" "gluecron.com" "gatetest")
 
@@ -35,9 +42,9 @@ else
   C_RED=""; C_GRN=""; C_YLW=""; C_BLU=""; C_BLD=""; C_RST=""
 fi
 
-# Phase status tracking: ok / fail / skip
+# Phase status tracking: ok / fail / skip / yellow
 declare -A PHASE_STATUS
-PHASE_ORDER=(SANITY OUTAGE_FIX DNS GLUECRON MIRROR HEALTH)
+PHASE_ORDER=(SANITY OUTAGE_FIX CADDY SERVICES GLUECRON DNS MIRROR HEALTH)
 for p in "${PHASE_ORDER[@]}"; do PHASE_STATUS[$p]="pending"; done
 
 banner() {
@@ -57,103 +64,194 @@ run()  {
   "$@"
 }
 redact() {
-  # Redact token-looking substrings from stdin (for log hygiene).
   sed -E 's/(token|TOKEN|secret|SECRET|password|PASSWORD|key|KEY)=[^ ]+/\1=***REDACTED***/g'
 }
 have_script() { [[ -x "$1" ]] || [[ -f "$1" ]]; }
+svc_active()  { systemctl is-active --quiet "$1"; }
+http_code()   { curl -sk -o /dev/null -w '%{http_code}' --max-time 5 "$1" || echo 000; }
 
 # ---------- PHASE 1: SANITY ----------
 phase_sanity() {
   banner 1 SANITY
   if [[ "$DRY_RUN" -eq 0 && "$(id -u)" -ne 0 ]]; then
-    err "must run as root (use sudo)"
+    err "must run as root (use sudo -E)"
     return 1
   fi
   ok "running as root (or dry-run)"
 
-  if [[ -r /etc/os-release ]]; then
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    if [[ "${ID:-}" != "ubuntu" ]]; then
-      warn "OS is ${ID:-unknown}, expected ubuntu — continuing"
-    else
-      local major="${VERSION_ID%%.*}"
-      if [[ "${major:-0}" -lt 22 ]]; then
-        err "Ubuntu ${VERSION_ID} < 22.04"
-        return 1
-      fi
-      ok "Ubuntu ${VERSION_ID} detected"
-    fi
-  else
-    warn "/etc/os-release missing — cannot verify OS"
+  local missing_bins=()
+  for b in bun git caddy systemctl curl; do
+    if ! command -v "$b" >/dev/null 2>&1; then missing_bins+=("$b"); fi
+  done
+  if (( ${#missing_bins[@]} > 0 )); then
+    err "missing required binaries: ${missing_bins[*]}"
+    info "install: apt install -y caddy git curl; curl -fsSL https://bun.sh/install | bash"
+    return 1
   fi
+  ok "required binaries present: bun git caddy systemctl curl"
 
   if [[ ! -d "$REPO_DIR/.git" ]]; then
     warn "$REPO_DIR not a git repo — cloning"
     run mkdir -p "$(dirname "$REPO_DIR")"
     run git clone "$REPO_URL" "$REPO_DIR"
   else
-    ok "$REPO_DIR exists"
+    ok "$REPO_DIR present"
   fi
 
-  local required=(DATABASE_URL CF_API_TOKEN GLUECRON_TOKEN HEALTH_CHECK_TOKEN)
-  local missing=()
-  for v in "${required[@]}"; do
-    if [[ -z "${!v:-}" ]]; then
-      missing+=("$v")
-    fi
-  done
-  if (( ${#missing[@]} > 0 )); then
-    warn "missing env vars (dependent phases will skip): ${missing[*]}"
+  if svc_active postgresql; then
+    ok "postgresql systemd unit active"
   else
-    ok "all env vars set"
+    err "postgresql not active — start it: systemctl start postgresql"
+    return 1
+  fi
+
+  local optional=(CF_API_TOKEN GLUECRON_TOKEN HEALTH_CHECK_TOKEN)
+  local unset_vars=()
+  for v in "${optional[@]}"; do
+    [[ -z "${!v:-}" ]] && unset_vars+=("$v")
+  done
+  if (( ${#unset_vars[@]} > 0 )); then
+    warn "optional env unset (dependent phases will skip): ${unset_vars[*]}"
+  else
+    ok "all optional env vars set"
   fi
   return 0
 }
 
-# ---------- PHASE 2: OUTAGE FIX ----------
+# ---------- PHASE 2: OUTAGE FIX (build + libsql + caddy log dir) ----------
 phase_outage_fix() {
   banner 2 OUTAGE_FIX
-  run cd "$REPO_DIR"
   if [[ "$DRY_RUN" -eq 0 ]]; then cd "$REPO_DIR"; fi
   run git fetch --all --prune
   run git checkout "$REPO_BRANCH"
   run git pull --ff-only origin "$REPO_BRANCH"
   ok "repo on $REPO_BRANCH, up to date"
 
-  local fix="$REPO_DIR/scripts/fix-website-access.sh"
-  if have_script "$fix"; then
-    run bash "$fix"
-    ok "fix-website-access.sh ran"
+  info "installing deps: bun install"
+  run bash -c "cd '$REPO_DIR' && bun install"
+
+  info "building: bun run build (produces dist/; without this vinxi is missing)"
+  run bash -c "cd '$REPO_DIR' && bun run build"
+
+  if [[ -d "$REPO_DIR/apps/api" ]]; then
+    info "adding libsql linux native binary (apps/api)"
+    run bash -c "cd '$REPO_DIR/apps/api' && bun add @libsql/linux-x64-gnu"
   else
-    warn "script $fix not found, skipping fix step"
+    warn "$REPO_DIR/apps/api not present — skipping libsql native add"
   fi
 
+  if [[ ! -d "$CADDY_LOG_DIR" ]]; then
+    info "creating $CADDY_LOG_DIR"
+    run mkdir -p "$CADDY_LOG_DIR"
+  fi
+  info "chown $CADDY_LOG_DIR to caddy:caddy (else caddy fails to start)"
+  run chown -R caddy:caddy "$CADDY_LOG_DIR"
+  ok "build + libsql + caddy log dir ready"
+  return 0
+}
+
+# ---------- PHASE 3: CADDY ----------
+phase_caddy() {
+  banner 3 CADDY
+  if [[ ! -f "$CADDY_SRC" ]]; then
+    err "Caddyfile source missing: $CADDY_SRC"
+    return 1
+  fi
+  info "installing Caddyfile: $CADDY_SRC -> $CADDY_DST"
+  run install -m 0644 "$CADDY_SRC" "$CADDY_DST"
+
   if [[ "$DRY_RUN" -eq 0 ]]; then
-    local code
-    code="$(curl -sk -o /dev/null -w '%{http_code}' --max-time 10 "$CRONTECH_URL" || echo 000)"
-    if [[ "$code" =~ ^(200|301|302|307|308)$ ]]; then
-      ok "crontech.ai local smoke test: HTTP $code"
+    if caddy validate --config "$CADDY_DST" >/dev/null 2>&1; then
+      ok "caddy validate passed"
     else
-      err "crontech.ai local smoke test failed: HTTP $code"
+      warn "caddy validate reported issues (continuing)"
+    fi
+  fi
+
+  info "systemctl restart caddy (NOT reload — admin API is off on this box)"
+  run systemctl restart caddy
+
+  if [[ "$DRY_RUN" -eq 0 ]]; then
+    sleep 1
+    if svc_active caddy; then
+      ok "caddy is active (running)"
+    else
+      err "caddy failed to start — journalctl -u caddy -n 50"
       return 1
     fi
-  else
-    info "[dry-run] would curl $CRONTECH_URL"
   fi
   return 0
 }
 
-# ---------- PHASE 3: DNS (optional) ----------
+# ---------- PHASE 4: SERVICES (crontech-web + crontech-api) ----------
+phase_services() {
+  banner 4 SERVICES
+  info "systemctl restart crontech-web crontech-api"
+  run systemctl restart crontech-web crontech-api
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    info "[dry-run] would verify both services active and curl $WEB_URL / $API_URL"
+    return 0
+  fi
+
+  sleep 2
+  local failed=0
+  for svc in crontech-web crontech-api; do
+    if svc_active "$svc"; then
+      ok "$svc is active"
+    else
+      err "$svc NOT active — journalctl -u $svc -n 100"
+      failed=1
+    fi
+  done
+
+  local wc ac
+  wc="$(http_code "$WEB_URL")"
+  ac="$(http_code "$API_URL")"
+  if [[ "$wc" =~ ^(200|301|302|307|308|404)$ ]]; then
+    ok "web  $WEB_URL -> HTTP $wc"
+  else
+    err "web  $WEB_URL -> HTTP $wc"; failed=1
+  fi
+  if [[ "$ac" =~ ^(200|301|302|401|403|404)$ ]]; then
+    ok "api  $API_URL -> HTTP $ac"
+  else
+    err "api  $API_URL -> HTTP $ac"; failed=1
+  fi
+  return $failed
+}
+
+# ---------- PHASE 5: GLUECRON (optional, skip if fix script absent) ----------
+phase_gluecron() {
+  banner 5 GLUECRON
+  local s="$REPO_DIR/scripts/fix-gluecron-service.sh"
+  if ! have_script "$s"; then
+    warn "fix-gluecron-service.sh not present (PR #143 not merged yet) — skipping"
+    PHASE_STATUS[GLUECRON]="skip"; return 0
+  fi
+  info "running $s"
+  run bash "$s"
+  if [[ "$DRY_RUN" -eq 0 ]]; then
+    if svc_active gluecron; then
+      ok "gluecron is active"
+    else
+      warn "gluecron not active after fix — journalctl -u gluecron -n 50"
+      return 2
+    fi
+  fi
+  return 0
+}
+
+# ---------- PHASE 6: DNS (optional) ----------
 phase_dns() {
-  banner 3 DNS
+  banner 6 DNS
   if [[ -z "${CF_API_TOKEN:-}" ]]; then
     warn "CF_API_TOKEN unset — skipping DNS phase"
     PHASE_STATUS[DNS]="skip"; return 0
   fi
   local s="$REPO_DIR/scripts/add-dns-gluecron.sh"
   if ! have_script "$s"; then
-    warn "script $s not found, skipping phase DNS"
+    warn "script $s not found — skipping DNS phase"
     PHASE_STATUS[DNS]="skip"; return 0
   fi
   run bash "$s"
@@ -161,52 +259,9 @@ phase_dns() {
   return 0
 }
 
-# ---------- PHASE 4: GLUECRON BOOTSTRAP (optional) ----------
-phase_gluecron() {
-  banner 4 GLUECRON
-  if [[ -z "${DATABASE_URL:-}" ]]; then
-    warn "DATABASE_URL unset — skipping GLUECRON phase"
-    PHASE_STATUS[GLUECRON]="skip"; return 0
-  fi
-  local s="$REPO_DIR/scripts/add-gluecron.sh"
-  if ! have_script "$s"; then
-    warn "script $s not found, skipping phase GLUECRON"
-    PHASE_STATUS[GLUECRON]="skip"; return 0
-  fi
-  run bash "$s"
-
-  if [[ "$DRY_RUN" -eq 0 ]]; then
-    info "waiting up to 60s for $GLUECRON_LOCAL_URL ..."
-    local i=0 code=000
-    while (( i < 60 )); do
-      code="$(curl -sk -o /dev/null -w '%{http_code}' --max-time 3 "$GLUECRON_LOCAL_URL" || echo 000)"
-      [[ "$code" =~ ^(200|301|302|401|403)$ ]] && break
-      sleep 1; i=$((i+1))
-    done
-    if [[ "$code" =~ ^(200|301|302|401|403)$ ]]; then
-      ok "gluecron up locally (HTTP $code after ${i}s)"
-    else
-      err "gluecron did not respond on $GLUECRON_LOCAL_URL (last HTTP $code)"
-      return 1
-    fi
-    if [[ -n "${CF_API_TOKEN:-}" ]]; then
-      local pub
-      pub="$(curl -sk -o /dev/null -w '%{http_code}' --max-time 10 "$GLUECRON_PUBLIC_URL" || echo 000)"
-      if [[ "$pub" =~ ^(200|301|302|401|403)$ ]]; then
-        ok "gluecron.com public smoke test: HTTP $pub"
-      else
-        warn "gluecron.com public smoke test: HTTP $pub (DNS may still propagate)"
-      fi
-    fi
-  else
-    info "[dry-run] would poll $GLUECRON_LOCAL_URL for 60s"
-  fi
-  return 0
-}
-
-# ---------- PHASE 5: MIRROR REPOS ----------
+# ---------- PHASE 7: MIRROR (optional) ----------
 phase_mirror() {
-  banner 5 MIRROR
+  banner 7 MIRROR
   if [[ -z "${GLUECRON_TOKEN:-}" ]]; then
     warn "GLUECRON_TOKEN unset — skipping MIRROR phase"
     PHASE_STATUS[MIRROR]="skip"; return 0
@@ -214,7 +269,7 @@ phase_mirror() {
   local mirror="$REPO_DIR/scripts/mirror-to-gluecron.sh"
   local verify="$REPO_DIR/scripts/verify-gluecron-mirror.sh"
   if ! have_script "$mirror"; then
-    warn "script $mirror not found, skipping phase MIRROR"
+    warn "script $mirror not found — skipping MIRROR phase"
     PHASE_STATUS[MIRROR]="skip"; return 0
   fi
   local failed=0
@@ -231,44 +286,88 @@ phase_mirror() {
       else
         err "verify crontech/$r failed"; failed=1
       fi
-    else
-      warn "verify script missing — skipping verify for $r"
     fi
   done
   return $failed
 }
 
-# ---------- PHASE 6: HEALTH REPORT ----------
+# ---------- PHASE 8: HEALTH REPORT ----------
 phase_health() {
-  banner 6 HEALTH
-  local out="" code=000 hdr=()
-  if [[ -n "${HEALTH_CHECK_TOKEN:-}" ]]; then
-    hdr=(-H "Authorization: Bearer ${HEALTH_CHECK_TOKEN}")
-  fi
+  banner 8 HEALTH
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    info "[dry-run] would GET $HEALTH_URL"
+    info "[dry-run] would print status table + GET $HEALTH_URL"
     return 0
   fi
-  out="$(curl -sk --max-time 15 "${hdr[@]}" -w '\n__CODE__%{http_code}' "$HEALTH_URL" || true)"
-  code="$(printf '%s' "$out" | awk -F'__CODE__' 'NF>1{print $2}' | tail -n1)"
-  local body; body="$(printf '%s' "$out" | sed 's/__CODE__.*$//')"
-  echo "$body" | redact
-  local worst="green"
-  if [[ "$code" != "200" ]]; then
-    err "healthz returned HTTP $code"
-    worst="red"
-  fi
-  # crude parse: count red/yellow markers in JSON body
-  local reds yellows
-  reds=$(printf '%s' "$body" | grep -oEi '"status"[[:space:]]*:[[:space:]]*"(red|down|fail)"' | wc -l || true)
-  yellows=$(printf '%s' "$body" | grep -oEi '"status"[[:space:]]*:[[:space:]]*"(yellow|degraded|warn)"' | wc -l || true)
-  if (( reds > 0 )); then worst="red"
-  elif (( yellows > 0 )) && [[ "$worst" != "red" ]]; then worst="yellow"; fi
+
   echo
-  info "Public URLs to verify manually:"
-  info "  https://crontech.ai"
-  info "  https://gluecron.com"
-  info "  $HEALTH_URL"
+  printf "  %-12s %-10s %s\n" "COMPONENT" "STATUS" "DETAIL"
+  printf "  %-12s %-10s %s\n" "---------" "------" "------"
+
+  local worst="green"
+  _row() {
+    local name="$1" status="$2" detail="$3"
+    local color="$C_GRN"
+    case "$status" in
+      active|green|OK) color="$C_GRN" ;;
+      degraded|yellow) color="$C_YLW"; [[ "$worst" == "green" ]] && worst="yellow" ;;
+      *)               color="$C_RED"; worst="red" ;;
+    esac
+    printf "  %-12s ${color}%-10s${C_RST} %s\n" "$name" "$status" "$detail"
+  }
+
+  local wc ac
+  wc="$(http_code "$WEB_URL")"
+  ac="$(http_code "$API_URL")"
+  if svc_active crontech-web && [[ "$wc" =~ ^(200|301|302|307|308|404)$ ]]; then
+    _row web active "HTTP $wc"
+  else
+    _row web down "HTTP $wc / unit=$(systemctl is-active crontech-web 2>/dev/null || echo ?)"
+  fi
+  if svc_active crontech-api && [[ "$ac" =~ ^(200|301|302|401|403|404)$ ]]; then
+    _row api active "HTTP $ac"
+  else
+    _row api down "HTTP $ac / unit=$(systemctl is-active crontech-api 2>/dev/null || echo ?)"
+  fi
+  if svc_active caddy; then
+    _row caddy active "systemd"
+  else
+    _row caddy down "systemctl status caddy"
+  fi
+  if systemctl list-unit-files gluecron.service >/dev/null 2>&1; then
+    if svc_active gluecron; then
+      _row gluecron active "systemd"
+    else
+      _row gluecron degraded "unit present, not active"
+    fi
+  else
+    _row gluecron degraded "unit not installed (PR #143)"
+  fi
+  if svc_active postgresql; then
+    _row postgres active "systemd"
+  else
+    _row postgres down "systemctl status postgresql"
+  fi
+
+  local cert_status="green" cert_detail="not checked"
+  if command -v openssl >/dev/null 2>&1; then
+    local cert_dir="/var/lib/caddy/.local/share/caddy/certificates"
+    if [[ -d "$cert_dir" ]]; then
+      local n
+      n="$(find "$cert_dir" -name '*.crt' 2>/dev/null | wc -l)"
+      if (( n > 0 )); then cert_detail="$n cert(s) on disk"; else cert_status="degraded"; cert_detail="no certs issued yet"; fi
+    else
+      cert_status="degraded"; cert_detail="caddy cert dir missing"
+    fi
+  fi
+  _row certs "$cert_status" "$cert_detail"
+
+  if [[ -n "${HEALTH_CHECK_TOKEN:-}" ]]; then
+    echo
+    info "healthz body:"
+    curl -sk --max-time 10 -H "Authorization: Bearer ${HEALTH_CHECK_TOKEN}" "$HEALTH_URL" | redact || true
+    echo
+  fi
+
   case "$worst" in
     green)  ok "empire is GREEN"; return 0 ;;
     yellow) warn "empire is YELLOW"; return 2 ;;
@@ -280,29 +379,27 @@ phase_health() {
 run_phase() {
   local key="$1" fn="$2"
   if "$fn"; then
-    # honor any skip already set inside the phase
     [[ "${PHASE_STATUS[$key]}" == "pending" ]] && PHASE_STATUS[$key]="ok"
   else
     local rc=$?
     if [[ "${PHASE_STATUS[$key]}" == "pending" ]]; then
-      if (( rc == 2 )); then
-        PHASE_STATUS[$key]="yellow"
-      else
-        PHASE_STATUS[$key]="fail"
-      fi
+      if (( rc == 2 )); then PHASE_STATUS[$key]="yellow"
+      else PHASE_STATUS[$key]="fail"; fi
     fi
     err "PHASE $key FAILED (rc=$rc) — continuing"
   fi
 }
 
 main() {
-  echo "${C_BLD}Crontech go-live — $(date -u +%FT%TZ)${C_RST}"
+  echo "${C_BLD}Crontech go-live (bare-metal) — $(date -u +%FT%TZ)${C_RST}"
   [[ "$DRY_RUN" -eq 1 ]] && warn "DRY-RUN MODE"
 
   run_phase SANITY     phase_sanity
   run_phase OUTAGE_FIX phase_outage_fix
-  run_phase DNS        phase_dns
+  run_phase CADDY      phase_caddy
+  run_phase SERVICES   phase_services
   run_phase GLUECRON   phase_gluecron
+  run_phase DNS        phase_dns
   run_phase MIRROR     phase_mirror
   run_phase HEALTH     phase_health
 
