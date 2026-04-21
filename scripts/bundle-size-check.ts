@@ -30,7 +30,7 @@ const FAIL_THRESHOLD_KB = 200;
 // bundle budget in CLAUDE.md §6.6. Matching on content-hashed filename
 // pattern so new builds with different hashes still match.
 const VENDOR_LAZY_ALLOWLIST: ReadonlyArray<RegExp> = [
-  /\/xterm-[A-Za-z0-9_-]+\.js$/,
+  /\/(?:vendor-)?xterm-[A-Za-z0-9_-]+\.js$/,
 ];
 
 interface FileEntry {
