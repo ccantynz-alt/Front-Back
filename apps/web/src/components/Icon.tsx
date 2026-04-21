@@ -2,6 +2,7 @@ import type { JSX } from "solid-js";
 import {
   FiCloud,
   FiCpu,
+  FiCreditCard,
   FiDatabase,
   FiExternalLink,
   FiEyeOff,
@@ -11,6 +12,7 @@ import {
   FiLink,
   FiLink2,
   FiLock,
+  FiMail,
   FiMessageSquare,
   FiRadio,
   FiServer,
@@ -18,6 +20,8 @@ import {
   FiShield,
   FiShieldOff,
   FiSmartphone,
+  FiUsers,
+  FiVideo,
   FiWifi,
   FiZap,
 } from "solid-icons/fi";
@@ -66,6 +70,10 @@ const ICON_MAP = {
   "file-text": FiFileText,
   "eye-off": FiEyeOff,
   server: FiServer,
+  users: FiUsers,
+  "credit-card": FiCreditCard,
+  mail: FiMail,
+  video: FiVideo,
 } as const satisfies Record<string, IconTypes>;
 
 export type IconName = keyof typeof ICON_MAP;
