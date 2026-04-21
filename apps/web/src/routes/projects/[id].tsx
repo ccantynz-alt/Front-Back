@@ -6,6 +6,8 @@ import {
   Show,
   Switch,
   Match,
+  Suspense,
+  lazy,
   onCleanup,
 } from "solid-js";
 import type { JSX } from "solid-js";
@@ -14,6 +16,7 @@ import { Badge, Button, Card, Stack, Text, Spinner } from "@back-to-the-future/u
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { SEOHead } from "../../components/SEOHead";
 import { CollabPresence } from "../../components/CollabPresence";
+import { DomainsPanel } from "../../components/DomainsPanel";
 import {
   createCollabRoom,
   getRandomColor,
