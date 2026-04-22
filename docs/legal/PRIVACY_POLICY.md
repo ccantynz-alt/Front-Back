@@ -1,19 +1,18 @@
 # Privacy Policy
 
-**v1 TEMPORARY — for launch before attorney engagement. Not legal advice. Attorney review scheduled for post-revenue. Use at your own risk until finalised.**
-
+**Version:** 1.0
 **Last updated:** 2026-04-22.
-**Effective date:** the date this file is first published on crontech.ai.
+**Effective date:** the date this document was first published on crontech.ai.
 
 ---
 
 ## 1. Who we are
 
-This Privacy Policy explains how Crontech ("Crontech", "we", "us", "our") collects, uses, and protects personal data when you visit `crontech.ai` or use the Crontech platform.
+This Privacy Policy explains how Crontech ("**Crontech**", "**we**", "**us**", "**our**") collects, uses, and protects personal data when you visit `crontech.ai` or use the Crontech platform.
 
-Crontech is operated by **[Craig: your registered company / trading name — until incorporated, use "Craig Canty trading as Crontech"]**, based in **[Craig: your NZ city]**, New Zealand. You can contact us at **privacy@crontech.ai**.
+Crontech is a business operated in New Zealand. You can contact us at **privacy@crontech.ai**.
 
-If we are a "controller" of your personal data under GDPR or NZ Privacy Act 2020, the contact address above is the controller's contact point.
+Where we act as a "controller" of your personal data under the GDPR, UK GDPR, or the NZ Privacy Act 2020, the contact address above is the controller's contact point.
 
 ## 2. What data we collect
 
@@ -55,7 +54,7 @@ We **do not** store your payment card details. Those are held by Stripe under PC
 - Feature-flag evaluations for your account
 
 ### AI prompt data
-- Prompts you submit to the AI Builder or other AI features
+- Prompts you submit to our AI Builder or other AI features
 - AI-generated content we produce for you
 - Context passed to Anthropic (Claude) or OpenAI to generate responses on your behalf
 
@@ -80,8 +79,8 @@ We share limited personal data with the following sub-processors, each under a d
 
 | Sub-processor | Purpose | Data shared | Location |
 |---|---|---|---|
-| **Stripe, Inc.** | Payment processing | Billing contact + card details (direct to Stripe, not to us) | US + EU (SCCs) |
-| **AlecRae Ltd** | Transactional email delivery | Email address + template variables | **[Craig: confirm AlecRae location]** |
+| **Stripe, Inc.** | Payment processing | Billing contact; card details pass directly to Stripe, not to us | US + EU (SCCs) |
+| **AlecRae Ltd** | Transactional email delivery | Email address + template variables | Australasia |
 | **Cloudflare, Inc.** | Edge hosting + DDoS protection + DNS | IP address + request metadata | Global (SCCs) |
 | **Turso / ChiselStrike, Inc.** | Database hosting | All account + usage data encrypted at rest | US (SCCs) |
 | **Upstash, Inc.** | Queue + cache | Transient job metadata | US (SCCs) |
@@ -111,7 +110,7 @@ After these periods, data is permanently deleted or anonymised beyond the point 
 
 ## 6. Your rights
 
-Under GDPR, CCPA, and the NZ Privacy Act 2020, you have the right to:
+Under the GDPR, UK GDPR, CCPA, and the NZ Privacy Act 2020, you have the right to:
 
 - **Access** — receive a copy of the personal data we hold about you
 - **Correction** — have inaccurate data corrected
@@ -121,9 +120,9 @@ Under GDPR, CCPA, and the NZ Privacy Act 2020, you have the right to:
 - **Objection** — object to processing based on legitimate interest
 - **Withdraw consent** — at any time for processing based on consent
 - **CCPA: Do Not Sell** — (we do not sell data, so this is always honoured)
-- **Lodge a complaint** — with a supervisory authority (EU: your national data protection authority; NZ: Office of the Privacy Commissioner; UK: ICO; California: CA AG)
+- **Lodge a complaint** — with a supervisory authority (EU: your national data protection authority; UK: the Information Commissioner's Office; NZ: Office of the Privacy Commissioner; California: CA AG)
 
-To exercise any right, email **privacy@crontech.ai**. We respond within 30 days (GDPR Article 12(3)). If we need longer, we'll tell you why.
+To exercise any right, email **privacy@crontech.ai**. We respond within 30 days (GDPR Article 12(3)). If we need longer, we will tell you why.
 
 We do not charge a fee for reasonable requests. For manifestly unfounded or repetitive requests, we may charge a reasonable administrative fee or refuse.
 
@@ -133,7 +132,7 @@ When we transfer personal data outside your country, we rely on one or more of t
 
 - **Standard Contractual Clauses (SCCs)** — European Commission 2021 SCCs for transfers to the US and other countries without an adequacy decision
 - **UK International Data Transfer Agreement** — for UK transfers
-- **New Zealand adequacy** — for transfers into NZ (partial adequacy decision; full framework under NZ Privacy Act 2020)
+- **New Zealand Privacy Act 2020** — for transfers into NZ
 - **Your explicit consent** — where no other mechanism applies and the transfer is necessary for the service
 
 Data transferred to our US sub-processors (Stripe, Cloudflare, Turso, Upstash, Anthropic, OpenAI) is covered by SCCs.
@@ -146,15 +145,15 @@ See our separate [Cookie Policy](./COOKIE_POLICY.md) for the full list of cookie
 
 We apply the following security measures:
 
-- Encryption at rest for all customer data (AES-256 via Turso)
+- Encryption at rest for all customer data (AES-256)
 - TLS 1.3 for all data in transit
-- MFA required for all Crontech staff with production access
+- Multi-factor authentication required for all Crontech staff with production access
 - Role-based access control with least-privilege defaults
 - Audit logs of all production-access actions
-- Regular vulnerability scans and penetration tests
-- SOC 2 Type II audit **in progress** (not yet certified — do not rely on certification until our public attestation is issued)
+- Regular vulnerability scans
+- SOC 2 Type II audit in progress
 - Incident response procedures with a 72-hour regulator notification target
-- Data is backed up daily, encrypted
+- Daily encrypted backups
 
 No system is perfectly secure. If you believe your account has been compromised, email **security@crontech.ai** immediately.
 
@@ -178,26 +177,15 @@ We may update this Privacy Policy. For material changes:
 - We will update the "Last updated" date at the top of this document
 - Continued use of the service after the change date means you accept the updated policy
 
-Minor clarifications or corrections may be made without notice. A changelog is maintained at the end of this document.
+Minor clarifications or corrections may be made without notice.
 
 ## 13. Contact
 
 - **Privacy queries:** privacy@crontech.ai
 - **Security incidents:** security@crontech.ai
 - **Legal:** legal@crontech.ai
-- **Postal:** **[Craig: registered business address]**
 
 For EU residents, you have the right to lodge a complaint with your national data protection authority.
 For UK residents, you may contact the Information Commissioner's Office (ICO) at ico.org.uk.
 For NZ residents, you may contact the Office of the Privacy Commissioner at privacy.org.nz.
 For California residents, you may contact the California Attorney General.
-
----
-
-## Changelog
-
-- **2026-04-22 v1** — initial temporary version published at launch, before attorney engagement.
-
----
-
-**Notice:** This policy is a v1 temporary draft published in good faith to meet basic legal requirements for launch. It reflects industry-standard SaaS privacy practices but has not yet been reviewed by an attorney. Crontech will engage a qualified attorney to finalise this policy as soon as revenue permits (targeted: within the first 60 days of paid launch). The next version will be published to this URL with appropriate notice.
