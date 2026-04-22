@@ -52,7 +52,7 @@ const hardcodedPlans = [
     id: "pro",
     name: "Pro",
     description: "For professionals and teams",
-    stripePriceId: "price_pro_monthly",
+    stripePriceId: process.env["STRIPE_PRICE_PRO_MONTHLY"] ?? "",
     price: 2900,
     interval: "monthly" as const,
     features: JSON.stringify(["Unlimited projects", "Advanced AI builder", "Video editor", "Real-time collaboration", "Priority support"]),
@@ -62,7 +62,7 @@ const hardcodedPlans = [
     id: "enterprise",
     name: "Enterprise",
     description: "Custom solutions for large organizations",
-    stripePriceId: "price_enterprise_monthly",
+    stripePriceId: process.env["STRIPE_PRICE_ENTERPRISE_MONTHLY"] ?? "",
     price: 9900,
     interval: "monthly" as const,
     features: JSON.stringify(["Everything in Pro", "Custom AI agents", "Sentinel intelligence", "SSO / SAML", "Dedicated support", "SLA guarantee"]),
@@ -164,6 +164,14 @@ export const billingRouter = router({
     .use(auditMiddleware("billing.checkout"))
     .mutation(async ({ input }) => {
       assertBillingEnabled();
+      // Real Stripe price IDs never contain "_" after the "price_" prefix.
+      // An empty string or "price_pro_monthly" means env vars aren't wired.
+      if (!input.priceId || input.priceId.slice(6).includes("_")) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Stripe price "${input.priceId}" is not configured. Set STRIPE_PRICE_PRO_MONTHLY / STRIPE_PRICE_ENTERPRISE_MONTHLY in the server env and restart.`,
+        });
+      }
       return createCheckoutSession({ priceId: input.priceId });
     }),
 
