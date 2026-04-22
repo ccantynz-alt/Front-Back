@@ -1,8 +1,27 @@
 # Self-Hosted Cutover Runbook
 
-> **Goal:** move Crontech off GitHub + Cloudflare + Neon onto our own bare metal.
-> **Result:** everything that can be ours, is ours. ~75% self-sufficient (ceiling for a single-site stack).
-> **Rollback at every step:** revert DNS = instant, mirror is additive (GitHub stays until you kill it).
+> **Goal:** move Crontech off Vercel + Neon onto our own bare metal. Later, move off Cloudflare DNS + GitHub.
+> **Result:** 50% self-sufficient after Phase 1a tonight; 75%+ after Phases 1b + 2.
+> **Rollback at every step:** Cloudflare DNS flip-back = instant (Phase 1a); nameserver revert = 1–48h (Phase 1b).
+>
+> ## Phased approach (read this first)
+>
+> **Phase 1a — Runtime off Vercel, keep Cloudflare DNS (~60 min, tonight):**
+> - Provision bare metal, run `bare-metal-setup.sh` + `harden-ubuntu.sh`
+> - Update Cloudflare A records (`crontech.ai`, `api.crontech.ai`, `www.crontech.ai`) to new Vultr IP
+> - **Skip Step 2 of this doc entirely.** Nameservers stay on Cloudflare.
+> - Downstream products unblock tonight.
+>
+> **Phase 1b — Self-host DNS, flip nameservers (separate sprint):**
+> - Ship Drizzle ZoneStore in `services/dns-server/src/index.ts` (currently returns REFUSED for every query)
+> - Ship apex NS-record synthesis in `scripts/import-dns-zone.ts`
+> - Ship DNS-01 wildcard cert handling in Caddyfile
+> - Pre-lower Cloudflare NS TTL to 300s, 48h before cutover
+> - Then flip nameservers per Step 2 below.
+>
+> **Phase 2 — Gluecron cutover (later):**
+> - Mirror + soak per `docs/SELF_HOSTED_CUTOVER.md` Step 3.
+> - Gluecron's own gaps (CI sandboxing, merge handler) must close first.
 
 ## Prerequisites (Craig, 5 minutes)
 
@@ -38,15 +57,34 @@ POSTGRES_GLUECRON_PASSWORD="$POSTGRES_GLUECRON_PASSWORD" \
 sudo -E bash /opt/crontech/scripts/bare-metal-setup.sh
 ```
 
-What that does: installs Bun, Postgres 16, Caddy. Sets up systemd units for crontech-web (3000), crontech-api (3001), gluecron (3002), dns-server (53). Creates Postgres databases + users. Writes `/etc/caddy/Caddyfile` with all vhosts. Firewall: allow 22/53/80/443.
+What that does: installs Bun, Postgres 16, Caddy. Sets up systemd units for crontech-web (3000), crontech-api (3001), caddy, postgres. Also installs (but does NOT auto-enable) gluecron.service + dns-server.service — those are Phase 1b / Phase 2 work. Creates Postgres databases + users. Writes `/etc/caddy/Caddyfile`. Firewall: allow 22/80/443 (53 opens later).
 
-**Verify before moving on:**
+**Verify before moving on (Phase 1a — only these four should be active):**
 ```bash
-systemctl status crontech-web crontech-api gluecron dns-server caddy postgresql
-# All should be active (running). If dns-server fails, check logs: journalctl -u dns-server -n 50
+systemctl status postgresql caddy
+# Both active/running. Then after you rsync code (Step 1b):
+systemctl start crontech-api crontech-web
+systemctl status crontech-api crontech-web
+# Both active/running.
 ```
 
-**Rollback:** old VPS at `45.76.21.235` is untouched. If this step fails, don't touch DNS — old VPS keeps serving.
+**Step 1b — rsync the code, install deps, build:**
+```bash
+cd /opt/crontech && git pull && bun install --production && bun run build
+# Start the services now that code is in place
+systemctl start crontech-api && sleep 3 && systemctl start crontech-web
+systemctl is-active crontech-api crontech-web
+```
+
+**Step 1c — point Cloudflare A records at new IP (tonight's cutover):**
+In the Cloudflare dashboard for `crontech.ai` (or via API), edit these A records to point at the new Vultr bare-metal IP:
+- `@` (apex) → new IP
+- `api` → new IP
+- `www` → new IP
+
+Keep Cloudflare proxy (orange cloud) OFF on these — Caddy handles TLS. Propagation: ~60s with Cloudflare's default TTL.
+
+**Rollback:** old VPS at `45.76.21.235` is untouched for 7 days. If anything breaks, revert the Cloudflare A records to the old IP. Takes effect in ~60s.
 
 ---
 
