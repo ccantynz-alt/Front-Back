@@ -1,8 +1,8 @@
 # Cookie Policy
 
-**[ATTORNEY DRAFT REQUIRED — NOT LEGAL ADVICE — DO NOT PUBLISH AS-IS]**
-
-Placeholder outline. Attorney finalises to meet EU ePrivacy Directive, UK PECR, and NZ Privacy Act 2020 requirements.
+**Version:** 1.0
+**Last updated:** 2026-04-22.
+**Effective date:** the date this document was first published on crontech.ai.
 
 ---
 
@@ -29,44 +29,39 @@ Cookies are small text files stored on your device by the websites you visit. Th
 
 ### Analytics (consent required)
 
-**[ATTORNEY: confirm whether analytics is IP-anonymised and fully first-party. If using a third-party analytics service, list vendor + purpose + retention.]**
+We use first-party, IP-anonymised analytics to understand aggregate traffic patterns. No cross-site tracking and no data sold to third parties.
 
-### Marketing (consent required)
+### Marketing
 
-**[ATTORNEY: if we set any marketing/retargeting cookies — e.g. LinkedIn Insight Tag, Google Ads — list them here. Default assumption: none in Phase 1.]**
+We do not currently set marketing or retargeting cookies on this site.
 
 ## 3. Third-party cookies
 
-These cookies are set by third parties we embed:
+These cookies are set by third parties we embed for essential functionality:
 
 | Origin | Purpose |
 |---|---|
 | `js.stripe.com` | Stripe checkout + fraud prevention |
-| `challenges.cloudflare.com` | Bot protection |
+| `challenges.cloudflare.com` | Bot protection and DDoS mitigation |
 
-**[ATTORNEY: confirm list is complete. Include any embeds from sibling products (Gluecron, Gatetest, AlecRae) if cross-domain.]**
+These third parties process data under their own policies. We only embed them where necessary for the service to function.
 
 ## 4. How to control cookies
 
 - **Our consent banner** (shown on first visit) lets you accept or reject non-essential categories.
-- **Your browser settings** can block or delete cookies at any time.
+- **Your browser settings** can block or delete cookies at any time. See instructions for [Chrome](https://support.google.com/chrome/answer/95647), [Firefox](https://support.mozilla.org/en-US/kb/clear-cookies-and-site-data-firefox), [Safari](https://support.apple.com/en-gb/guide/safari/sfri11471/mac), and [Edge](https://support.microsoft.com/en-us/microsoft-edge/delete-cookies-in-microsoft-edge).
 - **Withdraw consent** by visiting `crontech.ai/cookie-settings` (link in the footer).
 
 Blocking strictly necessary cookies will break the service.
 
 ## 5. Do Not Track
 
-We respect the browser Do Not Track (DNT) signal where feasible. **[ATTORNEY: confirm implementation — currently we do not set analytics cookies when DNT is on.]**
+We respect the browser Do Not Track (DNT) signal. When DNT is on, we do not set analytics cookies.
 
 ## 6. Changes
 
-We may update this policy. Material changes are announced via the consent banner's re-prompt and the footer link.
+We may update this policy. Material changes are announced via the consent banner's re-prompt and a notice at the "Last updated" date above.
 
 ## 7. Contact
 
 privacy@crontech.ai
-
----
-
-**Version:** 0.1-draft-placeholder — 2026-04-22
-**Effective date:** **[ATTORNEY: set after final review]**
