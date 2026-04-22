@@ -92,8 +92,11 @@ TARGET_OWNER="${TARGET_REPO%/*}"
 TARGET_NAME="${TARGET_REPO#*/}"
 
 SOURCE_DIR="${SOURCE_DIR:-$PWD}"
-if [ ! -d "$SOURCE_DIR/.git" ]; then
-  fail "$SOURCE_DIR is not a git repository (no .git directory found)"
+# Accept both working-tree clones (with .git/) and bare --mirror clones
+# (the shape scripts/mirror-all-to-gluecron.sh passes in). rev-parse
+# --git-dir succeeds in either layout.
+if ! git -C "$SOURCE_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+  fail "$SOURCE_DIR is not a git repository"
   cat 1>&2 <<EOF
 
 Set SOURCE_DIR to the root of the Crontech clone, e.g.:
@@ -377,15 +380,17 @@ if ! git clone "${clone_args[@]}" "$gluecron_push_url" "$verify_dir/mirror" 2>"$
   exit 6
 fi
 
-# Compute a tree hash over ONLY git-tracked files. This makes the source
-# and mirror comparable even when SOURCE_DIR has untracked build output
-# (node_modules, dist/, .env, etc.) that never got pushed.
+# Compute a tree hash over the tree object at HEAD. Works on both bare
+# and non-bare repos, so the same function can hash SOURCE_DIR (which
+# the all-to-gluecron wrapper passes as a bare --mirror clone) and the
+# verify clone (a normal working tree). git ls-tree yields deterministic
+# output — object ids plus paths — so any divergence surfaces as a
+# different hash without needing to materialise file contents.
 tree_hash() {
   local dir="$1"
   ( cd "$dir" && \
-    git ls-files -z | \
-    LC_ALL=C sort -z | \
-    xargs -0 sha256sum | \
+    git ls-tree -r HEAD | \
+    LC_ALL=C sort | \
     sha256sum | \
     awk '{print $1}'
   )
