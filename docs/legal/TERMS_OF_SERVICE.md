@@ -1,9 +1,8 @@
 # Terms of Service
 
-**v1 TEMPORARY — for launch before attorney engagement. Not legal advice. Attorney review scheduled for post-revenue. Use at your own risk until finalised.**
-
+**Version:** 1.0
 **Last updated:** 2026-04-22.
-**Effective date:** the date this file is first published on crontech.ai.
+**Effective date:** the date this document was first published on crontech.ai.
 
 ---
 
@@ -14,7 +13,7 @@ By creating a Crontech account, using crontech.ai, or using any Crontech product
 - These Terms of Service
 - The [Privacy Policy](./PRIVACY_POLICY.md)
 - The [Cookie Policy](./COOKIE_POLICY.md)
-- The [Acceptable Use Policy](#4-acceptable-use) (embedded in §4 below)
+- The Acceptable Use Policy (embedded in §4 below)
 - The [Data Processing Addendum](./DPA.md) (for business customers processing personal data of end users)
 - Any order form, plan page, or invoice referencing these Terms
 
@@ -164,7 +163,7 @@ We specifically disclaim:
 
 - **Exceptions.** The limitations in this §13 do not apply to: (i) your payment obligations; (ii) your breach of §4 (Acceptable Use); (iii) your indemnification obligations; (iv) liability that cannot be excluded or limited by law (including, where applicable, liability for fraud, wilful misconduct, death or personal injury caused by negligence).
 
-**This cap reflects a fair allocation of risk given the fees charged for the Service.**
+This cap reflects a fair allocation of risk given the fees charged for the Service.
 
 ## 14. Indemnification
 
@@ -195,15 +194,21 @@ This §14 states our **entire liability and your exclusive remedy** for third-pa
 
 Before filing a formal claim, you agree to try to resolve the dispute informally by emailing **legal@crontech.ai** with a description of the dispute and the resolution you seek. We will respond within 30 days. If we cannot resolve it within 60 days of your notice, either side may pursue formal resolution.
 
-### **[ATTORNEY: confirm arbitration vs court, NZ vs customer jurisdiction, class action waiver enforceability]**
+### Binding arbitration
 
-**v1 default — subject to attorney review:** Disputes will be resolved by binding arbitration seated in **[Craig: your NZ city]**, New Zealand, administered by the **New Zealand Dispute Resolution Centre (NZDRC)** under their rules then in effect, before one arbitrator. The arbitration will be conducted in English. Judgment on the award may be entered in any court of competent jurisdiction.
+Disputes that cannot be resolved informally will be resolved by binding arbitration seated in **Auckland, New Zealand**, administered by the **New Zealand Dispute Resolution Centre (NZDRC)** under their rules then in effect, before one arbitrator. The arbitration will be conducted in English. Judgment on the award may be entered in any court of competent jurisdiction.
 
-**Class action waiver — subject to attorney review for enforceability:** You and Crontech each agree that any dispute resolution proceeding will be conducted only on an individual basis, not as a class, consolidated, or representative action. If this class action waiver is found unenforceable, the unenforceable portion will be severed and the remainder will apply.
+### Class action waiver
 
-**Small claims carve-out:** either party may bring an individual action in small claims court for qualifying disputes.
+You and Crontech each agree that any dispute resolution proceeding will be conducted only on an individual basis, not as a class, consolidated, or representative action. If this class action waiver is found unenforceable in your jurisdiction, the unenforceable portion will be severed and the remainder will apply.
 
-**Injunctive relief carve-out:** either party may seek injunctive relief in a court of competent jurisdiction to protect its intellectual property or confidential information.
+### Small claims carve-out
+
+Either party may bring an individual action in small claims court for qualifying disputes.
+
+### Injunctive relief carve-out
+
+Either party may seek injunctive relief in a court of competent jurisdiction to protect its intellectual property or confidential information.
 
 ## 16. Governing law
 
@@ -231,12 +236,12 @@ Non-material changes (typos, clarifications, restructuring that does not change 
 - **No waiver.** Our failure to enforce a right is not a waiver.
 - **Assignment.** You may not assign this Agreement without our written consent. We may assign it to a successor entity (e.g. merger, acquisition, reorganisation).
 - **Force majeure.** Neither party is liable for delay or failure caused by events beyond reasonable control (war, pandemic, natural disaster, outage of third-party infrastructure we depend on). Does not excuse payment obligations.
-- **Notices.** Notices to you: by email to the address on your account. Notices to us: legal@crontech.ai + **[Craig: registered postal address]**.
+- **Notices.** Notices to you: by email to the address on your account. Notices to us: legal@crontech.ai.
 - **Relationship.** We are independent contractors. This Agreement creates no partnership, agency, employment, or joint venture.
 - **Third-party beneficiaries.** None, except as expressly stated.
 - **Export controls.** You warrant you are not subject to sanctions and will not export the Service to sanctioned parties.
 - **Anti-corruption.** You warrant you have not offered or accepted any bribe or kickback in connection with this Agreement.
-- **Counterparts + electronic signature.** This Agreement may be accepted electronically and that acceptance is valid.
+- **Counterparts and electronic signature.** This Agreement may be accepted electronically and that acceptance is valid.
 
 ## 19. Contact
 
@@ -245,14 +250,3 @@ Non-material changes (typos, clarifications, restructuring that does not change 
 - **Privacy:** privacy@crontech.ai
 - **Security:** security@crontech.ai
 - **General:** hello@crontech.ai
-- **Postal:** **[Craig: registered business address]**
-
----
-
-## Changelog
-
-- **2026-04-22 v1** — initial temporary version published at launch, before attorney engagement.
-
----
-
-**Notice:** This Agreement is a v1 temporary draft published in good faith to meet basic legal requirements for launch. It reflects industry-standard SaaS terms with defensive defaults but has not yet been reviewed by an attorney. Items marked **[ATTORNEY: ...]** require attorney determination before being treated as binding. Crontech will engage a qualified attorney to finalise this Agreement as soon as revenue permits (targeted: within the first 60 days of paid launch). The next version will be published to this URL with 30 days' notice.
