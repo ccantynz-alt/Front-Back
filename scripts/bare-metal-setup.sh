@@ -297,8 +297,16 @@ if [ "${DEPLOY_USER}" != "deploy" ]; then
 fi
 
 systemctl daemon-reload
-systemctl enable crontech-web.service crontech-api.service gluecron.service dns-server.service
-log_ok "Units enabled (will start on boot; start manually once code is deployed)"
+# Phase 1a cutover: only enable crontech-web + crontech-api for auto-start.
+# gluecron and dns-server have known production-readiness gaps (Gluecron's
+# runtime isn't deployed on this box yet; dns-server has no Postgres-backed
+# ZoneStore shipped — would return REFUSED for every query). Enabling them
+# would crash-loop on boot before code is rsynced. Operators enable them
+# manually once their respective cutover blocks ship.
+systemctl enable crontech-web.service crontech-api.service
+log_ok "Enabled: crontech-web, crontech-api (start manually once code is rsynced)"
+log_warn "NOT enabled: gluecron.service (Phase 2 — Gluecron cutover)"
+log_warn "NOT enabled: dns-server.service (Phase 1b — requires ZoneStore ship + DNS-01 wildcard)"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 8. Sudoers for deploy user
@@ -335,13 +343,15 @@ Host layout:
   ${REPOS_DIR}        — Gluecron bare git repos
   ${PG_DATA_DIR}  — Postgres 16 data
 
-Services (enabled, not yet started):
+Services enabled for auto-start (Phase 1a):
   postgres.service         (port 5432, localhost only)
-  crontech-web.service     (port 3000)
-  crontech-api.service     (port 3001)
-  gluecron.service         (port 3002)
-  dns-server.service       (port 53 via CAP_NET_BIND_SERVICE, user=${DNS_USER})
-  caddy.service            (ports 80/443, vhosts for ${DOMAIN}, www, api, gluecron, *)
+  crontech-web.service     (port 3000) — start after rsync
+  crontech-api.service     (port 3001) — start after rsync
+  caddy.service            (ports 80/443, vhosts for ${DOMAIN}, www, api, gluecron)
+
+Services installed but NOT auto-enabled (Phase 1b / Phase 2):
+  gluecron.service         (port 3002) — enable when Gluecron code is deployed
+  dns-server.service       (port 53)   — enable after ZoneStore + DNS-01 ship
 
 Firewall (ufw):
   allow 22 53/udp 53/tcp 80 443 443/udp — deny everything else.

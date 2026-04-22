@@ -60,13 +60,20 @@ GRANT ALL PRIVILEGES ON DATABASE gluecron TO gluecron;
 -- Extensions that both apps rely on (pgvector for embeddings, pgcrypto
 -- for uuid/hash helpers). Install into each DB as the owner so app
 -- migrations don't need superuser.
+--
+-- PG15+ removed the default PUBLIC CREATE grant on the `public` schema,
+-- so app roles need an explicit GRANT to create tables. The database
+-- OWNER implicitly owns public via pg_database_owner, but the explicit
+-- GRANT is belt-and-braces and documents intent.
 
 \connect crontech
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS vector;
+GRANT ALL ON SCHEMA public TO crontech;
 
 \connect gluecron
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS vector;
+GRANT ALL ON SCHEMA public TO gluecron;

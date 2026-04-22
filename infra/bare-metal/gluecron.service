@@ -24,6 +24,7 @@ Environment=PORT=3002
 Environment=NODE_ENV=production
 Environment=GLUECRON_REPO_DIR=/data/repos
 EnvironmentFile=-/opt/gluecron/.env
+EnvironmentFile=-/opt/gluecron/.env.production
 
 NoNewPrivileges=true
 ProtectSystem=strict

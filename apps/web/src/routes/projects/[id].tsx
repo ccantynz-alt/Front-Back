@@ -478,6 +478,10 @@ export default function ProjectDetailPage(): JSX.Element {
   const auth = useAuth();
   const [activeTab, setActiveTab] = createSignal<Tab>("overview");
   const [collabRoom, setCollabRoom] = createSignal<CollabRoom | null>(null);
+  // Surfaces AI-participant registration failures as visible UI state
+  // rather than swallowing them to the console. The editor still loads
+  // — the AI is just degraded — but the user can see why.
+  const [aiParticipantError, setAiParticipantError] = createSignal<string | null>(null);
 
   const projectQuery = useQuery(
     () =>
@@ -517,14 +521,19 @@ export default function ProjectDetailPage(): JSX.Element {
     setCollabRoom(room);
 
     // Auto-join the default AI agent as a collab peer.
+    // We never let this crash the editor — but we surface the failure
+    // to the UI via aiParticipantError so the user knows the AI peer
+    // is unavailable instead of silently missing.
     let aiParticipant: JoinedAIParticipant | null = null;
     try {
       aiParticipant = joinAsParticipant(id, DEFAULT_PROJECT_AI_AGENT_ID, {
         displayName: DEFAULT_PROJECT_AI_AGENT_NAME,
       });
+      setAiParticipantError(null);
     } catch (err) {
-      // Never let AI-agent registration crash the editor page.
+      const message = err instanceof Error ? err.message : String(err);
       console.error("[collab] failed to register AI participant", err);
+      setAiParticipantError(message);
     }
 
     onCleanup(() => {
@@ -614,6 +623,24 @@ export default function ProjectDetailPage(): JSX.Element {
                 room={collabRoom()}
                 currentUserId={currentUserId()}
               />
+
+              <Show when={aiParticipantError()}>
+                {(message) => (
+                  <div
+                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs"
+                    style={{
+                      background: "rgba(245, 158, 11, 0.08)",
+                      border: "1px solid rgba(245, 158, 11, 0.25)",
+                      color: "#fbbf24",
+                    }}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span aria-hidden="true">{"⚠"}</span>
+                    <span>AI peer unavailable: {message()}</span>
+                  </div>
+                )}
+              </Show>
 
               {/* Tab Navigation */}
               <div class="flex gap-1 border-b border-[var(--color-border)] pb-px">

@@ -42,9 +42,8 @@
     "advisory": ["warn", "info"]
   },
   "gating": {
-    "mode": "report-only",
-    "reason": "BLK-007 observation sprint. Flip to 'strict' in the PR that adds GateTest to main branch protection's required-checks list.",
-    "flipTo": "strict"
+    "mode": "strict",
+    "reason": "HARD GATE per CLAUDE.md §0.4.2 (flipped 2026-04-21 by Craig directive). Red GateTest blocks merge, full stop. The prior 'report-only' observation sprint is retired."
   },
   "triggers": {
     "pullRequest": {
@@ -169,6 +168,7 @@
       "**/node_modules/**",
       "**/.turbo/**",
       ".claude/**",
+      ".worktree-*/**",
       "**/.vercel/**",
       "**/.output/**",
       "**/.vinxi/**",
@@ -180,6 +180,7 @@
       "apps/*/.output/**",
       "apps/*/.vinxi/**",
       "apps/*/.vercel/**",
+      "apps/*/app.config.timestamp_*.js",
       "packages/*/dist/**",
       "services/*/dist/**",
       "**/*.min.js",

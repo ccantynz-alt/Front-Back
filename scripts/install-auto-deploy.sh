@@ -2,7 +2,7 @@
 # install-auto-deploy.sh
 #
 # Installs the crontech-deploy-hook: a tiny localhost HTTP service that
-# receives GitHub push webhooks for the Main branch and redeploys
+# receives GitHub push webhooks for the main branch and redeploys
 # /opt/crontech (git pull + bun install + bun run build + systemctl restart).
 #
 # Idempotent. Safe to re-run. Prints webhook URL + secret at the end.
@@ -88,10 +88,10 @@ log() { printf '[deploy %s] %s\n' "$(date -u +%FT%TZ)" "$*"; }
 cd "${DEPLOY_DIR:?}"
 log "fetch"
 git fetch --prune origin
-log "checkout Main"
-git checkout Main
-log "reset --hard origin/Main"
-git reset --hard origin/Main
+log "checkout main"
+git checkout main
+log "reset --hard origin/main"
+git reset --hard origin/main
 log "bun install (frozen)"
 bun install --frozen-lockfile
 log "bun run build"
@@ -177,7 +177,7 @@ const server = http.createServer((req, res) => {
     try { payload = JSON.parse(body.toString('utf8')); }
     catch { res.writeHead(400); return res.end('bad json'); }
     const ref = payload.ref || '';
-    if (ref !== 'refs/heads/Main') {
+    if (ref !== 'refs/heads/main') {
       log('ignore ref=' + ref + ' delivery=' + delivery);
       res.writeHead(202); return res.end('non-main ignored');
     }
