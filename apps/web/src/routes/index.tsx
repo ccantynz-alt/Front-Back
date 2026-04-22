@@ -82,7 +82,7 @@ const capabilities: Capability[] = [
     icon: "server",
     title: "Hosting",
     description:
-      "Global edge deploys on Cloudflare Workers. Push a URL, a repo, or a Claude prompt — ship to 330+ cities in seconds.",
+      "Global edge deploys. Push a URL, a repo, or a Claude prompt — ship to 330+ cities in seconds.",
   },
   {
     icon: "database",
@@ -106,7 +106,7 @@ const capabilities: Capability[] = [
     icon: "credit-card",
     title: "Billing",
     description:
-      "Stripe-powered subscriptions, metered usage, proration, invoices — fully integrated. One line to charge. Zero integration tax.",
+      "Subscriptions, metered usage, proration, invoices — fully integrated. One line to charge. Zero integration tax.",
   },
   {
     icon: "mail",
@@ -124,7 +124,7 @@ const capabilities: Capability[] = [
     icon: "bar-chart",
     title: "Observability",
     description:
-      "Weekly AI insights in plain English. 'Conversion dropped 8% — Claude thinks it's the button colour. Here's a PR.' Replaces five tools.",
+      "Weekly AI insights in plain English. 'Conversion dropped 8% — Claude thinks it's the button colour. Here's a PR.' One tool, not five.",
   },
 ];
 
@@ -157,13 +157,13 @@ const family: FamilyProduct[] = [
   {
     name: "Gluecron",
     role: "Git hosting",
-    description: "Where every commit lives. Our own GitHub replacement.",
+    description: "Where every commit lives. Our own git hosting product.",
     url: "https://gluecron.com",
   },
   {
     name: "Gatetest",
     role: "CI & visual QA",
-    description: "Replaces Playwright, Cypress, Percy, and Chromatic.",
+    description: "Modern testing, visual regression, and accessibility checks — runs on the platform.",
     url: "https://gatetest.io",
   },
   {
@@ -471,14 +471,15 @@ export default function Home(): JSX.Element {
                 class="max-w-2xl text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem]"
                 style={{ color: "#f0f0f5" }}
               >
-                Three things nobody else can offer.
+                Three things we&apos;ve built differently.
               </h2>
               <p
                 class="mt-5 max-w-xl text-[1.0625rem] leading-[1.7]"
                 style={{ color: "rgba(255,255,255,0.5)" }}
               >
-                Google and Microsoft are sitting on old tech with AI bolted on
-                top. We&apos;re fresh, AI-native, and we run on ourselves.
+                AI-native from the first commit. Open to every business, not
+                just developers. Running on the platform we&apos;re selling
+                you.
               </p>
             </div>
 
@@ -553,9 +554,8 @@ export default function Home(): JSX.Element {
                 class="mt-5 max-w-2xl text-[1.0625rem] leading-[1.7]"
                 style={{ color: "rgba(255,255,255,0.5)" }}
               >
-                Four products, one platform, all using each other. Google
-                doesn&apos;t visibly run Google on Google Cloud. Vercel
-                doesn&apos;t host Vercel on Vercel. We do.
+                Four products, one platform, all using each other. Most
+                platforms can&apos;t say that. We can.
               </p>
             </div>
 
