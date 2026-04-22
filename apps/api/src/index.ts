@@ -56,6 +56,7 @@ import { apiKeyAuthMiddleware } from "./middleware/api-key-auth";
 import { subdomainRouter } from "./middleware/subdomain";
 import { googleOAuthRoutes } from "./auth/google-oauth";
 import { unsubscribeRoutes } from "./email/unsubscribe";
+import { alecRaeWebhookApp } from "./email/alecrae-webhook";
 import { withAudit } from "./middleware/audit";
 
 const app = new Hono().basePath("/api");
@@ -418,6 +419,12 @@ app.route("/auth", googleOAuthRoutes);
 
 // Mount GDPR unsubscribe routes (GET + POST /api/unsubscribe, /api/resubscribe)
 app.route("/", unsubscribeRoutes);
+
+// Mount AlecRae email webhook receiver — HMAC-SHA256 verification runs
+// inside the handler against raw body, so it MUST stay outside global
+// middleware that would rewrite / consume the body.
+// POST /api/alecrae/webhook — see email/alecrae-webhook.ts.
+app.route("/", alecRaeWebhookApp);
 
 // Mount AI routes (raw Hono -- streaming works better outside tRPC)
 app.route("/ai", aiRoutes);
