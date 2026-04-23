@@ -1,6 +1,11 @@
-crontech.ai {
-	reverse_proxy crontech-web:3000
-	encode gzip
+crontech.ai, www.crontech.ai {
+	# Redirect www → apex so cookies, SEO, and analytics canonicalize
+	# onto crontech.ai. Caddy handles both hostnames on the same cert.
+	@wwwHost host www.crontech.ai
+	redir @wwwHost https://crontech.ai{uri} permanent
+
+	reverse_proxy localhost:3000
+	encode gzip zstd
 
 	header {
 		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
@@ -12,8 +17,8 @@ crontech.ai {
 }
 
 api.crontech.ai {
-	reverse_proxy crontech-api:3001
-	encode gzip
+	reverse_proxy localhost:3001
+	encode gzip zstd
 
 	header {
 		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
