@@ -79,9 +79,9 @@ describe("admin/claude — static source contract", () => {
   });
 
   test("lists the three supported Claude model IDs", () => {
-    expect(src).toContain("claude-opus-4-20250514");
-    expect(src).toContain("claude-sonnet-4-20250514");
-    expect(src).toContain("claude-haiku-4-20250506");
+    expect(src).toContain("claude-opus-4-7");
+    expect(src).toContain("claude-sonnet-4-6");
+    expect(src).toContain("claude-haiku-4-5-20251001");
   });
 });
 

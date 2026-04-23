@@ -32,9 +32,9 @@ interface ModelInfo {
 }
 
 const MODELS: ModelInfo[] = [
-  { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", inputCostPer1M: 3, outputCostPer1M: 15 },
-  { id: "claude-opus-4-20250514", name: "Claude Opus 4", inputCostPer1M: 15, outputCostPer1M: 75 },
-  { id: "claude-haiku-4-20250506", name: "Claude Haiku 4", inputCostPer1M: 0.80, outputCostPer1M: 4 },
+  { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", inputCostPer1M: 3, outputCostPer1M: 15 },
+  { id: "claude-opus-4-7", name: "Claude Opus 4.7", inputCostPer1M: 15, outputCostPer1M: 75 },
+  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", inputCostPer1M: 0.80, outputCostPer1M: 4 },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -195,7 +195,7 @@ export default function ChatPage(): JSX.Element {
   const [input, setInput] = createSignal("");
   const [isStreaming, setIsStreaming] = createSignal(false);
   const [streamContent, setStreamContent] = createSignal("");
-  const [selectedModel, setSelectedModel] = createSignal("claude-sonnet-4-20250514");
+  const [selectedModel, setSelectedModel] = createSignal("claude-sonnet-4-6");
   const [systemPrompt, setSystemPrompt] = createSignal("");
   const [showSettings, setShowSettings] = createSignal(false);
   const [hasApiKey, setHasApiKey] = createSignal(false);

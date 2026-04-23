@@ -41,9 +41,9 @@ import { showToast } from "../../../components/Toast";
 // shared catalog grows, update both.
 
 const ANTHROPIC_MODELS = {
-  "claude-opus-4-20250514": { name: "Claude Opus 4" },
-  "claude-sonnet-4-20250514": { name: "Claude Sonnet 4" },
-  "claude-haiku-4-20250506": { name: "Claude Haiku 4" },
+  "claude-opus-4-7": { name: "Claude Opus 4.7" },
+  "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
+  "claude-haiku-4-5-20251001": { name: "Claude Haiku 4.5" },
 } as const;
 
 type AnthropicModelId = keyof typeof ANTHROPIC_MODELS;
@@ -82,7 +82,7 @@ export function modelSelectOptions(): { value: string; label: string }[] {
 }
 
 /** Default model id to select when the user has no prior choice. */
-export const DEFAULT_ANTHROPIC_MODEL: AnthropicModelId = "claude-sonnet-4-20250514";
+export const DEFAULT_ANTHROPIC_MODEL: AnthropicModelId = "claude-sonnet-4-6";
 
 function readLocalStorage(key: string): string | null {
   if (typeof window === "undefined") return null;

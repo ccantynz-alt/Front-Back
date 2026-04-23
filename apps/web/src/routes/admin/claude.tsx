@@ -41,9 +41,9 @@ import { trpc } from "../../lib/trpc";
 // `ANTHROPIC_MODELS`.
 
 const ANTHROPIC_MODELS = {
-  "claude-opus-4-20250514": { name: "Claude Opus 4" },
-  "claude-sonnet-4-20250514": { name: "Claude Sonnet 4" },
-  "claude-haiku-4-20250506": { name: "Claude Haiku 4" },
+  "claude-opus-4-7": { name: "Claude Opus 4.7" },
+  "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
+  "claude-haiku-4-5-20251001": { name: "Claude Haiku 4.5" },
 } as const;
 
 type AnthropicModelId = keyof typeof ANTHROPIC_MODELS;
@@ -295,7 +295,7 @@ function AdminClaudeConsole(): JSX.Element {
   const [isStreaming, setIsStreaming] = createSignal(false);
   const [streamContent, setStreamContent] = createSignal("");
   const [selectedModel, setSelectedModel] = createSignal<string>(
-    "claude-sonnet-4-20250514",
+    "claude-sonnet-4-6",
   );
   const [error, setError] = createSignal<string | null>(null);
   const [needsKey, setNeedsKey] = createSignal(false);

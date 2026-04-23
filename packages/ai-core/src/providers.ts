@@ -18,9 +18,9 @@ import type { ComputeTier } from "./compute-tier";
 // ── Anthropic Model IDs ──────────────────────────────────────────
 
 export const ANTHROPIC_MODELS = {
-  "claude-opus-4-20250514": { name: "Claude Opus 4", inputCostPer1M: 15, outputCostPer1M: 75 },
-  "claude-sonnet-4-20250514": { name: "Claude Sonnet 4", inputCostPer1M: 3, outputCostPer1M: 15 },
-  "claude-haiku-4-20250506": { name: "Claude Haiku 4", inputCostPer1M: 0.80, outputCostPer1M: 4 },
+  "claude-opus-4-7": { name: "Claude Opus 4.7", inputCostPer1M: 15, outputCostPer1M: 75 },
+  "claude-sonnet-4-6": { name: "Claude Sonnet 4.6", inputCostPer1M: 3, outputCostPer1M: 15 },
+  "claude-haiku-4-5-20251001": { name: "Claude Haiku 4.5", inputCostPer1M: 0.80, outputCostPer1M: 4 },
 } as const;
 
 export type AnthropicModelId = keyof typeof ANTHROPIC_MODELS;
@@ -98,7 +98,7 @@ export function readProviderEnv(): AIProviderEnv {
       anthropicKey && anthropicKey.length > 5
         ? {
             apiKey: anthropicKey,
-            model: env("AI_ANTHROPIC_MODEL") ?? "claude-sonnet-4-20250514",
+            model: env("AI_ANTHROPIC_MODEL") ?? "claude-sonnet-4-6",
           }
         : undefined,
   };
@@ -232,7 +232,7 @@ export function getAnthropicModel(
   modelId?: string,
 ): LanguageModel {
   const provider = createAnthropic({ apiKey });
-  return provider(modelId ?? "claude-sonnet-4-20250514");
+  return provider(modelId ?? "claude-sonnet-4-6");
 }
 
 /**
@@ -241,7 +241,7 @@ export function getAnthropicModel(
 export function getAnthropicModelFromEnv(): LanguageModel | undefined {
   const key = env("ANTHROPIC_API_KEY");
   if (!key) return undefined;
-  const modelId = env("ANTHROPIC_MODEL") ?? "claude-sonnet-4-20250514";
+  const modelId = env("ANTHROPIC_MODEL") ?? "claude-sonnet-4-6";
   return getAnthropicModel(key, modelId);
 }
 
