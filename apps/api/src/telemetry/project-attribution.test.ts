@@ -16,7 +16,7 @@
 // need to prove the attribute plumbing flows through ALS correctly.
 // The HTTP-level enrichment is exercised end-to-end by `withProjectAttrs`.
 
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, beforeEach } from "bun:test";
 import {
   runWithProjectId,
   getCurrentProjectId,
@@ -24,6 +24,12 @@ import {
   projectAttributionMiddleware,
   projectAttributionTrpcMiddleware,
 } from "./project-attribution";
+import {
+  _getProjectInflightSnapshot,
+  _resetProjectInflight,
+  incrementProjectInflight,
+  decrementProjectInflight,
+} from "../telemetry";
 
 describe("AsyncLocalStorage primitives", () => {
   test("getCurrentProjectId returns undefined outside any frame", () => {
@@ -246,5 +252,192 @@ describe("tRPC middleware", () => {
       }),
     ).rejects.toThrow("handler failed");
     expect(getCurrentProjectId()).toBeUndefined();
+  });
+});
+
+// ── project_requests_inflight gauge plumbing ─────────────────────────
+//
+// Covers:
+//   1. `incrementProjectInflight` / `decrementProjectInflight` update
+//      the shared map predictably.
+//   2. The Hono middleware increments on entry and decrements on exit,
+//      including when the handler throws.
+//   3. The tRPC middleware does the same based on input.projectId.
+//   4. Concurrent requests for the same project raise the count past 1
+//      and return to 0 once all finish.
+//   5. Requests with no projectId don't touch the map at all.
+
+describe("project_requests_inflight — direct helpers", () => {
+  beforeEach(() => {
+    _resetProjectInflight();
+  });
+
+  test("increment creates the entry with count 1", () => {
+    incrementProjectInflight("proj-A");
+    const snap = _getProjectInflightSnapshot();
+    expect(snap.get("proj-A")?.count).toBe(1);
+  });
+
+  test("increment twice yields count 2", () => {
+    incrementProjectInflight("proj-A");
+    incrementProjectInflight("proj-A");
+    expect(_getProjectInflightSnapshot().get("proj-A")?.count).toBe(2);
+  });
+
+  test("decrement brings the count down but keeps the entry at 0 during grace", () => {
+    incrementProjectInflight("proj-A");
+    decrementProjectInflight("proj-A");
+    const entry = _getProjectInflightSnapshot().get("proj-A");
+    expect(entry?.count).toBe(0);
+    // Entry is still in the map so the observable gauge can emit its 0.
+    expect(entry).toBeDefined();
+  });
+
+  test("decrement of an unknown project is a no-op", () => {
+    decrementProjectInflight("proj-never-seen");
+    expect(_getProjectInflightSnapshot().size).toBe(0);
+  });
+
+  test("decrement never drops below 0", () => {
+    incrementProjectInflight("proj-A");
+    decrementProjectInflight("proj-A");
+    decrementProjectInflight("proj-A");
+    decrementProjectInflight("proj-A");
+    expect(_getProjectInflightSnapshot().get("proj-A")?.count).toBe(0);
+  });
+
+  test("multiple projects are tracked independently", () => {
+    incrementProjectInflight("proj-A");
+    incrementProjectInflight("proj-B");
+    incrementProjectInflight("proj-B");
+    const snap = _getProjectInflightSnapshot();
+    expect(snap.get("proj-A")?.count).toBe(1);
+    expect(snap.get("proj-B")?.count).toBe(2);
+  });
+});
+
+describe("project_requests_inflight — Hono middleware integration", () => {
+  const mw = projectAttributionMiddleware();
+
+  function fakeCtx(path: string, headers: Record<string, string> = {}) {
+    return {
+      req: {
+        path,
+        header: (name: string): string | undefined =>
+          headers[name.toLowerCase()],
+      },
+    };
+  }
+
+  beforeEach(() => {
+    _resetProjectInflight();
+  });
+
+  test("middleware increments on entry and returns to 0 on exit", async () => {
+    let seenCount: number | undefined;
+    await mw(
+      fakeCtx("/api/projects/11111111-1111-1111-1111-111111111111/deploy"),
+      async () => {
+        seenCount = _getProjectInflightSnapshot()
+          .get("11111111-1111-1111-1111-111111111111")?.count;
+      },
+    );
+    expect(seenCount).toBe(1);
+    expect(
+      _getProjectInflightSnapshot()
+        .get("11111111-1111-1111-1111-111111111111")?.count,
+    ).toBe(0);
+  });
+
+  test("middleware still decrements when the handler throws", async () => {
+    await expect(
+      mw(
+        fakeCtx("/api/projects/22222222-2222-2222-2222-222222222222"),
+        async () => {
+          throw new Error("boom");
+        },
+      ),
+    ).rejects.toThrow("boom");
+    expect(
+      _getProjectInflightSnapshot()
+        .get("22222222-2222-2222-2222-222222222222")?.count,
+    ).toBe(0);
+  });
+
+  test("requests with no projectId do not touch the map", async () => {
+    await mw(fakeCtx("/api/health"), async () => {});
+    expect(_getProjectInflightSnapshot().size).toBe(0);
+  });
+
+  test("concurrent requests for the same project raise and lower the count", async () => {
+    const id = "33333333-3333-3333-3333-333333333333";
+    let peak = 0;
+    let blocker1!: () => void;
+    let blocker2!: () => void;
+
+    const p1 = mw(fakeCtx(`/api/projects/${id}`), () =>
+      new Promise<void>((resolve) => {
+        peak = Math.max(peak, _getProjectInflightSnapshot().get(id)?.count ?? 0);
+        blocker1 = resolve;
+      }),
+    );
+    const p2 = mw(fakeCtx(`/api/projects/${id}`), () =>
+      new Promise<void>((resolve) => {
+        peak = Math.max(peak, _getProjectInflightSnapshot().get(id)?.count ?? 0);
+        blocker2 = resolve;
+      }),
+    );
+
+    // Give the microtask queue a chance to enter both handlers.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    blocker1();
+    blocker2();
+    await Promise.all([p1, p2]);
+
+    expect(peak).toBe(2);
+    expect(_getProjectInflightSnapshot().get(id)?.count).toBe(0);
+  });
+});
+
+describe("project_requests_inflight — tRPC middleware integration", () => {
+  beforeEach(() => {
+    _resetProjectInflight();
+  });
+
+  test("increments on input.projectId and decrements on exit", async () => {
+    let seenCount: number | undefined;
+    await projectAttributionTrpcMiddleware({
+      rawInput: { projectId: "trpc-proj-1" },
+      next: async () => {
+        seenCount = _getProjectInflightSnapshot().get("trpc-proj-1")?.count;
+        return { ok: true };
+      },
+    });
+    expect(seenCount).toBe(1);
+    expect(_getProjectInflightSnapshot().get("trpc-proj-1")?.count).toBe(0);
+  });
+
+  test("decrements even when the handler throws", async () => {
+    await expect(
+      projectAttributionTrpcMiddleware({
+        rawInput: { projectId: "trpc-proj-err" },
+        next: async () => {
+          throw new Error("handler failed");
+        },
+      }),
+    ).rejects.toThrow("handler failed");
+    expect(
+      _getProjectInflightSnapshot().get("trpc-proj-err")?.count,
+    ).toBe(0);
+  });
+
+  test("input without a projectId does not touch the map", async () => {
+    await projectAttributionTrpcMiddleware({
+      rawInput: { somethingElse: true },
+      next: async () => ({ ok: true }),
+    });
+    expect(_getProjectInflightSnapshot().size).toBe(0);
   });
 });

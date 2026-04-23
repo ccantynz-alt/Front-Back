@@ -59,13 +59,17 @@ describe("projects/[id]/metrics route — real metrics regression", () => {
     expect(src).toContain("trpc.metrics.projectTimeseries");
   });
 
-  test("renders all four required metric panels", () => {
+  test("renders all five required metric panels", () => {
     const src = readFileSync(ROUTE_PATH, "utf-8");
-    // The METRICS constant drives a <For> over these four descriptors.
+    // The METRICS constant drives a <For> over these five descriptors.
     expect(src).toMatch(/key:\s*"cpu"/);
     expect(src).toMatch(/key:\s*"memory"/);
     expect(src).toMatch(/key:\s*"bandwidth"/);
     expect(src).toMatch(/key:\s*"requests"/);
+    // `inflight` is the project_requests_inflight ObservableGauge we
+    // emit from apps/api/src/telemetry.ts — the first process-scoped
+    // metric that carries the `project_id` label honestly.
+    expect(src).toMatch(/key:\s*"inflight"/);
   });
 
   test("exposes the five required time ranges", () => {

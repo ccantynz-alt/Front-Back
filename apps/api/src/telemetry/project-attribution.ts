@@ -50,6 +50,10 @@
 //   empty state. No synthetic data is invented anywhere.
 
 import { AsyncLocalStorage } from "node:async_hooks";
+import {
+  incrementProjectInflight,
+  decrementProjectInflight,
+} from "../telemetry";
 
 // ── ALS frame shape ──────────────────────────────────────────────────
 interface ProjectAttributionFrame {
@@ -140,6 +144,10 @@ type Next = () => Promise<void>;
  * Hono middleware that attaches a project-scoped ALS frame when the
  * request targets a project. Safe to mount as a top-level `app.use`
  * — a request with no project in scope falls through unchanged.
+ *
+ * Also maintains the `project_requests_inflight` gauge: increments on
+ * entry and decrements in `finally` so the counter is honest even
+ * when the downstream handler throws.
  */
 export function projectAttributionMiddleware() {
   return async function projectAttribution(
@@ -154,7 +162,12 @@ export function projectAttributionMiddleware() {
       await next();
       return;
     }
-    await runWithProjectId(projectId, next);
+    incrementProjectInflight(projectId);
+    try {
+      await runWithProjectId(projectId, next);
+    } finally {
+      decrementProjectInflight(projectId);
+    }
   };
 }
 
@@ -210,5 +223,10 @@ export async function projectAttributionTrpcMiddleware(
     return args.next();
   }
 
-  return runWithProjectId(projectId, () => args.next());
+  incrementProjectInflight(projectId);
+  try {
+    return await runWithProjectId(projectId, () => args.next());
+  } finally {
+    decrementProjectInflight(projectId);
+  }
 }

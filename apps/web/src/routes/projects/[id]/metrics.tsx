@@ -30,7 +30,7 @@ import { trpc } from "../../../lib/trpc";
 
 // ── Types ────────────────────────────────────────────────────────────
 
-type MetricName = "cpu" | "memory" | "bandwidth" | "requests";
+type MetricName = "cpu" | "memory" | "bandwidth" | "requests" | "inflight";
 type RangeKey = "1h" | "6h" | "24h" | "7d" | "30d";
 
 interface TimeseriesPoint {
@@ -88,6 +88,14 @@ const METRICS: MetricDescriptor[] = [
     color: "#fbbf24",
     icon: "\u{1F4CA}",
     formatValue: (v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0)),
+  },
+  {
+    key: "inflight",
+    label: "Requests in flight",
+    unit: "req",
+    color: "#f472b6",
+    icon: "\u{1F500}",
+    formatValue: (v) => v.toFixed(0),
   },
 ];
 

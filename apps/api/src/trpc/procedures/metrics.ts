@@ -30,7 +30,13 @@ import { router, protectedProcedure } from "../init";
 
 // ── Input Schemas ────────────────────────────────────────────────────
 
-const metricEnum = z.enum(["cpu", "memory", "bandwidth", "requests"]);
+const metricEnum = z.enum([
+  "cpu",
+  "memory",
+  "bandwidth",
+  "requests",
+  "inflight",
+]);
 const rangeEnum = z.enum(["1h", "6h", "24h", "7d", "30d"]);
 
 export type ProjectMetricName = z.infer<typeof metricEnum>;
@@ -106,6 +112,18 @@ const METRIC_SPECS: Record<ProjectMetricName, MetricSpec> = {
     unit: "req/min",
     buildExpr: (projectId, window) =>
       `sum(rate(http_request_count_total{project_id="${projectId}"}[${window}])) * 60`,
+  },
+  // `project_requests_inflight` is an OTel ObservableGauge emitted by
+  // `apps/api/src/telemetry.ts`. Every scrape, it publishes one sample
+  // per active project containing the current in-flight request count.
+  // `max_over_time(...[window])` gives us the peak concurrency seen in
+  // the bucket — a better "is this project busy?" signal than the raw
+  // instantaneous sample, which is noisy at low traffic.
+  inflight: {
+    label: "Requests in flight",
+    unit: "req",
+    buildExpr: (projectId, window) =>
+      `max_over_time(project_requests_inflight{project_id="${projectId}"}[${window}])`,
   },
 };
 

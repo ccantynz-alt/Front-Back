@@ -164,6 +164,104 @@ export const wsConnectionCount = meter.createUpDownCounter("ws.connections.activ
   description: "Active WebSocket connections",
 });
 
+// ── Per-Project In-Flight Requests (Observable Gauge) ────────────────
+//
+// WHY THIS EXISTS
+//   Process-level metrics (CPU, memory, disk) are emitted by the OTel
+//   SDK via ObservableCallbacks that sample the host once per scrape
+//   interval. They are NOT request-scoped, so they don't see our
+//   AsyncLocalStorage frame and cannot carry a `project_id` label
+//   honestly — a single process serves many projects simultaneously.
+//
+//   `/projects/[id]/metrics` needs at least one real "is this project
+//   seeing traffic right now?" series to light up. This gauge fills
+//   that gap: we count, per project_id, how many requests are in
+//   flight at any given moment. The Hono attribution middleware
+//   increments on entry and decrements on exit — so the gauge is
+//   always honest: if a project has no traffic, its series drops to
+//   0 and is eventually evicted (see EVICTION below).
+//
+// EVICTION STRATEGY
+//   When a project's in-flight count drops to 0 we keep it in the
+//   map for a grace window (5 minutes) so the gauge can still emit
+//   "0" samples — that lets Mimir render the return-to-idle edge
+//   cleanly instead of dropping the series the instant traffic
+//   stops. After the grace window, the entry is pruned and the
+//   series goes stale in Mimir (which is the correct behaviour —
+//   an idle project shouldn't keep publishing a zero every 30s
+//   forever).
+//
+// HONEST FALLBACK
+//   The gauge emits nothing when no projects are active. Mimir
+//   queries on `project_requests_inflight{project_id="..."}` return
+//   empty results, the UI shows its empty state. No fake data.
+
+/** How long a project with no in-flight requests stays in the map
+ *  so the gauge can continue emitting 0 samples. */
+const PROJECT_INFLIGHT_GRACE_MS = 5 * 60 * 1000;
+
+interface InflightEntry {
+  count: number;
+  /** Last time the count was non-zero, or 0 if it's never been touched.
+   *  Populated on decrement-to-zero so we know when to prune. */
+  lastActiveMs: number;
+}
+
+const projectInflightMap = new Map<string, InflightEntry>();
+
+/** Increment the in-flight counter for a project. Safe to call many
+ *  times per request — only the entry and exit pair matters. */
+export function incrementProjectInflight(projectId: string): void {
+  const entry = projectInflightMap.get(projectId);
+  if (entry) {
+    entry.count += 1;
+    entry.lastActiveMs = Date.now();
+  } else {
+    projectInflightMap.set(projectId, { count: 1, lastActiveMs: Date.now() });
+  }
+}
+
+/** Decrement the in-flight counter for a project. If the count drops
+ *  to 0 the entry stays in the map for the grace window so the gauge
+ *  still emits a final "0" sample before the series goes stale. */
+export function decrementProjectInflight(projectId: string): void {
+  const entry = projectInflightMap.get(projectId);
+  if (!entry) return;
+  entry.count = Math.max(0, entry.count - 1);
+  entry.lastActiveMs = Date.now();
+}
+
+/** Test-only snapshot of the internal map. Not exported for prod use. */
+export function _getProjectInflightSnapshot(): Map<string, InflightEntry> {
+  return new Map(projectInflightMap);
+}
+
+/** Test-only reset of the internal map. */
+export function _resetProjectInflight(): void {
+  projectInflightMap.clear();
+}
+
+export const projectRequestsInflight = meter.createObservableGauge(
+  "project.requests.inflight",
+  {
+    description:
+      "Number of HTTP requests currently in flight, labelled by project_id",
+  },
+);
+
+projectRequestsInflight.addCallback((observableResult) => {
+  const now = Date.now();
+  // Walk the map. For each entry: emit the count (even if 0 within
+  // the grace window), and prune idle-too-long entries.
+  for (const [projectId, entry] of projectInflightMap) {
+    if (entry.count === 0 && now - entry.lastActiveMs > PROJECT_INFLIGHT_GRACE_MS) {
+      projectInflightMap.delete(projectId);
+      continue;
+    }
+    observableResult.observe(entry.count, { project_id: projectId });
+  }
+});
+
 // ── Span Helpers ─────────────────────────────────────────────────────
 
 export function traceAsync<T>(
