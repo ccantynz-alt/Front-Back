@@ -14,6 +14,16 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 export const middleware = t.middleware;
 
+// Per-project OTel attribution happens at the Hono layer
+// (see `apps/api/src/index.ts` → `projectAttributionMiddleware`).
+// A tRPC-level middleware that wraps every procedure was tried in
+// a parallel agent run but turned ~150 api tests red because it
+// mutated the shared `t.procedure` chain in a way the test harness
+// didn't expect — specifically, procedures that read raw input via
+// `getRawInput()` during test bootstrap triggered drizzle queries
+// against an un-migrated DB handle. Leaving tRPC attribution for
+// a future in-procedure helper instead of a chain-level middleware.
+
 /**
  * Middleware that enforces authentication on every call.
  * Re-validates the session token against the DB to ensure:

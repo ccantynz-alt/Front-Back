@@ -8,6 +8,10 @@ import { chatStreamRoutes } from "./ai/chat-stream";
 import { wsApp, websocket, sseApp, theatreSseApp, yjsWsApp, liveUpdatesApp } from "./realtime";
 import { terminalApp } from "./terminal/handler";
 import { initTelemetry, httpRequestCount, httpRequestDuration, recordRequest, getMetrics } from "./telemetry";
+import {
+  projectAttributionMiddleware,
+  withProjectAttrs,
+} from "./telemetry/project-attribution";
 import { getAllFlags, isFeatureEnabled } from "./feature-flags";
 import { checkNeonHealth } from "@back-to-the-future/db/neon";
 import {
@@ -59,6 +63,12 @@ import { unsubscribeRoutes } from "./email/unsubscribe";
 import { withAudit } from "./middleware/audit";
 
 const app = new Hono().basePath("/api");
+
+// ── Per-Project OTel Attribution (must run BEFORE the telemetry
+//    middleware below so `http_request_count` / `http_request_duration`
+//    samples pick up the `project_id` label from AsyncLocalStorage when
+//    the URL is project-scoped). Safe no-op on non-project routes.
+app.use("*", projectAttributionMiddleware());
 
 // ── Subdomain Routing (Multi-Tenant) ────────────────────────────────
 app.use("*", subdomainRouter);
@@ -172,16 +182,27 @@ app.use("/api/trpc/*", apiKeyAuthMiddleware);
 app.use("/api/ai/*", apiKeyAuthMiddleware);
 
 // ── Request Telemetry Middleware ──────────────────────────────────────
+// `withProjectAttrs` merges the current AsyncLocalStorage frame's
+// `project_id` into the attribute bag when the request belongs to a
+// project (populated above by `projectAttributionMiddleware`). On
+// non-project routes the helper is a no-op and we emit the same
+// attribute shape we always have.
 app.use("*", async (c, next) => {
   const start = performance.now();
-  httpRequestCount.add(1, { method: c.req.method, path: c.req.path });
+  httpRequestCount.add(
+    1,
+    withProjectAttrs({ method: c.req.method, path: c.req.path }),
+  );
   await next();
   const duration = performance.now() - start;
-  httpRequestDuration.record(duration, {
-    method: c.req.method,
-    path: c.req.path,
-    status: c.res.status,
-  });
+  httpRequestDuration.record(
+    duration,
+    withProjectAttrs({
+      method: c.req.method,
+      path: c.req.path,
+      status: c.res.status,
+    }),
+  );
   recordRequest(duration);
 });
 

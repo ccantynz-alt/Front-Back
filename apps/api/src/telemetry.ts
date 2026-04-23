@@ -1,5 +1,6 @@
 import { trace, metrics, SpanStatusCode } from "@opentelemetry/api";
 import type { Span } from "@opentelemetry/api";
+import { withProjectAttrs } from "./telemetry/project-attribution";
 // `@opentelemetry/sdk-node` pulls in Node built-ins (fs, async_hooks, etc.)
 // that Cloudflare Workers cannot parse. Import the type only at the top; the
 // value import happens lazily inside `initTelemetry()` so that Workers can
@@ -201,15 +202,34 @@ export function traceAICall(
     async (span) => {
       span.setAttribute("ai.model", model);
       const start = performance.now();
-      const { tokens, result } = await fn(span);
-      const duration = performance.now() - start;
-      aiInferenceLatency.record(duration, { model });
-      if (tokens) {
-        aiTokensUsed.add(tokens, { model });
-        span.setAttribute("ai.tokens", tokens);
+      let tokens: number | undefined;
+      let duration = 0;
+      try {
+        const ret = await fn(span);
+        tokens = ret.tokens;
+        duration = performance.now() - start;
+        // `withProjectAttrs` attaches the current AsyncLocalStorage
+        // project_id (when a request is project-scoped) so per-project
+        // AI dashboards can filter by it.
+        aiInferenceLatency.record(duration, withProjectAttrs({ model }));
+        if (tokens) {
+          aiTokensUsed.add(tokens, withProjectAttrs({ model }));
+          span.setAttribute("ai.tokens", tokens);
+        }
+        span.setAttribute("ai.latency_ms", Math.round(duration));
+        return ret.result;
+      } catch (err) {
+        // Even on failure we emit a latency sample so a noisy, crashing
+        // inference path shows up in the per-project dashboard rather
+        // than being silent. Errors still propagate.
+        duration = performance.now() - start;
+        aiInferenceLatency.record(
+          duration,
+          withProjectAttrs({ model, status: "error" }),
+        );
+        span.setAttribute("ai.latency_ms", Math.round(duration));
+        throw err;
       }
-      span.setAttribute("ai.latency_ms", Math.round(duration));
-      return result;
     },
     { "ai.model": model },
   );
