@@ -24,12 +24,18 @@ export interface Product {
 
 // ── Data ────────────────────────────────────────────────────────────
 //
-// All eight routes now resolve to real pages. SMS, eSIM, and the
-// Edge Database inspector carry a polite "coming soon" badge
-// because their customer-facing surfaces are not production-ready
-// yet, but the deep link resolves to an honest early-preview page
-// so the link-checker stays green and curious visitors can read
-// the product pitch without being shown fabricated data.
+// All eight routes now resolve to real pages. SMS and eSIM carry a
+// polite "coming soon" badge because their customer-facing surfaces
+// are not production-ready yet, but the deep link resolves to an
+// honest early-preview page so the link-checker stays green and
+// curious visitors can read the product pitch without being shown
+// fabricated data. Edge Database is live as of BLK-012 — the
+// in-browser inspector ships admin-gated against real tables.
+
+// Lock in: BLK-012 landed the real /database inspector (admin-gated,
+// read-only, wired to trpc.dbInspector.*), so the Edge Database
+// card flips from "coming-soon" back to "live". The honest fallback
+// for non-admins remains a polite "Admin only — contact support".
 
 export const PRODUCTS: Product[] = [
   {
@@ -44,7 +50,7 @@ export const PRODUCTS: Product[] = [
     title: "Edge Database",
     description: "Turso SQLite replicas, Neon Postgres, and Qdrant vector search — one unified data layer.",
     href: "/database",
-    status: "coming-soon",
+    status: "live",
   },
   {
     icon: "globe",

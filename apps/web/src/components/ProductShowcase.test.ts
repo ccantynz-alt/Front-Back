@@ -75,11 +75,11 @@ describe("ProductShowcase — smoke", () => {
     const src = readFileSync(COMPONENT_PATH, "utf-8");
     const liveCount = (src.match(/status: "live"/g) ?? []).length;
     const soonCount = (src.match(/status: "coming-soon"/g) ?? []).length;
-    // Edge Database joins SMS + eSIM on the coming-soon list until the
-    // in-browser inspector ships (BLK-012); shipping it as "live"
-    // against a page that fabricated rows was a doctrine breach.
-    expect(liveCount).toBe(5);
-    expect(soonCount).toBe(3);
+    // BLK-012 landed the real /database inspector (admin-gated,
+    // read-only, wired to trpc.dbInspector.*), so Edge Database is
+    // live again. Only SMS + eSIM remain on the coming-soon list.
+    expect(liveCount).toBe(6);
+    expect(soonCount).toBe(2);
   });
 
   test("copy is polite and names no competitors", () => {
