@@ -22,15 +22,28 @@ const FIRST_ARTICLE = resolve(
   "docs/getting-started/install.tsx",
 );
 
+// The full Getting Started series — five real articles. Every one
+// must resolve to a file on disk or /docs ships a dead link.
+const GETTING_STARTED_ARTICLES = [
+  "docs/getting-started/install.tsx",
+  "docs/getting-started/new-project.tsx",
+  "docs/getting-started/connect-github.tsx",
+  "docs/getting-started/custom-domain.tsx",
+  "docs/getting-started/billing.tsx",
+] as const;
+
 describe("docs route — smoke", () => {
   test("route file exists", () => {
     expect(existsSync(ROUTE_PATH)).toBe(true);
   });
 
-  test("the first real article exists on disk", () => {
-    // /docs links to /docs/getting-started/install — if that file
-    // disappears the landing regresses to shipping a dead link.
-    expect(existsSync(FIRST_ARTICLE)).toBe(true);
+  test("all five getting-started articles exist on disk", () => {
+    // /docs links to each of the five real articles. If any one of
+    // them disappears the landing regresses to shipping a dead link.
+    for (const rel of GETTING_STARTED_ARTICLES) {
+      const abs = resolve(import.meta.dir, rel);
+      expect(existsSync(abs)).toBe(true);
+    }
   });
 
   test("exports a default component", () => {
@@ -66,9 +79,13 @@ describe("docs route — smoke", () => {
     expect(code).not.toContain("149 articles across");
   });
 
-  test("renders one real article that resolves to an existing route", () => {
+  test("renders five real articles that each resolve to an existing route", () => {
     const src = readFileSync(ROUTE_PATH, "utf-8");
     expect(src).toContain("/docs/getting-started/install");
+    expect(src).toContain("/docs/getting-started/new-project");
+    expect(src).toContain("/docs/getting-started/connect-github");
+    expect(src).toContain("/docs/getting-started/custom-domain");
+    expect(src).toContain("/docs/getting-started/billing");
   });
 
   test("carries no 'Popular articles' hardcoded row list", () => {

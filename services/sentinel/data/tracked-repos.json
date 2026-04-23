@@ -10,8 +10,8 @@
       "defaultBranch": "canary",
       "lastKnownRelease": "v16.3.0-canary.2",
       "lastKnownReleaseAt": "2026-04-18T23:44:17Z",
-      "lastCommitCheckAt": "2026-04-20T09:44:07.294Z",
-      "baselineCommitsPerWeek": 100
+      "lastCommitCheckAt": "2026-04-23T06:20:44.867Z",
+      "baselineCommitsPerWeek": 81
     },
     {
       "owner": "remix-run",
@@ -36,8 +36,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "@sveltejs/kit@2.57.1",
       "lastKnownReleaseAt": "2026-04-09T21:45:47Z",
-      "lastCommitCheckAt": "2026-04-20T10:45:53.644Z",
-      "baselineCommitsPerWeek": 8
+      "lastCommitCheckAt": "2026-04-23T06:20:46.154Z",
+      "baselineCommitsPerWeek": 9
     },
     {
       "owner": "QwikDev",
@@ -60,8 +60,8 @@
       "category": "framework",
       "description": "Content-focused web framework. Islands architecture for partial hydration.",
       "defaultBranch": "main",
-      "lastKnownRelease": "astro@6.1.8",
-      "lastKnownReleaseAt": "2026-04-18T10:02:03Z",
+      "lastKnownRelease": "create-astro@5.0.6",
+      "lastKnownReleaseAt": "2026-04-22T17:12:53Z",
       "lastCommitCheckAt": "2026-04-23T05:21:53.459Z",
       "baselineCommitsPerWeek": 61
     },
@@ -75,8 +75,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v4.12.14",
       "lastKnownReleaseAt": "2026-04-15T06:15:10Z",
-      "lastCommitCheckAt": "2026-04-23T05:19:18.176Z",
-      "baselineCommitsPerWeek": 5
+      "lastCommitCheckAt": "2026-04-23T06:20:45.048Z",
+      "baselineCommitsPerWeek": 2
     },
     {
       "owner": "solidjs",
@@ -88,7 +88,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v2.0.0-beta.0",
       "lastKnownReleaseAt": "2026-03-03T23:09:19Z",
-      "lastCommitCheckAt": "2026-04-20T09:44:07.908Z",
+      "lastCommitCheckAt": "2026-04-23T06:15:16.748Z",
       "baselineCommitsPerWeek": 0
     },
     {
@@ -101,8 +101,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v11.16.0",
       "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
-      "lastCommitCheckAt": "2026-04-20T09:44:08.058Z",
-      "baselineCommitsPerWeek": 2
+      "lastCommitCheckAt": "2026-04-23T06:15:16.905Z",
+      "baselineCommitsPerWeek": 4
     },
     {
       "owner": "vercel",
@@ -114,8 +114,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "ai@5.0.179",
       "lastKnownReleaseAt": "2026-04-17T03:47:01Z",
-      "lastCommitCheckAt": "2026-04-20T09:44:08.402Z",
-      "baselineCommitsPerWeek": 93
+      "lastCommitCheckAt": "2026-04-23T06:15:17.160Z",
+      "baselineCommitsPerWeek": 88
     },
     {
       "owner": "langchain-ai",
@@ -138,10 +138,10 @@
       "category": "backend",
       "description": "Wrangler + Workers tooling. We run on this today; we also compete on DX.",
       "defaultBranch": "main",
-      "lastKnownRelease": "wrangler@4.83.0",
-      "lastKnownReleaseAt": "2026-04-15T09:28:42Z",
-      "lastCommitCheckAt": "2026-04-20T09:44:08.928Z",
-      "baselineCommitsPerWeek": 63
+      "lastKnownRelease": "wrangler@4.84.1",
+      "lastKnownReleaseAt": "2026-04-21T14:43:02Z",
+      "lastCommitCheckAt": "2026-04-23T06:20:45.452Z",
+      "baselineCommitsPerWeek": 60
     },
     {
       "owner": "cloudflare",
@@ -177,8 +177,8 @@
       "category": "backend",
       "description": "Reactive backend competitor. Sync engine + TS functions.",
       "defaultBranch": "main",
-      "lastKnownRelease": "precompiled-2026-04-19-53c780f",
-      "lastKnownReleaseAt": "2026-04-19T16:48:58Z",
+      "lastKnownRelease": "precompiled-2026-04-22-daed8a9",
+      "lastKnownReleaseAt": "2026-04-22T02:30:32Z",
       "lastCommitCheckAt": "2026-04-20T10:45:52.688Z",
       "baselineCommitsPerWeek": 99
     },
@@ -218,7 +218,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v4.40.0",
       "lastKnownReleaseAt": "2026-04-17T16:24:30Z",
-      "lastCommitCheckAt": "2026-04-19T03:44:39.287Z",
+      "lastCommitCheckAt": "2026-04-23T06:20:46.879Z",
       "baselineCommitsPerWeek": 10
     },
     {
@@ -229,10 +229,10 @@
       "category": "backend",
       "description": "Netlify deploy/edge competitor.",
       "defaultBranch": "main",
-      "lastKnownRelease": "v25.0.1",
-      "lastKnownReleaseAt": "2026-04-18T14:56:44Z",
-      "lastCommitCheckAt": "2026-04-23T05:21:54.184Z",
-      "baselineCommitsPerWeek": 18
+      "lastKnownRelease": "v25.3.0",
+      "lastKnownReleaseAt": "2026-04-22T22:14:44Z",
+      "lastCommitCheckAt": "2026-04-23T06:20:46.524Z",
+      "baselineCommitsPerWeek": 20
     },
     {
       "owner": "XeroAPI",
@@ -242,10 +242,10 @@
       "category": "api",
       "description": "Xero accounting API client. Astra/ledger.ai integration & competitive surface.",
       "defaultBranch": "master",
-      "lastKnownRelease": "15.0.0",
-      "lastKnownReleaseAt": "2026-04-02T01:26:35Z",
-      "lastCommitCheckAt": "2026-04-20T10:35:40.397Z",
-      "baselineCommitsPerWeek": 0
+      "lastKnownRelease": "15.0.1",
+      "lastKnownReleaseAt": "2026-04-21T22:57:36Z",
+      "lastCommitCheckAt": "2026-04-23T06:20:47.089Z",
+      "baselineCommitsPerWeek": 3
     },
     {
       "owner": "codacy",
@@ -300,6 +300,6 @@
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-23T05:21:54.184Z",
+  "lastUpdated": "2026-04-23T06:20:47.089Z",
   "schemaVersion": 1
 }

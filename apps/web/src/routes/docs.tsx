@@ -138,6 +138,30 @@ const REAL_ARTICLES: RealArticle[] = [
     readTime: "3 min",
     href: "/docs/getting-started/install",
   },
+  {
+    title: "Create your first project",
+    category: "Getting Started",
+    readTime: "3 min",
+    href: "/docs/getting-started/new-project",
+  },
+  {
+    title: "Connect a GitHub repository",
+    category: "Getting Started",
+    readTime: "3 min",
+    href: "/docs/getting-started/connect-github",
+  },
+  {
+    title: "Wire a custom domain",
+    category: "Getting Started",
+    readTime: "4 min",
+    href: "/docs/getting-started/custom-domain",
+  },
+  {
+    title: "Pick a plan and manage billing",
+    category: "Getting Started",
+    readTime: "3 min",
+    href: "/docs/getting-started/billing",
+  },
 ];
 
 // ── Sub-Components ──────────────────────────────────────────────────
@@ -293,7 +317,7 @@ export default function DocsPage(): JSX.Element {
           <div class="relative mx-auto max-w-6xl px-6 pt-20 pb-12">
             <div class="flex flex-col items-center text-center">
               <Badge variant="info" size="sm">
-                {articleCount()} article · {readyCount()} of {DOC_CATEGORIES.length} categories ready
+                {articleCount()} {articleCount() === 1 ? "article" : "articles"} · {readyCount()} of {DOC_CATEGORIES.length} categories ready
               </Badge>
               <h1
                 class="mt-6 text-5xl font-bold tracking-tight sm:text-6xl"
