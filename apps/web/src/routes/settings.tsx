@@ -1,5 +1,5 @@
 import { Title } from "@solidjs/meta";
-import { createSignal, createMemo, For, Show, Switch, Match } from "solid-js";
+import { createSignal, createMemo, createUniqueId, For, Show, Switch, Match } from "solid-js";
 import type { JSX } from "solid-js";
 import { trpc } from "../lib/trpc";
 import { useQuery, useMutation, invalidateQueries, friendlyError } from "../lib/use-trpc";
@@ -58,10 +58,12 @@ function SettingsInput(props: {
   disabled?: boolean;
   hint?: string;
 }): JSX.Element {
+  const inputId = createUniqueId();
   return (
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>{props.label}</label>
+      <label for={inputId} class="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>{props.label}</label>
       <input
+        id={inputId}
         type={props.type ?? "text"}
         value={props.value}
         onInput={(e) => props.onInput(e.currentTarget.value)}

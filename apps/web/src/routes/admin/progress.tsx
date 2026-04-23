@@ -470,6 +470,7 @@ function ProgressPage(): JSX.Element {
                       <input
                         type="search"
                         placeholder="Search by title, description, tag, or id…"
+                        aria-label="Search progress items"
                         value={search()}
                         onInput={(e) => setSearch(e.currentTarget.value)}
                         style={{

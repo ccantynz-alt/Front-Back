@@ -393,6 +393,7 @@ function AdminPageContent(): JSX.Element {
                     <input
                       type="text"
                       placeholder="Search users..."
+                      aria-label="Search users"
                       value={searchQuery()}
                       onInput={(e) => setSearchQuery(e.currentTarget.value)}
                       class="w-56 rounded-lg py-2 pl-8 pr-3 text-xs outline-none transition-colors duration-200"
