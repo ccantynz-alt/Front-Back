@@ -191,7 +191,7 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
               class="rounded-lg border px-3 py-2 text-xs"
               style={{
                 background: "rgba(239, 68, 68, 0.08)",
-                borderColor: "rgba(239, 68, 68, 0.3)",
+                "border-color": "rgba(239, 68, 68, 0.3)",
                 color: "#ef4444",
               }}
             >

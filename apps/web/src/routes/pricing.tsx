@@ -39,7 +39,7 @@ const PLANS: PlanTier[] = [
       "1 GB storage",
     ],
     highlighted: false,
-    ctaLabel: "Start free",
+    ctaLabel: "Join waitlist",
     accentColor: "var(--color-text-muted)",
   },
   {

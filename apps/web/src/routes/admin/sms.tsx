@@ -22,7 +22,7 @@ import { trpc } from "../../lib/trpc";
 interface AdminSmsMessage {
   id: string;
   userId: string;
-  direction: "send" | "receive";
+  direction: string;
   from: string;
   to: string;
   body: string;

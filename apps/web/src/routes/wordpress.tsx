@@ -439,7 +439,7 @@ export default function WordPress(): JSX.Element {
 
             <div class="mt-10 flex justify-center">
               <A
-                href="/docs/wordpress/install"
+                href="/docs/getting-started/install"
                 class="inline-flex items-center gap-2 text-[0.9375rem] font-semibold"
                 style={{ color: "#6366f1" }}
               >

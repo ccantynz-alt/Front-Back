@@ -77,9 +77,9 @@ describe("users table schema", () => {
     expect(columns.updatedAt.notNull).toBe(true);
   });
 
-  test("has exactly 11 columns", () => {
+  test("has exactly 12 columns", () => {
     const columns = getTableColumns(users);
-    expect(Object.keys(columns).length).toBe(11);
+    expect(Object.keys(columns).length).toBe(12);
   });
 
   test("has auth provider columns", () => {
