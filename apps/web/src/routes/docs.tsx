@@ -78,7 +78,8 @@ const DOC_CATEGORIES: DocCategory[] = [
       "Three-tier compute routing, WebGPU inference, streaming completions, and multi-agent orchestration.",
     tags: ["AI", "WebGPU", "inference"],
     gradient: "var(--color-primary)",
-    ready: false,
+    ready: true,
+    firstArticleHref: "/docs/ai-sdk",
   },
   {
     id: "components",
@@ -88,7 +89,8 @@ const DOC_CATEGORIES: DocCategory[] = [
       "Zod-schema-driven, AI-composable component catalog. From Button to DataTable with prop documentation.",
     tags: ["UI", "Zod", "SolidJS"],
     gradient: "var(--color-success)",
-    ready: false,
+    ready: true,
+    firstArticleHref: "/docs/components",
   },
   {
     id: "deployment",
@@ -109,7 +111,8 @@ const DOC_CATEGORIES: DocCategory[] = [
       "End-to-end walkthroughs: build a SaaS, integrate Stripe, wire real-time collaboration.",
     tags: ["tutorial", "walkthrough"],
     gradient: "var(--color-warning)",
-    ready: false,
+    ready: true,
+    firstArticleHref: "/docs/guides",
   },
   {
     id: "collaboration",
@@ -119,7 +122,8 @@ const DOC_CATEGORIES: DocCategory[] = [
       "Real-time multi-user editing with Yjs CRDTs. Presence, cursors, conflict resolution.",
     tags: ["CRDT", "Yjs", "multiplayer"],
     gradient: "var(--color-primary)",
-    ready: false,
+    ready: true,
+    firstArticleHref: "/docs/collaboration",
   },
   {
     id: "security",
@@ -129,7 +133,8 @@ const DOC_CATEGORIES: DocCategory[] = [
       "Passkey/WebAuthn, zero-trust architecture, audit trails, encryption at rest and in transit.",
     tags: ["auth", "passkeys", "compliance"],
     gradient: "var(--color-danger)",
-    ready: false,
+    ready: true,
+    firstArticleHref: "/docs/security",
   },
 ];
 
@@ -229,6 +234,107 @@ const REAL_ARTICLES: RealArticle[] = [
     category: "API Reference",
     readTime: "4 min",
     href: "/docs/api-reference/support",
+  },
+  // ── AI SDK ────────────────────────────────────────────────────────
+  {
+    title: "AI SDK overview",
+    category: "AI SDK",
+    readTime: "3 min",
+    href: "/docs/ai-sdk",
+  },
+  {
+    title: "Three-tier compute routing",
+    category: "AI SDK",
+    readTime: "5 min",
+    href: "/docs/ai-sdk/three-tier-compute",
+  },
+  {
+    title: "Streaming completions",
+    category: "AI SDK",
+    readTime: "4 min",
+    href: "/docs/ai-sdk/streaming-completions",
+  },
+  {
+    title: "Client-GPU inference",
+    category: "AI SDK",
+    readTime: "4 min",
+    href: "/docs/ai-sdk/client-gpu-inference",
+  },
+  // ── Components ───────────────────────────────────────────────────
+  {
+    title: "Components overview",
+    category: "Components",
+    readTime: "3 min",
+    href: "/docs/components",
+  },
+  {
+    title: "Component catalog",
+    category: "Components",
+    readTime: "4 min",
+    href: "/docs/components/catalog",
+  },
+  {
+    title: "AI-composable components",
+    category: "Components",
+    readTime: "4 min",
+    href: "/docs/components/ai-composable",
+  },
+  {
+    title: "Customizing components",
+    category: "Components",
+    readTime: "3 min",
+    href: "/docs/components/customization",
+  },
+  // ── Guides ───────────────────────────────────────────────────────
+  {
+    title: "Guides overview",
+    category: "Guides",
+    readTime: "2 min",
+    href: "/docs/guides",
+  },
+  {
+    title: "Build a SaaS on Crontech",
+    category: "Guides",
+    readTime: "3 min",
+    href: "/docs/guides/build-a-saas",
+  },
+  {
+    title: "Integrate Stripe",
+    category: "Guides",
+    readTime: "3 min",
+    href: "/docs/guides/integrate-stripe",
+  },
+  // ── Collaboration ────────────────────────────────────────────────
+  {
+    title: "Collaboration overview",
+    category: "Collaboration",
+    readTime: "2 min",
+    href: "/docs/collaboration",
+  },
+  {
+    title: "Yjs CRDTs",
+    category: "Collaboration",
+    readTime: "3 min",
+    href: "/docs/collaboration/yjs-crdts",
+  },
+  {
+    title: "Presence and cursors",
+    category: "Collaboration",
+    readTime: "3 min",
+    href: "/docs/collaboration/presence-and-cursors",
+  },
+  // ── Security & Auth ──────────────────────────────────────────────
+  {
+    title: "Security overview",
+    category: "Security & Auth",
+    readTime: "2 min",
+    href: "/docs/security",
+  },
+  {
+    title: "Authentication",
+    category: "Security & Auth",
+    readTime: "3 min",
+    href: "/docs/security/authentication",
   },
 ];
 
