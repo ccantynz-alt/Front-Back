@@ -1,3 +1,19 @@
+// ── /docs — Honest Documentation Landing ────────────────────────────
+//
+// The previous version of this page shipped "149 articles across 8
+// categories" in a headline badge, with each category card showing
+// fabricated counts (12, 34, 18, 42, 9, 15, 8, 11) and every quick-
+// link / category href pointing to a route that didn't exist. Users
+// clicking any card or quick link landed on a 404. "Popular articles"
+// was six hardcoded rows with synthetic read-times and dynamically-
+// composed dead hrefs.
+//
+// Rewritten here as an honest landing that reflects the true state of
+// the docs: one article shipped (getting-started/install), seven
+// categories intentionally marked "Coming soon" until their content
+// lands. No fake counts. No dead links. Search filters over the real
+// category list plus the one real article.
+
 import { createSignal, For, Show, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
 import { A } from "@solidjs/router";
@@ -11,15 +27,22 @@ interface DocCategory {
   icon: string;
   title: string;
   description: string;
-  articles: number;
   tags: string[];
   gradient: string;
+  /** True once at least one article in the category has shipped. */
+  ready: boolean;
+  /**
+   * If `ready` is true, link the card to the first article rather than
+   * a category index page that doesn't exist yet.
+   */
+  firstArticleHref?: string;
 }
 
-interface QuickLink {
-  label: string;
+interface RealArticle {
+  title: string;
+  category: string;
+  readTime: string;
   href: string;
-  description: string;
 }
 
 // ── Documentation Categories ────────────────────────────────────────
@@ -27,171 +50,170 @@ interface QuickLink {
 const DOC_CATEGORIES: DocCategory[] = [
   {
     id: "getting-started",
-    icon: "\u26A1",
+    icon: "⚡",
     title: "Getting Started",
     description:
-      "Set up your first project in under five minutes. Install the CLI, scaffold an app, deploy to the edge, and see it live.",
-    articles: 12,
+      "Create your account, install the CLI, and ship your first project to the edge.",
     tags: ["setup", "quickstart", "install"],
     gradient: "var(--color-primary)",
+    ready: true,
+    firstArticleHref: "/docs/getting-started/install",
   },
   {
     id: "api-reference",
-    icon: "\u2699\uFE0F",
+    icon: "⚙️",
     title: "API Reference",
     description:
-      "Full reference for every tRPC procedure, REST endpoint, and WebSocket channel. Type-safe schemas, request/response shapes, and curl examples.",
-    articles: 34,
-    tags: ["tRPC", "REST", "WebSocket", "endpoints"],
+      "tRPC procedures, REST endpoints, and WebSocket channels. Type-safe schemas end to end.",
+    tags: ["tRPC", "REST", "WebSocket"],
     gradient: "var(--color-primary)",
+    ready: false,
   },
   {
     id: "ai-sdk",
-    icon: "\uD83E\uDDE0",
+    icon: "🧠",
     title: "AI SDK",
     description:
-      "Three-tier compute routing, client-side WebGPU inference, streaming completions, generative UI, and multi-agent orchestration with LangGraph.",
-    articles: 18,
-    tags: ["AI", "WebGPU", "inference", "agents"],
+      "Three-tier compute routing, WebGPU inference, streaming completions, and multi-agent orchestration.",
+    tags: ["AI", "WebGPU", "inference"],
     gradient: "var(--color-primary)",
+    ready: false,
   },
   {
     id: "components",
-    icon: "\uD83E\uDDE9",
+    icon: "🧩",
     title: "Components",
     description:
-      "Zod-schema-driven, AI-composable component catalog. Every primitive from Button to DataTable, with live examples and prop documentation.",
-    articles: 42,
-    tags: ["UI", "Zod", "SolidJS", "catalog"],
+      "Zod-schema-driven, AI-composable component catalog. From Button to DataTable with prop documentation.",
+    tags: ["UI", "Zod", "SolidJS"],
     gradient: "var(--color-success)",
+    ready: false,
   },
   {
     id: "deployment",
-    icon: "\uD83D\uDE80",
+    icon: "🚀",
     title: "Deployment",
     description:
-      "Deploy to Cloudflare Workers, Pages, Fly.io, and Modal.com GPU clusters. CI/CD pipelines, environment variables, and canary rollouts.",
-    articles: 9,
-    tags: ["deploy", "edge", "CI/CD", "Cloudflare"],
+      "Deploy to Cloudflare Workers, Pages, and Fly.io. CI/CD pipelines, env vars, and canary rollouts.",
+    tags: ["deploy", "edge", "CI/CD"],
     gradient: "var(--color-warning)",
+    ready: false,
   },
   {
     id: "guides",
-    icon: "\uD83D\uDCD6",
+    icon: "📖",
     title: "Guides",
     description:
-      "Step-by-step walkthroughs for real-world workflows: building a SaaS app, integrating Stripe billing, real-time collaboration, and video processing.",
-    articles: 15,
-    tags: ["tutorial", "walkthrough", "patterns"],
+      "End-to-end walkthroughs: build a SaaS, integrate Stripe, wire real-time collaboration.",
+    tags: ["tutorial", "walkthrough"],
     gradient: "var(--color-warning)",
+    ready: false,
   },
   {
     id: "collaboration",
-    icon: "\uD83D\uDC65",
+    icon: "👥",
     title: "Collaboration",
     description:
-      "Real-time multi-user editing with Yjs CRDTs. Presence, cursors, conflict resolution, and AI agents as first-class collaborators.",
-    articles: 8,
-    tags: ["CRDT", "Yjs", "real-time", "multiplayer"],
+      "Real-time multi-user editing with Yjs CRDTs. Presence, cursors, conflict resolution.",
+    tags: ["CRDT", "Yjs", "multiplayer"],
     gradient: "var(--color-primary)",
+    ready: false,
   },
   {
     id: "security",
-    icon: "\uD83D\uDD12",
+    icon: "🔒",
     title: "Security & Auth",
     description:
-      "Passkey/WebAuthn authentication, zero-trust architecture, RBAC, audit trails, encryption at rest and in transit, and compliance certifications.",
-    articles: 11,
-    tags: ["auth", "passkeys", "encryption", "compliance"],
+      "Passkey/WebAuthn, zero-trust architecture, audit trails, encryption at rest and in transit.",
+    tags: ["auth", "passkeys", "compliance"],
     gradient: "var(--color-danger)",
+    ready: false,
   },
 ];
 
-const QUICK_LINKS: QuickLink[] = [
+const REAL_ARTICLES: RealArticle[] = [
   {
-    label: "Install the CLI",
+    title: "Install the CLI and create your first project",
+    category: "Getting Started",
+    readTime: "3 min",
     href: "/docs/getting-started/install",
-    description: "bun add -g @crontech/cli",
-  },
-  {
-    label: "Create your first project",
-    href: "/docs/getting-started/new-project",
-    description: "crontech init my-app",
-  },
-  {
-    label: "Deploy to edge",
-    href: "/docs/deployment/cloudflare",
-    description: "Ship globally in one command",
-  },
-  {
-    label: "AI chat endpoint",
-    href: "/docs/api-reference/ai-chat",
-    description: "Stream completions via SSE",
   },
 ];
 
 // ── Sub-Components ──────────────────────────────────────────────────
 
 function DocCategoryCard(props: { category: DocCategory }): JSX.Element {
-  return (
-    <A
-      href={`/docs/${props.category.id}`}
-      class="group block"
-      style={{ "text-decoration": "none" }}
+  const inner = (
+    <div
+      class="relative overflow-hidden rounded-2xl border border-[var(--color-border)] p-6 transition-all duration-300 hover:border-[var(--color-border-strong)]"
+      style={{
+        background: "var(--color-bg-subtle)",
+        opacity: props.category.ready ? 1 : 0.7,
+      }}
     >
       <div
-        class="relative overflow-hidden rounded-2xl border border-[var(--color-border)] p-6 transition-all duration-300 hover:scale-[1.02] hover:border-[var(--color-border-strong)]"
-        style={{
-          background: "var(--color-bg-subtle)",
-          "backdrop-filter": "blur(12px)",
-        }}
-      >
-        {/* Gradient accent bar */}
+        class="absolute inset-x-0 top-0 h-[2px] opacity-60"
+        style={{ background: props.category.gradient }}
+      />
+      <div class="flex items-start gap-4">
         <div
-          class="absolute inset-x-0 top-0 h-[2px] opacity-60 transition-opacity duration-300 group-hover:opacity-100"
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl"
           style={{ background: props.category.gradient }}
-        />
-
-        <div class="flex items-start gap-4">
-          <div
-            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl"
-            style={{ background: props.category.gradient }}
-          >
-            {props.category.icon}
+        >
+          {props.category.icon}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span
+              class="text-lg font-semibold"
+              style={{ color: "var(--color-text)" }}
+            >
+              {props.category.title}
+            </span>
+            <Show when={!props.category.ready}>
+              <span
+                class="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                style={{
+                  background:
+                    "color-mix(in oklab, var(--color-warning) 15%, transparent)",
+                  color: "var(--color-warning)",
+                  border:
+                    "1px solid color-mix(in oklab, var(--color-warning) 30%, transparent)",
+                }}
+              >
+                Coming soon
+              </span>
+            </Show>
           </div>
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-lg font-semibold transition-colors" style={{ color: "var(--color-text)" }}>
-                {props.category.title}
-              </span>
-              <span class="rounded-full px-2 py-0.5 text-xs font-mono" style={{ background: "var(--color-bg-elevated)", color: "var(--color-text-muted)" }}>
-                {props.category.articles}
-              </span>
-            </div>
-            <p class="text-sm leading-relaxed mb-3" style={{ color: "var(--color-text-muted)" }}>
-              {props.category.description}
-            </p>
-            <div class="flex flex-wrap gap-1.5">
-              <For each={props.category.tags}>
-                {(tag) => (
-                  <span class="rounded-md px-2 py-0.5 text-xs font-mono" style={{ background: "var(--color-bg-elevated)", color: "var(--color-text-muted)" }}>
-                    {tag}
-                  </span>
-                )}
-              </For>
-            </div>
+          <p
+            class="text-sm leading-relaxed mb-3"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {props.category.description}
+          </p>
+          <div class="flex flex-wrap gap-1.5">
+            <For each={props.category.tags}>
+              {(tag) => (
+                <span
+                  class="rounded-md px-2 py-0.5 text-xs font-mono"
+                  style={{
+                    background: "var(--color-bg-elevated)",
+                    color: "var(--color-text-muted)",
+                  }}
+                >
+                  {tag}
+                </span>
+              )}
+            </For>
           </div>
         </div>
-
-        {/* Arrow indicator */}
-        <div class="absolute right-5 top-1/2 -translate-y-1/2 transition-all duration-300 group-hover:translate-x-1" style={{ color: "var(--color-text-faint)" }}>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+      </div>
+      <Show when={props.category.ready}>
+        <div
+          class="absolute right-5 top-1/2 -translate-y-1/2"
+          style={{ color: "var(--color-text-faint)" }}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path
               d="M7.5 15L12.5 10L7.5 5"
               stroke="currentColor"
@@ -201,8 +223,23 @@ function DocCategoryCard(props: { category: DocCategory }): JSX.Element {
             />
           </svg>
         </div>
-      </div>
-    </A>
+      </Show>
+    </div>
+  );
+
+  return (
+    <Show
+      when={props.category.ready && props.category.firstArticleHref}
+      fallback={<div class="block">{inner}</div>}
+    >
+      <A
+        href={props.category.firstArticleHref ?? "#"}
+        class="block group"
+        style={{ "text-decoration": "none" }}
+      >
+        {inner}
+      </A>
+    </Show>
   );
 }
 
@@ -222,30 +259,41 @@ export default function DocsPage(): JSX.Element {
     );
   });
 
+  const filteredArticles = createMemo((): RealArticle[] => {
+    const query = searchQuery().toLowerCase().trim();
+    if (!query) return REAL_ARTICLES;
+    return REAL_ARTICLES.filter(
+      (a) =>
+        a.title.toLowerCase().includes(query) ||
+        a.category.toLowerCase().includes(query),
+    );
+  });
+
+  const readyCount = (): number => DOC_CATEGORIES.filter((c) => c.ready).length;
+  const articleCount = (): number => REAL_ARTICLES.length;
+
   return (
     <>
       <SEOHead
         title="Documentation"
-        description="Everything you need to build with Crontech. Guides, API references, component catalogs, and deployment workflows."
+        description="Everything you need to build with Crontech. Quickstart, guides, and API references as each category ships."
         path="/docs"
       />
 
       <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
-        {/* ── Hero Section ───────────────────────────────────────────── */}
+        {/* ── Hero ───────────────────────────────────────────────── */}
         <div class="relative overflow-hidden">
-          {/* Background gradient mesh */}
           <div
             class="absolute inset-0 opacity-30"
             style={{
               background:
-                "radial-gradient(ellipse at 20% 50%, color-mix(in oklab, var(--color-primary) 15%, transparent) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, color-mix(in oklab, var(--color-primary) 10%, transparent) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, color-mix(in oklab, var(--color-primary) 8%, transparent) 0%, transparent 50%)",
+                "radial-gradient(ellipse at 20% 50%, color-mix(in oklab, var(--color-primary) 15%, transparent) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, color-mix(in oklab, var(--color-primary) 10%, transparent) 0%, transparent 50%)",
             }}
           />
-
-          <div class="relative mx-auto max-w-6xl px-6 pt-20 pb-16">
+          <div class="relative mx-auto max-w-6xl px-6 pt-20 pb-12">
             <div class="flex flex-col items-center text-center">
               <Badge variant="info" size="sm">
-                149 articles across 8 categories
+                {articleCount()} article · {readyCount()} of {DOC_CATEGORIES.length} categories ready
               </Badge>
               <h1
                 class="mt-6 text-5xl font-bold tracking-tight sm:text-6xl"
@@ -259,12 +307,16 @@ export default function DocsPage(): JSX.Element {
               >
                 Documentation
               </h1>
-              <p class="mt-4 max-w-2xl text-lg" style={{ color: "var(--color-text-muted)" }}>
-                Everything you need to build, deploy, and scale with Crontech.
-                From first install to production-grade AI agents.
+              <p
+                class="mt-4 max-w-2xl text-lg"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                Quickstart is live. The rest of the docs land category-by-
+                category as each subsystem stabilises — we'd rather ship
+                accurate references slowly than inaccurate ones quickly.
               </p>
 
-              {/* ── Search Bar ──────────────────────────────────────── */}
+              {/* ── Search ───────────────────────────────────────── */}
               <div class="mt-8 w-full max-w-xl">
                 <div
                   class="relative rounded-2xl border border-[var(--color-border)] overflow-hidden"
@@ -291,226 +343,109 @@ export default function DocsPage(): JSX.Element {
                   </div>
                   <input
                     type="text"
-                    placeholder="Search documentation... (e.g. tRPC, passkeys, WebGPU)"
+                    placeholder="Search documentation"
                     aria-label="Search documentation"
                     value={searchQuery()}
-                    onInput={(e) =>
-                      setSearchQuery(e.currentTarget.value)
-                    }
+                    onInput={(e) => setSearchQuery(e.currentTarget.value)}
                     class="w-full bg-transparent py-4 pl-12 pr-4 outline-none text-sm"
                     style={{ color: "var(--color-text)" }}
                   />
-                  <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                    <kbd class="rounded border border-[var(--color-border)] px-2 py-0.5 text-xs font-mono" style={{ background: "var(--color-bg-elevated)", color: "var(--color-text-faint)" }}>
-                      /
-                    </kbd>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Quick Links ─────────────────────────────────────────── */}
-        <div class="mx-auto max-w-6xl px-6 pb-8">
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <For each={QUICK_LINKS}>
-              {(link) => (
-                <A
-                  href={link.href}
-                  class="group flex items-center gap-3 rounded-xl border border-[var(--color-border)] px-4 py-3 transition-all duration-200 hover:border-[var(--color-border-strong)]"
-                  style={{ "text-decoration": "none", background: "var(--color-bg-subtle)" }}
-                >
-                  <div class="flex-1 min-w-0">
-                    <span class="block text-sm font-medium transition-colors" style={{ color: "var(--color-text)" }}>
-                      {link.label}
-                    </span>
-                    <span class="block text-xs font-mono mt-0.5 truncate" style={{ color: "var(--color-text-faint)" }}>
-                      {link.description}
-                    </span>
-                  </div>
-                  <svg
-                    class="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
-                    style={{ color: "var(--color-text-faint)" }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </A>
-              )}
-            </For>
-          </div>
-        </div>
-
-        {/* ── Main Grid ───────────────────────────────────────────── */}
+        {/* ── Category Grid ────────────────────────────────────────── */}
         <div class="mx-auto max-w-6xl px-6 pb-20">
-          <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* ── Sidebar ──────────────────────────────────────────── */}
-            <aside class="lg:col-span-1">
-              <div class="sticky top-20 space-y-6">
-                <div>
-                  <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-faint)" }}>
-                    Categories
-                  </h3>
-                  <nav class="space-y-0.5">
-                    <For each={DOC_CATEGORIES}>
-                      {(cat) => (
-                        <a
-                          href={`#${cat.id}`}
-                          class="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors"
-                          style={{ "text-decoration": "none", color: "var(--color-text-muted)" }}
-                        >
-                          <span class="flex items-center gap-2">
-                            <span>{cat.icon}</span>
-                            <span>{cat.title}</span>
-                          </span>
-                          <span class="text-xs font-mono" style={{ color: "var(--color-text-faint)" }}>
-                            {cat.articles}
-                          </span>
-                        </a>
-                      )}
-                    </For>
-                  </nav>
-                </div>
-
-                {/* SDK versions */}
-                <div
-                  class="rounded-xl border border-[var(--color-border)] p-4"
-                  style={{ background: "var(--color-bg-subtle)" }}
-                >
-                  <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-faint)" }}>
-                    SDK Versions
-                  </h3>
-                  <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                      <span style={{ color: "var(--color-text-muted)" }}>@crontech/cli</span>
-                      <span class="font-mono text-xs" style={{ color: "var(--color-success)" }}>
-                        v0.8.2
-                      </span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span style={{ color: "var(--color-text-muted)" }}>@crontech/sdk</span>
-                      <span class="font-mono text-xs" style={{ color: "var(--color-success)" }}>
-                        v0.6.1
-                      </span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span style={{ color: "var(--color-text-muted)" }}>@crontech/ai</span>
-                      <span class="font-mono text-xs" style={{ color: "var(--color-success)" }}>
-                        v0.4.0
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </aside>
-
-            {/* ── Category Cards ────────────────────────────────────── */}
-            <div class="lg:col-span-3">
-              <Show
-                when={filteredCategories().length > 0}
-                fallback={
-                  <div class="flex flex-col items-center justify-center py-20 text-center">
-                    <div class="text-4xl mb-4 opacity-30">
-                      {"\uD83D\uDD0D"}
-                    </div>
-                    <p class="text-lg" style={{ color: "var(--color-text-muted)" }}>
-                      No results for "{searchQuery()}"
-                    </p>
-                    <p class="text-sm mt-1" style={{ color: "var(--color-text-faint)" }}>
-                      Try a different search term or browse the categories
-                    </p>
-                    <button
-                      type="button"
-                      class="mt-4 rounded-lg px-4 py-2 text-sm transition-colors"
-                      style={{ background: "var(--color-bg-elevated)", color: "var(--color-text-secondary)" }}
-                      onClick={() => setSearchQuery("")}
-                    >
-                      Clear search
-                    </button>
-                  </div>
-                }
-              >
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <For each={filteredCategories()}>
-                    {(category) => (
-                      <DocCategoryCard category={category} />
-                    )}
-                  </For>
-                </div>
-              </Show>
-
-              {/* ── Popular Articles ─────────────────────────────────── */}
-              <Show when={searchQuery() === ""}>
-                <div class="mt-16">
-                  <h2 class="text-lg font-semibold mb-6" style={{ color: "var(--color-text)" }}>
-                    Popular articles
-                  </h2>
-                  <div class="space-y-2">
-                    {[
-                      {
-                        title: "Quickstart: Your first Crontech project",
-                        category: "Getting Started",
-                        readTime: "3 min",
-                      },
-                      {
-                        title: "Three-tier compute explained",
-                        category: "AI SDK",
-                        readTime: "8 min",
-                      },
-                      {
-                        title: "tRPC procedure reference",
-                        category: "API Reference",
-                        readTime: "12 min",
-                      },
-                      {
-                        title:
-                          "Building AI-composable components with Zod schemas",
-                        category: "Components",
-                        readTime: "6 min",
-                      },
-                      {
-                        title: "Deploy to Cloudflare Workers in 60 seconds",
-                        category: "Deployment",
-                        readTime: "2 min",
-                      },
-                      {
-                        title:
-                          "Real-time collaboration with Yjs and AI agents",
-                        category: "Collaboration",
-                        readTime: "10 min",
-                      },
-                    ].map((article) => (
-                      <a
-                        href={`/docs/${article.category.toLowerCase().replace(/\s+/g, "-")}/${article.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-                        class="group flex items-center justify-between rounded-xl border border-[var(--color-border)] px-5 py-4 transition-all duration-200 hover:border-[var(--color-border-strong)]"
-                        style={{ "text-decoration": "none" }}
-                      >
-                        <div>
-                          <span class="text-sm transition-colors" style={{ color: "var(--color-text-secondary)" }}>
-                            {article.title}
-                          </span>
-                          <span class="ml-3 text-xs font-mono" style={{ color: "var(--color-text-faint)" }}>
-                            {article.category}
-                          </span>
-                        </div>
-                        <span class="text-xs shrink-0 ml-4" style={{ color: "var(--color-text-faint)" }}>
-                          {article.readTime}
-                        </span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </Show>
-            </div>
+          <div class="mb-5 flex items-baseline justify-between">
+            <h2
+              class="text-lg font-semibold"
+              style={{ color: "var(--color-text)" }}
+            >
+              Categories
+            </h2>
+            <p
+              class="text-xs"
+              style={{ color: "var(--color-text-faint)" }}
+            >
+              Cards fade out until their first article ships
+            </p>
           </div>
+          <Show
+            when={filteredCategories().length > 0}
+            fallback={
+              <div class="flex flex-col items-center justify-center py-20 text-center">
+                <p
+                  class="text-lg"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  No results for "{searchQuery()}"
+                </p>
+                <button
+                  type="button"
+                  class="mt-4 rounded-lg px-4 py-2 text-sm transition-colors"
+                  style={{
+                    background: "var(--color-bg-elevated)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                  onClick={() => setSearchQuery("")}
+                >
+                  Clear search
+                </button>
+              </div>
+            }
+          >
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <For each={filteredCategories()}>
+                {(category) => <DocCategoryCard category={category} />}
+              </For>
+            </div>
+          </Show>
+
+          {/* ── Real articles ────────────────────────────────────── */}
+          <Show when={filteredArticles().length > 0}>
+            <div class="mt-16">
+              <h2
+                class="text-lg font-semibold mb-6"
+                style={{ color: "var(--color-text)" }}
+              >
+                Articles
+              </h2>
+              <div class="space-y-2">
+                <For each={filteredArticles()}>
+                  {(article) => (
+                    <A
+                      href={article.href}
+                      class="group flex items-center justify-between rounded-xl border border-[var(--color-border)] px-5 py-4 transition-all duration-200 hover:border-[var(--color-border-strong)]"
+                      style={{ "text-decoration": "none" }}
+                    >
+                      <div class="min-w-0">
+                        <span
+                          class="text-sm"
+                          style={{ color: "var(--color-text-secondary)" }}
+                        >
+                          {article.title}
+                        </span>
+                        <span
+                          class="ml-3 text-xs font-mono"
+                          style={{ color: "var(--color-text-faint)" }}
+                        >
+                          {article.category}
+                        </span>
+                      </div>
+                      <span
+                        class="text-xs shrink-0 ml-4"
+                        style={{ color: "var(--color-text-faint)" }}
+                      >
+                        {article.readTime}
+                      </span>
+                    </A>
+                  )}
+                </For>
+              </div>
+            </div>
+          </Show>
         </div>
       </div>
     </>
