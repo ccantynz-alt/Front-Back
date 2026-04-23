@@ -1,6 +1,6 @@
 # STRATEGY — Appendix (2026-04-22 late evening)
 
-**Read this alongside `docs/STRATEGY.md`. This appendix captures three major framings that surfaced late in the 2026-04-22 session and must survive into every future session. If you are a future Claude reading this — read `STRATEGY.md` first, then this file. Do not rewrite either. Append new appendices instead.**
+**Read this alongside `docs/STRATEGY.md`. This appendix captures four major framings that surfaced late in the 2026-04-22 session and must survive into every future session. If you are a future Claude reading this — read `STRATEGY.md` first, then this file. Do not rewrite either. Append new appendices instead.**
 
 ---
 
@@ -85,6 +85,55 @@ Claude is not a feature. Claude is the **primary primitive** across every produc
 - **AlecRae** — Claude could power Inbox Agent responses, draft suggestions, deliverability root-cause analysis.
 
 Google / Microsoft / AWS lead with their own house models (Gemini / GPT-4 via OpenAI partnership / Bedrock menu). Crontech and siblings lead with Claude — which is, at time of writing (April 2026), the most capable reasoning model on the market. **This is a real, defensible technical differentiator that every marketing surface should mention**, but only obliquely ("Powered by Claude, the most capable AI on the market"), not aggressively ("Claude beats Gemini") until the fortress is built.
+
+---
+
+## 5. Testing doctrine — GateTest is mandatory for Crontech testing
+
+**Locked by Craig 2026-04-22 evening: any Crontech testing work must use GateTest. No exceptions.**
+
+GateTest (`ccantynz-alt/gatetest`) is Craig's own product and the commercial replacement for Playwright / Cypress / Percy / Chromatic / Lighthouse / axe. Using a competitor's tool to test our own product is anti-strategic on three levels:
+
+1. It signals "we don't trust our own product" to anyone who reads the package.json.
+2. It pays revenue / mindshare to a competitor we are explicitly trying to displace.
+3. It misses the dogfooding feedback loop — running GateTest against Crontech surfaces gaps in GateTest's own product that Craig can fix and ship as features.
+
+### What this means in practice for any Claude session
+
+When the user (or a planning step) asks for ANY of:
+- Visual regression testing
+- Layout / responsive QA
+- Accessibility audits
+- Broken link / dead-button detection
+- Console-error sweeps
+- Live-site crawling
+- Element-level interaction tests
+- E2E flows
+
+…the answer is **`gatetest` CLI**. Run `gatetest --help` to see the current module list. Common patterns:
+
+- `gatetest --crawl http://localhost:3000` — full local crawl
+- `gatetest --crawl https://crontech.ai --module visual --module accessibility --module links` — production sweep
+- `gatetest --module visual` — static visual regression on a built site
+- `gatetest --module e2e` — Playwright/Cypress-style flow execution (still uses gatetest as the customer interface even if the implementation is Playwright-under-the-hood; that's fine because the user-facing product is still GateTest)
+
+### What is BANNED
+
+- Installing `@playwright/test`, `playwright-core`, `playwright`, `cypress`, `puppeteer`, `puppeteer-core`, `@cypress/*`, or any direct competitor binary as a Crontech devDependency.
+- Telling agents or sub-tasks to "install Playwright and run tests" — always say "use the gatetest CLI" instead.
+- Adding visual-regression tooling that competes with GateTest (Percy, Chromatic, Loki, BackstopJS).
+
+If a previous agent added any of these as deps, **remove them as a follow-up commit** (see commit `a516c3c` for the canonical Playwright-removal pattern: revert + rewrite the `test:e2e` npm script to `gatetest --crawl`).
+
+### What is allowed
+
+- Repo-internal unit tests (`bun test`, `vitest`, `node:test`) — these are NOT competitors of GateTest. GateTest is for browser / live-site / E2E. Unit tests stay.
+- Type checking (`tsc`, `bunx tsc --noEmit`) — orthogonal.
+- `gatetest` itself as a devDep, or installed globally from the local `/home/user/gatetest` clone, or `npm install -g gatetest` once published.
+
+### Tracked gap
+
+GateTest's `--module` flags are not yet fully respected on the live-crawl path (audit at `docs/landing-before-after/after-gatetest-report.json` documents the missing rules: column-height drift, mid-hyphen wrap, flex-wrap cramping, section-rhythm drift). When running GateTest and finding bugs it doesn't catch, that is **product feedback for the GateTest team**, not a reason to fall back to a competitor. Append the gap to `docs/GATETEST_PRODUCT_GAPS.md` (create if missing) so Craig's GateTest backlog stays current.
 
 ---
 
