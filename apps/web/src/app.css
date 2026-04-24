@@ -2433,6 +2433,7 @@ html.dark .hero-gradient {
   row-gap: 1.25rem;
   width: 100%;
   max-width: 980px;
+  margin: 0 auto;
 }
 
 .landing-tech-strip-item {

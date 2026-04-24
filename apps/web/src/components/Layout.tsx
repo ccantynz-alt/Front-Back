@@ -456,7 +456,7 @@ export function Layout(props: LayoutProps): JSX.Element {
             onToggle={() => setSidebarCollapsed(!sidebarCollapsed())}
           />
         </Show>
-        <main class="flex-1 overflow-y-auto">
+        <main class="flex-1 overflow-y-auto w-full min-w-0">
           {props.children}
         </main>
       </div>
