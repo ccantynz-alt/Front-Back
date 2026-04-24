@@ -1,0 +1,40 @@
+name: Emergency Hotfix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  hotfix:
+    name: Fix Server & Restart Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: SSH — fix env + restart crontech-web
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VULTR_SERVER_IP }}
+          username: root
+          key: ${{ secrets.VULTR_SSH_KEY }}
+          script: |
+            set -e
+            echo '=== Fixing malformed PUBLIC_URL env var ==='
+            sed -i 's/^=PUBLIC_URL=/PUBLIC_URL=/' /opt/crontech/.env
+            grep PUBLIC_URL /opt/crontech/.env
+
+            echo '=== Restarting crontech-web ==='
+            systemctl restart crontech-web
+            sleep 5
+
+            echo '=== Health check ==='
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ || echo 000)
+            echo "HTTP status: $HTTP"
+
+            if [ "$HTTP" = "200" ]; then
+              echo ''
+              echo 'SUCCESS — crontech.ai is back online'
+            else
+              echo ''
+              echo 'FAILED — dumping logs'
+              journalctl -u crontech-web -n 40 --no-pager
+              exit 1
+            fi
