@@ -1,0 +1,19 @@
+[Unit]
+Description=Crontech Web (SolidStart/Bun)
+After=network.target crontech-api.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/crontech/apps/web
+ExecStart=/root/.bun/bin/bun run .output/server/index.mjs
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/crontech/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

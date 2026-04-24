@@ -1,263 +1,37 @@
-# Crontech Platform — Production Caddyfile
-# Automatic HTTPS via Let's Encrypt. HTTP/2 only for now (see note below).
-#
-# ── Bare-metal deployment notice ──────────────────────────────────────
-# Upstreams below reference localhost:<port> because Caddy runs as a
-# systemd service on the Vultr host, and the app services (crontech-web,
-# crontech-api, gluecron) are also systemd units binding to 0.0.0.0 on
-# the host. Docker service names (web:3000, api:3001) do NOT resolve
-# in this topology.
-#
-# If you switch back to docker-compose where Caddy runs inside the
-# compose network, change these back to service names:
-#   localhost:3000 -> web:3000
-#   localhost:3001 -> api:3001
-# (gluecron on :3002 is host-only either way.)
-#
-# Cache-Control strategy:
-#   /_build/*, /assets/*  -> content-hashed by Vinxi, safe to cache forever
-#   /api/*                -> dynamic, never cached
-#   root statics (.ico)   -> short TTL so new deploys replace them
-#   HTML (everything else)-> never cached, new deploys go live immediately
+# Crontech — production Caddyfile
+# Place at /etc/caddy/Caddyfile on the Vultr server.
+# Caddy auto-provisions TLS via Let's Encrypt.
 
-# ── Global options ────────────────────────────────────────────────────
+crontech.ai, www.crontech.ai {
+    # API routes go to the Hono backend
+    handle /api/* {
+        reverse_proxy localhost:3001
+    }
 
-{
-	# HTTP/2 + HTTP/1.1 only.
-	# HTTP/3 (QUIC, UDP/443) is intentionally disabled: the Vultr host
-	# firewall / docker-compose port mapping currently only exposes
-	# TCP/443, so QUIC handshakes fail and Chrome surfaces
-	# ERR_QUIC_PROTOCOL_ERROR instead of falling back. Re-enable by
-	# adding h3 back here once UDP/443 is confirmed open end-to-end
-	# (Vultr firewall + ports: "443:443/udp" in docker-compose).
-	servers {
-		protocols h1 h2 h2c
-	}
+    # WebSocket upgrade for live logs + real-time
+    handle /ws/* {
+        reverse_proxy localhost:3001 {
+            header_up Upgrade {http.request.header.Upgrade}
+            header_up Connection {http.request.header.Connection}
+        }
+    }
 
-	# Let's Encrypt email for certificate notifications
-	email {$ACME_EMAIL:admin@crontech.ai}
+    # Everything else goes to the SolidStart SSR server
+    handle {
+        reverse_proxy localhost:3000
+    }
 
-	# Admin API — disabled in production for security
-	admin off
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+
+    encode gzip
+    log {
+        output file /var/log/caddy/crontech.log
+    }
 }
-
-# ── crontech.ai -> Web App (SolidStart SSR) ──────────────────────────
-
-crontech.ai {
-	encode gzip zstd
-
-	# ── Matchers ──────────────────────────────────────────────────────
-	# Hashed immutable assets: content-addressed by Vinxi.
-	@hashedAssets path /_build/* /assets/*
-	# API passthrough from SSR: dynamic responses.
-	@apiPaths path /api/*
-	# Root-level static files with short TTL.
-	@rootStatics path *.ico *.png *.jpg *.jpeg *.svg *.webp *.xml *.txt *.json *.webmanifest
-	# Everything else (HTML, SSR output) — must NEVER cache.
-	@htmlish {
-		not path /_build/* /assets/* /api/* *.ico *.png *.jpg *.jpeg *.svg *.webp *.xml *.txt *.json *.webmanifest
-	}
-
-	# ── Cache-Control ─────────────────────────────────────────────────
-	header @hashedAssets Cache-Control "public, max-age=31536000, immutable"
-	header @apiPaths Cache-Control "no-cache, no-store, must-revalidate"
-	header @rootStatics Cache-Control "public, max-age=3600, must-revalidate"
-	header @htmlish {
-		Cache-Control "no-cache, no-store, must-revalidate"
-		Pragma "no-cache"
-		Expires "0"
-	}
-
-	# ── Security headers (every response) ─────────────────────────────
-	header {
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "SAMEORIGIN"
-		X-XSS-Protection "1; mode=block"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
-		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-		# Remove server identity
-		-Server
-	}
-
-	reverse_proxy localhost:3000 {
-		health_uri /
-		health_interval 30s
-		health_timeout 5s
-
-		# Pass original client info
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto {scheme}
-	}
-
-	log {
-		output file /var/log/caddy/crontech-web.log {
-			roll_size 50mb
-			roll_keep 5
-			roll_keep_for 168h
-		}
-		format json
-		level INFO
-	}
-}
-
-# ── www.crontech.ai -> redirect to apex ──────────────────────────────
-
-www.crontech.ai {
-	redir https://crontech.ai{uri} permanent
-}
-
-# ── api.crontech.ai -> API Server (Hono + Bun) ──────────────────────
-
-api.crontech.ai {
-	encode gzip zstd
-
-	# API responses are dynamic — never cache.
-	header {
-		Cache-Control "no-cache, no-store, must-revalidate"
-		Pragma "no-cache"
-		Expires "0"
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "DENY"
-		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
-		# Remove server identity
-		-Server
-	}
-
-	reverse_proxy localhost:3001 {
-		health_uri /api/health
-		health_interval 30s
-		health_timeout 5s
-
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto {scheme}
-	}
-
-	log {
-		output file /var/log/caddy/crontech-api.log {
-			roll_size 50mb
-			roll_keep 5
-			roll_keep_for 168h
-		}
-		format json
-		level INFO
-	}
-}
-
-# ── gluecron.crontech.ai -> Gluecron (self-hosted git + CI) ──────────
-# Gluecron runs as a host systemd service on port 3002 (crontech-web
-# owns 3000, crontech-api owns 3001). Ecosystem cornerstone: once
-# live, hosts source for Crontech / AlecRae / itself, replacing
-# GitHub. Provisioned by scripts/add-gluecron.sh.
-
-gluecron.crontech.ai {
-	encode gzip zstd
-
-	header {
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "SAMEORIGIN"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
-		-Server
-	}
-
-	reverse_proxy localhost:3002 {
-		health_uri /
-		health_interval 30s
-		health_timeout 5s
-
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Forwarded-Host {host}
-	}
-
-	log {
-		output file /var/log/caddy/gluecron.log {
-			roll_size 50mb
-			roll_keep 5
-			roll_keep_for 168h
-		}
-		format json
-		level INFO
-	}
-}
-
-# ── gluecron.com (apex) -> Gluecron ─────────────────────────────────
-# Same upstream as gluecron.crontech.ai. Requires:
-#   1. DNS A record gluecron.com -> Vultr host IP
-#   2. DNS A record www.gluecron.com -> Vultr host IP
-# Let's Encrypt issues on first request once DNS resolves.
-
-gluecron.com {
-	encode gzip zstd
-
-	header {
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "SAMEORIGIN"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
-		-Server
-	}
-
-	reverse_proxy localhost:3002 {
-		health_uri /
-		health_interval 30s
-		health_timeout 5s
-
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Forwarded-Host {host}
-	}
-
-	log {
-		output file /var/log/caddy/gluecron-apex.log {
-			roll_size 50mb
-			roll_keep 5
-			roll_keep_for 168h
-		}
-		format json
-		level INFO
-	}
-}
-
-www.gluecron.com {
-	redir https://gluecron.com{uri} permanent
-}
-
-# ── *.crontech.ai -> Customer project deployer (BLK-009) ─────────────
-# Wildcard block. Any subdomain NOT matched by a specific block above
-# (gluecron, www, api) falls through here and routes to the deployer
-# service based on the project slug. Enabled when the deployer
-# container is running on port 8080.
-
-# *.crontech.ai {
-# 	encode gzip zstd
-#
-# 	header {
-# 		X-Content-Type-Options "nosniff"
-# 		X-Frame-Options "SAMEORIGIN"
-# 		Strict-Transport-Security "max-age=63072000; includeSubDomains"
-# 		-Server
-# 	}
-#
-# 	reverse_proxy deployer:8080 {
-# 		header_up X-Real-IP {remote_host}
-# 		header_up X-Forwarded-For {remote_host}
-# 		header_up X-Forwarded-Proto {scheme}
-# 		header_up X-Forwarded-Host {host}
-# 	}
-#
-# 	log {
-# 		output file /var/log/caddy/crontech-deployer.log {
-# 			roll_size 50mb
-# 			roll_keep 5
-# 			roll_keep_for 168h
-# 		}
-# 		format json
-# 		level INFO
-# 	}
-# }
