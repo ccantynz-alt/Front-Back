@@ -138,14 +138,18 @@ function PlanCard(props: { plan: PlanTier; isAnnual: boolean }): JSX.Element {
   const isCustom = (): boolean => props.plan.monthlyPrice === -1;
 
   const handleCtaClick = (): void => {
-    // Pre-launch: every plan routes to the waitlist/contact flow.
-    // Billing is disabled at the tRPC layer (see billing.ts and the
-    // STRIPE_ENABLED env flag) until the attorney package is signed
-    // off and customer onboarding opens post-launch.
+    // Per-plan routing:
+    //   - Free      -> /register?plan=free (self-serve sign-up)
+    //   - Pro       -> /checkout/pro (auth-gated Stripe handoff route)
+    //   - Enterprise-> /support?topic=enterprise (sales-led, not self-serve)
+    // The /checkout/:plan route handles the logged-out redirect itself,
+    // so we can send users there unconditionally.
     if (props.plan.id === "enterprise") {
       window.location.href = "/support?topic=enterprise";
+    } else if (props.plan.id === "pro") {
+      window.location.href = "/checkout/pro";
     } else {
-      window.location.href = "/support?topic=waitlist&plan=" + props.plan.id;
+      window.location.href = "/register?plan=" + props.plan.id;
     }
   };
 
@@ -433,7 +437,15 @@ export default function PricingPage(): JSX.Element {
                 class="rounded-xl px-8 py-3 text-sm font-semibold transition-all duration-200 hover:brightness-110"
                 style={{ background: "var(--color-primary)", color: "var(--color-primary-text)" }}
               >
-                Join waitlist
+                Start free
+              </button>
+              <button
+                type="button"
+                onClick={() => { window.location.href = "/checkout/pro"; }}
+                class="rounded-xl px-8 py-3 text-sm font-medium transition-all"
+                style={{ background: "var(--color-bg-muted)", color: "var(--color-text-secondary)", border: "1px solid var(--color-border)" }}
+              >
+                Start Pro
               </button>
               <button
                 type="button"

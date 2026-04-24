@@ -11,8 +11,20 @@ import { useUrlState } from "../lib/url-state";
 import { useQuery } from "../lib/use-trpc";
 
 // ── Status Badge Mapping ────────────────────────────────────────────
+// "pending" and "failed" are the real-lifecycle statuses emitted by
+// projects.deploy once it talks to the orchestrator. We keep the older
+// legacy statuses (creating/stopped/error/deploying) in the union so
+// pre-orchestrator projects still render without a type error.
 
-type ProjectStatus = "creating" | "active" | "building" | "deploying" | "stopped" | "error";
+type ProjectStatus =
+  | "pending"
+  | "creating"
+  | "active"
+  | "building"
+  | "deploying"
+  | "failed"
+  | "stopped"
+  | "error";
 
 function statusVariant(
   status: ProjectStatus,
@@ -24,23 +36,30 @@ function statusVariant(
     case "building":
     case "deploying":
       return "info";
+    case "failed":
     case "error":
       return "error";
     case "stopped":
       return "warning";
+    case "pending":
+      return "default";
   }
 }
 
 function statusLabel(status: ProjectStatus): string {
   switch (status) {
+    case "pending":
+      return "Pending";
     case "creating":
       return "Creating";
     case "active":
-      return "Active";
+      return "Live";
     case "building":
-      return "Building";
+      return "Building...";
     case "deploying":
       return "Deploying";
+    case "failed":
+      return "Failed";
     case "error":
       return "Error";
     case "stopped":
@@ -48,13 +67,36 @@ function statusLabel(status: ProjectStatus): string {
   }
 }
 
+// ── Status Dot ──────────────────────────────────────────────────────
+// Fixed-colour dot rendered next to the badge so "Live", "Pending",
+// and "Failed" are instantly scannable without reading the label. The
+// building state renders a spinner in place of the dot.
+
+function statusDotColor(status: ProjectStatus): string {
+  switch (status) {
+    case "active":
+      return "#22c55e"; // green — live
+    case "failed":
+    case "error":
+      return "#ef4444"; // red — failed
+    case "pending":
+      return "#9ca3af"; // grey — pending
+    case "stopped":
+      return "#f59e0b"; // amber — stopped
+    case "creating":
+    case "building":
+    case "deploying":
+      return "#3b82f6"; // blue — in-flight
+  }
+}
+
 // ── Framework Icon ──────────────────────────────────────────────────
 
 function frameworkIcon(framework: string): string {
   const lower = framework.toLowerCase();
-  if (lower.includes("solid")) return "\u269B";
-  if (lower.includes("next")) return "\u25B2";
-  if (lower.includes("react")) return "\u269B";
+  if (lower.includes("solid")) return "⚛";
+  if (lower.includes("next")) return "▲";
+  if (lower.includes("react")) return "⚛";
   if (lower.includes("svelte")) return "\u{1F525}";
   if (lower.includes("vue")) return "\u{1F49A}";
   if (lower.includes("astro")) return "\u{1F680}";
@@ -88,9 +130,20 @@ interface ProjectCardProps {
   status: ProjectStatus;
   framework: string | null;
   updatedAt: string;
+  /** Live URL of the most recent successful deployment, if any. */
+  liveUrl?: string | null;
+  /** Error message from the most recent failed deployment, if any. */
+  errorMessage?: string | null;
 }
 
 function ProjectCard(props: ProjectCardProps): JSX.Element {
+  const isBuilding = (): boolean =>
+    props.status === "building" ||
+    props.status === "deploying" ||
+    props.status === "creating";
+  const isFailed = (): boolean =>
+    props.status === "failed" || props.status === "error";
+
   return (
     <A href={`/projects/${props.id}`} class="block group">
       <div
@@ -102,7 +155,7 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
       >
 
         <div class="relative z-10 flex flex-col gap-4">
-          {/* Header: name + status */}
+          {/* Header: name + status (dot / spinner + badge) */}
           <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
               <span class="text-xl shrink-0">
@@ -112,13 +165,42 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
                 {props.name}
               </h3>
             </div>
-            <Badge
-              variant={statusVariant(props.status)}
-              size="sm"
-            >
-              {statusLabel(props.status)}
-            </Badge>
+            <div class="flex items-center gap-2 shrink-0">
+              <Show
+                when={isBuilding()}
+                fallback={
+                  <span
+                    aria-hidden="true"
+                    class="inline-block h-2 w-2 rounded-full"
+                    style={{ background: statusDotColor(props.status) }}
+                  />
+                }
+              >
+                <Spinner size="sm" />
+              </Show>
+              <Badge variant={statusVariant(props.status)} size="sm">
+                {statusLabel(props.status)}
+              </Badge>
+            </div>
           </div>
+
+          {/* Failure banner: inline error copy so Craig can diagnose from the list */}
+          <Show when={isFailed() && props.errorMessage}>
+            <div
+              role="alert"
+              class="rounded-lg border px-3 py-2 text-xs"
+              style={{
+                background: "rgba(239, 68, 68, 0.08)",
+                "border-color": "rgba(239, 68, 68, 0.3)",
+                color: "#ef4444",
+              }}
+            >
+              <span class="font-semibold">Deploy failed:</span>{" "}
+              <span style={{ color: "var(--color-text)" }}>
+                {props.errorMessage}
+              </span>
+            </div>
+          </Show>
 
           {/* Details */}
           <div class="flex flex-col gap-2">
@@ -137,6 +219,30 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
                 {relativeTime(props.updatedAt)}
               </span>
             </div>
+
+            {/* Live URL — clickable anchor that does NOT navigate into the project */}
+            <Show when={props.liveUrl}>
+              {(url) => (
+                <div class="flex items-center gap-2">
+                  <span
+                    class="text-[11px] font-medium uppercase tracking-wider"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    URL
+                  </span>
+                  <a
+                    href={url()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    class="truncate text-xs underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                    style={{ color: "#22c55e" }}
+                  >
+                    {url()}
+                  </a>
+                </div>
+              )}
+            </Show>
           </div>
         </div>
 
@@ -324,9 +430,18 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
                     <ProjectCard
                       id={project.id}
                       name={project.name}
-                      status={project.status}
+                      status={project.status as ProjectStatus}
                       framework={project.framework}
                       updatedAt={project.updatedAt}
+                      liveUrl={
+                        (project as { liveUrl?: string | null }).liveUrl ??
+                        (project as { url?: string | null }).url ??
+                        null
+                      }
+                      errorMessage={
+                        (project as { errorMessage?: string | null })
+                          .errorMessage ?? null
+                      }
                     />
                   )}
                 </For>

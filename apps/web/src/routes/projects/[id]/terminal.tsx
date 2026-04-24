@@ -6,33 +6,15 @@ import { Button, Badge } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../../components/ProtectedRoute";
 import { Terminal } from "../../../components/Terminal";
 import { SEOHead } from "../../../components/SEOHead";
+import { trpc } from "../../../lib/trpc";
+import { useQuery } from "../../../lib/use-trpc";
 
 // ── Types ────────────────────────────────────────────────────────────
 
 interface ProjectMeta {
   name: string;
-  framework: string;
-  region: string;
-}
-
-// ── Mock project resolver ───────────────────────────────────────────
-
-function getProjectMeta(projectId: string): ProjectMeta {
-  // In production, fetch project metadata from tRPC.
-  // For now, derive a reasonable display name from the ID.
-  const names: Record<string, ProjectMeta> = {
-    demo: { name: "Demo Project", framework: "SolidStart", region: "us-east-1" },
-    "crontech-web": { name: "Crontech Web", framework: "SolidStart", region: "global" },
-    "api-server": { name: "API Server", framework: "Hono", region: "us-east-1" },
-  };
-
-  return (
-    names[projectId] ?? {
-      name: projectId.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      framework: "Bun",
-      region: "us-east-1",
-    }
-  );
+  framework: string | null;
+  runtime: string | null;
 }
 
 // ── Terminal Page ───────────────────────────────────────────────────
@@ -43,7 +25,29 @@ function TerminalPage(): JSX.Element {
   const [isFullscreen, setIsFullscreen] = createSignal(false);
 
   const projectId = (): string => params.id;
-  const project = (): ProjectMeta => getProjectMeta(projectId());
+
+  // Fetch real project metadata from the API. Falls back gracefully if
+  // the ID is invalid or the network is unavailable — the terminal
+  // itself still works, we just show a degraded header.
+  const projectQuery = useQuery(
+    () =>
+      trpc.projects.getById
+        .query({ projectId: projectId() })
+        .catch(() => null) as Promise<ProjectMeta | null>,
+    { key: ["projects"] },
+  );
+
+  const project = (): ProjectMeta => {
+    const data = projectQuery.data();
+    if (data) return data;
+    // Derive a display name from the raw ID while loading or on error.
+    const id = projectId();
+    return {
+      name: id.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      framework: null,
+      runtime: null,
+    };
+  };
 
   // Toggle fullscreen mode
   function toggleFullscreen(): void {
@@ -104,8 +108,12 @@ function TerminalPage(): JSX.Element {
 
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{project().name}</span>
-              <Badge variant="default">{project().framework}</Badge>
-              <Badge variant="default">{project().region}</Badge>
+              <Show when={project().framework}>
+                <Badge variant="default">{project().framework}</Badge>
+              </Show>
+              <Show when={project().runtime}>
+                <Badge variant="default">{project().runtime}</Badge>
+              </Show>
             </div>
           </div>
 

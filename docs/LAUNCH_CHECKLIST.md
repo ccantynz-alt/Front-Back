@@ -8,11 +8,21 @@ One-page go-live sequence for Crontech. Work top to bottom. Do not skip steps. S
 
 AlecRae sends email verification, password reset, welcome, subscription receipts, deploy notifications, and every other outbound mail. Without it, nobody can verify an email and therefore nobody can pay.
 
-1. Log in to the AlecRae dashboard and create a tenant named `crontech`.
-2. Add the sender domain `mail.crontech.ai`.
-3. AlecRae shows DKIM, SPF, and DMARC records — paste those into Cloudflare DNS for `crontech.ai`.
-4. Wait for AlecRae to verify the domain (polls DNS automatically, usually under 5 min).
-5. Create 10 templates (content can be iterated later, IDs must be exact):
+Prerequisites — AlecRae itself needs to be deployed (see AlecRae's onboarding note for its `DATABASE_URL`, `REDIS_URL`, `api.alecrae.com` DNS, Stripe / Anthropic / OpenAI / Google OAuth / Microsoft OAuth keys).
+
+1. Log in to the AlecRae dashboard.
+2. Run the AlecRae seed scripts (from AlecRae's onboarding note):
+    - `bun run db:migrate`
+    - `bun run scripts/seed.ts` — **save the API key it prints, and the account id**
+    - `ACCOUNT_ID=<crontech-account-id> bun run scripts/seed-crontech-templates.ts`
+3. Register the Crontech sender domain on AlecRae:
+    - `POST https://api.alecrae.com/v1/domains` body `{ "domain": "mail.crontech.ai" }`
+    - Copy the DKIM / SPF / DMARC records from the response into Cloudflare DNS for `crontech.ai`.
+    - `POST https://api.alecrae.com/v1/domains/<id>/verify` until every record goes green.
+4. Generate a 32-character webhook secret (any long random string): `openssl rand -hex 16`.
+5. Register the Crontech inbound webhook on AlecRae:
+    - `POST https://api.alecrae.com/v1/webhooks` body `{ "url": "https://crontech.ai/api/alecrae/webhook", "events": ["delivered","bounced","complained","opened","clicked"], "secret": "<the secret from step 4>" }`
+6. Confirm the 10 Crontech templates seeded (IDs must match exactly):
     - `crontech.verify-email`
     - `crontech.welcome`
     - `crontech.password-reset`
@@ -23,12 +33,20 @@ AlecRae sends email verification, password reset, welcome, subscription receipts
     - `crontech.deploy-success`
     - `crontech.deploy-failure`
     - `crontech.custom-domain-verified`
-6. Generate an AlecRae API key scoped to the `crontech` tenant. Copy it.
-7. In Vercel → Crontech project → Environment Variables (Production), set:
-    - `ALECRAE_API_URL` = `https://api.alecrae.com/v1`
-    - `ALECRAE_API_KEY` = the key from step 6
-    - `EMAIL_FROM` = `Crontech <noreply@mail.crontech.ai>`
-8. Configure AlecRae's outbound webhook to POST to `https://crontech.ai/api/alecrae/webhook` with the `ALECRAE_WEBHOOK_SECRET` you set in Vercel.
+7. In Vercel → Crontech project → Environment Variables (Production), set **exactly these names**:
+    - `ALECRAE_BASE_URL` = `https://api.alecrae.com/v1` (must include `/v1`)
+    - `ALECRAE_API_KEY` = the key from step 2 (seed.ts output)
+    - `ALECRAE_FROM_ADDRESS` = `Crontech <noreply@mail.crontech.ai>`
+    - `ALECRAE_WEBHOOK_SECRET` = the secret from step 4
+
+> **Note:** Legacy env names `ALECRAE_API_URL` and `EMAIL_FROM` still work with a deprecation warning in logs — but use the new names to avoid the warning and match AlecRae's onboarding note.
+
+8. Test send from AlecRae (from its dashboard or CLI):
+    - `POST https://api.alecrae.com/v1/send` body `{ "from": "noreply@mail.crontech.ai", "to": "<your test email>", "template_id": "crontech.verify-email", "variables": { "firstName": "Craig", "verifyUrl": "https://crontech.ai/verify/test123" }, "message_id": "launch-test-001" }`
+    - Expected response: `{ "id": "...", "status": "queued" }`
+    - Confirm email arrives in inbox (not spam) within 60s.
+    - Confirm webhook fires — the Crontech API logs should contain `[alecrae-webhook] event=delivered message_id=launch-test-001`.
+    - Retry the same POST with the same `message_id` and confirm no duplicate email lands (idempotency proof).
 
 ## 2. Stripe (payments)
 
@@ -76,12 +94,15 @@ Crontech is the first to go live, but it dogfoods three siblings. Each must be a
 
 ## 5. Troubleshooting
 
-- **Verification email never arrives** — check `ALECRAE_API_KEY` is set in Vercel prod, check AlecRae logs for the `message_id`, check DKIM/SPF/DMARC are green in AlecRae.
+- **Verification email never arrives** — check `ALECRAE_API_KEY` and `ALECRAE_BASE_URL` are set in Vercel prod. Check the `[EMAIL]` logs — a deprecation warning means legacy env name is still set and should be renamed. Check AlecRae logs for the `message_id`, check DKIM/SPF/DMARC are green.
+- **`[EMAIL] AlecRae failed: HTTP 404`** — your `ALECRAE_BASE_URL` is missing the `/v1` suffix. Should be `https://api.alecrae.com/v1`, not just `https://api.alecrae.com`.
+- **Webhook arriving but logs say `invalid_signature`** — `ALECRAE_WEBHOOK_SECRET` in Vercel doesn't match the one registered with AlecRae's `POST /v1/webhooks` endpoint.
+- **Webhook arriving but logs say `ALECRAE_WEBHOOK_SECRET not set — signature verification SKIPPED`** — you forgot to set the Vercel env var; anybody can post fake events right now.
 - **"Billing is not yet operational"** on `/pricing` → `STRIPE_ENABLED` is still `false` in Vercel.
 - **PRECONDITION_FAILED: Stripe price "..." is not configured** → `STRIPE_PRICE_PRO_MONTHLY` or `STRIPE_PRICE_ENTERPRISE_MONTHLY` is empty or still a placeholder. Paste real Stripe price IDs.
 - **PRECONDITION_FAILED on checkout for your user** → you haven't verified your email. Check inbox, click verify link, retry.
 - **Stripe checkout loads but card is rejected** → you're using test keys in prod (or vice versa).
-- **Webhook signature invalid** → `STRIPE_WEBHOOK_SECRET` in Vercel doesn't match the secret shown in the Stripe dashboard for that specific webhook endpoint.
+- **Webhook signature invalid (Stripe)** → `STRIPE_WEBHOOK_SECRET` in Vercel doesn't match the secret shown in the Stripe dashboard for that specific webhook endpoint.
 - **User signed up but isn't in the admin user list** → Turso DB connection env vars (`DATABASE_URL`, `DATABASE_AUTH_TOKEN`) are misconfigured.
 
 ## 6. After launch — within 24h

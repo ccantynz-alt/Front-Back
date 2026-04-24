@@ -14,6 +14,7 @@ import {
   deployments,
 } from "@back-to-the-future/db";
 import { emitDataChange } from "../../realtime/live-updates";
+import { orchestratorDeploy } from "../../deploy/orchestrator-client";
 import type { TRPCContext } from "../context";
 
 // ── Constants ────────────────────────────────────────────────────────
@@ -240,7 +241,7 @@ export const projectsRouter = router({
         buildCommand: input.buildCommand ?? null,
         runtime: input.runtime ?? null,
         port: input.port ?? null,
-        status: "active",
+        status: "pending",
         createdAt: now,
         updatedAt: now,
       };
@@ -252,7 +253,7 @@ export const projectsRouter = router({
         id,
         slug,
         name: input.name,
-        status: "active" as const,
+        status: "pending" as const,
         createdAt: now,
       };
     }),
@@ -567,7 +568,10 @@ export const projectsRouter = router({
       return rows;
     }),
 
-  /** Trigger a new deployment (creates the deployment record). */
+  /**
+   * Trigger a new deployment. Synchronously calls the orchestrator and records
+   * the real outcome — no background queue, no polling. "Live" means live.
+   */
   deploy: protectedProcedure
     .input(
       z.object({
@@ -584,37 +588,121 @@ export const projectsRouter = router({
         ctx.userId,
       );
 
-      if (project.status !== "active") {
+      // Allow deploying any project the user owns EXCEPT ones mid-build or
+      // already-being-torn-down. "pending" and "active" are both valid entry
+      // points (first deploy and redeploy respectively).
+      if (project.status === "building" || project.status === "deploying") {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "Cannot deploy a project that is not active.",
+          message: "A deployment is already in progress for this project.",
         });
       }
 
+      const branch = input.branch ?? "main";
       const id = generateId();
       const now = new Date();
+
+      // ── Step 1: Insert the deployment row as "building" ──
       const values: typeof deployments.$inferInsert = {
         id,
         projectId: input.projectId,
         userId: ctx.userId,
         commitSha: input.commitSha ?? null,
         commitMessage: input.commitMessage ?? null,
-        branch: input.branch ?? "main",
-        status: "queued",
+        branch,
+        status: "building",
         url: null,
         duration: null,
         createdAt: now,
       };
 
       await ctx.db.insert(deployments).values(values);
+      emitDataChange(["projects", "deployments"], "deployment started");
 
-      emitDataChange(["projects", "deployments"], "deployment triggered");
-      return {
-        id,
-        projectId: input.projectId,
-        status: "queued" as const,
-        branch: input.branch ?? "main",
-        createdAt: now,
-      };
+      // ── Step 2: Synchronously call the orchestrator ──
+      const orchestratorUrl = process.env["ORCHESTRATOR_URL"];
+      if (!orchestratorUrl) {
+        const errMsg = "ORCHESTRATOR_URL is not configured";
+        await ctx.db
+          .update(deployments)
+          .set({
+            status: "failed",
+            errorMessage: errMsg,
+            completedAt: new Date(),
+          })
+          .where(eq(deployments.id, id));
+        emitDataChange(["projects", "deployments"], "deployment failed");
+        return {
+          id,
+          projectId: input.projectId,
+          status: "failed" as const,
+          branch,
+          createdAt: now,
+          error: errMsg,
+          url: null,
+        };
+      }
+
+      try {
+        const result = await orchestratorDeploy({
+          appName: project.slug,
+          repoUrl: project.repoUrl ?? "",
+          branch,
+          domain: `${project.slug}.crontech.ai`,
+          port: project.port ?? 3000,
+          runtime: project.runtime === "node" ? "nextjs" : "bun",
+        });
+
+        // ── Step 3a: Success — mark deployment + parent project as active ──
+        const completedAt = new Date();
+        await ctx.db
+          .update(deployments)
+          .set({
+            status: "active",
+            url: result.url,
+            deployUrl: result.url,
+            completedAt,
+          })
+          .where(eq(deployments.id, id));
+
+        await ctx.db
+          .update(projects)
+          .set({ status: "active", updatedAt: completedAt })
+          .where(eq(projects.id, input.projectId));
+
+        emitDataChange(["projects", "deployments"], "deployment live");
+        return {
+          id,
+          projectId: input.projectId,
+          status: "active" as const,
+          branch,
+          createdAt: now,
+          url: result.url,
+          error: null,
+        };
+      } catch (err: unknown) {
+        // ── Step 3b: Failure — mark deployment failed, leave project pending ──
+        const errMsg =
+          err instanceof Error ? err.message : "Orchestrator unreachable";
+        await ctx.db
+          .update(deployments)
+          .set({
+            status: "failed",
+            errorMessage: errMsg,
+            completedAt: new Date(),
+          })
+          .where(eq(deployments.id, id));
+
+        emitDataChange(["projects", "deployments"], "deployment failed");
+        return {
+          id,
+          projectId: input.projectId,
+          status: "failed" as const,
+          branch,
+          createdAt: now,
+          url: null,
+          error: errMsg,
+        };
+      }
     }),
 });

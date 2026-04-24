@@ -339,7 +339,7 @@ function AdminClaudeConsole(): JSX.Element {
       setMessages(
         data.messages.map((m) => ({
           id: m.id,
-          role: m.role,
+          role: m.role as "user" | "assistant" | "system",
           content: m.content,
           model: m.model ?? undefined,
           inputTokens: m.inputTokens ?? undefined,
