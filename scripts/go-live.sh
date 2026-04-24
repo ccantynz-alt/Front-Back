@@ -4,7 +4,7 @@
 # BARE-METAL. The stack is systemd, NOT docker:
 #   - Caddy is the apt package (systemctl restart caddy; admin API off)
 #   - crontech-web / crontech-api are systemd services running from /opt/crontech
-#   - Postgres is local systemd
+#   - Postgres is Neon (remote serverless) — no local postgres required
 #   - Build is bun install + bun run build; libsql native binary must be added
 #
 # Idempotent. Each phase short-circuits if already done. Run as root on the box.
@@ -221,21 +221,38 @@ phase_services() {
   return $failed
 }
 
-# ---------- PHASE 5: GLUECRON (optional, skip if fix script absent) ----------
+# ---------- PHASE 5: GLUECRON ----------
 phase_gluecron() {
   banner 5 GLUECRON
-  local s="$REPO_DIR/scripts/fix-gluecron-service.sh"
-  if ! have_script "$s"; then
-    warn "fix-gluecron-service.sh not present (PR #143 not merged yet) — skipping"
-    PHASE_STATUS[GLUECRON]="skip"; return 0
+
+  # If already running, nothing to do.
+  if [[ "$DRY_RUN" -eq 0 ]] && svc_active gluecron; then
+    ok "gluecron already active — skipping install"
+    PHASE_STATUS[GLUECRON]="ok"; return 0
   fi
-  info "running $s"
-  run bash "$s"
+
+  # If /opt/gluecron is missing, run the full installer first.
+  if [[ ! -d /opt/gluecron ]] || [[ "$DRY_RUN" -eq 1 ]]; then
+    local add="$REPO_DIR/scripts/add-gluecron.sh"
+    if ! have_script "$add"; then
+      warn "add-gluecron.sh not found — skipping Gluecron install"
+      PHASE_STATUS[GLUECRON]="skip"; return 0
+    fi
+    info "Gluecron not installed — running full installer (auto-detects DATABASE_URL)"
+    run bash "$add"
+  fi
+
+  # Install/update the canonical systemd unit from infra/systemd/gluecron.service.
+  local fix="$REPO_DIR/scripts/fix-gluecron-service.sh"
+  if have_script "$fix"; then
+    run bash "$fix"
+  fi
+
   if [[ "$DRY_RUN" -eq 0 ]]; then
     if svc_active gluecron; then
       ok "gluecron is active"
     else
-      warn "gluecron not active after fix — journalctl -u gluecron -n 50"
+      warn "gluecron not active — check: journalctl -u gluecron -n 50"
       return 2
     fi
   fi

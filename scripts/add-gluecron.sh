@@ -22,10 +22,28 @@ log() { printf '\n>>> %s\n' "$*"; }
 die() { printf '\n!!! %s\n' "$*" >&2; exit 1; }
 
 # ---------------------------------------------------------------------------
-# 0. Preflight
+# 0. Preflight — auto-detect DATABASE_URL from server env files if not set
 # ---------------------------------------------------------------------------
 log "preflight: checking required env"
-: "${DATABASE_URL:?DATABASE_URL is required (postgres connection string)}"
+
+# Auto-load from the Crontech env files on the server if DATABASE_URL not set.
+# Preference order: explicit env var > .env.production > .env
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  CRONTECH_DIR="${CRONTECH_DIR:-/opt/crontech}"
+  for envfile in "$CRONTECH_DIR/.env.production" "$CRONTECH_DIR/.env"; do
+    if [[ -f "$envfile" ]]; then
+      # Extract NEON_DATABASE_URL or DATABASE_URL from the file
+      _val="$(grep -E '^(NEON_DATABASE_URL|DATABASE_URL)=' "$envfile" | grep -v '^#' | head -1 | cut -d= -f2- || true)"
+      if [[ -n "$_val" ]]; then
+        export DATABASE_URL="$_val"
+        log "auto-detected DATABASE_URL from $envfile"
+        break
+      fi
+    fi
+  done
+fi
+
+: "${DATABASE_URL:?DATABASE_URL not found — set it explicitly or ensure NEON_DATABASE_URL is in /opt/crontech/.env}"
 
 GLUECRON_REPO="${GLUECRON_REPO:-https://github.com/ccantynz-alt/Gluecron.com.git}"
 GLUECRON_BRANCH="${GLUECRON_BRANCH:-main}"

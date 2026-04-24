@@ -1,7 +1,7 @@
 [Unit]
 Description=Gluecron (self-hosted git + CI)
-After=network.target postgres.service
-Wants=postgres.service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
