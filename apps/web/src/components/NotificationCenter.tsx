@@ -16,24 +16,24 @@ interface Notification {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function typeLabel(type: Notification["type"]): string {
-  const labels: Record<Notification["type"], string> = {
+function typeLabel(type: string | null | undefined): string {
+  const labels: Record<string, string> = {
     system: "System",
     billing: "Billing",
     collaboration: "Collab",
     ai: "AI",
   };
-  return labels[type];
+  return labels[type ?? ""] ?? "System";
 }
 
-function typeBadgeVariant(type: Notification["type"]): "default" | "success" | "warning" | "error" {
-  const variants: Record<Notification["type"], "default" | "success" | "warning" | "error"> = {
+function typeBadgeVariant(type: string | null | undefined): "default" | "success" | "warning" | "error" {
+  const variants: Record<string, "default" | "success" | "warning" | "error"> = {
     system: "default",
     billing: "warning",
     collaboration: "success",
     ai: "default",
   };
-  return variants[type];
+  return variants[type ?? ""] ?? "default";
 }
 
 function formatTimeAgo(date: Date | string): string {

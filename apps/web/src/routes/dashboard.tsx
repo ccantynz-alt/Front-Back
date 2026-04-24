@@ -894,7 +894,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                                 : "\u{1F4CB}"
                         }
                         title={evt.event}
-                        description={evt.category.replace(/_/g, " ")}
+                        description={(evt.category ?? "").replace(/_/g, " ")}
                         time={new Date(evt.timestamp).toLocaleTimeString(
                           undefined,
                           { hour: "2-digit", minute: "2-digit" },

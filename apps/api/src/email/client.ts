@@ -234,8 +234,8 @@ export async function sendEmail(
   }
 
   const opts = {
-    headers: options?.headers,
-    messageId: options?.messageId,
+    ...(options?.headers !== undefined && { headers: options.headers }),
+    ...(options?.messageId !== undefined && { messageId: options.messageId }),
   };
 
   // 1. Try AlecRae MTA (our own infrastructure)

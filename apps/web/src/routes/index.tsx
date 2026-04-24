@@ -244,9 +244,7 @@ function PillarCard(props: Pillar): JSX.Element {
               >
                 <span
                   class="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{
-                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                  }}
+                  style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
                   aria-hidden="true"
                 />
                 <span>{point}</span>
@@ -332,25 +330,24 @@ export default function Home(): JSX.Element {
       <div>
         {/* ── Hero ─────────────────────────────────────────────── */}
         <section class="landing-hero">
-          <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-32 pb-32 md:pt-40 md:pb-36 lg:px-8 lg:pt-44 lg:pb-40">
           <div class="relative z-10 mx-auto max-w-[1120px] px-6 pt-32 pb-36 lg:px-8 lg:pt-44 lg:pb-48">
             <div class="flex flex-col items-center text-center">
-              {/* Claude-powered badge */}
+              {/* Early access badge */}
               <div class="landing-hero-badge mb-10">
                 <span class="landing-hero-badge-dot" aria-hidden="true" />
                 <span class="landing-hero-badge-text">
-                  Powered by Claude &mdash; the most capable AI on the market
+                  Now in early access &mdash; Powered by Claude
                 </span>
               </div>
 
-              {/* Headline — every business */}
+              {/* Headline — locked per docs/POSITIONING.md §3 */}
               <h1
                 class="max-w-4xl text-[2.75rem] font-extrabold leading-[1.08] tracking-[-0.03em] sm:text-[3.5rem] lg:text-[4.25rem]"
                 style={{ color: "#0f172a" }}
               >
-                Build a business.{" "}
+                The developer platform for the{" "}
                 <span class="landing-gradient-text">
-                  We&apos;ll power the internet part.
+                  next decade
                 </span>
               </h1>
 
@@ -365,22 +362,20 @@ export default function Home(): JSX.Element {
                 &mdash; one product, zero ops.
               </p>
 
-              {/* CTAs — builder-first for non-devs, register for everyone */}
+              {/* CTAs — locked per docs/POSITIONING.md */}
               <div class="mt-14 flex flex-col items-center gap-5 sm:flex-row">
-                <A href="/builder">
+                <A href="/register">
                   <button class="landing-hero-btn-primary" type="button">
-                    Describe your business &#8594;
+                    Start building
                   </button>
                 </A>
-                <A href="/register">
+                <A href="/docs">
                   <button class="landing-hero-btn-outline" type="button">
-                    Start building
+                    See the docs
                   </button>
                 </A>
               </div>
 
-              {/* Proof strip — softened, honest, Claude-prominent */}
-              <div class="landing-tech-strip-wrap mt-20">
               {/* Tech strip */}
               <div class="landing-tech-strip-wrap mt-24">
                 <div class="landing-tech-strip-divider" aria-hidden="true" />
@@ -418,22 +413,6 @@ export default function Home(): JSX.Element {
                 {(signal) => (
                   <div class="landing-stat-cell">
                     <SignalBlock value={signal.value} label={signal.label} />
-          <div class="relative z-10 mx-auto max-w-[1120px] px-6 lg:px-8">
-            <div class="grid grid-cols-2 sm:grid-cols-4">
-              <For each={speedSignals}>
-                {(signal, i) => (
-                  <div
-                    style={{
-                      "border-right":
-                        i() < speedSignals.length - 1
-                          ? "1px solid rgba(99,102,241,0.18)"
-                          : "none",
-                    }}
-                  >
-                    <SpeedSignalBlock
-                      value={signal.value}
-                      label={signal.label}
-                    />
                   </div>
                 )}
               </For>
@@ -443,8 +422,6 @@ export default function Home(): JSX.Element {
 
         {/* ── Every business preview ────────────────────────────── */}
         <section class="landing-dark-section py-28 lg:py-36">
-        {/* ── Three pillars (light) ─────────────────────────────── */}
-        <section class="landing-dark-section py-28 lg:py-40">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="mb-14 flex flex-col items-center text-center">
               <div class="landing-section-label">
@@ -453,14 +430,14 @@ export default function Home(): JSX.Element {
               </div>
               <h2
                 class="max-w-3xl text-[2rem] font-bold tracking-tight sm:text-[2.5rem] lg:text-[2.75rem]"
-                style={{ color: "#0f172a" }}
+                style={{ color: "#f0f0f5" }}
               >
                 One platform.{" "}
                 <span class="landing-gradient-text">Every business.</span>
               </h2>
               <p
                 class="mt-5 max-w-2xl text-[1.0625rem] leading-[1.7]"
-                style={{ color: "#475569" }}
+                style={{ color: "rgba(255,255,255,0.55)" }}
               >
                 From online stores to nonprofits, Crontech powers the internet
                 part so you can focus on your customers.
@@ -477,7 +454,7 @@ export default function Home(): JSX.Element {
               <A
                 href="/solutions"
                 class="text-sm font-semibold"
-                style={{ color: "#6366f1" }}
+                style={{ color: "#a5b4fc" }}
               >
                 See all 10 verticals &#8594;
               </A>
@@ -486,7 +463,7 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Three pillars ─────────────────────────────────────── */}
-        <section class="landing-dark-section-alt py-28 lg:py-36">
+        <section class="landing-dark-section-alt py-28 lg:py-40">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="mb-20 flex flex-col items-center text-center">
               <div class="landing-section-label">
@@ -527,8 +504,6 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── Capabilities grid ─────────────────────────────────── */}
-        <section class="landing-dark-section py-28 lg:py-36">
-        {/* ── Capabilities grid (light) ─────────────────────────── */}
         <section class="landing-dark-section-alt py-28 lg:py-40">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="mb-16 flex flex-col items-center text-center">
@@ -538,13 +513,13 @@ export default function Home(): JSX.Element {
               </div>
               <h2
                 class="max-w-3xl text-[2rem] font-bold tracking-tight sm:text-[2.5rem] lg:text-[2.75rem]"
-                style={{ color: "#0f172a" }}
+                style={{ color: "#f0f0f5" }}
               >
                 One product replaces many.
               </h2>
               <p
                 class="mt-5 max-w-2xl text-[1.0625rem] leading-[1.7]"
-                style={{ color: "#475569" }}
+                style={{ color: "rgba(255,255,255,0.55)" }}
               >
                 Every capability a modern application needs, unified into one
                 platform, one dashboard, one bill. No vendor stitching.
@@ -566,8 +541,6 @@ export default function Home(): JSX.Element {
         </section>
 
         {/* ── The family (dogfood proof) ────────────────────────── */}
-        <section class="landing-dark-section-alt py-28 lg:py-36">
-        {/* ── Proof strip (light) ────────────────────────────────── */}
         <section class="landing-dark-section py-28 lg:py-36">
           <div class="mx-auto max-w-[1120px] px-6 lg:px-8">
             <div class="mb-14 flex flex-col items-center text-center">
@@ -611,13 +584,13 @@ export default function Home(): JSX.Element {
             <div class="flex flex-col gap-4">
               <span
                 class="text-[11px] font-semibold uppercase tracking-[0.18em]"
-                style={{ color: "#6366f1" }}
+                style={{ color: "#818cf8" }}
               >
                 The mission
               </span>
               <p
                 class="text-[1.0625rem] leading-[1.8]"
-                style={{ color: "#475569" }}
+                style={{ color: "rgba(255,255,255,0.6)" }}
               >
                 We&apos;re building Crontech to make it cheap and fast for
                 anyone to start a business, employ people, and serve customers.
@@ -632,7 +605,6 @@ export default function Home(): JSX.Element {
 
         {/* ── Bottom CTA ────────────────────────────────────────── */}
         <section class="landing-cta-section">
-          <div class="relative z-10 mx-auto max-w-[800px] px-6 py-28 text-center lg:px-8 lg:py-36">
           <div class="relative z-10 mx-auto max-w-[880px] px-6 py-32 text-center lg:px-8 lg:py-44">
             <h2
               class="text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem] lg:text-[2.75rem]"

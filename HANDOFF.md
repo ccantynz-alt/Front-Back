@@ -1,5 +1,49 @@
 # HANDOFF — Next Session Starts Here
 
+---
+
+## SESSION_LOG — 2026-04-23 — claude/fix-website-reliability-fmr2O
+
+**Branch:** `claude/fix-website-reliability-fmr2O`  
+**Objective:** Comprehensive website reliability sweep — fix all build failures, dead links, type errors, and homepage visual breakage.
+
+**Blocks advanced:** None (reliability/stability sweep of existing code)
+
+**Files touched:**
+- `apps/api/src/email/client.ts` — exactOptionalPropertyTypes fix
+- `apps/web/src/components/Icon.tsx` — added 8 missing icon registrations (bar-chart, briefcase, code, heart, home, pen-tool, shopping-cart, utensils)
+- `apps/web/src/components/LegalPage.tsx` — dead link /terms → /legal/terms
+- `apps/web/src/components/NotificationCenter.tsx` — type param broadening (string vs narrow enum)
+- `apps/web/src/routes/admin/claude.tsx` — role union cast
+- `apps/web/src/routes/admin/sms.tsx` — direction type widened to string
+- `apps/web/src/routes/dashboard.tsx` — null-safe evt.category
+- `apps/web/src/routes/index.tsx` — complete rewrite fixing broken JSX from prior parallel-agent merge + restored POSITIONING.md-locked headline + early access badge + CTAs
+- `apps/web/src/routes/pricing.tsx` — Free tier ctaLabel "Start free" → "Join waitlist"
+- `apps/web/src/routes/projects.tsx` — CSS property borderColor → border-color
+- `apps/web/src/routes/wordpress.tsx` — dead link /docs/wordpress/install → /docs/getting-started/install
+- `packages/db/migrations/0027_billing_plumbing.sql` — renamed from 0026
+- `packages/db/migrations/meta/_journal.json` — fixed invalid JSON, renumbered duplicate idx
+- `packages/db/src/schema.test.ts` — users column count 11 → 12 (emailVerified added)
+- `packages/db/src/schema.ts` — complete rewrite with all 47 table exports (was truncated with TENANT_PROJECTS_PLACEHOLDER)
+
+**Quality gates at push:**
+- `bun run build` ✅ 6/6 packages
+- `bun run check` ✅ 19/19 packages, 0 errors
+- `bun run test` ✅ 903/903 tests (785 web + 118 db + rest)
+- `bun run check-links` ✅ 0 dead links
+- `bun run check-buttons` ✅ 0 dead buttons
+- `bunx biome check` ✅ exit 0
+
+**Craig's authorizations this session:** None needed — all fixes were free actions (§0.7 🟢)
+
+**Next agent should start by:**
+1. Read CLAUDE.md, docs/POSITIONING.md, docs/BUILD_BIBLE.md. Post doctrine-confirmed line.
+2. Check if a PR exists for branch `claude/fix-website-reliability-fmr2O`; if not, create one.
+3. Monitor GateTest results on the PR.
+4. Continue with next BUILD_BIBLE block.
+
+---
+
 **First action (morning of 2026-04-21):** Merge **PR #163** — it now carries **BLK-009 sandbox-wrap + BLK-014 Grafana LGTM + BLK-015 Sentinel live daemon**, all on `claude/build-status-update-VqeIy`, 5 clean commits, 6/6 local gates green. After merge, say "yes" in chat to flip BLK-009, BLK-014, BLK-015 → ✅ SHIPPED in `docs/BUILD_BIBLE.md`. (BLK-020 Admin Claude Console also still pending its 🟡 → ✅ flip from the previous session.)
 
 **Pending your strategic call:** BLK-010 Stripe metered billing (§0.7 HARD GATE — pricing/billing/revenue). Say "go" and the next session spawns a scoped agent that ships schema + webhooks + customer portal plumbing only (no pricing values set — you pick those).

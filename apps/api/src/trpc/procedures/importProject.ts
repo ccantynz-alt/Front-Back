@@ -1,5 +1,5 @@
 // ── Import Project Procedures ──────────────────────────────────────────
-// One-click competitor import: Vercel, Netlify.
+// One-click competitor import: Vercel, Netlify, GitHub.
 // Fetches projects, env vars, and domains from external platforms,
 // then creates them locally in the Crontech DB. Tokens are NEVER stored.
 
@@ -37,6 +37,10 @@ const NetlifyImportInput = PlatformToken.extend({
   siteId: z.string().min(1, "Site ID is required"),
 });
 
+const GithubImportInput = PlatformToken.extend({
+  repoFullName: z.string().min(1, "Repository full name is required"),
+});
+
 // ── External API Response Schemas ──────────────────────────────────────
 
 const VercelProjectSchema = z.object({
@@ -67,6 +71,17 @@ const NetlifySiteSchema = z.object({
     })
     .nullable()
     .optional(),
+});
+
+const GithubRepoSchema = z.object({
+  id: z.number(),
+  full_name: z.string(),
+  name: z.string(),
+  html_url: z.string(),
+  homepage: z.string().nullable().optional(),
+  default_branch: z.string().optional(),
+  language: z.string().nullable().optional(),
+  private: z.boolean().optional(),
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -139,6 +154,38 @@ async function netlifyFetch<T>(path: string, token: string): Promise<T> {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: `Netlify API error (${response.status}): ${text}`,
+    });
+  }
+
+  return response.json() as Promise<T>;
+}
+
+async function githubFetch<T>(path: string, token: string): Promise<T> {
+  const response = await fetch(`https://api.github.com${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "Crontech-Import/1.0",
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Invalid GitHub Personal Access Token. Check your token and try again.",
+      });
+    }
+    if (response.status === 429) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: "GitHub API rate limit exceeded. Please wait and try again.",
+      });
+    }
+    const text = await response.text().catch(() => "Unknown error");
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: `GitHub API error (${response.status}): ${text}`,
     });
   }
 
@@ -309,6 +356,108 @@ export const importRouter = router({
         envVarsImported: envInserts.length,
         domainsImported: domainInserts.length,
         framework: vercelProject.framework ?? null,
+      };
+    }),
+
+  /** List GitHub repositories for the given Personal Access Token. */
+  listGithubRepos: protectedProcedure
+    .input(PlatformToken)
+    .mutation(async ({ input }) => {
+      const data = await githubFetch<unknown[]>(
+        "/user/repos?sort=updated&per_page=100&type=all",
+        input.token,
+      );
+
+      const parsed = z.array(GithubRepoSchema).safeParse(data);
+      if (!parsed.success) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to parse GitHub repositories response.",
+        });
+      }
+
+      return parsed.data.map((r) => ({
+        id: String(r.id),
+        name: r.full_name,
+        framework: null as string | null,
+      }));
+    }),
+
+  /** Import a project from GitHub: creates a Crontech project linked to the repo. */
+  importFromGithub: protectedProcedure
+    .input(GithubImportInput)
+    .mutation(async ({ ctx, input }) => {
+      const repoData = await githubFetch<Record<string, unknown>>(
+        `/repos/${input.repoFullName}`,
+        input.token,
+      );
+
+      const parsed = GithubRepoSchema.safeParse(repoData);
+      if (!parsed.success) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to parse GitHub repository details.",
+        });
+      }
+      const repo = parsed.data;
+
+      const projectId = generateId();
+      const now = new Date();
+
+      // Derive a friendly project name from the repo name (not full_name)
+      const projectName = repo.name;
+
+      await ctx.db.insert(projects).values({
+        id: projectId,
+        userId: ctx.userId,
+        name: projectName,
+        slug: slugify(projectName),
+        description: `Imported from GitHub (${repo.full_name})`,
+        framework: mapFramework(repo.language),
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // Add the GitHub Pages / homepage as a domain if present
+      const domainInserts: Array<{
+        id: string;
+        projectId: string;
+        domain: string;
+        isPrimary: boolean;
+        dnsVerified: boolean;
+        createdAt: Date;
+      }> = [];
+
+      if (repo.homepage) {
+        try {
+          const url = new URL(repo.homepage);
+          const hostname = url.hostname;
+          if (hostname) {
+            domainInserts.push({
+              id: generateId(),
+              projectId,
+              domain: hostname,
+              isPrimary: true,
+              dnsVerified: false,
+              createdAt: now,
+            });
+          }
+        } catch {
+          // homepage is not a valid URL — skip
+        }
+      }
+
+      if (domainInserts.length > 0) {
+        await ctx.db.insert(projectDomains).values(domainInserts);
+      }
+
+      return {
+        projectId,
+        name: projectName,
+        envVarsImported: 0,
+        domainsImported: domainInserts.length,
+        framework: repo.language ?? null,
       };
     }),
 

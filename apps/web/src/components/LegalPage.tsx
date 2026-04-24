@@ -141,7 +141,7 @@ export default function LegalPage(props: LegalPageProps): JSX.Element {
             <span class="mx-2">·</span>
             <a href="/privacy" style={{ color: "#6366f1" }}>Privacy</a>
             <span class="mx-2">·</span>
-            <a href="/terms" style={{ color: "#6366f1" }}>Terms</a>
+            <a href="/legal/terms" style={{ color: "#6366f1" }}>Terms</a>
             <span class="mx-2">·</span>
             <a href="/cookies" style={{ color: "#6366f1" }}>Cookies</a>
           </p>
