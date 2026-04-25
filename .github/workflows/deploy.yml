@@ -1,9 +1,9 @@
 name: Deploy
 
 # ── Crontech Production Deploy (Vultr) ───────────────────────────────────
-# Pushes to Main: build + test locally, then SSH into the Vultr box
-# and pull/rebuild/restart. No Docker — runs Bun directly via systemd.
-# Caddy handles TLS + reverse proxy.
+# Strategy: build ONCE in CI, ship pre-built artifacts to the server.
+# Server side: git pull + extract tarball + migrate + restart — ~30 seconds.
+# No second build on the server. No waiting.
 #
 # Required GitHub secrets:
 #   VULTR_SERVER_IP    — production server IPv4
@@ -22,7 +22,7 @@ jobs:
   build-and-test:
     name: Build & Quality Gates
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -54,51 +54,97 @@ jobs:
       - name: Run tests
         run: bun run test
 
+      # Package every build output into a single tarball.
+      # The server extracts this instead of running bun build — cuts
+      # server-side deploy time from ~5 min to ~30 sec.
+      - name: Package build artifacts
+        run: |
+          tar -czf crontech-dist.tar.gz \
+            apps/api/dist/ \
+            apps/web/.output/ \
+            packages/db/dist/ \
+            packages/ui/dist/ \
+            packages/ai-core/dist/ \
+            packages/audit-log/dist/ \
+            packages/queue/dist/ \
+            packages/schemas/dist/ \
+            packages/storage/dist/ \
+            packages/theatre/dist/ \
+            packages/flywheel/dist/ \
+            services/edge-workers/dist/ \
+            2>/dev/null || true
+          echo "Artifact: $(du -sh crontech-dist.tar.gz | cut -f1)"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: crontech-dist.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
   deploy-vultr:
     name: Deploy to Vultr
     runs-on: ubuntu-latest
     needs: build-and-test
     environment: production
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: .
+
+      - name: Ship artifact to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VULTR_SERVER_IP }}
+          username: root
+          key: ${{ secrets.VULTR_SSH_KEY }}
+          source: "crontech-dist.tar.gz"
+          target: "/tmp/"
+
+      - name: Deploy via SSH (artifact swap — no rebuild on server)
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VULTR_SERVER_IP }}
           username: root
           key: ${{ secrets.VULTR_SSH_KEY }}
-          command_timeout: 10m
+          command_timeout: 8m
           script: |
             set -euo pipefail
             export PATH="$HOME/.bun/bin:/usr/local/bin:$PATH"
-            echo "=== Deploying Crontech to Vultr ==="
+            echo "=== Crontech Deploy — artifact swap ==="
 
             APP_DIR="/opt/crontech"
             cd "$APP_DIR"
 
-            # Save current commit for rollback
             PREV_SHA=$(git rev-parse HEAD 2>/dev/null || echo "none")
             echo "Previous SHA: $PREV_SHA"
 
-            # 1. Pull latest code
-            echo "[1/8] Pulling latest code..."
+            # [1] Pull latest code (config, migrations, service files — no rebuild)
+            echo "[1/6] Pulling latest code..."
             git fetch origin Main
             git reset --hard origin/Main
 
-            # 2. Fix Caddy log ownership (prevents Caddy from crashing on log write)
-            echo "[2/8] Fixing Caddy log ownership..."
-            mkdir -p /var/log/caddy
-            chown -R caddy:caddy /var/log/caddy
+            # [2] Sync deps (fast — frozen lockfile, existing node_modules)
+            echo "[2/6] Syncing dependencies..."
+            bun install --frozen-lockfile
 
-            # 3. Validate and repair .env file (strip malformed lines like =KEY=value)
-            echo "[3/8] Validating env file..."
+            # [3] Extract pre-built artifacts (replaces bun run build entirely)
+            echo "[3/6] Extracting pre-built artifacts..."
+            tar -xzf /tmp/crontech-dist.tar.gz -C "$APP_DIR"
+            rm -f /tmp/crontech-dist.tar.gz
+            echo "  Done — build outputs in place"
+
+            # [4] Validate and repair .env
+            echo "[4/6] Validating env file..."
             if [ -f /opt/crontech/.env ]; then
-              # Fix lines that start with = (corrupted env assignments)
               sed -i 's/^=\([A-Z_][A-Z0-9_]*\)=/\1=/' /opt/crontech/.env
-              # Report any remaining malformed lines
               MALFORMED=$(grep -n '^[^A-Z#[:space:]]' /opt/crontech/.env | grep -v '^[0-9]*:#' || true)
               if [ -n "$MALFORMED" ]; then
                 echo "WARNING: Potentially malformed .env lines:"
@@ -108,42 +154,34 @@ jobs:
               fi
             fi
 
-            # 4. Install dependencies
-            echo "[4/8] Installing dependencies..."
-            bun install --frozen-lockfile
+            # [5] Run database migrations + sync service files + restart
+            echo "[5/6] Migrating + restarting..."
+            bun run --cwd apps/api -e 'import("@back-to-the-future/db/migrate").then(m => m.runMigrations()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1) })' \
+              || echo "Migration skipped (DB not configured)"
 
-            # 5. Build
-            echo "[5/8] Building..."
-            bun run build
+            # Fix Caddy log ownership
+            mkdir -p /var/log/caddy
+            chown -R caddy:caddy /var/log/caddy
 
-            # 5b. Run database migrations
-            echo "[5b/8] Running database migrations..."
-            bun run --cwd apps/api -e 'import("@back-to-the-future/db/migrate").then(m => m.runMigrations()).then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1) })' || echo "Migration skipped (DB not configured)"
-
-            # 6. Sync service files from repo to systemd
-            echo "[6/8] Syncing service files..."
+            # Sync service unit files from repo
             cp infra/bare-metal/crontech-web.service /etc/systemd/system/crontech-web.service
             cp infra/bare-metal/crontech-api.service /etc/systemd/system/crontech-api.service
             cp infra/bare-metal/crontech-deploy-agent.service /etc/systemd/system/crontech-deploy-agent.service
             cp infra/bare-metal/crontech-watchdog.service /etc/systemd/system/crontech-watchdog.service
             cp infra/bare-metal/crontech-watchdog.timer /etc/systemd/system/crontech-watchdog.timer
-            # Install watchdog script
             mkdir -p /opt/crontech/scripts
             cp infra/bare-metal/crontech-watchdog.sh /opt/crontech/scripts/watchdog.sh
             chmod +x /opt/crontech/scripts/watchdog.sh
             systemctl daemon-reload
-            # Enable watchdog timer + deploy agent on first deploy (idempotent)
             systemctl enable --now crontech-deploy-agent 2>/dev/null || true
             systemctl enable --now crontech-watchdog.timer 2>/dev/null || true
 
-            # 7. Restart services
-            echo "[7/8] Restarting services..."
             systemctl restart crontech-api
-            sleep 3
+            sleep 2
             systemctl restart crontech-web
 
-            # 8. Health checks with rollback
-            echo "[8/8] Verifying deploy..."
+            # [6] Health checks with automatic rollback
+            echo "[6/6] Verifying..."
             DEPLOY_OK=false
             for i in $(seq 1 12); do
               sleep 5
@@ -170,7 +208,7 @@ jobs:
                 bun install --frozen-lockfile
                 bun run build
                 systemctl restart crontech-api
-                sleep 3
+                sleep 2
                 systemctl restart crontech-web
                 echo "Rolled back to $PREV_SHA"
               fi
