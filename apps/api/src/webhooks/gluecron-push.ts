@@ -191,9 +191,15 @@ export function createGluecronPushApp(
       return undefined;
     })();
 
+    // GLUECRON_GIT_BASE_URL flips the clone origin from GitHub to Gluecron
+    // the moment Gluecron's git hosting goes live — set it in .env and
+    // nothing else needs to change.
+    const gitBase =
+      process.env["GLUECRON_GIT_BASE_URL"]?.replace(/\/$/, "") ??
+      "https://github.com";
     const deployInput: OrchestratorDeployInput = {
       appName: config.appName,
-      repoUrl: `https://github.com/${payload.repository}.git`,
+      repoUrl: `${gitBase}/${payload.repository}.git`,
       branch: config.branch,
       domain: config.domain,
       port: config.port,
