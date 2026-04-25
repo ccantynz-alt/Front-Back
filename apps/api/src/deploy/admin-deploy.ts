@@ -89,3 +89,74 @@ adminDeployApp.post("/admin/restart", requireAdmin, async (c) => {
     return c.json({ ok: false, error: `deploy agent unreachable: ${msg}` }, 503);
   }
 });
+
+// ── Env var management ───────────────────────────────────────────────
+// Proxies to the deploy agent's /env-vars endpoints so the admin UI can
+// manage the platform .env file without SSH access.
+
+// GET /api/admin/env-vars — list of { key, hint } (values never returned)
+adminDeployApp.get("/admin/env-vars", requireAdmin, async (c) => {
+  if (!AGENT_SECRET) {
+    return c.json({ ok: false, error: "DEPLOY_AGENT_SECRET not configured" }, 503);
+  }
+  try {
+    const res = await fetch(`${AGENT_URL}/env-vars`, {
+      headers: agentHeaders(),
+      signal: AbortSignal.timeout(5_000),
+    });
+    const body = await res.json() as Record<string, unknown>;
+    return c.json(body, res.status as 200 | 503);
+  } catch {
+    return c.json({ ok: false, error: "deploy agent unreachable" }, 503);
+  }
+});
+
+// PUT /api/admin/env-vars — set a key=value
+adminDeployApp.put("/admin/env-vars", requireAdmin, async (c) => {
+  if (!AGENT_SECRET) {
+    return c.json({ ok: false, error: "DEPLOY_AGENT_SECRET not configured" }, 503);
+  }
+  let body: { key?: string; value?: string };
+  try {
+    body = await c.req.json() as { key?: string; value?: string };
+  } catch {
+    return c.json({ ok: false, error: "invalid JSON body" }, 400);
+  }
+  if (!body.key || typeof body.value !== "string") {
+    return c.json({ ok: false, error: "key and value are required" }, 400);
+  }
+  try {
+    const res = await fetch(`${AGENT_URL}/env-vars`, {
+      method: "PUT",
+      headers: { ...agentHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ key: body.key, value: body.value }),
+      signal: AbortSignal.timeout(5_000),
+    });
+    const resBody = await res.json() as Record<string, unknown>;
+    return c.json(resBody, res.status as 200 | 400 | 503);
+  } catch {
+    return c.json({ ok: false, error: "deploy agent unreachable" }, 503);
+  }
+});
+
+// DELETE /api/admin/env-vars/:key — remove a key
+adminDeployApp.delete("/admin/env-vars/:key", requireAdmin, async (c) => {
+  if (!AGENT_SECRET) {
+    return c.json({ ok: false, error: "DEPLOY_AGENT_SECRET not configured" }, 503);
+  }
+  const key = c.req.param("key");
+  if (!key) {
+    return c.json({ ok: false, error: "key param required" }, 400);
+  }
+  try {
+    const res = await fetch(`${AGENT_URL}/env-vars/${encodeURIComponent(key)}`, {
+      method: "DELETE",
+      headers: agentHeaders(),
+      signal: AbortSignal.timeout(5_000),
+    });
+    const resBody = await res.json() as Record<string, unknown>;
+    return c.json(resBody, res.status as 200 | 404 | 503);
+  } catch {
+    return c.json({ ok: false, error: "deploy agent unreachable" }, 503);
+  }
+});
