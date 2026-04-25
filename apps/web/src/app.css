@@ -1950,42 +1950,29 @@ textarea:focus-visible {
 }
 
 .landing-stats-section {
-  background: #05060b;
-  color: #f8fafc;
-  padding: 6rem 0;
-  border-top: 1px solid rgba(99,102,241,0.15);
-  border-bottom: 1px solid rgba(99,102,241,0.15);
+  background: #ffffff;
+  color: #0f172a;
+  padding: 3rem 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
   position: relative;
   overflow: hidden;
 }
 
-.landing-stats-section::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(ellipse at center, rgba(99,102,241,0.08) 0%, transparent 60%);
-  pointer-events: none;
-}
-
 @media (min-width: 768px) {
   .landing-stats-section {
-    padding: 8rem 0;
+    padding: 3.5rem 0;
   }
 }
 
 @media (min-width: 1024px) {
   .landing-stats-section {
-    padding: 10rem 0;
+    padding: 4rem 0;
   }
 }
 
 .landing-dark-section .landing-card,
-.landing-dark-section-alt .landing-card,
-.landing-stats-section .landing-card {
+.landing-dark-section-alt .landing-card {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
 }
@@ -2499,7 +2486,7 @@ html.dark .hero-gradient {
 }
 
 .landing-stat-cell:not(:last-child) {
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid #e2e8f0;
 }
 
 @media (max-width: 639.98px) {
@@ -2507,7 +2494,7 @@ html.dark .hero-gradient {
     border-right: none;
   }
   .landing-stat-cell:nth-child(-n+2) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid #e2e8f0;
   }
 }
 
@@ -2533,8 +2520,7 @@ html.dark .hero-gradient {
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  color: #fff;
-  background: linear-gradient(180deg, #ffffff 0%, #cbd5ff 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -2565,7 +2551,7 @@ html.dark .hero-gradient {
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: #94a3b8;
   text-align: center;
   line-height: 1.5;
   /* Labels may wrap across two lines — the flex cell is `justify-content:

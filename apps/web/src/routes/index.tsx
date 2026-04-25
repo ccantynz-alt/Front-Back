@@ -403,7 +403,7 @@ export default function Home(): JSX.Element {
 
       {/* ── Hero ───────────────────────────────────────────────────── */}
       <section class="landing-hero">
-        <div class="relative z-10 mx-auto w-full max-w-[1120px] px-6 pb-36 pt-32 lg:px-8 lg:pb-48 lg:pt-44">
+        <div class="relative z-10 mx-auto w-full max-w-[1120px] px-6 pb-16 pt-32 lg:px-8 lg:pb-20 lg:pt-44">
           <div class="flex flex-col items-center text-center">
 
             {/* Badge */}
@@ -436,20 +436,16 @@ export default function Home(): JSX.Element {
 
             {/* CTAs */}
             <div class="mt-12 flex flex-col items-center gap-4 sm:flex-row">
-              <A href="/register">
-                <button class="landing-hero-btn-primary-dark" type="button">
-                  Start building
-                </button>
+              <A href="/register" class="landing-hero-btn-primary-dark">
+                Start building
               </A>
-              <A href="/docs">
-                <button class="landing-hero-btn-outline-dark" type="button">
-                  See the docs
-                </button>
+              <A href="/docs" class="landing-hero-btn-outline-dark">
+                See the docs
               </A>
             </div>
 
             {/* Tech strip */}
-            <div class="landing-tech-strip-wrap mt-24">
+            <div class="landing-tech-strip-wrap mt-14">
               <div class="landing-tech-strip-divider" aria-hidden="true" />
               <div class="landing-tech-strip">
                 <For
@@ -668,25 +664,19 @@ export default function Home(): JSX.Element {
             the app, the database, the auth, the billing. You iterate.
           </p>
           <div class="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <A href="/builder">
-              <button class="landing-hero-btn-primary-dark" type="button">
-                Try the AI builder &#8594;
-              </button>
+            <A href="/builder" class="landing-hero-btn-primary-dark">
+              Try the AI builder &#8594;
             </A>
             <Show
               when={auth.isAuthenticated()}
               fallback={
-                <A href="/register">
-                  <button class="landing-hero-btn-outline-dark" type="button">
-                    Create an account
-                  </button>
+                <A href="/register" class="landing-hero-btn-outline-dark">
+                  Create an account
                 </A>
               }
             >
-              <A href="/dashboard">
-                <button class="landing-hero-btn-outline-dark" type="button">
-                  Open dashboard
-                </button>
+              <A href="/dashboard" class="landing-hero-btn-outline-dark">
+                Open dashboard
               </A>
             </Show>
           </div>

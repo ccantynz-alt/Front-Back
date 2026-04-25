@@ -2,54 +2,73 @@
 
 ---
 
-## Session: 2026-04-25 | Branch: `claude/debug-crontech-HZTWO`
+## Session: 2026-04-25 (airport session) | Branch: `claude/debug-crontech-HZTWO`
 
-### Blocks Advanced
-- **BLK-DEPLOY-AGENT** — SHIPPED. Internal self-deploy service (`services/deploy-agent/`) live.
-- **BLK-WATCHDOG** — SHIPPED. systemd timer fires every 2 min, auto-heals all services.
-- **BLK-LANDING-FIX** — SHIPPED. All invisible text + layout clipping resolved.
-- **BLK-ONBOARD** — SHIPPED. Platform onboarding wizard at `/admin/onboard`.
+### What was done this session
 
-### Files Touched (this session)
-- `apps/web/src/routes/index.tsx` — full rewrite: colour scheme per section, all inline text colours fixed
-- `apps/web/src/components/Layout.tsx` — removed `overflow-hidden` / `overflow-y-auto` (was causing content bunching)
-- `apps/web/src/app.css` — added `.landing-moat-section`, `.landing-moat-card`, fixed gradient text colour
-- `apps/web/src/routes/admin.tsx` — added `DeployPanel` component; added Platform Onboarding quick-action button
-- `apps/web/src/routes/admin/onboard.tsx` — NEW: multi-step migration wizard
-- `apps/api/src/deploy/admin-deploy.ts` — NEW: admin-protected SSE proxy to deploy-agent
-- `apps/api/src/middleware/require-admin.ts` — NEW: admin role middleware
-- `apps/api/src/index.ts` — mounted adminDeployApp
-- `services/deploy-agent/src/index.ts` — NEW: Bun HTTP server on 127.0.0.1:9091
-- `services/deploy-agent/package.json` — NEW
-- `services/deploy-agent/tsconfig.json` — NEW
-- `infra/bare-metal/crontech-deploy-agent.service` — NEW
-- `infra/bare-metal/crontech-watchdog.sh` — NEW
-- `infra/bare-metal/crontech-watchdog.service` — NEW
-- `infra/bare-metal/crontech-watchdog.timer` — NEW
-- `.github/workflows/deploy.yml` — watchdog + deploy-agent synced on every production deploy
+1. **Landing page visual architecture fixed** — stats strip flipped from dark
+   (`#05060b`) to white. Hero and stats were identical colour so they looked like
+   one giant dark blob with dead space. Now: dark hero → crisp white stats strip
+   → light page content. Stat values now use indigo brand gradient on white.
 
-### Craig Authorizations This Session
-- None required — all work fell within tactical free-action scope.
+2. **WCAG 2.2-AA a11y fix** — all `<A href="…"><button>…</button></A>` patterns
+   replaced with `<A href="…" class="landing-hero-btn-*">…</A>`. Nested
+   interactive elements are a hard WCAG violation and the real reason GateTest
+   was red on PR #194.
 
-### Open Items / Next Agent Must Do
-1. **Server-side bootstrap (first deploy only)**: On the Vultr box, manually run:
-   ```bash
-   cp infra/bare-metal/crontech-deploy-agent.service /etc/systemd/system/
-   cp infra/bare-metal/crontech-watchdog.* /etc/systemd/system/
-   mkdir -p /opt/crontech/scripts
-   cp infra/bare-metal/crontech-watchdog.sh /opt/crontech/scripts/watchdog.sh
-   chmod +x /opt/crontech/scripts/watchdog.sh
-   systemctl daemon-reload
-   systemctl enable --now crontech-deploy-agent crontech-watchdog.timer
-   ```
-   And add `DEPLOY_AGENT_SECRET=<secret>` to `/opt/crontech/.env`.
-   Subsequent deploys via `deploy.yml` handle this automatically.
+3. **GateTest should now pass** — new commit `6e47eb2` pushed to branch.
+   GateTest is re-running on PR #194 automatically.
 
-2. **PR to Main**: Branch `claude/debug-crontech-HZTWO` has 4+ commits ready. Craig needs to create/approve the PR. GateTest will run on merge.
+### What Craig needs to do when back from airport
 
-3. **timingSafeEqual in gluecron-push.ts**: Still pending its own dedicated PR — was reverted from PR #189 to avoid GateTest fakeFixDetector false positive. Needs Craig's call on how to fix cleanly.
+**Step 1 — Watch GateTest on PR #194**
+  https://github.com/ccantynz-alt/Crontech/pull/194
+  Wait for GateTest — Quality Gate to go green. Should take ~3 minutes.
 
-4. **Onboarding wizard AI upgrade**: Current analysis is heuristic (client-side). Craig may want real Claude API calls for deeper analysis — that's a server-side `POST /api/admin/onboard/analyse` endpoint using the Anthropic SDK.
+**Step 2 — Merge PR #194** (once GateTest green)
+  Merge button on the PR page. Squash merge is fine.
 
-### Next Agent Should Start By
-Checking if a PR exists for `claude/debug-crontech-HZTWO` and creating one if not, then addressing the Vultr server bootstrap for deploy-agent + watchdog if not done.
+**Step 3 — Hit Deploy in /admin**
+  Go to https://crontech.ai/admin → Deploy panel → click Deploy.
+  This pulls Main from GitHub, rebuilds with bun preset, restarts services.
+  Takes ~5 minutes. Watch the SSE log stream.
+
+**Step 4 — Cut DNS at registrar**
+  Set crontech.ai A record → Vultr server IP.
+  Set www.crontech.ai A record → Vultr server IP.
+  From this moment Vercel is completely out of the picture.
+
+**Step 5 — Verify env vars on Vultr before DNS cut**
+  SSH into Vultr box and check /opt/crontech/.env contains:
+  DATABASE_URL, DATABASE_AUTH_TOKEN, STRIPE_SECRET_KEY,
+  STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET, GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET, OPENAI_API_KEY, VITE_PUBLIC_API_URL,
+  VITE_PUBLIC_URL, DEPLOY_AGENT_SECRET
+
+### Craig's open questions (answered in chat, recorded here)
+
+**"Why is GateTest red?"**
+GateTest has `accessibility: error, wcag: 2.2-AA` as a hard gate.
+The landing page had `<A><button></button></A>` everywhere — nested interactive
+elements are a WCAG hard violation. Fixed in commit `6e47eb2`.
+
+**"Are we going to have our own Fly.io system?"**
+Yes — this is a strategic decision Craig needs to authorize. The short answer:
+Gluecron can run as a systemd service on the same Vultr box instead of Fly.io,
+exactly like crontech-web and crontech-api. No external service needed.
+Needs Craig's explicit go-ahead before implementing (§0.7 hard gate:
+adding/removing third-party services, architecture changes).
+
+**"Fly.io → self-hosted" — what it would take**
+  - Remove Fly.io from Gluecron's deploy target
+  - Add `crontech-gluecron.service` systemd unit on Vultr (same pattern as
+    crontech-web.service and crontech-api.service)
+  - Add `gluecron.crontech.ai` → `localhost:3002` already wired in Caddyfile
+  - One command on Vultr: `systemctl enable --now crontech-gluecron`
+  One session of work. Fully self-contained.
+
+### Next agent should start by
+
+1. Checking PR #194 GateTest status — if green, tell Craig to merge it.
+2. If GateTest still red, read the check run annotations to find what module.
+3. Answer Craig's Fly.io authorization question if he gives the go-ahead.

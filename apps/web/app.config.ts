@@ -18,9 +18,7 @@ function splitVendor(id: string): string | undefined {
 
 export default defineConfig({
   server: {
-    // Use Vercel's Build Output API format when deploying to Vercel,
-    // keep the bun preset for Vultr bare-metal and local dev.
-    preset: process.env.VERCEL ? "vercel" : "bun",
+    preset: "bun",
     compatibilityDate: "2024-12-01",
   },
   vite: {
