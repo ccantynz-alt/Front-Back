@@ -182,15 +182,15 @@ Bun.serve({
   hostname: "127.0.0.1",
 
   async fetch(req) {
-    if (!authorised(req)) {
-      return json({ ok: false, error: "unauthorized" }, 401);
-    }
-
     const { pathname } = new URL(req.url);
     const method = req.method;
 
     if (pathname === "/health" && method === "GET") {
       return json({ ok: true, pid: process.pid });
+    }
+
+    if (!authorised(req)) {
+      return json({ ok: false, error: "unauthorized" }, 401);
     }
 
     if (pathname === "/status" && method === "GET") {
