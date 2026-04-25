@@ -124,7 +124,17 @@ jobs:
             echo "[6/8] Syncing service files..."
             cp infra/bare-metal/crontech-web.service /etc/systemd/system/crontech-web.service
             cp infra/bare-metal/crontech-api.service /etc/systemd/system/crontech-api.service
+            cp infra/bare-metal/crontech-deploy-agent.service /etc/systemd/system/crontech-deploy-agent.service
+            cp infra/bare-metal/crontech-watchdog.service /etc/systemd/system/crontech-watchdog.service
+            cp infra/bare-metal/crontech-watchdog.timer /etc/systemd/system/crontech-watchdog.timer
+            # Install watchdog script
+            mkdir -p /opt/crontech/scripts
+            cp infra/bare-metal/crontech-watchdog.sh /opt/crontech/scripts/watchdog.sh
+            chmod +x /opt/crontech/scripts/watchdog.sh
             systemctl daemon-reload
+            # Enable watchdog timer + deploy agent on first deploy (idempotent)
+            systemctl enable --now crontech-deploy-agent 2>/dev/null || true
+            systemctl enable --now crontech-watchdog.timer 2>/dev/null || true
 
             # 7. Restart services
             echo "[7/8] Restarting services..."

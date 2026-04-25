@@ -1,0 +1,12 @@
+# crontech-watchdog.service — one-shot health check, fired by the timer
+[Unit]
+Description=Crontech Watchdog — auto-heal health check
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/crontech/scripts/watchdog.sh
+User=root
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crontech-watchdog
