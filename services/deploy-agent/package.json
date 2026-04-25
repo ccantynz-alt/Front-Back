@@ -1,0 +1,15 @@
+{
+  "name": "@back-to-the-future/deploy-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Root-privileged deploy agent — localhost:9091 only, not exposed via Caddy",
+  "scripts": {
+    "start": "bun src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "check": "tsc --noEmit",
+    "test": "echo 'No tests — deploy-agent is infrastructure, tested in staging'"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.13"
+  }
+}

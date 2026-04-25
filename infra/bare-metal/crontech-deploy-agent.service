@@ -1,0 +1,42 @@
+# Crontech Deploy Agent — internal privileged HTTP service
+#
+# Listens on http://127.0.0.1:9091 ONLY. Never exposed externally.
+# Crontech's API admin endpoint (POST /api/admin/deploy) proxies here.
+#
+# Runs as root so it can: git pull, bun install, bun build, systemctl restart.
+# The DEPLOY_AGENT_SECRET must match the value in /opt/crontech/.env.
+#
+# Install:
+#   cp infra/bare-metal/crontech-deploy-agent.service /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable --now crontech-deploy-agent
+
+[Unit]
+Description=Crontech Deploy Agent (internal, localhost:9091)
+Documentation=https://api.crontech.ai
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/crontech
+
+ExecStart=/root/.bun/bin/bun run services/deploy-agent/src/index.ts
+Restart=always
+RestartSec=5
+
+Environment=APP_DIR=/opt/crontech
+Environment=DEPLOY_AGENT_PORT=9091
+EnvironmentFile=-/opt/crontech/.env
+
+# Only listen on localhost — belt-and-braces
+IPAddressAllow=127.0.0.1/8 ::1/128
+IPAddressDeny=any
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crontech-deploy-agent
+
+[Install]
+WantedBy=multi-user.target

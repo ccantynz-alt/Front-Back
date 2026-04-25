@@ -43,6 +43,7 @@ import { gluecronPushApp } from "./webhooks/gluecron-push";
 import { inboundSmsApp } from "./sms/inbound";
 import { githubWebhookApp } from "./github/webhook";
 import { deploymentLogsStreamApp } from "./deploy/logs-stream";
+import { adminDeployApp } from "./deploy/admin-deploy";
 import { createEmpireHealthApp } from "./healthz/empire";
 import { db as defaultDb } from "@back-to-the-future/db";
 import {
@@ -484,6 +485,9 @@ app.route("/", terminalApp);
 // BLK-009: SSE live log stream for deployments at
 // /api/deployments/:id/logs/stream
 app.route("/", deploymentLogsStreamApp);
+
+// Admin deploy trigger — POST /api/admin/deploy (proxies to deploy-agent on localhost:9091)
+app.route("/api", adminDeployApp);
 
 // ── Auto-migrate on startup (safe default: only when AUTO_MIGRATE=true) ──
 async function maybeRunMigrations(): Promise<void> {
