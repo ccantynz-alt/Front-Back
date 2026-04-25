@@ -25,7 +25,9 @@
         "VITE_API_URL",
         "PUBLIC_URL",
         "PUBLIC_API_URL",
-        "stripePriceId"
+        "stripePriceId",
+        "VERCEL",
+        "VERCEL_ENV"
       ]
     },
     "test": {
