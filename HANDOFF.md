@@ -1,6 +1,56 @@
 # HANDOFF — Next Session Starts Here
 
-**First action (morning of 2026-04-24):** Review the launch state of `https://www.crontech.ai` and `https://crontech.ai` in a fresh incognito window. Apex worked at end-of-session 2026-04-23; www should now also work after tonight's Caddy restart + cert reissue, but it was the last thing fixed and never verified browser-side.
+**First action (2026-04-25):** Merge PR on branch `claude/debug-crontech-HZTWO` to Main. This contains two production-blocking fixes (see session log below). Once merged, the deploy workflow will SSH to Vultr, pull the new code, run migrations, and restart services. Verify `https://crontech.ai` serves HTTP 200 after the deploy completes.
+
+---
+
+## SESSION LOG — 2026-04-25
+
+**Branch:** `claude/debug-crontech-HZTWO` — 2 commits ahead of Main.
+**PR:** Open at `https://github.com/ccantynz-alt/Crontech/pull/new/claude/debug-crontech-HZTWO` (create it from GitHub, then merge).
+
+**Root cause diagnosed:** The `crontech-api` systemd service has been crash-looping on every start since the repo was set up. The API is built with `bun build --outdir dist` and the start script ran `bun run dist/index.js`. The bundled output cannot resolve `@libsql/linux-x64-gnu` (the Turso/libsql native binary) because Bun stores it in its internal `.bun/` content-addressed cache — not in a standard `node_modules/@libsql/linux-x64-gnu` symlink that the bundled runtime can find. Every startup resulted in:
+
+```
+error: Cannot find module '@libsql/linux-x64-gnu' from '…/apps/api/dist/index.js'
+```
+
+The API was never successfully running from the built output. Running from source (`bun src/index.ts`) works perfectly — Bun resolves native modules correctly in source mode. This is the intended pattern for Bun production apps.
+
+**Blocks advanced:**
+
+| Fix | Commit | Description |
+|---|---|---|
+| API crash-loop | `bf1557d` | `apps/api/package.json`: `start` changed from `bun run dist/index.js` → `bun src/index.ts` |
+| Missing DB migrations in deploy | `17d0710` | `.github/workflows/deploy.yml`: restored migration step accidentally dropped in `60341ec` hardening commit |
+
+**Gates on HEAD:**
+
+| Gate | Result |
+|---|---|
+| `bun run check` | ✅ 19/19, 0 TS errors |
+| `bun run test` | ✅ 21/21, 534 tests pass |
+| `bun run build` | ✅ 6/6 |
+| `bun run check-links` | ✅ 0 dead (142 routes) |
+| `bun run check-buttons` | ✅ 0 dead (160 files) |
+
+**What Craig needs to do:**
+1. Merge the PR (`claude/debug-crontech-HZTWO` → `Main`) — triggers the deploy workflow automatically.
+2. After deploy succeeds: open `https://crontech.ai` in an incognito window to confirm the site is serving.
+3. Check the Vultr server's `/opt/crontech/.env` — if `AUTO_MIGRATE=true` is NOT set, migrations now run inline during deploy (restored in `17d0710`) so the DB schema will be current.
+4. BLK-010 Stripe going-live and AlecRae email remain blocked on Craig's input (unchanged from previous HANDOFF).
+
+**Still pending from previous sessions:**
+- `www.crontech.ai` — verify it redirects to apex correctly.
+- `/etc/caddy/terminal.Caddyfile.broken` on the Vultr box — web terminal disabled until re-running `scripts/install-web-terminal-full.sh`.
+- BLK-010 Stripe, BLK-011 CRDT collab, BLK-008 design sign-off — all still on Craig.
+
+**Next agent should start by:**
+1. Read `CLAUDE.md`, `docs/POSITIONING.md`, `docs/BUILD_BIBLE.md`. Post doctrine-confirmed line.
+2. Confirm the deploy ran and `https://crontech.ai` is live.
+3. Pick up the next highest-priority item (BLK-010 Stripe walk-through with Craig, or BLK-011 CRDT scoping).
+
+---
 
 If www still shows `ERR_SSL_PROTOCOL_ERROR`, the fallback is the Cloudflare Redirect Rule (Rules → Redirect Rules → create: Hostname equals `www.crontech.ai` → Static redirect to `https://crontech.ai${http.request.uri.path}` status 301). That works entirely at CF's edge and bypasses the origin TLS problem.
 
