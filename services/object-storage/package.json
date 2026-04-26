@@ -1,0 +1,23 @@
+{
+  "name": "@back-to-the-future/object-storage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BLK-018 — Self-hosted S3-compatible object storage (MinIO) with a Bun-side proxy + admin layer on localhost:9094",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "start": "bun src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "check": "tsc --noEmit",
+    "test": "bun test",
+    "build": "bun build src/index.ts --outdir dist --target bun"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.13",
+    "typescript": "^6"
+  }
+}

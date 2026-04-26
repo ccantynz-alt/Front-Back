@@ -6,12 +6,13 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "../init";
+import { router, protectedProcedure, adminProcedure } from "../init";
 import {
   generateUploadUrl,
   generateDownloadUrl,
   deleteFile,
 } from "@back-to-the-future/storage";
+import { createClientFromEnv } from "@back-to-the-future/object-storage/client";
 
 export const storageRouter = router({
   /**
@@ -112,5 +113,52 @@ export const storageRouter = router({
       const deleted = await deleteFile(ctx.userId, rawKey);
 
       return { deleted, key: input.key };
+    }),
+
+  /**
+   * BLK-018 — Admin-only signed PUT URL for the self-hosted object
+   * storage backend (services/object-storage). Returns `{ url, key,
+   * expiresAt }` so the admin caller can hand the URL to a single
+   * trusted uploader (e.g. an internal asset migration script). Public
+   * customer presigns continue to flow through `getUploadUrl` above.
+   *
+   * Returns PRECONDITION_FAILED when the self-hosted backend is not
+   * configured — the admin should set OBJECT_STORAGE_ENDPOINT,
+   * OBJECT_STORAGE_ACCESS_KEY_ID, and OBJECT_STORAGE_SECRET_ACCESS_KEY
+   * (or MINIO_ROOT_USER + MINIO_ROOT_PASSWORD) on the API server.
+   */
+  getSignedUploadUrl: adminProcedure
+    .input(
+      z.object({
+        key: z.string().min(1),
+        contentType: z.string().min(1).optional(),
+        expiresIn: z.number().int().min(60).max(3600).optional(),
+      }),
+    )
+    .mutation(({ input }) => {
+      const client = createClientFromEnv();
+      if (!client) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            "Self-hosted object storage is not configured. " +
+            "Set OBJECT_STORAGE_ENDPOINT and credentials on the API server.",
+        });
+      }
+      const presignInput: {
+        key: string;
+        expiresIn: number;
+        contentType?: string;
+      } = {
+        key: input.key,
+        expiresIn: input.expiresIn ?? 900,
+      };
+      if (input.contentType) presignInput.contentType = input.contentType;
+      const presigned = client.presignPut(presignInput);
+      return {
+        url: presigned.url,
+        key: presigned.key,
+        expiresAt: presigned.expiresAt,
+      };
     }),
 });
