@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Tailwind v4 auto-detection misses our SolidStart layout, leaving
+   arbitrary-value utilities like `max-w-[1120px]` un-generated — which
+   silently breaks every section container on the landing page. Pin the
+   scan paths explicitly so JSX class strings are always discovered. */
+@source "../src/**/*.{ts,tsx}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
 /* ══════════════════════════════════════════════════════════════════════
    BACK TO THE FUTURE — Design System
    ══════════════════════════════════════════════════════════════════════ */
