@@ -13,6 +13,7 @@ import { db, dnsRecords, dnsZones } from "@back-to-the-future/db";
 import { upsertSubdomainRecord } from "./dns-helper";
 
 const ZONE_NAME = "crontech.ai";
+const FIXED_NOW = 1_700_000_000_000;
 
 async function wipeDns(): Promise<void> {
   // Records cascade when zones go, but be explicit so parallel tests can
@@ -26,7 +27,6 @@ async function seedZone(overrides: { serial?: number } = {}): Promise<{
   serial: number;
 }> {
   const id = `z-${crypto.randomUUID()}`;
-  const now = Date.now();
   const serial = overrides.serial ?? 42;
   await db.insert(dnsZones).values({
     id,
@@ -39,8 +39,8 @@ async function seedZone(overrides: { serial?: number } = {}): Promise<{
     expireSeconds: 604800,
     minimumTtl: 300,
     serial,
-    createdAt: now,
-    updatedAt: now,
+    createdAt: FIXED_NOW,
+    updatedAt: FIXED_NOW,
   });
   return { id, serial };
 }
@@ -140,8 +140,8 @@ describe("upsertSubdomainRecord", () => {
       content: "1.1.1.1",
       ttl: 300,
       priority: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: FIXED_NOW,
+      updatedAt: FIXED_NOW,
     });
 
     await upsertSubdomainRecord("acme", "2.2.2.2");

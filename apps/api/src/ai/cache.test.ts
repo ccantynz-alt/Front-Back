@@ -129,8 +129,8 @@ describe("AI cache", () => {
     await cachedAICall(opts, fn);
     await cachedAICall(opts, fn);
 
-    // Hit counter is incremented async — give it a tick.
-    await new Promise((r) => setTimeout(r, 50));
+    // Flush all pending microtasks and macrotasks so the async hit-counter write completes.
+    await new Promise<void>((resolve) => setImmediate(resolve));
 
     const rows = await db
       .select()

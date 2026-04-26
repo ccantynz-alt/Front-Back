@@ -37,13 +37,22 @@ async function main(): Promise<void> {
   )[0];
 
   if (existing) {
-    console.log(`User exists (${existing.id}). Skipping registration.`);
+    process.stdout.write(`User exists (${existing.id}). Skipping registration.\n`);
   } else {
     const { userId } = await registerWithPassword(
       { email, password, displayName },
       db,
     );
-    console.log(`Registered user ${userId}.`);
+
+    const created = (
+      await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1)
+    )[0];
+
+    if (!created) {
+      throw new Error(`Registration reported success for userId ${userId} but user was not found in the database.`);
+    }
+
+    process.stdout.write(`Registered user ${userId}.\n`);
   }
 
   await db.update(users).set({ role: "admin" }).where(eq(users.email, email));
@@ -56,10 +65,14 @@ async function main(): Promise<void> {
       .limit(1)
   )[0];
 
-  console.log("\nAdmin ready:");
-  console.log(`  id:    ${after?.id}`);
-  console.log(`  email: ${after?.email}`);
-  console.log(`  role:  ${after?.role}`);
+  if (!after) {
+    throw new Error(`Failed to retrieve user after promotion. No user found with email provided.`);
+  }
+
+  process.stdout.write("\nAdmin ready:\n");
+  process.stdout.write(`  id:    ${after.id}\n`);
+  process.stdout.write(`  email: [redacted]\n`);
+  process.stdout.write(`  role:  ${after.role}\n`);
 }
 
 main().catch((err) => {

@@ -6,10 +6,12 @@ import {
   calculatePasswordStrength,
 } from "./password";
 
+const STRONG_PASSWORD = "MyP@ssw0rd!23";
+
 describe("Password Auth Module", () => {
   describe("passwordSchema", () => {
     test("accepts strong password", () => {
-      expect(passwordSchema.safeParse("MyP@ssw0rd!23").success).toBe(true);
+      expect(passwordSchema.safeParse(STRONG_PASSWORD).success).toBe(true);
     });
 
     test("rejects short password", () => {
@@ -25,7 +27,7 @@ describe("Password Auth Module", () => {
     test("accepts valid registration data", () => {
       const data = {
         email: "test@example.com",
-        password: "MyP@ssw0rd!23",
+        password: STRONG_PASSWORD,
         displayName: "Test User",
       };
       const result = registerWithPasswordSchema.safeParse(data);
@@ -35,7 +37,7 @@ describe("Password Auth Module", () => {
     test("rejects invalid email", () => {
       const data = {
         email: "not-an-email",
-        password: "MyP@ssw0rd!23",
+        password: STRONG_PASSWORD,
         displayName: "Test User",
       };
       const result = registerWithPasswordSchema.safeParse(data);
@@ -45,7 +47,7 @@ describe("Password Auth Module", () => {
     test("requires displayName", () => {
       const data = {
         email: "test@example.com",
-        password: "MyP@ssw0rd!23",
+        password: STRONG_PASSWORD,
       };
       const result = registerWithPasswordSchema.safeParse(data);
       expect(result.success).toBe(false);
@@ -56,7 +58,7 @@ describe("Password Auth Module", () => {
     test("accepts valid login data", () => {
       const data = {
         email: "test@example.com",
-        password: "MyP@ssw0rd!23",
+        password: STRONG_PASSWORD,
       };
       expect(loginWithPasswordSchema.safeParse(data).success).toBe(true);
     });
