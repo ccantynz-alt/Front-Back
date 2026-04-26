@@ -6,8 +6,10 @@ name: Deploy
 # No second build on the server. No waiting.
 #
 # Required GitHub secrets:
-#   VULTR_SERVER_IP    — production server IPv4
-#   VULTR_SSH_KEY      — private SSH key for root deploy user
+#   VULTR_SERVER_IP        — production server IPv4
+#   VULTR_SSH_KEY          — private SSH key for root deploy user
+#   SLACK_DEPLOY_WEBHOOK   — Slack incoming webhook URL for deploy failure
+#                            alerts (posted from the public smoke-test step)
 
 on:
   push:
@@ -237,3 +239,64 @@ jobs:
               journalctl -u crontech-web --no-pager -n 30
               exit 1
             fi
+
+      # ── Public smoke test ─────────────────────────────────────────────────
+      # The inner SSH health-check above curls localhost on the server. That
+      # is necessary but not sufficient — it tells us the processes are up,
+      # not that the public hostnames resolve, that Caddy is fronting them
+      # correctly, that TLS is valid, or that Cloudflare DNS is pointing at
+      # the right origin.
+      #
+      # On 2026-04-26 the platform sat broken for ~36 hours because the
+      # inner health-check was curling the wrong path (/health instead of
+      # /api/health). That class of bug is invisible from inside the box
+      # but obvious from the public internet. This step is the OUTER check.
+      # If the public URLs are not 2xx, the deploy is not real.
+      - name: Public smoke test
+        run: |
+          set -e
+          fail() {
+            echo "::error::Public smoke test failed for $1"
+            echo "SMOKE_FAILED_URL=$1" >> "$GITHUB_ENV"
+            exit 1
+          }
+          smoke() {
+            local url="$1"
+            local attempt=1
+            local max=3
+            while [ $attempt -le $max ]; do
+              echo "Attempt $attempt/$max — GET $url"
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$url" || echo "000")
+              if [ "$code" -ge 200 ] 2>/dev/null && [ "$code" -lt 300 ] 2>/dev/null; then
+                echo "  OK ($code)"
+                return 0
+              fi
+              echo "  Got HTTP $code — backing off 5s"
+              attempt=$((attempt + 1))
+              sleep 5
+            done
+            fail "$url"
+          }
+          smoke "https://crontech.ai/"
+          smoke "https://api.crontech.ai/api/health"
+          echo "Public smoke test passed for both URLs."
+
+      - name: Notify on failure
+        if: failure()
+        continue-on-error: true
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_DEPLOY_WEBHOOK }}
+        run: |
+          if [ -z "${SLACK_WEBHOOK:-}" ]; then
+            echo "SLACK_DEPLOY_WEBHOOK not set — skipping Slack alert"
+            exit 0
+          fi
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          SHA="${{ github.sha }}"
+          FAILED_URL="${SMOKE_FAILED_URL:-unknown (see job log)}"
+          TEXT=":rotating_light: Crontech deploy failed — public smoke test could not verify the production URLs.\n*Failed step / URL:* ${FAILED_URL}\n*SHA:* \`${SHA}\`\n*Run:* ${RUN_URL}"
+          PAYLOAD=$(jq -n --arg text "$TEXT" '{text: $text}')
+          curl -X POST -H 'Content-Type: application/json' \
+            --data "$PAYLOAD" \
+            "$SLACK_WEBHOOK" \
+            || echo "Slack POST failed (non-fatal)"

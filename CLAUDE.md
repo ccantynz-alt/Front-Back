@@ -1199,6 +1199,16 @@ This platform is 22 services rolled into one. Every service needs its own config
 | `DISCORD_WEBHOOK_URL` | Alerts | OPT | Discord webhook for backup alerts |
 | `GITHUB_TOKEN` | Collectors | OPT | GitHub PAT for release monitoring |
 
+### Workflow Secrets (GitHub Actions)
+
+These are not application env vars — they are GitHub repo secrets consumed by `.github/workflows/*.yml`. Listed here so the next session can audit at a glance which secrets the deploy pipeline depends on.
+
+| Variable | Workflow | Required | Description |
+|---|---|---|---|
+| `VULTR_SERVER_IP` | `deploy.yml` | YES | Production server IPv4 |
+| `VULTR_SSH_KEY` | `deploy.yml` | YES | Private SSH key for the deploy user |
+| `SLACK_DEPLOY_WEBHOOK` | `deploy.yml` | OPT | Slack incoming webhook posted to by the post-deploy public smoke test on failure. If unset, the alert is skipped (deploy still fails on the smoke-test step) |
+
 > **This table grows as services are added.** Every new integration must add its env vars here before merging.
 
 ---
