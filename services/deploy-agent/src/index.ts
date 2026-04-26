@@ -15,6 +15,9 @@
  *   GET  /env-vars        → { ok: true, vars: [{ key, hint, set }] }
  *   PUT  /env-vars        → set a key=value in the .env file
  *   DELETE /env-vars/:key → remove a key from the .env file
+ *   GET  /git/log         → { ok: true, commits: [{ sha, subject, date }] }
+ *   GET  /git/drift       → { ok: true, localSha, originSha, ahead, behind, dirty }
+ *   GET  /diagnose        → { ok: true, services, checks: [{ name, ok, detail }] }
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -221,6 +224,166 @@ function valueHint(v: string): string {
   return `${v.slice(0, 4)}${"•".repeat(Math.min(8, v.length - 4))}`;
 }
 
+// ── Git log + drift helpers (BLK /admin/ops) ─────────────────────────
+// `git log` and `git rev-list` run in APP_DIR. We pin the format so the
+// parse is deterministic. `parseGitLog` is exported as a pure helper for
+// unit testing — the deploy-agent has no test harness yet, but the shape
+// is identical to what `parseDriftCounts` is to keep it test-friendly.
+
+export interface GitCommit {
+  sha: string;
+  subject: string;
+  date: string;
+}
+
+export function parseGitLog(stdout: string): GitCommit[] {
+  if (!stdout) return [];
+  const commits: GitCommit[] = [];
+  for (const line of stdout.split("\n")) {
+    if (!line.trim()) continue;
+    // Format: %h\x1f%s\x1f%ar — using ASCII unit-separator so commit
+    // subjects containing pipes / commas still parse cleanly.
+    const parts = line.split("\x1f");
+    if (parts.length !== 3) continue;
+    const [sha, subject, date] = parts;
+    if (!sha || !subject || !date) continue;
+    commits.push({ sha, subject, date });
+  }
+  return commits;
+}
+
+export interface DriftCounts {
+  ahead: number;
+  behind: number;
+}
+
+export function parseDriftCounts(stdout: string): DriftCounts {
+  // `git rev-list --left-right --count origin/Main...HEAD` returns
+  // "<behind>\t<ahead>" — left side is origin, right side is HEAD.
+  const trimmed = stdout.trim();
+  if (!trimmed) return { ahead: 0, behind: 0 };
+  const parts = trimmed.split(/\s+/);
+  const behind = Number.parseInt(parts[0] ?? "0", 10);
+  const ahead = Number.parseInt(parts[1] ?? "0", 10);
+  return {
+    ahead: Number.isFinite(ahead) ? ahead : 0,
+    behind: Number.isFinite(behind) ? behind : 0,
+  };
+}
+
+async function getGitLog(limit = 20): Promise<GitCommit[]> {
+  const { stdout } = await runCommand(
+    [
+      "git",
+      "log",
+      `-${Math.max(1, Math.min(100, limit))}`,
+      "--pretty=format:%h\x1f%s\x1f%ar",
+    ],
+    APP_DIR,
+  );
+  return parseGitLog(stdout);
+}
+
+async function getGitDrift(): Promise<{
+  localSha: string;
+  originSha: string;
+  ahead: number;
+  behind: number;
+  dirty: boolean;
+}> {
+  // Fetch first so origin/Main reflects reality. `--quiet` keeps stderr
+  // free of "From origin/Main..." chatter that would otherwise confuse
+  // the JSON response.
+  await runCommand(["git", "fetch", "--quiet", "origin", "Main"], APP_DIR);
+
+  const [{ stdout: localSha }, { stdout: originSha }, { stdout: drift }, { stdout: status }] =
+    await Promise.all([
+      runCommand(["git", "rev-parse", "--short", "HEAD"], APP_DIR),
+      runCommand(["git", "rev-parse", "--short", "origin/Main"], APP_DIR),
+      runCommand(
+        ["git", "rev-list", "--left-right", "--count", "origin/Main...HEAD"],
+        APP_DIR,
+      ),
+      runCommand(["git", "status", "--porcelain"], APP_DIR),
+    ]);
+
+  const counts = parseDriftCounts(drift);
+  return {
+    localSha: localSha.trim(),
+    originSha: originSha.trim(),
+    ahead: counts.ahead,
+    behind: counts.behind,
+    dirty: status.trim().length > 0,
+  };
+}
+
+// ── Diagnose helper ──────────────────────────────────────────────────
+// Runs a battery of fast read-only checks. Used by `/admin/ops`'s
+// "Diagnose" button so an admin can see at a glance whether the box
+// is actually serving traffic without SSH-ing in.
+
+interface DiagnoseCheck {
+  name: string;
+  ok: boolean;
+  detail: string;
+}
+
+async function runDiagnose(): Promise<{
+  services: Record<string, string>;
+  checks: DiagnoseCheck[];
+}> {
+  const status = await getStatus();
+  const checks: DiagnoseCheck[] = [];
+
+  // Hit the local API health endpoint
+  try {
+    const res = await fetch("http://127.0.0.1:3001/api/health", {
+      signal: AbortSignal.timeout(3_000),
+    });
+    const body = await res.text();
+    checks.push({
+      name: "api-health",
+      ok: res.ok && body.includes('"status":"ok"'),
+      detail: `HTTP ${res.status}`,
+    });
+  } catch (err) {
+    checks.push({
+      name: "api-health",
+      ok: false,
+      detail: err instanceof Error ? err.message : "fetch failed",
+    });
+  }
+
+  // Hit the local web origin
+  try {
+    const res = await fetch("http://127.0.0.1:3000/", {
+      signal: AbortSignal.timeout(3_000),
+    });
+    checks.push({
+      name: "web-origin",
+      ok: res.ok,
+      detail: `HTTP ${res.status}`,
+    });
+  } catch (err) {
+    checks.push({
+      name: "web-origin",
+      ok: false,
+      detail: err instanceof Error ? err.message : "fetch failed",
+    });
+  }
+
+  // Confirm services are active
+  for (const [svc, state] of Object.entries(status.services)) {
+    checks.push({
+      name: `systemd-${svc}`,
+      ok: state === "active",
+      detail: state,
+    });
+  }
+
+  return { services: status.services, checks };
+}
+
 // ── Server ───────────────────────────────────────────────────────────
 
 Bun.serve({
@@ -297,6 +460,38 @@ Bun.serve({
       map.delete(key);
       writeEnvMap(map);
       return json({ ok: true, key, action: "deleted" });
+    }
+
+    if (pathname === "/git/log" && method === "GET") {
+      const url = new URL(req.url);
+      const limit = Number.parseInt(url.searchParams.get("limit") ?? "20", 10);
+      try {
+        const commits = await getGitLog(Number.isFinite(limit) ? limit : 20);
+        return json({ ok: true, commits });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "git log failed";
+        return json({ ok: false, error: msg }, 500);
+      }
+    }
+
+    if (pathname === "/git/drift" && method === "GET") {
+      try {
+        const drift = await getGitDrift();
+        return json({ ok: true, ...drift });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "git drift failed";
+        return json({ ok: false, error: msg }, 500);
+      }
+    }
+
+    if (pathname === "/diagnose" && method === "GET") {
+      try {
+        const result = await runDiagnose();
+        return json({ ok: true, ...result });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "diagnose failed";
+        return json({ ok: false, error: msg }, 500);
+      }
     }
 
     return json({ ok: false, error: "not found" }, 404);

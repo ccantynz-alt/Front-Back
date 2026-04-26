@@ -21,6 +21,7 @@
     "@back-to-the-future/db": "workspace:*",
     "@back-to-the-future/dns-server": "workspace:*",
     "@back-to-the-future/flywheel": "workspace:*",
+    "@back-to-the-future/object-storage": "workspace:*",
     "@back-to-the-future/orchestrator": "workspace:*",
     "@back-to-the-future/queue": "workspace:*",
     "@back-to-the-future/schemas": "workspace:*",

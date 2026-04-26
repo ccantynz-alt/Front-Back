@@ -37,7 +37,7 @@
 | Cloudflare product | What it does | Crontech equivalent | Status |
 |---|---|---|---|
 | CDN (cache) | Edge caching of static + dynamic | Caddy on Vultr (single origin) | ❌ Single-origin, no edge. |
-| Workers | V8 isolates running at 330+ PoPs | None | ❌ **Largest single gap.** Per BLK-002 stack thesis we should build it. |
+| Workers | V8 isolates running at 330+ PoPs | `services/edge-runtime/` (BLK-017 v0) | 🟡 Code in repo, **not running**. v0 uses Bun Workers as V8-isolate stand-in; v1 swaps to `isolated-vm`. |
 | Pages | Static site hosting | SolidStart on Vultr | ✅ Self-hosted. |
 | Argo Smart Routing | Optimised origin paths | None | ❌ Build it: Anycast IP per region routing back to nearest Vultr node. |
 | Cache Reserve | Persistent edge cache | None | ❌ |
@@ -62,7 +62,7 @@
 
 | Cloudflare product | What it does | Crontech equivalent | Status |
 |---|---|---|---|
-| R2 | Object storage (S3-compatible) | None — `services/storage/` exists in workspace, content unknown | 🟡 Verify state, then build to fill. |
+| R2 | Object storage (S3-compatible) | `services/object-storage/` (BLK-018 v0) — MinIO + S3 v4 client + admin presign | 🟡 Code in repo, **not running**. v0 single-node MinIO via docker-compose; v1 multi-region replication. |
 | Workers KV | Global key-value at edge | None | ❌ |
 | D1 | Edge SQLite | Postgres on Vultr (single instance) | ❌ |
 | Durable Objects | Stateful edge compute | None | ❌ **Crown-jewel of Cloudflare's compute story.** Build it — required for cheap real-time collab. |
@@ -75,7 +75,7 @@
 | Cloudflare product | What it does | Crontech equivalent | Status |
 |---|---|---|---|
 | Workers AI | Hosted inference (Llama, etc.) | Anthropic API + WebGPU client-side per stack | 🟡 Talk to Anthropic; do not host models. Build a hosted inference layer for non-frontier models. |
-| AI Gateway | One endpoint that fans out to providers, caches, retries | None | ❌ **Highest leverage** — caches + cost-controls every LLM call. |
+| AI Gateway | One endpoint that fans out to providers, caches, retries | `services/ai-gateway/` (BLK-021 v0) — OpenAI-compat proxy + LRU cache + Anthropic↔OpenAI failover | 🟡 Code in repo, **not running**. Existing AI consumers not yet routed through it. |
 | Constellation | Hosted ONNX models | None | ❌ Skippable for now. |
 | Llama-as-a-service | Hosted Llama models | WebGPU + WebLLM client-side per stack | 🟡 Client-side plan; server-side ❌. |
 
@@ -100,7 +100,7 @@
 
 | Cloudflare product | What it does | Crontech equivalent | Status |
 |---|---|---|---|
-| Cloudflare Tunnel (cloudflared) | Origin to edge over reverse tunnel | None | ❌ Build it. Origin IP becomes private, eliminates direct attack surface on Vultr. |
+| Cloudflare Tunnel (cloudflared) | Origin to edge over reverse tunnel | `services/tunnel/` (BLK-019 v0) — origin↔edge WebSocket bridge with framed HTTP, exponential reconnect | 🟡 Code in repo, **not running**. Origin still publicly reachable on its own IP. |
 | Spectrum | TCP/UDP proxy at edge | None | ❌ |
 | Magic Transit / Magic WAN | BGP-level network routing | None | ❌ Skippable for years. |
 
@@ -110,10 +110,12 @@
 
 Cloudflare ships ~34 distinct products. Crontech has working equivalents
 for **3** of them (Caddy auto-TLS, type-safe API contracts via tRPC,
-self-hosted web hosting on Vultr). Another **5** exist as code in this
+self-hosted web hosting on Vultr). Another **9** exist as code in this
 repo but are **not running**: `dns-server`, `crontech-deploy-agent`,
-`crontech-watchdog`, `services/queue`, `services/sentinel`. The
-remaining ~26 are unbuilt.
+`crontech-watchdog`, `services/queue`, `services/sentinel`, plus the
+four 2026-04-26 v0 additions `services/edge-runtime` (BLK-017),
+`services/object-storage` (BLK-018), `services/tunnel` (BLK-019), and
+`services/ai-gateway` (BLK-021). The remaining ~22 are unbuilt.
 
 That is the gap. Per CLAUDE.md §1 Mission ("self-evolving,
 self-defending technology war machine") and §2 Gap analysis ("80%+

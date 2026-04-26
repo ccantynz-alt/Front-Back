@@ -532,6 +532,18 @@ function AdminPageContent(): JSX.Element {
                 </button>
                 <button
                   type="button"
+                  onClick={() => navigate("/admin/ops")}
+                  class="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200"
+                  style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)" }}
+                >
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" style={{ background: "color-mix(in oklab, var(--color-success) 10%, transparent)", color: "var(--color-success)" }}>&#128736;</span>
+                  <div>
+                    <span class="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>Operations Console</span>
+                    <p class="text-[11px]" style={{ color: "var(--color-text-faint)" }}>Deploy drift, recent commits, services, diagnose battery</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
                   onClick={() => navigate("/admin/support")}
                   class="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200"
                   style={{ border: "1px solid var(--color-border)", background: "var(--color-bg-subtle)" }}

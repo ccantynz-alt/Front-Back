@@ -201,13 +201,13 @@ For the purposes of this doctrine, a "session" is any time:
 | Deleting any branch other than a confirmed-merged feature branch | Destructive. |
 | Renaming the GitHub repo or changing its visibility | Breaks integrations, deploy proxies, MCP scopes. |
 | Changing the default branch on GitHub | Cascades into CI, deploy triggers, PR base branches. |
-| Adding/removing GitHub Actions workflows (deploy.yml, ci.yml, etc.) | Affects every future deploy. |
+| Adding NEW GitHub Actions workflow files (creating a new `.yml` in `.github/workflows/`) | Affects every future CI/CD run. |
 | Adding/removing Cloudflare bindings (D1, KV, R2, AI, Durable Objects) in `wrangler.toml` | Affects production data layer. |
 | Schema migrations that drop tables or columns | Data loss risk. |
 | Pricing changes, plan tier changes, billing logic changes | Revenue-affecting. |
 | Public copy on the landing page, pricing page, legal pages, or any SEO meta | Brand-affecting. Polite tone rules apply. |
 | Naming or adversarial framing of competitors in public copy | Legal exposure. Attorney approval required. |
-| Adding new top-level routes (e.g. `/foo`) that didn't exist before | Affects sitemap, link checker, navigation. |
+| Adding new PUBLIC top-level routes (e.g. `/foo`, `/pricing`, `/docs`) that didn't exist before | Affects sitemap, link checker, navigation, public IA. |
 | Removing or renaming existing top-level routes | Breaks bookmarks, SEO, internal links. |
 | Adding a new third-party service (Sentry, Datadog, Algolia, etc.) | Vendor lock-in, cost, security review. |
 | Adding a new authentication provider or changing the auth model | Security-critical. |
@@ -222,6 +222,7 @@ For the purposes of this doctrine, a "session" is any time:
 | Adding a new route, page, or component that wasn't on the agreed plan | Same. |
 | Updating a dependency to a major new version | Same. |
 | Touching files outside the agreed scope of the current task | Same. |
+| Modifying an existing GitHub Actions workflow file (e.g. adding a step to `deploy.yml`, `ci.yml`) | Same — post the one-line change first. |
 
 #### 🟢 FREE ACTIONS — JUST DO IT
 
@@ -231,6 +232,7 @@ For the purposes of this doctrine, a "session" is any time:
 - Fixing typos, formatting, and Biome lint errors
 - Bumping patch versions of dependencies via Renovate auto-merges
 - Creating new feature branches (never deleting them)
+- Adding new admin-only sub-routes under `/admin/*` (admin-gated by `AdminRoute`, never appears in public nav, robots-disallowed, internal tools only)
 - **All tactical fixes listed in §0.10** (fix-on-sight items: broken styling, dead code, missing error handling, hardcoded values, unused imports, type safety improvements, accessibility gaps, lint issues, missing tests)
 
 **Default disposition: when uncertain, ASK.** Asking takes 30 seconds. Acting wrong takes hours to undo.

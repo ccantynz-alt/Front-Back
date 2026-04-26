@@ -1,0 +1,10 @@
+[install]
+exact = true
+
+[install.lockfile]
+save = true
+
+[test]
+# Unit tests only. The reverse-tunnel daemon runs no real sockets here —
+# every test mocks the WebSocket layer through the abstractions in
+# `src/origin.ts` and `src/edge.ts`.

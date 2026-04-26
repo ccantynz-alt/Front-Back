@@ -1,0 +1,40 @@
+# Crontech Self-Hosted Object Storage — BLK-018 v0
+#
+# Single-node MinIO instance providing S3-compatible object storage. The
+# operator MUST supply a `.env` file alongside this docker-compose.yml with
+# the following two variables BEFORE running `docker compose up`:
+#
+#   MINIO_ROOT_USER=<admin-username>
+#   MINIO_ROOT_PASSWORD=<long-random-secret-min-8-chars>
+#
+# Optional overrides:
+#   MINIO_DATA_DIR=./data        # host path mounted as the persistent volume
+#   MINIO_API_PORT=9000          # S3 API listening port (HTTP)
+#   MINIO_CONSOLE_PORT=9001      # browser admin console port
+#
+# By default the container binds 127.0.0.1 only — the public ingress to the
+# S3 API is the Bun proxy in services/object-storage/src/index.ts (port
+# 9094) which adds bearer-token auth and bucket admin routes. Multi-region
+# replication arrives in v1; this is the v0 single-node configuration.
+
+services:
+  minio:
+    image: minio/minio:RELEASE.2025-01-20T14-49-07Z
+    container_name: crontech-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required in .env}
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-http://127.0.0.1:9001}
+    ports:
+      - "127.0.0.1:${MINIO_API_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - ${MINIO_DATA_DIR:-./data}:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
