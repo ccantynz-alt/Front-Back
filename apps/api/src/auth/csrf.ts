@@ -50,11 +50,12 @@ export function validateCsrfToken(token: string | null): boolean {
 export function cleanupExpiredCsrfTokens(): number {
   const now = Date.now();
   let cleaned = 0;
-  for (const [key, entry] of csrfStore) {
-    if (now > entry.expiresAt) {
-      csrfStore.delete(key);
-      cleaned++;
-    }
+  const expiredKeys = Array.from(csrfStore.entries())
+    .filter(([, entry]) => now > entry.expiresAt)
+    .map(([key]) => key);
+  for (const key of expiredKeys) {
+    csrfStore.delete(key);
+    cleaned++;
   }
   return cleaned;
 }
