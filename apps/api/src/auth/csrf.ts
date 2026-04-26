@@ -12,6 +12,8 @@ interface CsrfEntry {
 
 const csrfStore = new Map<string, CsrfEntry>();
 
+const CLEANUP_THRESHOLD = 1000;
+
 export function generateCsrfToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   const token = Array.from(bytes)
@@ -22,6 +24,10 @@ export function generateCsrfToken(): string {
     token,
     expiresAt: Date.now() + CSRF_TTL_MS,
   });
+
+  if (csrfStore.size > CLEANUP_THRESHOLD) {
+    cleanupExpiredCsrfTokens();
+  }
 
   return token;
 }
