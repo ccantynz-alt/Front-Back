@@ -17,227 +17,44 @@
 // public port faces the internet.
 // ─────────────────────────────────────────────────────────────────────
 
+import { type ResponseFrame, decodeResponse, generateRequestId } from "./frame";
 import {
-  type RequestFrame,
-  type ResponseFrame,
-  bodyFromBase64,
-  bodyToBase64,
-  decodeResponse,
-  encodeRequest,
-  generateRequestId,
-} from "./frame";
-import { timingSafeEqual } from "./auth";
+  type OriginConnection,
+  OriginRegistry,
+  authenticateProtocol,
+  parseProtocol,
+} from "./registry";
+import { forwardThroughOrigin } from "./forward";
 
-// ── Sub-protocol parsing ────────────────────────────────────────────
+// Re-exports preserve the public surface for tests + downstream callers.
+export {
+  authenticateProtocol,
+  parseProtocol,
+  type ProtocolClaims,
+  type OriginConnection,
+  type PendingRequest,
+  OriginRegistry,
+} from "./registry";
+export {
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  type ForwardOptions,
+  forwardThroughOrigin,
+} from "./forward";
 
-const PROTOCOL_PREFIX = "crontech-tunnel.v1.";
+// ── Logger surface ──────────────────────────────────────────────────
 
-export interface ProtocolClaims {
-  readonly secret: string;
-  readonly hostname: string;
+export interface TunnelLogger {
+  log(msg: string): void;
+  warn(msg: string): void;
 }
 
-/**
- * Parse the `Sec-WebSocket-Protocol` value an origin presents at
- * upgrade. Returns the claimed shared secret and hostname, or null
- * if the format is wrong. Always pure — no I/O.
- */
-export function parseProtocol(value: string | null | undefined): ProtocolClaims | null {
-  if (!value) {
-    return null;
-  }
-  if (!value.startsWith(PROTOCOL_PREFIX)) {
-    return null;
-  }
-  const rest = value.slice(PROTOCOL_PREFIX.length);
-  const dotIdx = rest.indexOf(".");
-  if (dotIdx <= 0 || dotIdx === rest.length - 1) {
-    return null;
-  }
-  const secret = rest.slice(0, dotIdx);
-  const hostname = rest.slice(dotIdx + 1);
-  if (secret.length === 0 || hostname.length === 0) {
-    return null;
-  }
-  return { secret, hostname };
-}
-
-/**
- * Authenticate a parsed protocol claim. Constant-time comparison.
- */
-export function authenticateProtocol(
-  claims: ProtocolClaims | null,
-  expectedSecret: string,
-): boolean {
-  if (!claims) {
-    return false;
-  }
-  if (expectedSecret.length === 0) {
-    return false;
-  }
-  return timingSafeEqual(claims.secret, expectedSecret);
-}
-
-// ── Origin connection registry ──────────────────────────────────────
-//
-// Tracks live origin WebSocket connections by hostname. v0 supports a
-// single origin per hostname — a second origin claiming the same
-// hostname displaces the first. Multi-origin failover is BLK-019 v1.
-
-export interface OriginConnection {
-  /** Send a binary frame to this origin. */
-  send(buf: Uint8Array): void;
-  /** Mark the connection as closed. Used by the registry on drop. */
-  close(): void;
-  /** Stable identifier for diagnostics. */
-  readonly id: string;
-}
-
-export interface PendingRequest {
-  resolve(res: ResponseFrame): void;
-  reject(err: Error): void;
-}
-
-export class OriginRegistry {
-  private readonly connections = new Map<string, OriginConnection>();
-  private readonly pending = new Map<string, PendingRequest>();
-
-  register(hostname: string, conn: OriginConnection): void {
-    const previous = this.connections.get(hostname);
-    if (previous && previous.id !== conn.id) {
-      previous.close();
-    }
-    this.connections.set(hostname, conn);
-  }
-
-  unregister(hostname: string, conn: OriginConnection): void {
-    const current = this.connections.get(hostname);
-    if (current && current.id === conn.id) {
-      this.connections.delete(hostname);
-    }
-  }
-
-  get(hostname: string): OriginConnection | undefined {
-    return this.connections.get(hostname);
-  }
-
-  size(): number {
-    return this.connections.size;
-  }
-
-  trackPending(id: string, pending: PendingRequest): void {
-    this.pending.set(id, pending);
-  }
-
-  resolvePending(id: string, res: ResponseFrame): boolean {
-    const entry = this.pending.get(id);
-    if (!entry) {
-      return false;
-    }
-    this.pending.delete(id);
-    entry.resolve(res);
-    return true;
-  }
-
-  rejectPending(id: string, err: Error): boolean {
-    const entry = this.pending.get(id);
-    if (!entry) {
-      return false;
-    }
-    this.pending.delete(id);
-    entry.reject(err);
-    return true;
-  }
-
-  pendingCount(): number {
-    return this.pending.size;
-  }
-}
-
-// ── Request forwarding ──────────────────────────────────────────────
-
-export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
-
-export interface ForwardOptions {
-  readonly timeoutMs?: number;
-}
-
-/**
- * Forward an inbound HTTP request through the matching origin
- * connection and await the response frame. Returns a Web Response.
- *
- * Pure with respect to the registry — the registry is the only side
- * effect, which makes this easy to test with a fake origin connection.
- */
-export async function forwardThroughOrigin(
-  request: Request,
-  registry: OriginRegistry,
-  options: ForwardOptions = {},
-): Promise<Response> {
-  const url = new URL(request.url);
-  const host = request.headers.get("host") ?? url.host;
-  const conn = registry.get(host);
-  if (!conn) {
-    return new Response(`no origin registered for ${host}`, {
-      status: 502,
-      headers: { "content-type": "text/plain; charset=utf-8" },
-    });
-  }
-
-  const id = generateRequestId();
-  const headers: Record<string, string> = {};
-  request.headers.forEach((value, key) => {
-    headers[key] = value;
-  });
-  const bodyBuf = new Uint8Array(await request.arrayBuffer());
-  const frame: RequestFrame = {
-    type: "request",
-    id,
-    method: request.method,
-    url: `${url.pathname}${url.search}`,
-    headers,
-    body: bodyToBase64(bodyBuf),
-  };
-
-  const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
-  const responsePromise = new Promise<ResponseFrame>((resolve, reject) => {
-    registry.trackPending(id, { resolve, reject });
-    const timer = setTimeout(() => {
-      if (registry.rejectPending(id, new Error("origin response timeout"))) {
-        // marker — no extra work
-      }
-    }, timeoutMs);
-    // Best-effort cleanup if Bun supports `unref`
-    if (typeof timer === "object" && timer !== null && "unref" in timer) {
-      const maybeUnref = (timer as { unref?: () => void }).unref;
-      if (typeof maybeUnref === "function") {
-        maybeUnref.call(timer);
-      }
-    }
-  });
-
-  conn.send(encodeRequest(frame));
-
-  try {
-    const responseFrame = await responsePromise;
-    return new Response(bodyFromBase64(responseFrame.body), {
-      status: responseFrame.status,
-      headers: responseFrame.headers,
-    });
-  } catch (err) {
-    return new Response(`tunnel error: ${(err as Error).message}`, {
-      status: 504,
-      headers: { "content-type": "text/plain; charset=utf-8" },
-    });
-  }
-}
-
-// ── Daemon (runtime entrypoint) ─────────────────────────────────────
+// ── Daemon configuration ────────────────────────────────────────────
 
 interface EdgeConfig {
   readonly sharedSecret: string;
   readonly controlPort: number;
   readonly publicPort: number;
+  readonly bindHostname: string;
 }
 
 function loadConfig(): EdgeConfig {
@@ -253,27 +70,30 @@ function loadConfig(): EdgeConfig {
   if (!Number.isInteger(publicPort) || publicPort <= 0) {
     throw new Error(`TUNNEL_EDGE_PUBLIC_PORT must be a positive integer, got ${publicPort}`);
   }
-  return { sharedSecret, controlPort, publicPort };
+  const bindHostname = process.env["TUNNEL_EDGE_HOSTNAME"] ?? "0.0.0.0";
+  return { sharedSecret, controlPort, publicPort, bindHostname };
 }
+
+// ── WebSocket server scaffolding ────────────────────────────────────
 
 interface BunWsContext {
   hostname: string;
   conn: OriginConnection;
 }
 
-function startServers(config: EdgeConfig, registry: OriginRegistry): void {
+function startServers(
+  config: EdgeConfig,
+  registry: OriginRegistry,
+  logger: TunnelLogger,
+): void {
   // Control plane: origin WebSocket registrations.
   Bun.serve<BunWsContext, never>({
     port: config.controlPort,
-    hostname: process.env["TUNNEL_EDGE_HOSTNAME"] ?? "0.0.0.0",
+    hostname: config.bindHostname,
     fetch(req, server) {
       const protocolHeader = req.headers.get("sec-websocket-protocol");
       const claims = parseProtocol(protocolHeader);
-      if (!authenticateProtocol(claims, config.sharedSecret)) {
-        return new Response("unauthorized", { status: 401 });
-      }
-      // Non-null after authenticateProtocol — but narrow explicitly.
-      if (!claims) {
+      if (!authenticateProtocol(claims, config.sharedSecret) || !claims) {
         return new Response("unauthorized", { status: 401 });
       }
       const id = generateRequestId();
@@ -304,7 +124,7 @@ function startServers(config: EdgeConfig, registry: OriginRegistry): void {
         };
         ctx.conn = conn;
         registry.register(ctx.hostname, conn);
-        console.log(
+        logger.log(
           `[tunnel/edge] origin connected: hostname=${ctx.hostname} id=${conn.id} ` +
             `total=${registry.size()}`,
         );
@@ -318,7 +138,7 @@ function startServers(config: EdgeConfig, registry: OriginRegistry): void {
         try {
           frame = decodeResponse(buf);
         } catch (err) {
-          console.warn(`[tunnel/edge] decode error: ${(err as Error).message}`);
+          logger.warn(`[tunnel/edge] decode error: ${(err as Error).message}`);
           return;
         }
         registry.resolvePending(frame.id, frame);
@@ -326,7 +146,7 @@ function startServers(config: EdgeConfig, registry: OriginRegistry): void {
       close(ws) {
         const ctx = ws.data;
         registry.unregister(ctx.hostname, ctx.conn);
-        console.log(
+        logger.log(
           `[tunnel/edge] origin disconnected: hostname=${ctx.hostname} id=${ctx.conn.id} ` +
             `total=${registry.size()}`,
         );
@@ -343,14 +163,15 @@ function startServers(config: EdgeConfig, registry: OriginRegistry): void {
     },
   });
 
-  console.log(
+  logger.log(
     `[tunnel/edge] control on :${config.controlPort}, public on :${config.publicPort}`,
   );
 }
 
-function normaliseInbound(data: string | Buffer | Uint8Array | ArrayBuffer): Uint8Array | null {
+function normaliseInbound(
+  data: string | Buffer | Uint8Array | ArrayBuffer,
+): Uint8Array | null {
   if (typeof data === "string") {
-    // Strings are not valid frames in v0.
     return null;
   }
   if (data instanceof Uint8Array) {
@@ -359,8 +180,6 @@ function normaliseInbound(data: string | Buffer | Uint8Array | ArrayBuffer): Uin
   if (data instanceof ArrayBuffer) {
     return new Uint8Array(data);
   }
-  // Bun.Buffer extends Uint8Array, so the Uint8Array check above
-  // already covers Buffer instances. Anything else is unexpected.
   return null;
 }
 
@@ -369,5 +188,13 @@ function normaliseInbound(data: string | Buffer | Uint8Array | ArrayBuffer): Uin
 if (import.meta.main) {
   const config = loadConfig();
   const registry = new OriginRegistry();
-  startServers(config, registry);
+  const logger: TunnelLogger = {
+    log: (msg) => {
+      process.stdout.write(`${msg}\n`);
+    },
+    warn: (msg) => {
+      process.stderr.write(`${msg}\n`);
+    },
+  };
+  startServers(config, registry, logger);
 }

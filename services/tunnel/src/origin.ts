@@ -269,7 +269,7 @@ if (import.meta.main) {
       setTimeout(fn, ms);
     },
     log: (msg) => {
-      console.log(msg);
+      process.stdout.write(`${msg}\n`);
     },
   };
   connectAndServe(config, deps);
