@@ -5,6 +5,7 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 import { aiRoutes } from "./ai/routes";
 import { chatStreamRoutes } from "./ai/chat-stream";
+import { aiGatewayApp } from "./ai/gateway";
 import { wsApp, websocket, sseApp, theatreSseApp, yjsWsApp, liveUpdatesApp } from "./realtime";
 import { terminalApp } from "./terminal/handler";
 import { initTelemetry, httpRequestCount, httpRequestDuration, recordRequest, getMetrics } from "./telemetry";
@@ -466,6 +467,14 @@ app.route("/ai", aiRoutes);
 
 // Mount Anthropic chat streaming routes
 app.route("/chat", chatStreamRoutes);
+
+// Mount the Crontech AI Gateway (OpenAI-compatible LLM proxy with caching,
+// failover and per-call cost/latency metrics). Closes the "AI Gateway"
+// cell in `docs/CLOUDFLARE_PARITY_AUDIT.md` (§5 AI table) — Cloudflare's
+// AI Gateway is the equivalent product. Sub-app exposes
+// POST /api/ai/gateway/v1/chat/completions. See ./ai/gateway/index.ts
+// for the full wire contract and the §6.4 tRPC-exception rationale.
+app.route("/", aiGatewayApp);
 
 app.use("/trpc/*", async (c) => {
   const response = await fetchRequestHandler({
