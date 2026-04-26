@@ -67,7 +67,7 @@ function validPayload(
 }
 
 function postRequest(body: unknown, headers: Record<string, string> = {}): Request {
-  return new Request("http://test/api/hooks/gluecron/platform", {
+  return new Request("http://test/hooks/gluecron/platform", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
@@ -121,7 +121,7 @@ describe("gluecron-platform-deploy", () => {
     test("400 on invalid JSON body", async () => {
       const { app, calls } = setup();
       const res = await app.request(
-        new Request("http://test/api/hooks/gluecron/platform", {
+        new Request("http://test/hooks/gluecron/platform", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
