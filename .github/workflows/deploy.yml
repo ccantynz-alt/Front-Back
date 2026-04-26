@@ -142,15 +142,29 @@ jobs:
             echo "  Done — build outputs in place"
 
             # [4] Validate and repair .env
+            # systemd silently ignores any line whose variable name doesn't
+            # match its env-var grammar. A single corrupt byte (smart quote,
+            # Unicode look-alike like U+2248 "almost equal", BOM, stray '=')
+            # at the start of a line takes that variable down without warning.
+            # On 2026-04-26 a leading "≈" on PUBLIC_URL silently broke the
+            # web service for ~36 hours. Strip every plausible offender
+            # before checking for survivors.
             echo "[4/6] Validating env file..."
             if [ -f /opt/crontech/.env ]; then
-              sed -i 's/^=\([A-Z_][A-Z0-9_]*\)=/\1=/' /opt/crontech/.env
-              MALFORMED=$(grep -n '^[^A-Z#[:space:]]' /opt/crontech/.env | grep -v '^[0-9]*:#' || true)
+              # Strip a UTF-8 BOM if some editor stamped one onto the file head.
+              sed -i '1s/^\xEF\xBB\xBF//' /opt/crontech/.env
+              # Strip any sequence of leading bytes that aren't a valid env-var
+              # name char, '#', '=', or whitespace, before a VAR_NAME= pattern.
+              # Catches U+2248, smart quotes, stray '=', and similar paste rot.
+              sed -i -E 's/^[^A-Za-z_#=[:space:]]+([A-Z_][A-Z0-9_]*=)/\1/' /opt/crontech/.env
+              # Surface anything still malformed so it shows up in the deploy log
+              # instead of being silently ignored by systemd.
+              MALFORMED=$(grep -n '^[^A-Za-z#[:space:]]' /opt/crontech/.env || true)
               if [ -n "$MALFORMED" ]; then
-                echo "WARNING: Potentially malformed .env lines:"
+                echo "WARNING: Malformed .env lines remain after auto-repair:"
                 echo "$MALFORMED"
               else
-                echo "  .env looks clean"
+                echo "  .env clean"
               fi
             fi
 
@@ -185,7 +199,10 @@ jobs:
             DEPLOY_OK=false
             for i in $(seq 1 12); do
               sleep 5
-              API=$(curl -sf http://localhost:3001/health 2>/dev/null | grep -o '"status":"ok"' || echo "fail")
+              # Hono mounts the api under basePath("/api"), so the live health
+              # route is /api/health, not /health. Curling /health returns 404
+              # and rolls back every deploy silently — discovered 2026-04-26.
+              API=$(curl -sf http://localhost:3001/api/health 2>/dev/null | grep -o '"status":"ok"' || echo "fail")
               WEB=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
               echo "  Check $i/12: api=$API web=$WEB"
               if [ "$API" = '"status":"ok"' ] && [ "$WEB" = "200" ]; then
