@@ -2,6 +2,12 @@
  * Gluecron platform self-deploy webhook.
  *
  *   POST /api/hooks/gluecron/platform
+ *      (the route is declared as "/hooks/gluecron/platform" because the
+ *       parent api uses `new Hono().basePath("/api")` — the basePath is
+ *       prepended automatically when the sub-app is mounted with
+ *       `app.route("/", gluecronPlatformDeployApp)`. Declaring "/api/..."
+ *       here would double the prefix to "/api/api/..." and 500 on hit.)
+ *
  *   Authorization: Bearer ${GLUECRON_WEBHOOK_SECRET}
  *   Content-Type:  application/json
  *
@@ -117,7 +123,7 @@ export function createGluecronPlatformDeployApp(
 
   const app = new Hono();
 
-  app.post("/api/hooks/gluecron/platform", async (c) => {
+  app.post("/hooks/gluecron/platform", async (c) => {
     // ── 1. Auth: bearer token ─────────────────────────────────────
     const secret = getWebhookSecret();
     const provided = extractBearer(c.req.header("Authorization"));
