@@ -66,7 +66,7 @@ Each row is the honest state today. "Status" is one of:
 | Custom domains + auto-TLS | Caddy on Vultr | ✅ |
 | Git-push deploy | `.github/workflows/deploy.yml` (just fixed 2026-04-26) | ✅ |
 | Vercel AI SDK | We use the same SDK | ✅ |
-| Edge Functions (V8 isolates at PoPs) | Single-origin only — no edge | ❌ |
+| Edge Functions (V8 isolates at PoPs) | `services/edge-runtime/` (BLK-017 v0) — Bun-Worker stand-in for V8 isolates, single instance | 🟡 Code in repo, not running, not multi-region |
 | Serverless Functions | Hono routes on the box | 🟢 (architecture differs but covers the use case) |
 | Preview deployments per PR | None | ❌ |
 | Image optimisation | None | ❌ |
@@ -94,13 +94,15 @@ Each row is the honest state today. "Status" is one of:
 | Custom domains + TLS | Caddy | ✅ |
 | Auto-deploy from git | deploy.yml | ✅ |
 
-### Cloudflare — estimated **~10% parity** (see also `docs/CLOUDFLARE_PARITY_AUDIT.md`)
+### Cloudflare — estimated **~13% parity** (see also `docs/CLOUDFLARE_PARITY_AUDIT.md`)
 
 Cloudflare ships 34+ products. We have working equivalents for ~3
 (TLS via Caddy, type-safe API contracts via tRPC, base web hosting on
-Vultr). Another ~5 exist as code in this repo but **are not running**
-(`dns-server`, `deploy-agent`, `watchdog`, `queue`, `sentinel`). The
-remaining ~25 are unbuilt.
+Vultr). Another ~9 exist as code in this repo but **are not running**
+(`dns-server`, `deploy-agent`, `watchdog`, `queue`, `sentinel`, plus
+the four 2026-04-26 v0 additions: `edge-runtime` BLK-017,
+`object-storage` BLK-018, `tunnel` BLK-019, `ai-gateway` BLK-021).
+The remaining ~22 are unbuilt.
 
 The full breakdown is in `docs/CLOUDFLARE_PARITY_AUDIT.md` so this row
 stays terse.

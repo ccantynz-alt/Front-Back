@@ -160,3 +160,61 @@ adminDeployApp.delete("/admin/env-vars/:key", requireAdmin, async (c) => {
     return c.json({ ok: false, error: "deploy agent unreachable" }, 503);
   }
 });
+
+// ── Ops endpoints (BLK /admin/ops console) ───────────────────────────
+// These three proxies surface git history, deploy drift, and a fast
+// read-only diagnose battery to the admin UI without needing SSH on
+// the box. All require admin auth and time out within 8s so a stuck
+// agent never wedges the dashboard.
+
+// GET /api/admin/git/log — last N commits on the deployed branch
+adminDeployApp.get("/admin/git/log", requireAdmin, async (c) => {
+  if (!AGENT_SECRET) {
+    return c.json({ ok: false, error: "DEPLOY_AGENT_SECRET not configured" }, 503);
+  }
+  const limit = c.req.query("limit") ?? "20";
+  try {
+    const res = await fetch(`${AGENT_URL}/git/log?limit=${encodeURIComponent(limit)}`, {
+      headers: agentHeaders(),
+      signal: AbortSignal.timeout(8_000),
+    });
+    const body = await res.json() as Record<string, unknown>;
+    return c.json(body, res.status as 200 | 500 | 503);
+  } catch {
+    return c.json({ ok: false, error: "deploy agent unreachable" }, 503);
+  }
+});
+
+// GET /api/admin/git/drift — local SHA vs origin/Main with ahead/behind counts
+adminDeployApp.get("/admin/git/drift", requireAdmin, async (c) => {
+  if (!AGENT_SECRET) {
+    return c.json({ ok: false, error: "DEPLOY_AGENT_SECRET not configured" }, 503);
+  }
+  try {
+    const res = await fetch(`${AGENT_URL}/git/drift`, {
+      headers: agentHeaders(),
+      signal: AbortSignal.timeout(8_000),
+    });
+    const body = await res.json() as Record<string, unknown>;
+    return c.json(body, res.status as 200 | 500 | 503);
+  } catch {
+    return c.json({ ok: false, error: "deploy agent unreachable" }, 503);
+  }
+});
+
+// GET /api/admin/diagnose — fast read-only health battery
+adminDeployApp.get("/admin/diagnose", requireAdmin, async (c) => {
+  if (!AGENT_SECRET) {
+    return c.json({ ok: false, error: "DEPLOY_AGENT_SECRET not configured" }, 503);
+  }
+  try {
+    const res = await fetch(`${AGENT_URL}/diagnose`, {
+      headers: agentHeaders(),
+      signal: AbortSignal.timeout(8_000),
+    });
+    const body = await res.json() as Record<string, unknown>;
+    return c.json(body, res.status as 200 | 500 | 503);
+  } catch {
+    return c.json({ ok: false, error: "deploy agent unreachable" }, 503);
+  }
+});

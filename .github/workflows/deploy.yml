@@ -237,3 +237,19 @@ jobs:
               journalctl -u crontech-web --no-pager -n 30
               exit 1
             fi
+
+      # Public-URL smoke test — validates the full path
+      # (DNS → Caddy → systemd service → app) from outside the box.
+      # The in-SSH curl loop above only proves the box can serve on
+      # 127.0.0.1; this proves crontech.ai + api.crontech.ai are
+      # actually reachable. If this fails, the deploy job fails so
+      # we get notified the same way as a build failure.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Public smoke test
+        env:
+          BASE_WEB: https://crontech.ai
+          BASE_API: https://api.crontech.ai
+        run: bun run smoke
