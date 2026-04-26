@@ -220,6 +220,17 @@
         "typescript": "^6.0.2",
       },
     },
+    "services/edge-runtime": {
+      "name": "@back-to-the-future/edge-runtime",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/edge-workers": {
       "name": "@back-to-the-future/edge-workers",
       "dependencies": {
@@ -421,6 +432,8 @@
     "@back-to-the-future/db": ["@back-to-the-future/db@workspace:packages/db"],
 
     "@back-to-the-future/dns-server": ["@back-to-the-future/dns-server@workspace:services/dns-server"],
+
+    "@back-to-the-future/edge-runtime": ["@back-to-the-future/edge-runtime@workspace:services/edge-runtime"],
 
     "@back-to-the-future/edge-workers": ["@back-to-the-future/edge-workers@workspace:services/edge-workers"],
 
