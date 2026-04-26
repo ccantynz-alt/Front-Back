@@ -266,6 +266,14 @@
         "typescript": "^6.0.2",
       },
     },
+    "services/tunnel": {
+      "name": "@back-to-the-future/tunnel",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
   },
   "packages": {
     "@a2a-js/sdk": ["@a2a-js/sdk@0.2.5", "", { "dependencies": { "@types/cors": "^2.8.17", "@types/express": "^4.17.23", "body-parser": "^2.2.0", "cors": "^2.8.5", "express": "^4.21.2", "uuid": "^11.1.0" } }, "sha512-VTDuRS5V0ATbJ/LkaQlisMnTAeYKXAK6scMguVBstf+KIBQ7HIuKhiXLv+G/hvejkV+THoXzoNifInAkU81P1g=="],
@@ -439,6 +447,8 @@
     "@back-to-the-future/storage": ["@back-to-the-future/storage@workspace:packages/storage"],
 
     "@back-to-the-future/theatre": ["@back-to-the-future/theatre@workspace:packages/theatre"],
+
+    "@back-to-the-future/tunnel": ["@back-to-the-future/tunnel@workspace:services/tunnel"],
 
     "@back-to-the-future/ui": ["@back-to-the-future/ui@workspace:packages/ui"],
 

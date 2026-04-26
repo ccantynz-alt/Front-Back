@@ -1,0 +1,50 @@
+# Crontech — Reverse-tunnel origin daemon (BLK-019)
+#
+# Install path: /etc/systemd/system/crontech-tunnel-origin.service
+# Reload + enable:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now crontech-tunnel-origin.service
+#
+# Runs the daemon out of /opt/crontech/services/tunnel. Opens an
+# outbound WebSocket to the configured edge endpoint and forwards
+# inbound HTTP through it to the local API/web on 127.0.0.1.
+#
+# Required environment (typically supplied via /opt/crontech/.env):
+#   TUNNEL_EDGE_URL          ws(s)://edge.crontech.ai:9094/
+#   TUNNEL_SHARED_SECRET     opaque secret matched by the edge daemon
+#   TUNNEL_HOSTNAME          public hostname this origin serves
+# Optional:
+#   TUNNEL_LOCAL_WEB_PORT    default 3000
+#   TUNNEL_LOCAL_API_PORT    default 3001
+
+[Unit]
+Description=Crontech Reverse-Tunnel Origin Daemon (BLK-019)
+Documentation=https://crontech.ai/docs/tunnel
+After=network.target crontech-api.service crontech-web.service
+Wants=crontech-api.service crontech-web.service
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/crontech
+
+ExecStart=/usr/local/bin/bun run --cwd services/tunnel start:origin
+Restart=always
+RestartSec=5
+
+EnvironmentFile=-/opt/crontech/.env
+EnvironmentFile=-/opt/crontech/.env.production
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/crontech
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crontech-tunnel-origin
+
+[Install]
+WantedBy=multi-user.target
