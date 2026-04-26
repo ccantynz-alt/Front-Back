@@ -129,6 +129,17 @@ function checkMemory(): { mb: number; status: ServiceStatus } {
   };
 }
 
+async function settleAll<T>(promises: Promise<T>[]): Promise<Array<{ status: "fulfilled"; value: T } | { status: "rejected"; reason: unknown }>> {
+  return Promise.all(
+    promises.map((p) =>
+      p.then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (reason) => ({ status: "rejected" as const, reason }),
+      ),
+    ),
+  );
+}
+
 async function alertIfDown(snapshot: HealthSnapshot): Promise<void> {
   const broken = snapshot.services.filter((s) => s.status === "down");
   if (broken.length === 0) return;
@@ -144,7 +155,7 @@ async function alertIfDown(snapshot: HealthSnapshot): Promise<void> {
       body: broken.map((b) => `- ${b.name}: ${b.detail ?? b.status}`).join("\n"),
       timestamp: snapshot.timestamp,
     };
-    await Promise.allSettled([alerts.sendSlackAlert(message), alerts.sendDiscordAlert(message)]);
+    await settleAll([alerts.sendSlackAlert(message), alerts.sendDiscordAlert(message)]);
   } catch {
     // Sentinel unavailable - log via audit instead.
     await writeAudit({
