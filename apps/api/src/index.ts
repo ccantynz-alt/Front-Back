@@ -40,6 +40,7 @@ import { startQueue } from "./automation/retry-queue";
 import { startHealingLoop } from "./automation/self-heal";
 import { runDispatcher } from "./webhooks/dispatcher";
 import { gluecronPushApp } from "./webhooks/gluecron-push";
+import { gluecronPlatformDeployApp } from "./webhooks/gluecron-platform-deploy";
 import { inboundSmsApp } from "./sms/inbound";
 import { githubWebhookApp } from "./github/webhook";
 import { deploymentLogsStreamApp } from "./deploy/logs-stream";
@@ -430,6 +431,13 @@ app.route("/", inboundSmsApp);
 // handled inside the route, not via the global middleware stack).
 // POST /api/hooks/gluecron/push — see webhooks/gluecron-push.ts.
 app.route("/", gluecronPushApp);
+
+// Mount Gluecron platform self-deploy receiver — the BLK-016 cutover hook.
+// `git push gluecron Main` on the Crontech repo lands here, which triggers
+// the deploy-agent on localhost:9091 and refreshes crontech.ai with no
+// GitHub Actions in the loop. POST /api/hooks/gluecron/platform — see
+// webhooks/gluecron-platform-deploy.ts.
+app.route("/", gluecronPlatformDeployApp);
 
 // Mount GitHub push webhook receiver (BLK-009) — HMAC-SHA256 verification
 // is performed inside the handler against raw body, so it MUST stay
