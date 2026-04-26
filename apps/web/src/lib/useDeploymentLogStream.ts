@@ -135,7 +135,7 @@ export function useDeploymentLogStream(
       connect(id);
     }, reconnectDelay);
     reconnectDelay = Math.min(
-      reconnectDelay * 2 + Math.floor(Math.random() * 500),
+      reconnectDelay * 2 + (crypto.getRandomValues(new Uint32Array(1))[0]! % 500),
       MAX_RECONNECT_MS,
     );
   }

@@ -57,7 +57,7 @@ async function createUser(role: "admin" | "viewer"): Promise<string> {
   const id = crypto.randomUUID();
   await db.insert(users).values({
     id,
-    email: `esim-${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
+    email: `esim-${role}-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}@example.com`,
     displayName: `eSIM Test ${role}`,
     role,
   });

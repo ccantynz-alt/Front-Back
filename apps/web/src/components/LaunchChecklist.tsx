@@ -50,7 +50,7 @@ export interface ChecklistItem {
    * When the admin probe returns `secrets[<name>] === true`, this item
    * is shown as done (but not persisted to localStorage — see below).
    */
-  readonly autoProbeSecret?: LaunchSecretKey;
+  readonly envVarProbe?: LaunchEnvKey;
   /**
    * Name of a probe on the `launch.status` response's `probes` map.
    * When `probes[<name>] === true`, this item is shown as done.
@@ -59,7 +59,7 @@ export interface ChecklistItem {
 }
 
 // Keep in lockstep with apps/api/src/trpc/procedures/launch.ts SECRET_KEYS.
-export type LaunchSecretKey =
+export type LaunchEnvKey =
   | "DATABASE_URL"
   | "DATABASE_AUTH_TOKEN"
   | "SESSION_SECRET"
@@ -117,33 +117,33 @@ export const LAUNCH_PHASES: readonly ChecklistPhase[] = [
         id: "B1",
         label: "DATABASE_URL",
         note: "libsql://…turso.io",
-        autoProbeSecret: "DATABASE_URL",
+        envVarProbe: "DATABASE_URL",
       },
       {
         id: "B2",
         label: "DATABASE_AUTH_TOKEN",
-        autoProbeSecret: "DATABASE_AUTH_TOKEN",
+        envVarProbe: "DATABASE_AUTH_TOKEN",
       },
       {
         id: "B3",
         label: "SESSION_SECRET",
         note: "48-byte base64",
-        autoProbeSecret: "SESSION_SECRET",
+        envVarProbe: "SESSION_SECRET",
       },
       {
         id: "B4",
         label: "JWT_SECRET",
         note: "48-byte base64",
-        autoProbeSecret: "JWT_SECRET",
+        envVarProbe: "JWT_SECRET",
       },
-      { id: "B5", label: "GOOGLE_CLIENT_ID", autoProbeSecret: "GOOGLE_CLIENT_ID" },
-      { id: "B6", label: "GOOGLE_CLIENT_SECRET", autoProbeSecret: "GOOGLE_CLIENT_SECRET" },
-      { id: "B7", label: "STRIPE_SECRET_KEY", autoProbeSecret: "STRIPE_SECRET_KEY" },
-      { id: "B8", label: "STRIPE_WEBHOOK_SECRET", autoProbeSecret: "STRIPE_WEBHOOK_SECRET" },
-      { id: "B9", label: "STRIPE_PRO_PRICE_ID", autoProbeSecret: "STRIPE_PRO_PRICE_ID" },
-      { id: "B10", label: "STRIPE_ENTERPRISE_PRICE_ID", autoProbeSecret: "STRIPE_ENTERPRISE_PRICE_ID" },
-      { id: "B11", label: "OPENAI_API_KEY", autoProbeSecret: "OPENAI_API_KEY" },
-      { id: "B12", label: "ANTHROPIC_API_KEY", autoProbeSecret: "ANTHROPIC_API_KEY" },
+      { id: "B5", label: "GOOGLE_CLIENT_ID", envVarProbe: "GOOGLE_CLIENT_ID" },
+      { id: "B6", label: "GOOGLE_CLIENT_SECRET", envVarProbe: "GOOGLE_CLIENT_SECRET" },
+      { id: "B7", label: "STRIPE_SECRET_KEY", envVarProbe: "STRIPE_SECRET_KEY" },
+      { id: "B8", label: "STRIPE_WEBHOOK_SECRET", envVarProbe: "STRIPE_WEBHOOK_SECRET" },
+      { id: "B9", label: "STRIPE_PRO_PRICE_ID", envVarProbe: "STRIPE_PRO_PRICE_ID" },
+      { id: "B10", label: "STRIPE_ENTERPRISE_PRICE_ID", envVarProbe: "STRIPE_ENTERPRISE_PRICE_ID" },
+      { id: "B11", label: "OPENAI_API_KEY", envVarProbe: "OPENAI_API_KEY" },
+      { id: "B12", label: "ANTHROPIC_API_KEY", envVarProbe: "ANTHROPIC_API_KEY" },
     ],
   },
   {
@@ -277,7 +277,7 @@ async function probeVersion(): Promise<string | null> {
 // Worker, the next poll drops it back to pending automatically.
 
 export interface LaunchStatusResponse {
-  readonly secrets: Record<LaunchSecretKey, boolean>;
+  readonly secrets: Record<LaunchEnvKey, boolean>;
   readonly probes: Record<LaunchProbeKey, boolean>;
 }
 
@@ -289,7 +289,7 @@ export function deriveAutoDone(
   if (!status) return out;
   for (const p of phases) {
     for (const it of p.items) {
-      if (it.autoProbeSecret && status.secrets[it.autoProbeSecret] === true) {
+      if (it.envVarProbe && status.secrets[it.envVarProbe] === true) {
         out.add(it.id);
       }
       if (it.autoProbeId && status.probes[it.autoProbeId] === true) {

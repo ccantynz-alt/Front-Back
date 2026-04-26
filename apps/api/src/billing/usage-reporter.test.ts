@@ -70,7 +70,7 @@ let mockRetrieveImpl: RetrieveImpl = async (id) => ({
   items: { data: [] },
 });
 let mockCreateImpl: CreateImpl = async () => ({
-  id: `ur_default_${Math.random().toString(36).slice(2, 8)}`,
+  id: `ur_default_${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`,
 });
 
 await mock.module("../stripe/client", () => ({
@@ -112,7 +112,7 @@ async function createTestUser(): Promise<string> {
   const id = crypto.randomUUID();
   await db.insert(users).values({
     id,
-    email: `usage-reporter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
+    email: `usage-reporter-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}@example.com`,
     displayName: "Usage Reporter Test",
   });
   return id;
@@ -220,7 +220,7 @@ describe("reportUsageForUser", () => {
     retrieveCalls = [];
     createCalls = [];
     mockCreateImpl = async () => ({
-      id: `ur_${Math.random().toString(36).slice(2, 10)}`,
+      id: `ur_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`,
     });
     userId = await createTestUser();
     await seedSubscription(userId);

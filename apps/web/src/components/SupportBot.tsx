@@ -203,7 +203,7 @@ export function SupportBot(): ReturnType<typeof Show> {
   ];
 
   function pushMessage(role: Role, content: string): string {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const id = `${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
     setMessages((prev) => [...prev, { id, role, content }]);
     return id;
   }
@@ -346,16 +346,7 @@ export function SupportBot(): ReturnType<typeof Show> {
                 "justify-content": "space-between",
                 cursor: "pointer",
               }}
-              role="button"
-              tabindex="0"
-              aria-label={minimized() ? "Expand help" : "Minimize help"}
               onClick={() => setMinimized(!minimized())}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setMinimized(!minimized());
-                }
-              }}
             >
               <div style={{ "font-weight": "600", "font-size": "14px" }}>
                 Help &mdash; {hints().title}

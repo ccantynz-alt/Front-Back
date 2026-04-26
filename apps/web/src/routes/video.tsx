@@ -313,12 +313,12 @@ export default function VideoPage(): JSX.Element {
                   >
                     <Icon name={feat.icon} size={20} />
                   </div>
-                  <h3
+                  <h2
                     class="mt-5 text-[1.0625rem] font-semibold tracking-tight"
                     style={{ color: "#f0f0f5" }}
                   >
                     {feat.title}
-                  </h3>
+                  </h2>
                   <p
                     class="mt-2 text-sm leading-[1.75]"
                     style={{ color: "rgba(255,255,255,0.55)" }}

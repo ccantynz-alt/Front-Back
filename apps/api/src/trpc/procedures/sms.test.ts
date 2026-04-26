@@ -60,7 +60,7 @@ async function createUser(role: "admin" | "viewer"): Promise<string> {
   const id = crypto.randomUUID();
   await db.insert(users).values({
     id,
-    email: `sms-${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
+    email: `sms-${role}-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}@example.com`,
     displayName: `SMS Test ${role}`,
     role,
   });
@@ -81,11 +81,11 @@ async function cleanupUser(userId: string): Promise<void> {
 
 async function attachNumber(userId: string, e164: string): Promise<void> {
   await db.insert(smsNumbers).values({
-    id: `smsn_test_${Math.random().toString(36).slice(2, 10)}`,
+    id: `smsn_test_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`,
     userId,
     e164Number: e164,
     countryCode: "US",
-    sinchNumberId: `sinch_${Math.random().toString(36).slice(2, 10)}`,
+    sinchNumberId: `sinch_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`,
     capabilities: JSON.stringify(["sms"]),
     monthlyCostMicrodollars: 1_000_000,
   });
@@ -475,7 +475,7 @@ describe("sms router", () => {
     const e164 = "+14155550178";
     await attachNumber(userId, e164);
     await db.insert(smsWebhookSubscriptions).values({
-      id: `sub_${Math.random().toString(36).slice(2, 8)}`,
+      id: `sub_${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`,
       userId,
       e164Number: e164,
       customerWebhookUrl: "https://example.com/sms",
@@ -551,7 +551,7 @@ describe("sms router", () => {
       clientFactory: () => makeFakeClient(state),
       markupPercent: 30,
       buyNumberImpl: async () => ({
-        id: `smsn_${Math.random().toString(36).slice(2, 8)}`,
+        id: `smsn_${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`,
         e164Number: "+14155550123",
         sinchNumberId: "sinch-num-xyz",
         monthlyCostMicrodollars: 1_300_000,

@@ -118,7 +118,7 @@ const ValidateInputSchema = z.object({ tree: ComponentTreeNodeSchema });
 // ── Helpers ───────────────────────────────────────────────────
 
 function newComponentId(): string {
-  return `uic_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `uic_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
 function parseDescriptor(raw: string): ComponentDescriptor {

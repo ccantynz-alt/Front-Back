@@ -678,8 +678,9 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
                 />
 
                 <div class="input-wrapper">
-                  <label class="input-label">Description (optional)</label>
+                  <label class="input-label" for="new-project-description">Description (optional)</label>
                   <textarea
+                    id="new-project-description"
                     class="textarea"
                     placeholder="A brief description of what this project does"
                     rows={3}

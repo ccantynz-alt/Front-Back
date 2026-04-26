@@ -970,10 +970,11 @@ function ServerEnvPanel(): JSX.Element {
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div class="flex-1">
-              <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+              <label for="admin-env-key" class="mb-1 block text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
                 Key
               </label>
               <input
+                id="admin-env-key"
                 type="text"
                 value={newKey()}
                 onInput={(e) => setNewKey(e.currentTarget.value.toUpperCase())}
@@ -988,10 +989,11 @@ function ServerEnvPanel(): JSX.Element {
               />
             </div>
             <div class="flex-1">
-              <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+              <label for="admin-env-value" class="mb-1 block text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
                 Value
               </label>
               <input
+                id="admin-env-value"
                 type="password"
                 value={newValue()}
                 onInput={(e) => setNewValue(e.currentTarget.value)}

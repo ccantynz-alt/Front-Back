@@ -121,7 +121,7 @@ function parseExpiry(value: string | undefined): Date {
 }
 
 function newId(): string {
-  return `dom_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `dom_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
 function translateOpensrsError(err: unknown, fallbackMessage: string): never {

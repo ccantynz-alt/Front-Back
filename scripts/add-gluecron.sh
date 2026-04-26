@@ -74,7 +74,12 @@ if [[ -z "$BUN_BIN" ]]; then
   log "bun: not found, installing to /usr/local"
   # Official installer drops into ~/.bun; symlink into /usr/local/bin.
   export BUN_INSTALL="/usr/local"
-  curl -fsSL https://bun.sh/install | bash
+  # Download installer to a temp file and execute (safer than direct pipe).
+  local _bun_installer; _bun_installer="$(mktemp /tmp/bun-install.XXXXXX.sh)"
+  curl -fsSL https://bun.sh/install -o "$_bun_installer"
+  chmod +x "$_bun_installer"
+  bash "$_bun_installer"
+  rm -f "$_bun_installer"
   BUN_BIN="/usr/local/bin/bun"
 fi
 [[ -x "$BUN_BIN" ]] || die "bun install failed: $BUN_BIN not executable"

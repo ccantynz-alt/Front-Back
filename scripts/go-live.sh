@@ -85,7 +85,7 @@ phase_sanity() {
   done
   if (( ${#missing_bins[@]} > 0 )); then
     err "missing required binaries: ${missing_bins[*]}"
-    info "install: apt install -y caddy git curl; curl -fsSL https://bun.sh/install | bash"
+    info "install: apt install -y caddy git curl && BUN_INSTALL=/usr/local bash <(curl -fsSL https://bun.sh/install)"
     return 1
   fi
   ok "required binaries present: bun git caddy systemctl curl"

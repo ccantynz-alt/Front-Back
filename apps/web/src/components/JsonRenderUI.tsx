@@ -324,6 +324,7 @@ export function ChatGenUI(props: ChatGenUIProps): JSX.Element {
           type="text"
           placeholder={props.placeholder ?? "Describe the UI you want..."}
           value={inputValue()}
+          label="Describe UI"
           onInput={(e: Event) =>
             setInputValue((e.target as HTMLInputElement).value)
           }

@@ -100,9 +100,16 @@ export function MetricsChart(props: MetricsChartProps): JSX.Element {
     onCleanup(() => observer.disconnect());
   });
 
-  // Animate entrance
+  // Animate entrance — skip entirely when user prefers reduced motion
   createEffect((): void => {
     if (props.animate === false) return;
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      setAnimProgress(1);
+      return;
+    }
     let frame: number;
     const start = performance.now();
     const duration = 1200;

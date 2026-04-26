@@ -104,7 +104,7 @@ export function createInboundSmsApp(deps: InboundHookDeps = {}): Hono {
       return c.json({ ok: true, status: "ignored" as const });
     }
 
-    const messageId = `sms_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    const messageId = `sms_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
     const receivedAt = new Date(now());
     const row: typeof smsMessages.$inferInsert = {
       id: messageId,
@@ -225,7 +225,7 @@ async function enqueueCustomerWebhook(
       )
       .limit(1);
     if (!shadow[0]) {
-      const shadowId = `uwh_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+      const shadowId = `uwh_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
       await db.insert(userWebhooks).values({
         id: shadowId,
         userId: input.userId,
@@ -242,7 +242,7 @@ async function enqueueCustomerWebhook(
     }
     const hook = shadow[0];
     if (!hook) continue;
-    const deliveryId = `wdel_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const deliveryId = `wdel_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
     await db.insert(webhookDeliveries).values({
       id: deliveryId,
       webhookId: hook.id,

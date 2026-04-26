@@ -102,7 +102,7 @@ const sections: Section[] = [
       "\u2022 Firefox: Settings > Privacy & Security > Cookies and Site Data",
       "\u2022 Safari: Preferences > Privacy > Manage Website Data",
       "\u2022 Edge: Settings > Cookies and Site Permissions > Manage and Delete Cookies and Site Data",
-      "Important: If you disable or delete essential cookies (ct_session, ct_csrf), you will be signed out of the Service and will need to re-authenticate. Core functionality such as authentication and CSRF protection depends on these cookies and cannot work without them.",
+      "Important: Removing essential cookies (ct_session, ct_csrf) will sign you out and require re-authentication. Core functionality including authentication and cross-site request forgery prevention relies on these cookies.",
     ],
   },
   {

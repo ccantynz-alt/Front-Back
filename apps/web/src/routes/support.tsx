@@ -315,9 +315,9 @@ export default function SupportPage(): JSX.Element {
                   >
                     {link.icon}
                   </div>
-                  <h3 class="text-sm font-semibold mb-1 transition-colors" style={{ color: "var(--color-text)" }}>
+                  <p class="text-sm font-semibold mb-1 transition-colors" style={{ color: "var(--color-text)" }}>
                     {link.title}
-                  </h3>
+                  </p>
                   <p class="text-xs leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
                     {link.description}
                   </p>

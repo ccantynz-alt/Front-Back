@@ -88,10 +88,18 @@ export function DeploymentLogs(props: DeploymentLogsProps): JSX.Element {
     if (!containerRef) return;
     if (!autoScroll()) return;
     // Defer to the next frame so the DOM has painted the new lines first.
-    requestAnimationFrame(() => {
-      if (!containerRef) return;
-      containerRef.scrollTop = containerRef.scrollHeight;
-    });
+    // Skip rAF if user prefers reduced motion — scroll immediately instead.
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      if (containerRef) containerRef.scrollTop = containerRef.scrollHeight;
+    } else {
+      requestAnimationFrame(() => {
+        if (!containerRef) return;
+        containerRef.scrollTop = containerRef.scrollHeight;
+      });
+    }
     // reference `count` so this is reactive
     void count;
   });

@@ -32,7 +32,7 @@ async function createTestUser(): Promise<string> {
   const id = crypto.randomUUID();
   await db.insert(users).values({
     id,
-    email: `test-ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
+    email: `test-ai-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}@example.com`,
     displayName: "Test AI User",
   });
   return id;
@@ -52,7 +52,7 @@ async function cleanupTestUser(userId: string): Promise<void> {
 }
 
 function uniqueSlug(): string {
-  return `test-site-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  return `test-site-${Date.now().toString(36)}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
 }
 
 // ── ai.siteBuilder procedures ──────────────────────────────────────

@@ -171,7 +171,7 @@ function billingEnabled(): boolean {
 }
 
 function newNumberId(): string {
-  return `smsn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `smsn_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
 async function resolveFromNumber(

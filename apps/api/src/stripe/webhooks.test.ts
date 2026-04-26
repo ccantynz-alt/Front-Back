@@ -81,7 +81,7 @@ async function createTestUser(): Promise<string> {
   const id = crypto.randomUUID();
   await db.insert(users).values({
     id,
-    email: `stripe-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
+    email: `stripe-test-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}@example.com`,
     displayName: "Stripe Test User",
   });
   return id;
@@ -101,7 +101,7 @@ async function cleanupUser(userId: string): Promise<void> {
 function buildEvent<T>(
   type: Stripe.Event.Type,
   data: T,
-  eventId = `evt_test_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+  eventId = `evt_test_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`,
 ): Stripe.Event {
   return {
     id: eventId,

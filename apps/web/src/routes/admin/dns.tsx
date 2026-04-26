@@ -331,7 +331,7 @@ function AdminDnsContent(): JSX.Element {
               </p>
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <label class="flex flex-col gap-1.5">
+              <label class="flex flex-col gap-1.5" for="dns-zone-name">
                 <span
                   class="text-[10px] font-semibold uppercase tracking-widest"
                   style={{ color: "var(--color-text-faint)" }}
@@ -339,6 +339,7 @@ function AdminDnsContent(): JSX.Element {
                   Zone name
                 </span>
                 <input
+                  id="dns-zone-name"
                   type="text"
                   placeholder="example.com"
                   value={form().zoneName}
@@ -353,7 +354,7 @@ function AdminDnsContent(): JSX.Element {
                   }}
                 />
               </label>
-              <label class="flex flex-col gap-1.5">
+              <label class="flex flex-col gap-1.5" for="dns-admin-email">
                 <span
                   class="text-[10px] font-semibold uppercase tracking-widest"
                   style={{ color: "var(--color-text-faint)" }}
@@ -361,6 +362,7 @@ function AdminDnsContent(): JSX.Element {
                   Admin email
                 </span>
                 <input
+                  id="dns-admin-email"
                   type="email"
                   placeholder="hostmaster@example.com"
                   value={form().adminEmail}
@@ -375,7 +377,7 @@ function AdminDnsContent(): JSX.Element {
                   }}
                 />
               </label>
-              <label class="flex flex-col gap-1.5">
+              <label class="flex flex-col gap-1.5" for="dns-primary-ns">
                 <span
                   class="text-[10px] font-semibold uppercase tracking-widest"
                   style={{ color: "var(--color-text-faint)" }}
@@ -383,6 +385,7 @@ function AdminDnsContent(): JSX.Element {
                   Primary nameserver
                 </span>
                 <input
+                  id="dns-primary-ns"
                   type="text"
                   placeholder="ns1.crontech.ai"
                   value={form().primaryNs}
@@ -397,7 +400,7 @@ function AdminDnsContent(): JSX.Element {
                   }}
                 />
               </label>
-              <label class="flex flex-col gap-1.5">
+              <label class="flex flex-col gap-1.5" for="dns-secondary-ns">
                 <span
                   class="text-[10px] font-semibold uppercase tracking-widest"
                   style={{ color: "var(--color-text-faint)" }}
@@ -405,6 +408,7 @@ function AdminDnsContent(): JSX.Element {
                   Secondary nameserver (optional)
                 </span>
                 <input
+                  id="dns-secondary-ns"
                   type="text"
                   placeholder="ns2.crontech.ai"
                   value={form().secondaryNs}
