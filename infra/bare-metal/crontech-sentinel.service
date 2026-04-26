@@ -1,0 +1,39 @@
+# Crontech Sentinel — 24/7 Competitive Intelligence Engine
+#
+# Long-lived Bun process running the collector cycle and dead-man's switch.
+# Per CLAUDE.md §0.3 Ahead-of-Competition Rule: this service must run
+# continuously so the session-start hook reads from a live intel store.
+#
+# Install:
+#   cp infra/bare-metal/crontech-sentinel.service /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable --now crontech-sentinel
+#
+# (deploy.yml installs + enables this on every push to Main.)
+
+[Unit]
+Description=Crontech Sentinel (competitive intelligence engine)
+Documentation=https://docs.crontech.ai/blocks/blk-015
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/crontech
+
+ExecStart=/root/.bun/bin/bun run services/sentinel/src/index.ts
+Restart=always
+RestartSec=10
+
+Environment=APP_DIR=/opt/crontech
+Environment=SENTINEL_PORT=3002
+EnvironmentFile=-/opt/crontech/.env
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crontech-sentinel
+
+[Install]
+WantedBy=multi-user.target
