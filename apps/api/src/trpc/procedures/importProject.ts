@@ -285,13 +285,28 @@ export const importRouter = router({
       }
       const vercelProject = parsed.data;
 
-      // Fetch env vars
-      const envData = await vercelFetch<{ envs: unknown[] }>(
-        `/v9/projects/${input.projectId}/env`,
-        input.token,
-      );
-      const envParsed = z.array(VercelEnvVarSchema).safeParse(envData.envs);
-      const envVars = envParsed.success ? envParsed.data : [];
+      // Fetch env vars — try decrypted first; fall back if token lacks scope.
+      let envVars: Array<z.infer<typeof VercelEnvVarSchema>> = [];
+      try {
+        const envData = await vercelFetch<{ envs: unknown[] }>(
+          `/v9/projects/${input.projectId}/env?decrypt=1`,
+          input.token,
+        );
+        const envParsed = z.array(VercelEnvVarSchema).safeParse(envData.envs);
+        if (envParsed.success) envVars = envParsed.data;
+      } catch {
+        // Token lacks decrypt scope — list without values so the project still imports.
+        try {
+          const envData = await vercelFetch<{ envs: unknown[] }>(
+            `/v9/projects/${input.projectId}/env`,
+            input.token,
+          );
+          const envParsed = z.array(VercelEnvVarSchema).safeParse(envData.envs);
+          if (envParsed.success) envVars = envParsed.data;
+        } catch {
+          // Continue without env vars
+        }
+      }
 
       // Fetch domains
       const domainData = await vercelFetch<{ domains: unknown[] }>(

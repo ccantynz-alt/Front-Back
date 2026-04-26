@@ -44,6 +44,7 @@ import { inboundSmsApp } from "./sms/inbound";
 import { githubWebhookApp } from "./github/webhook";
 import { deploymentLogsStreamApp } from "./deploy/logs-stream";
 import { adminDeployApp } from "./deploy/admin-deploy";
+import { platformAutoDeployApp } from "./deploy/platform-auto-deploy";
 import { createEmpireHealthApp } from "./healthz/empire";
 import { db as defaultDb } from "@back-to-the-future/db";
 import {
@@ -435,6 +436,10 @@ app.route("/", gluecronPushApp);
 // outside global middleware that would rewrite / consume the body.
 // POST /api/webhook/github — see github/webhook.ts.
 app.route("/", githubWebhookApp);
+
+// Platform auto-deploy: POST /api/hooks/github/platform
+// GitHub pushes to ccantynz-alt/Crontech Main trigger the deploy agent.
+app.route("/", platformAutoDeployApp);
 
 // Mount Google OAuth routes (raw Hono -- needs redirects outside tRPC)
 app.route("/auth", googleOAuthRoutes);

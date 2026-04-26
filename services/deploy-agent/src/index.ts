@@ -8,11 +8,17 @@
  * Auth: Authorization: Bearer ${DEPLOY_AGENT_SECRET}
  *
  * Endpoints:
- *   GET  /health  → { ok: true }
- *   GET  /status  → { services, sha, deploying }
- *   POST /deploy  → SSE stream of deploy steps (git pull → install → build → restart)
- *   POST /restart → SSE stream of service restarts only
+ *   GET  /health          → { ok: true }
+ *   GET  /status          → { services, sha, deploying }
+ *   POST /deploy          → SSE stream of deploy steps (git pull → install → build → restart)
+ *   POST /restart         → SSE stream of service restarts only
+ *   GET  /env-vars        → { ok: true, vars: [{ key, hint, set }] }
+ *   PUT  /env-vars        → set a key=value in the .env file
+ *   DELETE /env-vars/:key → remove a key from the .env file
  */
+
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import path from "node:path";
 
 const PORT = Number(process.env["DEPLOY_AGENT_PORT"] ?? 9091);
 const SECRET = process.env["DEPLOY_AGENT_SECRET"] ?? "";
@@ -175,6 +181,46 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+// ── Env var file management ──────────────────────────────────────────
+
+const ENV_FILE_PATH = path.join(APP_DIR, ".env");
+
+function readEnvMap(): Map<string, string> {
+  if (!existsSync(ENV_FILE_PATH)) return new Map();
+  const content = readFileSync(ENV_FILE_PATH, "utf8");
+  const map = new Map<string, string>();
+  for (const rawLine of content.split("\n")) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq <= 0) continue;
+    const k = line.slice(0, eq).trim();
+    let v = line.slice(eq + 1).trim();
+    if (
+      (v.startsWith('"') && v.endsWith('"')) ||
+      (v.startsWith("'") && v.endsWith("'"))
+    ) {
+      v = v.slice(1, -1);
+    }
+    map.set(k, v);
+  }
+  return map;
+}
+
+function writeEnvMap(map: Map<string, string>): void {
+  const lines = Array.from(map.entries()).map(([k, v]) => {
+    const needsQuotes = /[\s"'\\#]/.test(v);
+    return needsQuotes ? `${k}="${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"` : `${k}=${v}`;
+  });
+  writeFileSync(ENV_FILE_PATH, lines.join("\n") + "\n", "utf8");
+}
+
+function valueHint(v: string): string {
+  if (!v) return "(empty)";
+  if (v.length <= 4) return "••••";
+  return `${v.slice(0, 4)}${"•".repeat(Math.min(8, v.length - 4))}`;
+}
+
 // ── Server ───────────────────────────────────────────────────────────
 
 Bun.serve({
@@ -212,6 +258,45 @@ Bun.serve({
 
     if (pathname === "/restart" && method === "POST") {
       return sseStream(runRestart);
+    }
+
+    if (pathname === "/env-vars" && method === "GET") {
+      const map = readEnvMap();
+      const vars = Array.from(map.entries()).map(([key, value]) => ({
+        key,
+        hint: valueHint(value),
+        set: true,
+      }));
+      return json({ ok: true, vars });
+    }
+
+    if (pathname === "/env-vars" && method === "PUT") {
+      let body: { key?: string; value?: string };
+      try {
+        body = await req.json() as { key?: string; value?: string };
+      } catch {
+        return json({ ok: false, error: "invalid JSON body" }, 400);
+      }
+      const k = body.key?.trim();
+      if (!k || typeof body.value !== "string") {
+        return json({ ok: false, error: "key and value required" }, 400);
+      }
+      const map = readEnvMap();
+      map.set(k, body.value);
+      writeEnvMap(map);
+      return json({ ok: true, key: k, action: map.has(k) ? "updated" : "created" });
+    }
+
+    const envVarsDeleteMatch = /^\/env-vars\/([^/]+)$/.exec(pathname);
+    if (envVarsDeleteMatch && method === "DELETE") {
+      const key = decodeURIComponent(envVarsDeleteMatch[1] ?? "");
+      const map = readEnvMap();
+      if (!map.has(key)) {
+        return json({ ok: false, error: "key not found" }, 404);
+      }
+      map.delete(key);
+      writeEnvMap(map);
+      return json({ ok: true, key, action: "deleted" });
     }
 
     return json({ ok: false, error: "not found" }, 404);

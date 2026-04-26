@@ -587,6 +587,11 @@ function AdminPageContent(): JSX.Element {
         <div class="mt-8">
           <DeployPanel />
         </div>
+
+        {/* Server Env Vars */}
+        <div class="mt-8">
+          <ServerEnvPanel />
+        </div>
       </div>
     </div>
   );
@@ -816,6 +821,259 @@ function DeployPanel(): JSX.Element {
             )}
           </For>
         </div>
+      </Show>
+    </div>
+  );
+}
+
+// ── Server Env Vars Panel ─────────────────────────────────────────────
+// Reads and writes the platform .env file via the deploy agent.
+// Values are never returned — only a masked hint is shown.
+
+interface EnvVarHint {
+  key: string;
+  hint: string;
+  set: boolean;
+}
+
+function ServerEnvPanel(): JSX.Element {
+  const token = (): string => localStorage.getItem("ct_token") ?? "";
+  const authHeaders = (): HeadersInit => ({ Authorization: `Bearer ${token()}` });
+
+  const [vars, setVars] = createSignal<EnvVarHint[]>([]);
+  const [loading, setLoading] = createSignal(true);
+  const [error, setError] = createSignal("");
+  const [showAdd, setShowAdd] = createSignal(false);
+  const [newKey, setNewKey] = createSignal("");
+  const [newValue, setNewValue] = createSignal("");
+  const [saving, setSaving] = createSignal(false);
+
+  const load = async (): Promise<void> => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/env-vars", { headers: authHeaders() });
+      if (!res.ok) {
+        setError(`Failed to load (${res.status})`);
+        return;
+      }
+      const body = await res.json() as { ok: boolean; vars?: EnvVarHint[] };
+      setVars(body.vars ?? []);
+    } catch {
+      setError("Deploy agent unreachable");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  void load();
+
+  const save = async (): Promise<void> => {
+    const k = newKey().trim().toUpperCase();
+    const v = newValue();
+    if (!k || !v) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/env-vars", {
+        method: "PUT",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ key: k, value: v }),
+      });
+      if (res.ok) {
+        showToast(`Saved ${k}`, "success");
+        setNewKey("");
+        setNewValue("");
+        setShowAdd(false);
+        void load();
+      } else {
+        const body = await res.json() as { error?: string };
+        showToast(body.error ?? "Save failed", "error");
+      }
+    } catch {
+      showToast("Deploy agent unreachable", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (key: string): Promise<void> => {
+    try {
+      const res = await fetch(`/api/admin/env-vars/${encodeURIComponent(key)}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (res.ok) {
+        showToast(`Removed ${key}`, "success");
+        void load();
+      } else {
+        showToast("Delete failed", "error");
+      }
+    } catch {
+      showToast("Deploy agent unreachable", "error");
+    }
+  };
+
+  const KEY_RE = /^[A-Z_][A-Z0-9_]*$/;
+
+  return (
+    <div
+      class="rounded-2xl p-6"
+      style={{
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-border)",
+      }}
+    >
+      <div class="mb-5 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-semibold" style={{ color: "var(--color-text)" }}>
+            Server Environment Variables
+          </h3>
+          <p class="mt-0.5 text-xs" style={{ color: "var(--color-text-faint)" }}>
+            Manages <code class="font-mono">/opt/crontech/.env</code> on the Vultr box via the deploy agent. Values are write-only — hints shown only.
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            onClick={() => void load()}
+            class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+            style={{
+              "border-color": "var(--color-border)",
+              color: "var(--color-text-muted)",
+              background: "var(--color-bg-subtle)",
+            }}
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAdd((v) => !v)}
+            class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+            style={{
+              "border-color": "var(--color-primary)",
+              color: "var(--color-primary)",
+              background: "color-mix(in srgb, var(--color-primary) 8%, transparent)",
+            }}
+          >
+            + Add / Update
+          </button>
+        </div>
+      </div>
+
+      <Show when={showAdd()}>
+        <div
+          class="mb-5 rounded-xl border p-4"
+          style={{
+            "border-color": "var(--color-border)",
+            background: "var(--color-bg-subtle)",
+          }}
+        >
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div class="flex-1">
+              <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+                Key
+              </label>
+              <input
+                type="text"
+                value={newKey()}
+                onInput={(e) => setNewKey(e.currentTarget.value.toUpperCase())}
+                placeholder="DATABASE_URL"
+                class="w-full rounded-lg border bg-transparent px-3 py-2 font-mono text-sm focus:outline-none"
+                style={{
+                  "border-color": newKey().length > 0 && !KEY_RE.test(newKey())
+                    ? "var(--color-danger)"
+                    : "var(--color-border)",
+                  color: "var(--color-text)",
+                }}
+              />
+            </div>
+            <div class="flex-1">
+              <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+                Value
+              </label>
+              <input
+                type="password"
+                value={newValue()}
+                onInput={(e) => setNewValue(e.currentTarget.value)}
+                placeholder="secret value…"
+                class="w-full rounded-lg border bg-transparent px-3 py-2 font-mono text-sm focus:outline-none"
+                style={{
+                  "border-color": "var(--color-border)",
+                  color: "var(--color-text)",
+                }}
+              />
+            </div>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setShowAdd(false); setNewKey(""); setNewValue(""); }}
+                class="rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+                style={{ "border-color": "var(--color-border)", color: "var(--color-text-muted)" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={saving() || !KEY_RE.test(newKey()) || !newValue()}
+                onClick={() => void save()}
+                class="rounded-lg px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-50"
+                style={{
+                  background: "var(--color-primary)",
+                  color: "#fff",
+                }}
+              >
+                {saving() ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Show>
+
+      <Show when={loading()}>
+        <div class="flex items-center gap-2 py-4 text-sm" style={{ color: "var(--color-text-faint)" }}>
+          <div class="h-4 w-4 animate-spin rounded-full border-2" style={{ "border-color": "var(--color-border)", "border-top-color": "var(--color-primary)" }} />
+          Loading env vars from server…
+        </div>
+      </Show>
+
+      <Show when={!loading() && error()}>
+        <p class="py-2 text-sm" style={{ color: "var(--color-danger)" }}>{error()}</p>
+      </Show>
+
+      <Show when={!loading() && !error()}>
+        <Show
+          when={vars().length > 0}
+          fallback={
+            <p class="py-2 text-sm" style={{ color: "var(--color-text-faint)" }}>
+              No env vars found — deploy agent may be offline or .env is empty.
+            </p>
+          }
+        >
+          <div class="space-y-1">
+            <For each={vars().slice().sort((a, b) => a.key.localeCompare(b.key))}>
+              {(v) => (
+                <div
+                  class="flex items-center justify-between rounded-lg px-3 py-2"
+                  style={{ background: "var(--color-bg-subtle)", border: "1px solid var(--color-border)" }}
+                >
+                  <span class="font-mono text-sm" style={{ color: "var(--color-text)" }}>{v.key}</span>
+                  <div class="flex items-center gap-3">
+                    <span class="font-mono text-xs" style={{ color: "var(--color-text-faint)" }}>{v.hint}</span>
+                    <button
+                      type="button"
+                      onClick={() => void remove(v.key)}
+                      aria-label={`Remove ${v.key}`}
+                      class="rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors"
+                      style={{ color: "var(--color-danger)", background: "transparent" }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )}
+            </For>
+          </div>
+        </Show>
       </Show>
     </div>
   );
