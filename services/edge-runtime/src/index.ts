@@ -18,13 +18,12 @@
 // expected clients; multi-tenant auth lands in v1.
 
 import { z } from "zod";
+import { computeBundleHash } from "./dispatch";
 import {
-  type WorkerMessage,
-  type WorkerReply,
-  WorkerReplySchema,
-  computeBundleHash,
-  serialiseRequest,
-} from "./dispatch";
+  type WorkerSpawner,
+  defaultSpawnWorker,
+  invokeBundle,
+} from "./invoke";
 import { BundleRegistry, BundleSchema, type RegisteredBundle } from "./registry";
 
 // ── Configuration ────────────────────────────────────────────────────
@@ -55,14 +54,6 @@ export interface EdgeRuntimeServer {
   stop(): Promise<void>;
 }
 
-export interface RuntimeWorker {
-  postMessage(msg: WorkerMessage): void;
-  onMessage(handler: (reply: WorkerReply) => void): void;
-  terminate(): Promise<void> | void;
-}
-
-export type WorkerSpawner = () => RuntimeWorker;
-
 // ── Auth ─────────────────────────────────────────────────────────────
 
 function requireAuth(req: Request, secret: string): Response | null {
@@ -77,123 +68,6 @@ function requireAuth(req: Request, secret: string): Response | null {
     mismatch |= header.charCodeAt(i) ^ expected.charCodeAt(i);
   }
   return mismatch === 0 ? null : new Response("unauthorized", { status: 401 });
-}
-
-// ── Admin schemas ────────────────────────────────────────────────────
-
-const AdminBundleInputSchema = BundleSchema;
-
-// ── Worker spawning (default impl) ──────────────────────────────────
-
-function defaultSpawnWorker(): RuntimeWorker {
-  // Bun's Worker constructor is the only place we touch the actual
-  // runtime sandbox. Everything else stays pure / mockable.
-  const url = new URL("./worker-host.ts", import.meta.url);
-  const worker = new Worker(url.href, { type: "module" });
-  let listener: ((reply: WorkerReply) => void) | null = null;
-  worker.onmessage = (ev: MessageEvent<unknown>): void => {
-    if (listener === null) return;
-    const parsed = WorkerReplySchema.safeParse(ev.data);
-    if (!parsed.success) {
-      listener({ type: "error", message: `invalid worker reply: ${parsed.error.message}` });
-      return;
-    }
-    listener(parsed.data);
-  };
-  return {
-    postMessage(msg) {
-      worker.postMessage(msg);
-    },
-    onMessage(handler) {
-      listener = handler;
-    },
-    terminate() {
-      worker.terminate();
-    },
-  };
-}
-
-// ── Per-invocation worker lifecycle ─────────────────────────────────
-
-interface InvokeArgs {
-  bundle: RegisteredBundle;
-  request: Request;
-  spawn: WorkerSpawner;
-  timeoutMs: number;
-}
-
-async function invokeBundle(args: InvokeArgs): Promise<Response> {
-  const { bundle, request, spawn, timeoutMs } = args;
-  const worker = spawn();
-  const replyQueue: WorkerReply[] = [];
-  const waiters: ((reply: WorkerReply) => void)[] = [];
-
-  worker.onMessage((reply) => {
-    const next = waiters.shift();
-    if (next) next(reply);
-    else replyQueue.push(reply);
-  });
-
-  const nextReply = (): Promise<WorkerReply> =>
-    new Promise((resolve) => {
-      const queued = replyQueue.shift();
-      if (queued) resolve(queued);
-      else waiters.push(resolve);
-    });
-
-  const withTimeout = <T>(p: Promise<T>): Promise<T> =>
-    new Promise<T>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error("worker timeout")), timeoutMs);
-      p.then(
-        (v) => {
-          clearTimeout(t);
-          resolve(v);
-        },
-        (e: unknown) => {
-          clearTimeout(t);
-          reject(e instanceof Error ? e : new Error(String(e)));
-        },
-      );
-    });
-
-  try {
-    worker.postMessage({ type: "init", code: bundle.code, entrypoint: bundle.entrypoint });
-    const initReply = await withTimeout(nextReply());
-    if (initReply.type === "error") {
-      return new Response(`bundle init failed: ${initReply.message}`, { status: 500 });
-    }
-    if (initReply.type !== "ready") {
-      return new Response("unexpected worker reply during init", { status: 500 });
-    }
-
-    const serialised = await serialiseRequest(request);
-    worker.postMessage({ type: "invoke", request: serialised });
-    const invokeReply = await withTimeout(nextReply());
-    if (invokeReply.type === "error") {
-      return new Response(`handler error: ${invokeReply.message}`, { status: 500 });
-    }
-    if (invokeReply.type !== "response") {
-      return new Response("unexpected worker reply during invoke", { status: 500 });
-    }
-    const { response } = invokeReply;
-    const headers = new Headers();
-    for (const [k, v] of response.headers) headers.append(k, v);
-    const body =
-      response.bodyBase64.length === 0 ? null : Buffer.from(response.bodyBase64, "base64");
-    return new Response(body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "dispatch failed";
-    if (message === "worker timeout") {
-      return new Response("gateway timeout", { status: 504 });
-    }
-    return new Response(`dispatch error: ${message}`, { status: 500 });
-  } finally {
-    await worker.terminate();
-  }
 }
 
 // ── Path routing ────────────────────────────────────────────────────
@@ -218,6 +92,47 @@ export function parsePath(method: string, pathname: string): ParsedPath {
     if (id !== undefined) return { kind: "run", bundleId: id };
   }
   return { kind: "unknown" };
+}
+
+// ── Admin handlers ──────────────────────────────────────────────────
+
+async function handleUpsert(
+  req: Request,
+  registry: BundleRegistry,
+): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response("invalid json", { status: 400 });
+  }
+  const parsed = BundleSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      { error: "validation_failed", issues: parsed.error.issues },
+      { status: 400 },
+    );
+  }
+  const { id, code, entrypoint } = parsed.data;
+  const hash = computeBundleHash({ id, entrypoint, code });
+  const bundle: RegisteredBundle = {
+    id,
+    code,
+    entrypoint,
+    hash,
+    registeredAt: Date.now(),
+  };
+  registry.set(bundle);
+  return Response.json(
+    {
+      id: bundle.id,
+      entrypoint: bundle.entrypoint,
+      hash: bundle.hash,
+      registeredAt: bundle.registeredAt,
+      codeBytes: bundle.code.length,
+    },
+    { status: 201 },
+  );
 }
 
 // ── Server ───────────────────────────────────────────────────────────
@@ -261,39 +176,7 @@ export async function startEdgeRuntime(
       }
 
       if (route.kind === "upsert") {
-        let body: unknown;
-        try {
-          body = await req.json();
-        } catch {
-          return new Response("invalid json", { status: 400 });
-        }
-        const parsed = AdminBundleInputSchema.safeParse(body);
-        if (!parsed.success) {
-          return Response.json(
-            { error: "validation_failed", issues: parsed.error.issues },
-            { status: 400 },
-          );
-        }
-        const { id, code, entrypoint } = parsed.data;
-        const hash = computeBundleHash({ id, entrypoint, code });
-        const bundle: RegisteredBundle = {
-          id,
-          code,
-          entrypoint,
-          hash,
-          registeredAt: Date.now(),
-        };
-        registry.set(bundle);
-        return Response.json(
-          {
-            id: bundle.id,
-            entrypoint: bundle.entrypoint,
-            hash: bundle.hash,
-            registeredAt: bundle.registeredAt,
-            codeBytes: bundle.code.length,
-          },
-          { status: 201 },
-        );
+        return handleUpsert(req, registry);
       }
 
       if (route.kind === "delete" && route.bundleId !== undefined) {
@@ -338,6 +221,7 @@ export async function startEdgeRuntime(
 export { BundleRegistry, BundleSchema, BundleIdSchema } from "./registry";
 export type { BundleId, BundleInput, RegisteredBundle, PublicBundleSummary } from "./registry";
 export { computeBundleHash } from "./dispatch";
+export type { RuntimeWorker, WorkerSpawner } from "./invoke";
 
 // ── Standalone runner ───────────────────────────────────────────────
 // Validate env up-front with Zod when this file is the entrypoint, so
