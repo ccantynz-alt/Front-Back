@@ -46,7 +46,11 @@ function parseTransports(
   transports: string | null,
 ): AuthenticatorTransportFuture[] | undefined {
   if (!transports) return undefined;
-  return JSON.parse(transports) as AuthenticatorTransportFuture[];
+  try {
+    return JSON.parse(transports) as AuthenticatorTransportFuture[];
+  } catch (err) {
+    throw new Error(`Failed to parse transports value: ${String(err)}`);
+  }
 }
 
 function buildCredentialDescriptor(
