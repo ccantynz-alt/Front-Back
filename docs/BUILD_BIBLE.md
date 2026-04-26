@@ -422,7 +422,7 @@ The grouping below mirrors the parity audit so the link from
 
 ---
 
-### BLK-017 — Crontech Edge Runtime (V8-isolate, Workers-class) 🔵 PLANNED
+### BLK-017 — Crontech Edge Runtime (V8-isolate, Workers-class) 🟡 BUILDING (v0 in repo)
 
 **Scope.** Self-hosted V8-isolate edge runtime running on our
 own multi-region nodes (initial: a single Hetzner / Vultr
@@ -442,9 +442,19 @@ hosted models (covered by BLK-021).
 a response within 5ms cold / 1ms warm at p50, and survives a node
 failover within 10s.
 
+**v0 state (as of 2026-04-26).** `services/edge-runtime/` shipped
+on `claude/vendor-parity-docs-22c9D` (commits `3fe51c7` + `956e4ae`).
+HTTP dispatcher on `127.0.0.1:9096`, Zod-validated bundle upload,
+in-memory registry, Bearer-token auth, **Bun-Worker dispatch with
+5s hard timeout** (Bun Workers are the V8-isolate stand-in for v0
+— v1 swaps in `isolated-vm` or a custom V8 harness; documented in
+`docs/EDGE_RUNTIME_V0.md`). 39 tests / 91 expects green. Not yet
+deployed to a production edge node, not yet multi-region, not yet
+Anycast-routed.
+
 ---
 
-### BLK-018 — Self-Hosted Object Storage (R2-class) 🔵 PLANNED
+### BLK-018 — Self-Hosted Object Storage (R2-class) 🟡 BUILDING (v0 in repo)
 
 **Scope.** S3-compatible object storage running on Crontech
 infrastructure. Initial: MinIO cluster on a single region; v1:
@@ -460,9 +470,18 @@ Block storage / EBS-equivalent (separate concern).
 API, have it replicated, served from the edge with >100MB/s
 egress, and retrieved by URL in <100ms p50 globally.
 
+**v0 state (as of 2026-04-26).** `services/object-storage/`
+shipped on `claude/vendor-parity-docs-22c9D` (commit `89951dc`).
+MinIO `docker-compose.yml` (single-node), systemd unit
+`crontech-object-storage.service`, Bun proxy on
+`127.0.0.1:9094`, S3 v4-signing client wrapper in
+`packages/storage/src/client.ts`, tRPC `storage.getSignedUploadUrl`
+admin-only procedure. 70+ test assertions green. Not yet
+multi-region, not yet wired to edge cache, not yet customer-facing.
+
 ---
 
-### BLK-019 — Reverse-Tunnel Daemon (Cloudflare Tunnel-class) 🔵 PLANNED
+### BLK-019 — Reverse-Tunnel Daemon (Cloudflare Tunnel-class) 🟡 BUILDING (v0 in repo)
 
 **Scope.** Daemon that opens an outbound persistent connection
 from the origin Vultr/Hetzner node to the Crontech edge runtime
@@ -479,9 +498,19 @@ node IPs. The origin host has no public-facing port 80/443
 listener. End-to-end latency through the tunnel adds <5ms p50
 versus direct origin hit.
 
+**v0 state (as of 2026-04-26).** `services/tunnel/` shipped on
+`claude/vendor-parity-docs-22c9D` (commits `6a9385b` + `3cf5ce1`
++ `6bc7f04`). Origin↔edge WebSocket bridge with framed HTTP
+(4-byte big-endian length prefix + JSON, 32 MiB cap),
+hostname connection registry, exponential-backoff reconnect (1s →
+60s capped), constant-time shared-secret auth, systemd unit
+`crontech-tunnel-origin.service`. 47 tests / 114 assertions
+green. Not yet deployed (origin still publicly reachable on its
+own IP), not yet TLS-terminated at the edge.
+
 ---
 
-### BLK-021 — AI Gateway (Crontech LLM Proxy) 🔵 PLANNED
+### BLK-021 — AI Gateway (Crontech LLM Proxy) 🟡 BUILDING (v0 in repo)
 
 **Scope.** Self-hosted LLM proxy that fans out across providers
 (Anthropic, OpenAI, Google, Mistral, plus client-side WebGPU
@@ -499,6 +528,17 @@ moonshot block when GPU economics flip). Multi-modal routing
 codebase routes through the gateway. Cache hit rate ≥30% on
 admin Claude Console traffic within first month live. Failover
 from Anthropic to OpenAI on 5xx round-trip <500ms.
+
+**v0 state (as of 2026-04-26).** `services/ai-gateway/` shipped
+on `claude/vendor-parity-docs-22c9D` (commit `482e633`).
+OpenAI-compatible `POST /v1/chat/completions` on
+`127.0.0.1:9092`, Anthropic + OpenAI raw-fetch adapters,
+LRU 1000-entry exact-match cache via WebCrypto SHA-256
+(`x-cache: HIT/MISS` header), single-hop failover on 5xx
+(`x-failover` header), in-memory usage ledger with
+microdollar cost estimation. 31 tests green. Not yet wired
+into existing AI consumers (zero blast radius v0), no
+spend-cap enforcement yet, no semantic cache, no streaming.
 
 ---
 
