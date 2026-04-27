@@ -7,6 +7,29 @@
 @source "../src/**/*.{ts,tsx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
+/* ── Tailwind v4 `translate` shorthand defaults ──────────────────── */
+/* Tailwind v4 compiles `-translate-x-1/2` (etc.) to:
+ *     translate: var(--tw-translate-x) var(--tw-translate-y);
+ * The `translate` SHORTHAND requires both axes. If a page only uses
+ * an X utility (no Y utility anywhere in the page), --tw-translate-y
+ * is undefined, the whole `translate` value is invalid, and the
+ * browser silently drops it — leaving the element un-translated.
+ *
+ * Real-world failure: the /pricing "Most Popular" badge had
+ *   `class="absolute -top-3 left-1/2 -translate-x-1/2"`,
+ * but rendered anchored at its LEFT edge at 50% of the card width
+ * (pushed half off the right side) because translateX never applied.
+ *
+ * Fix: define both axis variables at :root with sane defaults so the
+ * shorthand always evaluates to a valid value. Tailwind utilities
+ * that DO set them (e.g. `translate-x-4`) override these defaults
+ * via the cascade as expected. */
+:root {
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-translate-z: 0;
+}
+
 /* ══════════════════════════════════════════════════════════════════════
    BACK TO THE FUTURE — Design System
    ══════════════════════════════════════════════════════════════════════ */
@@ -2882,4 +2905,69 @@ html.dark .hero-gradient {
   .product-card-live:hover {
     transform: none;
   }
+}
+
+/* ── Input component (packages/ui Input) ─────────────────────────── */
+/* These classes are referenced by packages/ui/src/components/Input.tsx
+ * but were missing CSS definitions, so labels were rendering inline
+ * next to inputs (e.g. "Emailcrontech-admin" running together on the
+ * sign-in page). Defining them as the component's render shape implies
+ * a vertical stack with proper label spacing. */
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.input-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg-inset, var(--color-bg-subtle));
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.input::placeholder {
+  color: var(--color-text-faint);
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 20%, transparent);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.input-error {
+  border-color: var(--color-danger);
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-danger) 20%, transparent);
+}
+
+.input-error-text {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-danger);
+  margin-top: 2px;
 }

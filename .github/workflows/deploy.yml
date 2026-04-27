@@ -185,12 +185,26 @@ jobs:
             cp infra/bare-metal/crontech-deploy-agent.service /etc/systemd/system/crontech-deploy-agent.service
             cp infra/bare-metal/crontech-watchdog.service /etc/systemd/system/crontech-watchdog.service
             cp infra/bare-metal/crontech-watchdog.timer /etc/systemd/system/crontech-watchdog.timer
+            cp infra/bare-metal/dns-server.service /etc/systemd/system/dns-server.service
+            cp infra/bare-metal/crontech-sentinel.service /etc/systemd/system/crontech-sentinel.service
+            cp infra/bare-metal/crontech-edge-runtime.service /etc/systemd/system/crontech-edge-runtime.service
+            cp infra/bare-metal/crontech-ai-gateway.service /etc/systemd/system/crontech-ai-gateway.service
+            cp infra/bare-metal/crontech-object-storage.service /etc/systemd/system/crontech-object-storage.service
+            cp infra/bare-metal/crontech-tunnel-origin.service /etc/systemd/system/crontech-tunnel-origin.service
             mkdir -p /opt/crontech/scripts
             cp infra/bare-metal/crontech-watchdog.sh /opt/crontech/scripts/watchdog.sh
             chmod +x /opt/crontech/scripts/watchdog.sh
             systemctl daemon-reload
+            # Always-on services (graceful failure with `|| true` — a missing
+            # secret / docker / user shouldn't break the whole deploy).
             systemctl enable --now crontech-deploy-agent 2>/dev/null || true
             systemctl enable --now crontech-watchdog.timer 2>/dev/null || true
+            systemctl enable --now dns-server 2>/dev/null || true
+            systemctl enable --now crontech-sentinel 2>/dev/null || true
+            systemctl enable --now crontech-edge-runtime 2>/dev/null || true
+            systemctl enable --now crontech-ai-gateway 2>/dev/null || true
+            systemctl enable --now crontech-object-storage 2>/dev/null || true
+            systemctl enable --now crontech-tunnel-origin 2>/dev/null || true
 
             systemctl restart crontech-api
             sleep 2

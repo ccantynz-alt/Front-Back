@@ -1,0 +1,44 @@
+# Crontech AI Gateway (BLK-021 v0)
+#
+# Self-hosted LLM proxy: OpenAI-compatible inbound shape, fans out to
+# Anthropic + OpenAI, LRU response cache, single-hop failover.
+# Bun.serve on 127.0.0.1:9092 ONLY. Internal.
+#
+# Per CLAUDE.md §0.10 Zero-Idle Rule: service unit lives in repo so
+# deploy.yml auto-installs on every push to Main.
+#
+# Install (manual, if needed):
+#   cp infra/bare-metal/crontech-ai-gateway.service /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable --now crontech-ai-gateway
+
+[Unit]
+Description=Crontech AI Gateway (LLM proxy, BLK-021 v0)
+Documentation=https://docs.crontech.ai/blocks/blk-021
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/crontech
+
+ExecStart=/root/.bun/bin/bun run services/ai-gateway/src/index.ts
+Restart=always
+RestartSec=5
+
+Environment=APP_DIR=/opt/crontech
+Environment=AI_GATEWAY_PORT=9092
+EnvironmentFile=-/opt/crontech/.env
+
+# Only listen on localhost — belt-and-braces. Internal consumers
+# (apps/api, services/sentinel, future agents) call over loopback.
+IPAddressAllow=127.0.0.1/8 ::1/128
+IPAddressDeny=any
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crontech-ai-gateway
+
+[Install]
+WantedBy=multi-user.target

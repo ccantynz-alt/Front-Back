@@ -169,12 +169,29 @@ function PlanCard(props: { plan: PlanTier; isAnnual: boolean }): JSX.Element {
           : "1px solid var(--color-border)",
       }}
     >
-      {/* Popular badge */}
+      {/* Popular badge — uses inline style for top/left/transform so the
+          ribbon ALWAYS sits above the card regardless of Tailwind utility
+          generation. The previous Tailwind-only approach (`absolute -top-3
+          left-1/2 -translate-x-1/2`) silently failed in places where the
+          translate-x-1/2 utility resolved to a `translate` shorthand the
+          browser ignored, dropping the badge into the card body. */}
       <Show when={props.plan.highlighted}>
-        <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+        <div
+          class="z-10"
+          style={{
+            position: "absolute",
+            top: "-14px",
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
+        >
           <span
-            class="rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider"
-            style={{ background: "var(--color-primary)", color: "var(--color-primary-text)" }}
+            class="rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
+            style={{
+              background: "var(--color-primary)",
+              color: "var(--color-primary-text)",
+              "box-shadow": "0 2px 8px color-mix(in oklab, var(--color-primary) 35%, transparent)",
+            }}
           >
             Most Popular
           </span>
@@ -339,8 +356,13 @@ export default function PricingPage(): JSX.Element {
             >
               Annual
               <span
-                class="ml-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                style={{ background: "var(--color-success-bg)", color: "var(--color-success)" }}
+                class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={{
+                  background: "var(--color-success-bg)",
+                  color: "var(--color-success)",
+                  "margin-left": "8px",
+                  "white-space": "nowrap",
+                }}
               >Save 17%</span>
             </span>
           </div>

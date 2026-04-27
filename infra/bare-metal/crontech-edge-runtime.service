@@ -1,0 +1,43 @@
+# Crontech Edge Runtime (BLK-017 v0)
+#
+# Self-hosted V8-isolate edge runtime. Bun.serve on 127.0.0.1:9096 ONLY.
+# Internal — Caddy / tunnel daemon proxy customer traffic in.
+#
+# Per CLAUDE.md §0.10 Zero-Idle Rule: service unit lives in repo so
+# deploy.yml auto-installs on every push to Main.
+#
+# Install (manual, if needed):
+#   cp infra/bare-metal/crontech-edge-runtime.service /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable --now crontech-edge-runtime
+
+[Unit]
+Description=Crontech Edge Runtime (V8-isolate, BLK-017 v0)
+Documentation=https://docs.crontech.ai/blocks/blk-017
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/crontech
+
+ExecStart=/root/.bun/bin/bun run services/edge-runtime/src/index.ts
+Restart=always
+RestartSec=5
+
+Environment=APP_DIR=/opt/crontech
+Environment=EDGE_RUNTIME_PORT=9096
+EnvironmentFile=-/opt/crontech/.env
+
+# Only listen on localhost — belt-and-braces. Edge ingress comes through
+# Caddy (TLS termination) or the tunnel daemon (BLK-019), never direct.
+IPAddressAllow=127.0.0.1/8 ::1/128
+IPAddressDeny=any
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crontech-edge-runtime
+
+[Install]
+WantedBy=multi-user.target

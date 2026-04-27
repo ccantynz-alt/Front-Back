@@ -10,8 +10,8 @@
       "defaultBranch": "canary",
       "lastKnownRelease": "v16.3.0-canary.2",
       "lastKnownReleaseAt": "2026-04-18T23:44:17Z",
-      "lastCommitCheckAt": "2026-04-25T06:18:58.252Z",
-      "baselineCommitsPerWeek": 61
+      "lastCommitCheckAt": "2026-04-27T05:05:10.746Z",
+      "baselineCommitsPerWeek": 58
     },
     {
       "owner": "remix-run",
@@ -23,8 +23,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "test@0.1.0",
       "lastKnownReleaseAt": "2026-04-23T00:39:57Z",
-      "lastCommitCheckAt": "2026-04-25T06:19:00.395Z",
-      "baselineCommitsPerWeek": 10
+      "lastCommitCheckAt": "2026-04-27T05:05:42.201Z",
+      "baselineCommitsPerWeek": 16
     },
     {
       "owner": "sveltejs",
@@ -36,7 +36,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "@sveltejs/kit@2.58.0",
       "lastKnownReleaseAt": "2026-04-23T23:43:15Z",
-      "lastCommitCheckAt": "2026-04-25T06:19:00.616Z",
+      "lastCommitCheckAt": "2026-04-27T05:05:42.683Z",
       "baselineCommitsPerWeek": 10
     },
     {
@@ -62,8 +62,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "@astrojs/cloudflare@13.2.1",
       "lastKnownReleaseAt": "2026-04-23T14:57:18Z",
-      "lastCommitCheckAt": "2026-04-25T06:19:00.864Z",
-      "baselineCommitsPerWeek": 62
+      "lastCommitCheckAt": "2026-04-27T05:05:43.181Z",
+      "baselineCommitsPerWeek": 58
     },
     {
       "owner": "honojs",
@@ -101,7 +101,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "v11.16.0",
       "lastKnownReleaseAt": "2026-03-28T10:24:00Z",
-      "lastCommitCheckAt": "2026-04-25T06:18:58.690Z",
+      "lastCommitCheckAt": "2026-04-27T05:03:51.711Z",
       "baselineCommitsPerWeek": 4
     },
     {
@@ -140,7 +140,7 @@
       "defaultBranch": "main",
       "lastKnownRelease": "@cloudflare/workflows-shared@0.9.1",
       "lastKnownReleaseAt": "2026-04-24T11:27:42Z",
-      "lastCommitCheckAt": "2026-04-25T06:18:59.154Z",
+      "lastCommitCheckAt": "2026-04-27T05:05:41.267Z",
       "baselineCommitsPerWeek": 59
     },
     {
@@ -166,7 +166,7 @@
       "defaultBranch": "master",
       "lastKnownRelease": "v1.26.04",
       "lastKnownReleaseAt": "2026-04-09T14:38:08Z",
-      "lastCommitCheckAt": "2026-04-25T06:18:59.477Z",
+      "lastCommitCheckAt": "2026-04-27T05:05:41.545Z",
       "baselineCommitsPerWeek": 100
     },
     {
@@ -179,8 +179,8 @@
       "defaultBranch": "main",
       "lastKnownRelease": "precompiled-2026-04-24-db5c424",
       "lastKnownReleaseAt": "2026-04-24T17:28:31Z",
-      "lastCommitCheckAt": "2026-04-25T06:18:59.715Z",
-      "baselineCommitsPerWeek": 95
+      "lastCommitCheckAt": "2026-04-27T05:05:41.844Z",
+      "baselineCommitsPerWeek": 93
     },
     {
       "owner": "superfly",
@@ -203,8 +203,8 @@
       "category": "backend",
       "description": "We use Renovate; track feature evolution for self-evolution pipeline.",
       "defaultBranch": "main",
-      "lastKnownRelease": "43.141.5",
-      "lastKnownReleaseAt": "2026-04-24T18:49:54Z",
+      "lastKnownRelease": "43.141.6",
+      "lastKnownReleaseAt": "2026-04-26T09:01:48Z",
       "lastCommitCheckAt": "2026-04-25T06:13:19.000Z",
       "baselineCommitsPerWeek": 96
     },
@@ -216,8 +216,8 @@
       "category": "backend",
       "description": "Railway PaaS competitor for deploy/runtime story.",
       "defaultBranch": "master",
-      "lastKnownRelease": "v4.41.0",
-      "lastKnownReleaseAt": "2026-04-23T06:56:30Z",
+      "lastKnownRelease": "v4.42.1",
+      "lastKnownReleaseAt": "2026-04-24T19:57:43Z",
       "lastCommitCheckAt": "2026-04-25T06:13:19.155Z",
       "baselineCommitsPerWeek": 11
     },
@@ -296,10 +296,10 @@
       "defaultBranch": "main",
       "lastKnownRelease": null,
       "lastKnownReleaseAt": null,
-      "lastCommitCheckAt": "2026-04-25T06:18:59.861Z",
+      "lastCommitCheckAt": "2026-04-27T05:05:41.972Z",
       "baselineCommitsPerWeek": 0
     }
   ],
-  "lastUpdated": "2026-04-25T06:19:01.893Z",
+  "lastUpdated": "2026-04-27T05:05:43.183Z",
   "schemaVersion": 1
 }

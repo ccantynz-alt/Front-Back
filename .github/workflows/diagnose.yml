@@ -1,0 +1,130 @@
+name: Diagnose Production
+
+# ═══════════════════════════════════════════════════════════════════════
+#  CRONTECH PRODUCTION DIAGNOSTIC WORKFLOW
+# ═══════════════════════════════════════════════════════════════════════
+# Manual-only. Click "Run workflow" from the GitHub Actions UI to grab
+# a snapshot of production health: journal logs, service state, env
+# integrity, port bindings, disk + memory.
+#
+# No SSH client needed locally. No Vultr console needed. Click a button,
+# read the workflow output. Built in response to the 2026-04-26 API 500
+# outage where every endpoint returned 500 with a requestId — diagnosis
+# was blocked on getting the journalctl output off the box.
+#
+# Required GitHub secrets (already present from deploy.yml):
+#   VULTR_SERVER_IP   — production server IPv4
+#   VULTR_SSH_KEY     — private SSH key for root deploy user
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "systemd unit to focus journal output on"
+        required: false
+        default: "crontech-api"
+        type: choice
+        options:
+          - crontech-api
+          - crontech-web
+          - crontech-deploy-agent
+          - crontech-watchdog
+          - dns-server
+          - caddy
+          - postgres
+      journal_lines:
+        description: "How many recent journal lines to show"
+        required: false
+        default: "120"
+
+jobs:
+  diagnose:
+    name: Read box health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: SSH into Vultr and dump diagnostics
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VULTR_SERVER_IP }}
+          username: root
+          key: ${{ secrets.VULTR_SSH_KEY }}
+          command_timeout: 4m
+          script: |
+            set +e  # do not abort on any single command failure — we want everything
+
+            echo "═══════════════════════════════════════════════════════"
+            echo "  CRONTECH DIAGNOSTIC SNAPSHOT"
+            echo "  Time:   $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "  Host:   $(hostname)"
+            echo "  Uptime: $(uptime -p)"
+            echo "═══════════════════════════════════════════════════════"
+
+            echo ""
+            echo "[1/8] Service status (key units)"
+            echo "─────────────────────────────────────────────────────"
+            for svc in crontech-api crontech-web crontech-deploy-agent crontech-watchdog.timer dns-server caddy postgres crontech-sentinel crontech-ai-gateway crontech-edge-runtime crontech-object-storage crontech-tunnel-origin; do
+              printf "  %-30s %s\n" "$svc" "$(systemctl is-active $svc 2>&1)"
+            done
+
+            echo ""
+            echo "[2/8] Current SHA on box vs origin/Main"
+            echo "─────────────────────────────────────────────────────"
+            cd /opt/crontech
+            echo "  Local HEAD:    $(git rev-parse --short HEAD)"
+            git fetch --quiet origin Main 2>/dev/null
+            echo "  origin/Main:   $(git rev-parse --short origin/Main)"
+            DRIFT=$(git rev-list --left-right --count origin/Main...HEAD 2>/dev/null)
+            echo "  drift (behind/ahead): $DRIFT"
+
+            echo ""
+            echo "[3/8] journalctl -u ${{ inputs.service }} -n ${{ inputs.journal_lines }}"
+            echo "─────────────────────────────────────────────────────"
+            journalctl -u ${{ inputs.service }} -n ${{ inputs.journal_lines }} --no-pager 2>&1 | tail -${{ inputs.journal_lines }}
+
+            echo ""
+            echo "[4/8] systemctl status ${{ inputs.service }}"
+            echo "─────────────────────────────────────────────────────"
+            systemctl status ${{ inputs.service }} --no-pager 2>&1 | head -30
+
+            echo ""
+            echo "[5/8] Port bindings (3000, 3001, 9091-9097)"
+            echo "─────────────────────────────────────────────────────"
+            ss -tlnp 2>/dev/null | grep -E ":(3000|3001|909[1-7])" || echo "  (no listeners on expected ports)"
+
+            echo ""
+            echo "[6/8] /opt/crontech/.env integrity (KEYS ONLY — values redacted)"
+            echo "─────────────────────────────────────────────────────"
+            if [ -f /opt/crontech/.env ]; then
+              grep -E '^[A-Z_][A-Z0-9_]*=' /opt/crontech/.env | sed -E 's/=.*/=<set>/' | sort -u | head -60
+              echo ""
+              MALFORMED=$(grep -nE '^[^A-Za-z#[:space:]]' /opt/crontech/.env || true)
+              if [ -n "$MALFORMED" ]; then
+                echo "  ⚠ MALFORMED LINES:"
+                echo "$MALFORMED"
+              else
+                echo "  .env grammar clean"
+              fi
+            else
+              echo "  /opt/crontech/.env MISSING"
+            fi
+
+            echo ""
+            echo "[7/8] Disk + memory"
+            echo "─────────────────────────────────────────────────────"
+            df -h / 2>/dev/null | head -2
+            echo ""
+            free -h 2>/dev/null | head -3
+
+            echo ""
+            echo "[8/8] Live local health probes (loopback)"
+            echo "─────────────────────────────────────────────────────"
+            curl -s -m 3 -o /tmp/_h.json -w "  api  /api/health     HTTP %{http_code}  (size %{size_download})\n" http://127.0.0.1:3001/api/health 2>&1
+            head -c 300 /tmp/_h.json 2>/dev/null; echo ""
+            curl -s -m 3 -o /dev/null -w "  api  /api/version    HTTP %{http_code}\n" http://127.0.0.1:3001/api/version 2>&1
+            curl -s -m 3 -o /dev/null -w "  web  /              HTTP %{http_code}\n" http://127.0.0.1:3000/ 2>&1
+
+            echo ""
+            echo "═══════════════════════════════════════════════════════"
+            echo "  END SNAPSHOT"
+            echo "═══════════════════════════════════════════════════════"

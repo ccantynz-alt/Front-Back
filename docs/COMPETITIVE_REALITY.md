@@ -153,12 +153,12 @@ features that are either missing entirely or built-but-not-running:
 |---|---|---|
 | 1. Customer signs up | `/register`, password / passkey / OAuth | ✅ |
 | 2. Customer adds a domain | `tenant_git_repos` table + DNS proc + Caddy vhost | 🟡 (schema yes, automation partial) |
-| 3. Customer points DNS at Crontech | Cloudflare or our own DNS | 🟢 Cloudflare works; ⭐ self-hosted dns-server **not running** |
-| 4. Customer pushes code | git remote → webhook → deploy-agent | 🟢 GitHub-Actions path works; ⭐ Gluecron path live as of PR #202/#203 tonight, **untested end-to-end** |
+| 3. Customer points DNS at Crontech | Cloudflare or our own DNS | 🟢 Cloudflare works; self-hosted dns-server ✅ active on Vultr |
+| 4. Customer pushes code | git remote → webhook → deploy-agent | 🟢 GitHub-Actions path works; deploy-agent ✅ active; Gluecron path live as of PR #202/#203, **untested end-to-end** |
 | 5. Build runs in isolation | Per-tenant Cloudflare-Container or Fly.io microVM | ❌ Not built. Today every tenant build runs on the shared Vultr box. |
-| 6. Static assets served | R2 or equivalent CDN | ❌ Not built. Caddy serves directly from Vultr disk. |
+| 6. Static assets served | R2 or equivalent CDN | 🟡 BLK-018 v0 in repo (`services/object-storage/`), unit shipped, deploys on next push. |
 | 7. Logs streamed to customer | SSE log stream | 🟢 `deploymentLogsStreamApp` mounted; not surfaced in admin UI |
-| 8. Health monitored | Watchdog + alert | ⭐ `crontech-watchdog.service` **not running** |
+| 8. Health monitored | Watchdog + alert | 🟢 `crontech-watchdog.timer` ✅ active; alert pipeline still pending |
 | 9. Customer can email + SMS users | Mailgun-equivalent + Twilio-equivalent | ❌ Not built (per tables above) |
 | 10. Customer billed | Stripe metered | ❌ BLK-010 PLANNED, not started |
 | 11. Customer sees analytics | Privacy-first analytics | ❌ Not built |
@@ -169,24 +169,33 @@ partial one. **This is the gap between "we onboard customers now" and
 
 ---
 
-## The five doctrine breaches sitting in this repo today
+## Self-hosted services: live state (last verified 2026-04-26 SSH session)
 
-Each of these has *working code in `services/` or `infra/`* and would
-help onboarding immediately, but is **not running** on the Vultr box.
-Turning them on requires no new code, only the right `systemctl
-enable --now` invocation. Per CLAUDE.md §0.10 Zero-Idle Rule, leaving
-shippable code unshipped is itself a breach.
+Each row shows code-in-repo state and on-the-box state separately.
+Per CLAUDE.md §0.10 Zero-Idle Rule, "code in repo, not running" is a
+breach; "no systemd unit at all" is a deeper breach.
 
-| Service | Path | What it does | Why it matters for onboarding |
+| Service | Code in repo | systemd unit | Active on Vultr |
 |---|---|---|---|
-| `crontech-deploy-agent.service` | `infra/bare-metal/crontech-deploy-agent.service` | HTTP daemon on `127.0.0.1:9091` for git-pull / build / restart | Required for the BLK-016 Gluecron self-deploy hook (just shipped) to actually execute. |
-| `crontech-watchdog.service` | `infra/bare-metal/crontech-watchdog.service` (+ `.timer`) | Periodic health curl + auto-restart on failure | Means the platform self-heals between deploys. Catches the next "site is silently down" before a human does. |
-| `dns-server.service` | `infra/bare-metal/dns-server.service` (+ `services/dns-server/`) | Self-hosted authoritative DNS | Removes the Cloudflare dependency for DNS. Step toward true self-sufficiency. |
-| `services/queue/` | `services/queue/` | Background job queue | Required for any non-blocking work (email sends, build triggers, deploys). |
-| `services/sentinel/` | `services/sentinel/` (+ collectors) | 24/7 competitive intelligence + ecosystem monitoring | Per CLAUDE.md §0.3 Ahead-of-Competition Rule. The session-start hook reports "no intel store yet" every session — that's a 30+ session-old breach. |
+| `crontech-deploy-agent` | ✅ `services/deploy-agent/` | ✅ `infra/bare-metal/crontech-deploy-agent.service` | ✅ active |
+| `crontech-watchdog` | ✅ `infra/bare-metal/crontech-watchdog.sh` | ✅ `crontech-watchdog.{service,timer}` | ✅ active |
+| `dns-server` | ✅ `services/dns-server/` | ✅ `infra/bare-metal/dns-server.service` | ✅ active |
+| `crontech-sentinel` (BLK-015) | ✅ `services/sentinel/` | ✅ `infra/bare-metal/crontech-sentinel.service` (added 2026-04-26) | ⚠️ next deploy enables |
+| `crontech-ai-gateway` (BLK-021) | ✅ `services/ai-gateway/` | ✅ `infra/bare-metal/crontech-ai-gateway.service` (added 2026-04-26) | ⚠️ next deploy enables |
+| `crontech-edge-runtime` (BLK-017) | ✅ `services/edge-runtime/` | ✅ `infra/bare-metal/crontech-edge-runtime.service` (added 2026-04-26) | ⚠️ next deploy enables |
+| `crontech-tunnel-origin` (BLK-019) | ✅ `services/tunnel/` | ✅ `infra/bare-metal/crontech-tunnel-origin.service` | ⚠️ next deploy enables |
+| `crontech-object-storage` (BLK-018) | ✅ `services/object-storage/` | ✅ `infra/bare-metal/crontech-object-storage.service` (relocated 2026-04-26) | ⚠️ next deploy enables (requires docker on box) |
+| `queue` | ✅ `packages/queue/` (library, not a daemon) | n/a (consumed by workers) | n/a |
 
-**Five wins for zero new code.** Cost: an SSH session and `systemctl
-enable --now` × 5. Should not survive past tonight.
+`deploy.yml` was updated 2026-04-26 to `cp` + `systemctl enable --now`
+each unit on every push to `Main` (graceful failure with `|| true`
+so a missing secret / docker / user doesn't break the deploy). After
+the next merge to `Main`, the four ⚠️ rows flip to ✅ active.
+
+**Status of the original "five dormant" call-out from 2026-04-25:** three
+of the five (deploy-agent, watchdog, dns-server) are now live on the
+Vultr box. The other two (queue, sentinel) were misclassified — `queue`
+is a library, not a service; `sentinel` had no systemd unit and now does.
 
 ---
 
@@ -196,31 +205,39 @@ This is a list, not a timeline. Each item is a discrete unit of work.
 The order is "what gives the most onboarding capability per session of
 work" — not "what we'll do this month."
 
-1. **Turn on the five dormant services above.** Zero code. Largest
-   immediate-effect single move available to us.
-2. **Smoke test against the public URL in `deploy.yml`.** ~30 minutes
-   of work. Catches the next 36-hour silent failure.
-3. **Slack / email alert on deploy failure.** ~15 minutes. We never have
-   to ask "why isn't the site updating" again.
-4. **Cloudflare Health Checks** on `crontech.ai` and
-   `api.crontech.ai/api/health`. ~10 minutes in the Cloudflare console.
-   Free.
-5. **Admin Ops page** at `/admin/ops`. Surfaces deploy status, recent
-   commits, current SHA on box vs `Main`, log tail, three buttons
-   (Deploy, Restart, Diagnose). Removes ~90% of SSH-and-paste manual
-   loops. Per session estimate: 1-2 sessions.
-6. **AI Gateway** — own LLM proxy with caching + provider failover.
-   Single biggest leverage on cost + future product offering. Per
-   session estimate: 1-2 sessions.
-7. **R2-equivalent object storage** (self-hosted MinIO on Vultr or
-   custom) — required for tenant assets, image uploads, video.
-8. **WAF + rate-limit dashboard** in admin. We have the primitives
+1. ~~**Turn on the five dormant services above.**~~ ✅ DONE 2026-04-26.
+   Three live on box (deploy-agent, watchdog, dns-server). Two
+   reclassified (queue is a library; sentinel got a unit and deploys
+   on next push). New v0 services (BLK-017/018/019/021) all have units
+   in repo and deploy on next push.
+2. ~~**Smoke test against the public URL in `deploy.yml`.**~~ ✅ DONE
+   2026-04-26 in commit `5c5abf0`. Job fails if `crontech.ai` or
+   `api.crontech.ai` doesn't respond after deploy.
+3. **Self-hosted alert pipeline on deploy failure.** Build it on top
+   of BLK-030 (transactional email) — Slack is a vendor we're not
+   adding. Delete `Cloudflare Health Checks` from this list — same
+   reason. Per-session estimate: ships with BLK-030 v0.
+4. ~~**Admin Ops page** at `/admin/ops`.~~ ✅ DONE 2026-04-26 in
+   commit `5c5abf0`. Surfaces deploy drift, recent commits, services,
+   diagnose battery.
+5. **AI Gateway wired into existing AI consumers.** v0 service shipped
+   2026-04-26 (`services/ai-gateway/`); next move is routing
+   `apps/api/src/ai/*` and the Composer through the gateway. Single
+   biggest leverage on cost + cache hit rate. Per-session estimate: 1.
+6. **Object storage cutover to BLK-018.** v0 service shipped
+   2026-04-26 (`services/object-storage/`); next move is routing
+   tenant uploads through it. Per-session estimate: 1.
+7. **Tunnel cutover (BLK-019).** v0 daemon shipped 2026-04-26
+   (`services/tunnel/`); next move is enabling on the box +
+   privatising the origin IP. Per-session estimate: 1.
+8. **Edge runtime first customer (BLK-017).** v0 dispatcher shipped
+   2026-04-26 (`services/edge-runtime/`); next move is wrangler-shim
+   deploy command + first customer bundle running. Per-session
+   estimate: 2.
+9. **WAF + rate-limit dashboard** in admin. We have the primitives
    already; surface them.
-9. **Privacy-first first-party analytics.** No more Cloudflare-anything
-   in the public site.
-10. **Cloudflare Tunnel equivalent** so the origin IP can go private.
-11. **Workers-equivalent edge runtime.** Largest CapEx gap, longest
-    build, but the single feature that closes the Vercel-edge gap.
+10. **Privacy-first first-party analytics.** No more vendor analytics
+    on the public site.
 12. **Durable Objects equivalent.** Required for real-time collab + edge
     state.
 13. **Stream-equivalent video pipeline.** Already in stack as ambition.
