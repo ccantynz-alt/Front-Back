@@ -20,6 +20,11 @@
 #
 # Logs:
 #   journalctl -u crontech-object-storage -f
+#
+# Hardening (Wave B2, 2026-04-27): wired into the failure-notify chain.
+# This is a oneshot Type=oneshot RemainAfterExit=yes unit, so Restart=
+# does not apply — the docker compose stack itself owns container restart
+# policy. Bun-stop directives intentionally omitted for the same reason.
 
 [Unit]
 Description=Crontech Self-Hosted Object Storage (MinIO via docker compose)
@@ -27,6 +32,7 @@ Documentation=https://docs.crontech.ai/blocks/blk-018
 Requires=docker.service
 After=docker.service network-online.target
 Wants=network-online.target
+OnFailure=crontech-failure-notify@%i.service
 
 [Service]
 Type=oneshot
@@ -34,6 +40,7 @@ RemainAfterExit=yes
 WorkingDirectory=/opt/crontech/services/object-storage
 EnvironmentFile=-/opt/crontech/services/object-storage/.env
 
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/docker compose up -d --remove-orphans
 ExecStop=/usr/bin/docker compose down
 ExecReload=/usr/bin/docker compose pull && /usr/bin/docker compose up -d --remove-orphans
