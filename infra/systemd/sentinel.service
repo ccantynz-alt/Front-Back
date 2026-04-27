@@ -3,6 +3,7 @@ Description=Crontech Sentinel — competitive intelligence one-shot collector
 Documentation=https://github.com/ccantynz-alt/Crontech/blob/main/services/sentinel/README.md
 After=network-online.target
 Wants=network-online.target
+OnFailure=crontech-failure-notify@%i.service
 
 [Service]
 Type=oneshot
@@ -12,9 +13,14 @@ WorkingDirectory=/opt/crontech/services/sentinel
 # Optional env file — leading `-` means systemd does NOT fail if absent.
 # Use this to supply SLACK_WEBHOOK_URL, GITHUB_TOKEN, DISCORD_WEBHOOK_URL.
 EnvironmentFile=-/opt/crontech/.env
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/local/bin/bun run src/run-once.ts --alerts
 Restart=on-failure
 RestartSec=30
+StartLimitIntervalSec=300
+StartLimitBurst=10
+# Type=oneshot: KillSignal/TimeoutStopSec/KillMode intentionally omitted.
+# WatchdogSec is not meaningful for oneshot units.
 
 # Hardening — Sentinel only needs read access to its own workspace plus
 # write access to services/sentinel/data/ (intelligence.json + .last-run).
