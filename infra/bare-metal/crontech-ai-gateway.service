@@ -11,11 +11,17 @@
 #   cp infra/bare-metal/crontech-ai-gateway.service /etc/systemd/system/
 #   systemctl daemon-reload
 #   systemctl enable --now crontech-ai-gateway
+#
+# Hardening (Wave B2, 2026-04-27): added explicit PATH, OnFailure notifier,
+# tightened restart limits, and Bun-friendly stop semantics. To enable
+# systemd watchdog later, emit sd_notify WATCHDOG pings and uncomment
+# WatchdogSec=60.
 
 [Unit]
 Description=Crontech AI Gateway (LLM proxy, BLK-021 v0)
 Documentation=https://docs.crontech.ai/blocks/blk-021
 After=network.target
+OnFailure=crontech-failure-notify@%i.service
 
 [Service]
 Type=simple
@@ -26,7 +32,14 @@ WorkingDirectory=/opt/crontech
 ExecStart=/root/.bun/bin/bun run services/ai-gateway/src/index.ts
 Restart=always
 RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=10
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+KillMode=mixed
+# WatchdogSec=60s  # enable once the Bun runtime emits sd_notify WATCHDOG pings
 
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:/root/.bun/bin
 Environment=APP_DIR=/opt/crontech
 Environment=AI_GATEWAY_PORT=9092
 EnvironmentFile=-/opt/crontech/.env
