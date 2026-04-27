@@ -2883,3 +2883,68 @@ html.dark .hero-gradient {
     transform: none;
   }
 }
+
+/* ── Input component (packages/ui Input) ─────────────────────────── */
+/* These classes are referenced by packages/ui/src/components/Input.tsx
+ * but were missing CSS definitions, so labels were rendering inline
+ * next to inputs (e.g. "Emailcrontech-admin" running together on the
+ * sign-in page). Defining them as the component's render shape implies
+ * a vertical stack with proper label spacing. */
+
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.input-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg-inset, var(--color-bg-subtle));
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.input::placeholder {
+  color: var(--color-text-faint);
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 20%, transparent);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.input-error {
+  border-color: var(--color-danger);
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-danger) 20%, transparent);
+}
+
+.input-error-text {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-danger);
+  margin-top: 2px;
+}
