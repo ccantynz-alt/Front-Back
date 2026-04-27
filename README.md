@@ -206,6 +206,32 @@ crontech/
 
 ## Getting Started
 
+## 60-second start (minimum env)
+
+The smallest viable env to get `bun install && bun run check && bun test` to green. Copy this into `.env` at the repo root:
+
+```env
+# Local SQLite — libsql accepts file: URLs in dev
+DATABASE_URL=file:./local.db
+DATABASE_AUTH_TOKEN=
+
+# Runtime mode
+NODE_ENV=development
+
+# Required by the auth/session layer (generate with: openssl rand -hex 32)
+SESSION_SECRET=0000000000000000000000000000000000000000000000000000000000000000
+```
+
+Then:
+
+```bash
+bun install
+bun run check
+bun test
+```
+
+Full env reference: `.env.example`. Doctrine: `CLAUDE.md`.
+
 ### Prerequisites
 - [Bun](https://bun.sh) v1.3.9+
 - Node.js 20+ (for some tooling)
