@@ -27,7 +27,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(`Looking up user: ${email}...`);
+  console.info(`Looking up user: ${email}...`);
 
   const result = await db
     .select({ id: users.id, email: users.email, role: users.role, displayName: users.displayName })
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
   }
 
   if (user.role === "admin") {
-    console.log(`\n${user.displayName} (${user.email}) is already an admin. No changes needed.`);
+    console.info(`\n${user.displayName} (${user.email}) is already an admin. No changes needed.`);
     process.exit(0);
   }
 
@@ -53,11 +53,11 @@ async function main(): Promise<void> {
     .set({ role: "admin" })
     .where(eq(users.id, user.id));
 
-  console.log(`\nPromoted to admin:`);
-  console.log(`  Name:  ${user.displayName}`);
-  console.log(`  Email: ${user.email}`);
-  console.log(`  Role:  ${user.role} → admin`);
-  console.log(`\nDone. Log out and back in for the change to take effect.`);
+  console.info(`\nPromoted to admin:`);
+  console.info(`  Name:  ${user.displayName}`);
+  console.info(`  Email: ${user.email}`);
+  console.info(`  Role:  ${user.role} → admin`);
+  console.info(`\nDone. Log out and back in for the change to take effect.`);
 }
 
 main().catch((err) => {

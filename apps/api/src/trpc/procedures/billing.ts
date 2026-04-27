@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { log } from "../../log";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { db } from "@back-to-the-future/db";
@@ -108,7 +109,7 @@ export const billingRouter = router({
           err instanceof Error ? err.message : String(err),
         );
       }
-      console.info(`[billing] waitlist signup: ${input.email}`);
+      log.info(`[billing] waitlist signup: ${input.email}`);
       return { ok: true as const };
     }),
 

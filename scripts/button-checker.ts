@@ -69,9 +69,9 @@ for (const file of files) {
   }
 }
 
-console.log(`Scanned ${files.length} files.`);
+console.info(`Scanned ${files.length} files.`);
 if (dead.length === 0) {
-  console.log("OK: no dead buttons.");
+  console.info("OK: no dead buttons.");
   process.exit(0);
 }
 console.error(`DEAD BUTTONS (${dead.length}):`);

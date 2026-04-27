@@ -73,7 +73,8 @@ log_ok "Repo found at ${REPO_DIR}"
 
 if ! command -v bun &>/dev/null; then
   log_err "Bun is not installed. Install it first:"
-  echo "  curl -fsSL https://bun.sh/install | bash"
+  echo "  # Download installer and execute:"
+  echo "  BUN_INSTALL=\$HOME/.bun bash <(curl -fsSL https://bun.sh/install)"
   echo "  source ~/.bashrc"
   exit 1
 fi

@@ -127,12 +127,12 @@ async function listAllCloudflareZones(token: string): Promise<
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
-  console.log("══════════════════════════════════════════════════");
-  console.log("  Cloudflare → Crontech DNS batch import");
-  console.log("══════════════════════════════════════════════════");
-  console.log("");
+  console.info("══════════════════════════════════════════════════");
+  console.info("  Cloudflare → Crontech DNS batch import");
+  console.info("══════════════════════════════════════════════════");
+  console.info("");
 
-  console.log("Listing all zones on your Cloudflare account...");
+  console.info("Listing all zones on your Cloudflare account...");
   let zones = await listAllCloudflareZones(args.token);
 
   if (args.filter) {
@@ -140,20 +140,20 @@ async function main(): Promise<void> {
   }
 
   if (zones.length === 0) {
-    console.log("No zones found. Nothing to import.");
+    console.info("No zones found. Nothing to import.");
     process.exit(0);
   }
 
-  console.log(`Found ${zones.length} zone(s):`);
+  console.info(`Found ${zones.length} zone(s):`);
   for (const z of zones) {
     const flag = z.status === "active" ? "✓" : "•";
     const pausedTag = z.paused ? " [paused]" : "";
-    console.log(`  ${flag} ${z.name.padEnd(32)} status=${z.status}${pausedTag}`);
+    console.info(`  ${flag} ${z.name.padEnd(32)} status=${z.status}${pausedTag}`);
   }
-  console.log("");
+  console.info("");
 
   if (args.dryRun) {
-    console.log("(--dry-run) Skipping actual import. Re-run without --dry-run to migrate.");
+    console.info("(--dry-run) Skipping actual import. Re-run without --dry-run to migrate.");
     process.exit(0);
   }
 
@@ -166,8 +166,8 @@ async function main(): Promise<void> {
   const results: Array<{ zone: string; ok: boolean; error?: string }> = [];
 
   for (const z of zones) {
-    console.log("──────────────────────────────────────────────────");
-    console.log(`Importing ${z.name}...`);
+    console.info("──────────────────────────────────────────────────");
+    console.info(`Importing ${z.name}...`);
     try {
       const proc = Bun.spawn(
         [
@@ -204,31 +204,31 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log("");
-  console.log("══════════════════════════════════════════════════");
-  console.log("  Summary");
-  console.log("══════════════════════════════════════════════════");
+  console.info("");
+  console.info("══════════════════════════════════════════════════");
+  console.info("  Summary");
+  console.info("══════════════════════════════════════════════════");
   const ok = results.filter((r) => r.ok);
   const failed = results.filter((r) => !r.ok);
-  console.log(`  ${ok.length} / ${results.length} zones imported successfully`);
+  console.info(`  ${ok.length} / ${results.length} zones imported successfully`);
   if (failed.length > 0) {
-    console.log(`  ${failed.length} zone(s) failed:`);
+    console.info(`  ${failed.length} zone(s) failed:`);
     for (const f of failed) {
-      console.log(`    ✗ ${f.zone} — ${f.error}`);
+      console.info(`    ✗ ${f.zone} — ${f.error}`);
     }
     process.exit(1);
   }
 
-  console.log("");
-  console.log("Next steps:");
-  console.log(
+  console.info("");
+  console.info("Next steps:");
+  console.info(
     "  1. At your domain registrar, change nameservers for each imported zone to:",
   );
-  console.log(`     ${args.primaryNs}`);
-  console.log(`     ${args.secondaryNs}`);
-  console.log("  2. Wait for propagation (1–48 h).");
-  console.log("  3. Verify with: dig NS <zone>");
-  console.log("");
+  console.info(`     ${args.primaryNs}`);
+  console.info(`     ${args.secondaryNs}`);
+  console.info("  2. Wait for propagation (1–48 h).");
+  console.info("  3. Verify with: dig NS <zone>");
+  console.info("");
 }
 
 main().catch((err) => {

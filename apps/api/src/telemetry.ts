@@ -1,4 +1,5 @@
 import { trace, metrics, SpanStatusCode } from "@opentelemetry/api";
+import { log } from "./log";
 import type { Span } from "@opentelemetry/api";
 import { withProjectAttrs } from "./telemetry/project-attribution";
 // `@opentelemetry/sdk-node` pulls in Node built-ins (fs, async_hooks, etc.)
@@ -20,7 +21,7 @@ export async function initTelemetry(): Promise<NodeSDK | null> {
 
   // Skip telemetry initialization if no endpoint configured
   if (!otlpEndpoint) {
-    console.log("OpenTelemetry: No OTEL_EXPORTER_OTLP_ENDPOINT set, telemetry disabled");
+    log.info("OpenTelemetry: No OTEL_EXPORTER_OTLP_ENDPOINT set, telemetry disabled");
     return null;
   }
 
@@ -69,7 +70,7 @@ export async function initTelemetry(): Promise<NodeSDK | null> {
   });
 
   sdk.start();
-  console.log(`OpenTelemetry: Initialized (endpoint: ${otlpEndpoint})`);
+  log.info(`OpenTelemetry: Initialized (endpoint: ${otlpEndpoint})`);
 
   return sdk;
 }

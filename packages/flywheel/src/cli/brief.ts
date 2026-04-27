@@ -9,13 +9,13 @@ import { buildSessionBrief, renderBrief, getTopLessons } from "../brief";
 
 async function main(): Promise<void> {
   const entries = await buildSessionBrief(db, { limit: 3 });
-  console.log(renderBrief(entries));
+  console.info(renderBrief(entries));
 
   const lessons = await getTopLessons(db, { limit: 5 });
   if (lessons.length > 0) {
-    console.log("[flywheel] Top lessons from prior sessions:");
+    console.info("[flywheel] Top lessons from prior sessions:");
     for (const l of lessons) {
-      console.log(`  • [${l.category}] ${l.title} (conf ${l.confidence})`);
+      console.info(`  • [${l.category}] ${l.title} (conf ${l.confidence})`);
     }
   }
 }

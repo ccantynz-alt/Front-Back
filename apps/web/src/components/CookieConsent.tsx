@@ -16,10 +16,14 @@ export function CookieConsent(): JSX.Element {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) {
       setVisible(true);
-      // Trigger animation on next frame
-      requestAnimationFrame(() => {
+      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReduced) {
         setAnimateIn(true);
-      });
+      } else {
+        requestAnimationFrame(() => {
+          setAnimateIn(true);
+        });
+      }
     }
   });
 

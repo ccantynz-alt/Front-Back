@@ -34,7 +34,7 @@ async function createTestUser(): Promise<string> {
   const id = crypto.randomUUID();
   await db.insert(users).values({
     id,
-    email: `test-ui-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
+    email: `test-ui-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}@example.com`,
     displayName: "Test UI User",
   });
   return id;

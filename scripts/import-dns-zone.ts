@@ -111,7 +111,7 @@ function printHelp(): void {
     "  bun run scripts/import-dns-zone.ts --token=cf_abc --zone=gluecron.com --dry-run",
   ];
   for (const line of lines) {
-    console.log(line);
+    console.info(line);
   }
 }
 
@@ -134,7 +134,7 @@ export async function runCli(argv: readonly string[]): Promise<number> {
     return 1;
   }
 
-  console.log(
+  console.info(
     `Importing zone "${args.zone}" from Cloudflare${args.dryRun ? " (dry-run)" : ""}...`,
   );
 
@@ -148,23 +148,23 @@ export async function runCli(argv: readonly string[]): Promise<number> {
       dryRun: args.dryRun,
     });
 
-    console.log("");
-    console.log(`Zone id:   ${summary.zoneId}`);
-    console.log(`Zone name: ${summary.zoneName}`);
-    console.log(`Imported:  ${summary.imported}`);
-    console.log(`Skipped:   ${summary.skipped}`);
-    console.log(`Errors:    ${summary.errors.length}`);
+    console.info("");
+    console.info(`Zone id:   ${summary.zoneId}`);
+    console.info(`Zone name: ${summary.zoneName}`);
+    console.info(`Imported:  ${summary.imported}`);
+    console.info(`Skipped:   ${summary.skipped}`);
+    console.info(`Errors:    ${summary.errors.length}`);
     if (summary.errors.length > 0) {
-      console.log("");
-      console.log("Per-record errors:");
+      console.info("");
+      console.info("Per-record errors:");
       for (const err of summary.errors) {
         const prefix = err.type && err.record ? `  [${err.type} ${err.record}]` : "  [?]";
-        console.log(`${prefix} ${err.reason}`);
+        console.info(`${prefix} ${err.reason}`);
       }
     }
     if (summary.dryRun) {
-      console.log("");
-      console.log("Dry-run: no changes were written to the database.");
+      console.info("");
+      console.info("Dry-run: no changes were written to the database.");
     }
     return 0;
   } catch (err) {

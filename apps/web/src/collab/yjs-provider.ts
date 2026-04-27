@@ -46,7 +46,7 @@ const CURSOR_COLORS = [
 ];
 
 export function getRandomColor(): string {
-  return CURSOR_COLORS[Math.floor(Math.random() * CURSOR_COLORS.length)]!;
+  return CURSOR_COLORS[Math.floor(crypto.getRandomValues(new Uint32Array(1))[0]! / 0x100000000 * CURSOR_COLORS.length)]!;
 }
 
 // ── Server URL Resolver ──────────────────────────────────────────────

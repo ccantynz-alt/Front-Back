@@ -48,7 +48,7 @@ function getSupportFromAddress(): string {
 }
 
 function newId(prefix: string): string {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
 function normalizeSubject(subject: string): string {

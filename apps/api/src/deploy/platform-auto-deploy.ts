@@ -15,6 +15,7 @@
 
 import { Hono } from "hono";
 import { verifyGithubSignature } from "../github/webhook";
+import { log } from "../log";
 
 const AGENT_URL = `http://127.0.0.1:${process.env["DEPLOY_AGENT_PORT"] ?? 9091}`;
 const AGENT_SECRET = process.env["DEPLOY_AGENT_SECRET"] ?? "";
@@ -97,7 +98,7 @@ platformAutoDeployApp.post("/api/hooks/github/platform", async (c) => {
           if (done) break;
         }
       }
-      console.log(`[platform-auto-deploy] deploy finished (${res.status})`);
+      log.info(`[platform-auto-deploy] deploy finished (${res.status})`);
     } catch (err) {
       console.error(
         "[platform-auto-deploy] deploy error:",
@@ -106,6 +107,6 @@ platformAutoDeployApp.post("/api/hooks/github/platform", async (c) => {
     }
   })();
 
-  console.log(`[platform-auto-deploy] triggered by push to ${PLATFORM_BRANCH}`);
+  log.info(`[platform-auto-deploy] triggered by push to ${PLATFORM_BRANCH}`);
   return c.json({ ok: true, triggered: true, branch: PLATFORM_BRANCH });
 });

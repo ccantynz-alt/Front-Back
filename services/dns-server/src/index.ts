@@ -126,7 +126,7 @@ if (import.meta.main) {
   const server = await startDnsServer({ store: fallbackStore });
 
   const shutdown = async (signal: string): Promise<void> => {
-    console.log(`[dns] received ${signal}`);
+    console.info(`[dns] received ${signal}`);
     await server.stop();
     process.exit(0);
   };

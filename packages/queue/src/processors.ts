@@ -90,13 +90,13 @@ registerProcessor("send_email", async (data, _job) => {
   // Delegates to the existing email client in apps/api.
   // In production, import { sendEmail } from "../../email/client"
   // and call it here. Stubbed for now.
-  console.log("[queue:send_email] Processing:", data["to"], data["subject"]);
+  console.info("[queue:send_email] Processing:", data["to"], data["subject"]);
 });
 
 registerProcessor("process_webhook", async (data, _job) => {
   // Delegates to the webhook dispatcher.
   // In production, import { runDispatcher } and enqueue the delivery.
-  console.log(
+  console.info(
     "[queue:process_webhook] Processing:",
     data["webhookId"],
     data["eventType"],
@@ -104,7 +104,7 @@ registerProcessor("process_webhook", async (data, _job) => {
 });
 
 registerProcessor("provision_tenant", async (data, _job) => {
-  console.log(
+  console.info(
     "[queue:provision_tenant] Provisioning tenant:",
     data["tenantId"],
     "plan:",
@@ -114,7 +114,7 @@ registerProcessor("provision_tenant", async (data, _job) => {
 });
 
 registerProcessor("generate_site", async (data, _job) => {
-  console.log(
+  console.info(
     "[queue:generate_site] Generating site:",
     data["siteId"],
     "for tenant:",

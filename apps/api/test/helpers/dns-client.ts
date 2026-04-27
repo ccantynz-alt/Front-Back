@@ -100,7 +100,7 @@ export async function createDnsClient(options: DnsClientOptions): Promise<DnsCli
   function nextId(): number {
     // 16-bit transaction id. Avoid collisions with in-flight queries.
     for (let attempt = 0; attempt < 1024; attempt += 1) {
-      const id = Math.floor(Math.random() * 0x10000);
+      const id = crypto.getRandomValues(new Uint16Array(1))[0]!;
       if (!pending.has(id)) return id;
     }
     throw new Error("dns-client: exhausted transaction id space");

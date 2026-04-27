@@ -21,6 +21,7 @@
  */
 
 import { Hono } from "hono";
+import { log } from "../log";
 
 async function timingSafeEqualHex(a: string, b: string): Promise<boolean> {
   if (a.length !== b.length) return false;
@@ -116,7 +117,7 @@ app.post("/alecrae/webhook", async (c) => {
     );
   }
 
-  console.log(
+  log.info(
     `[alecrae-webhook] event=${event} message_id=${messageId} to=${to} ts=${timestamp}`,
   );
 

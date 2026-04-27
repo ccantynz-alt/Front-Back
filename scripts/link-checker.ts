@@ -65,9 +65,9 @@ for (const file of srcFiles) {
   }
 }
 
-console.log(`Scanned ${srcFiles.length} files. Found ${routes.size} routes.`);
+console.info(`Scanned ${srcFiles.length} files. Found ${routes.size} routes.`);
 if (dead.length === 0) {
-  console.log("OK: no dead links.");
+  console.info("OK: no dead links.");
   process.exit(0);
 }
 console.error(`DEAD LINKS (${dead.length}):`);

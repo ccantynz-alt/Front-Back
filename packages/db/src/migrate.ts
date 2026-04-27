@@ -17,9 +17,9 @@ export async function runMigrations(
   const client = createLibSQLClient(clientConfig);
   const db = drizzle(client, { schema });
 
-  console.log("[migrate] Running database migrations...");
+  console.info("[migrate] Running database migrations...");
   await migrate(db, { migrationsFolder: new URL("../migrations", import.meta.url).pathname });
-  console.log("[migrate] Migrations completed successfully.");
+  console.info("[migrate] Migrations completed successfully.");
 }
 
 // Run directly if executed as a script

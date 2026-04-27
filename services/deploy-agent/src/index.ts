@@ -498,5 +498,5 @@ Bun.serve({
   },
 });
 
-console.log(`[deploy-agent] Listening on http://127.0.0.1:${PORT}`);
-console.log(`[deploy-agent] APP_DIR=${APP_DIR}`);
+console.info(`[deploy-agent] Listening on http://127.0.0.1:${PORT}`);
+console.info(`[deploy-agent] APP_DIR=${APP_DIR}`);

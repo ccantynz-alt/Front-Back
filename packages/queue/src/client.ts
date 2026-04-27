@@ -138,10 +138,10 @@ export async function closeQueue(): Promise<void> {
 
 if (typeof process !== "undefined") {
   process.on("SIGTERM", () => {
-    console.log("[queue] SIGTERM received, draining queue...");
+    console.info("[queue] SIGTERM received, draining queue...");
     closeQueue()
       .then(() => {
-        console.log("[queue] Queue drained. Exiting.");
+        console.info("[queue] Queue drained. Exiting.");
       })
       .catch((err) => {
         console.error("[queue] Error during shutdown:", err);

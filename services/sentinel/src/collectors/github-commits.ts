@@ -249,7 +249,7 @@ export const githubCommitsCollector: Collector = {
         if (result.item) {
           allItems.push(result.item);
         }
-        console.log(
+        console.info(
           `[sentinel:github-commits] ${repo.owner}/${repo.repo}: ${result.recentCount} commits in ${LOOKBACK_DAYS}d${result.isSpike ? " [SPIKE]" : ""}${result.baseline !== null ? ` (baseline: ${result.baseline})` : " (first check)"}`,
         );
       } catch (err) {

@@ -9,11 +9,11 @@ import { ingestTranscripts, defaultTranscriptDir } from "../ingest";
 async function main(): Promise<void> {
   const force = process.argv.includes("--force");
   const dir = defaultTranscriptDir();
-  console.log(`[flywheel:ingest] Scanning ${dir} (force=${force ? "yes" : "no"})`);
+  console.info(`[flywheel:ingest] Scanning ${dir} (force=${force ? "yes" : "no"})`);
 
   const result = await ingestTranscripts(db, { force });
 
-  console.log(
+  console.info(
     `[flywheel:ingest] Scanned ${result.scanned} transcripts — ` +
       `ingested ${result.ingested}, skipped ${result.skipped}, ` +
       `inserted ${result.turnsInserted} turns.`,

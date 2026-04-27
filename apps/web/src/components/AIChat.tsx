@@ -108,6 +108,7 @@ export function AIChat(props: AIChatProps): JSX.Element {
         <Stack direction="horizontal" gap="sm">
           <Input
             placeholder={props.placeholder ?? "Type a message..."}
+            aria-label="Type a message"
             value={input()}
             onInput={(e) => setInput(e.currentTarget.value)}
             onKeyDown={(e: KeyboardEvent) => {

@@ -40,31 +40,31 @@ function collectMigrationFiles(): Array<{ file: string; source: string; path: st
 
 function main(): number {
   const files = collectMigrationFiles();
-  console.log(bold("Crontech migration validator"));
-  console.log(dim(`scanning ${files.length} files in ${MIGRATIONS_DIR}`));
-  console.log();
+  console.info(bold("Crontech migration validator"));
+  console.info(dim(`scanning ${files.length} files in ${MIGRATIONS_DIR}`));
+  console.info();
 
   const summary = lintMigrationSet(
     files.map(({ file, source }) => ({ file, source })),
   );
 
   for (const f of summary.errors) {
-    console.log(
+    console.info(
       `${red("ERROR")} ${f.file}${f.line > 0 ? `:${f.line}` : ""} [${f.rule}] ${f.message}`,
     );
   }
   for (const f of summary.warnings) {
-    console.log(
+    console.info(
       `${yellow("WARN ")} ${f.file}${f.line > 0 ? `:${f.line}` : ""} [${f.rule}] ${f.message}`,
     );
   }
 
   if (summary.errors.length === 0 && summary.warnings.length === 0) {
-    console.log(dim("(no findings)"));
+    console.info(dim("(no findings)"));
   }
 
-  console.log();
-  console.log(
+  console.info();
+  console.info(
     `${bold("summary:")} ${summary.totalFiles} file(s), ${
       summary.errors.length === 0
         ? green("0 errors")
@@ -77,10 +77,10 @@ function main(): number {
   );
 
   if (summary.errors.length > 0) {
-    console.log(red(bold("validation failed")));
+    console.info(red(bold("validation failed")));
     return 1;
   }
-  console.log(green(bold("validation passed")));
+  console.info(green(bold("validation passed")));
   return 0;
 }
 

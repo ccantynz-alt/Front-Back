@@ -244,9 +244,9 @@ async function runAll(): Promise<void> {
     }),
   );
 
-  console.log("\nPhase D Smoke Tests");
-  console.log(`  web: ${BASE_WEB}`);
-  console.log(`  api: ${BASE_API}\n`);
+  console.info("\nPhase D Smoke Tests");
+  console.info(`  web: ${BASE_WEB}`);
+  console.info(`  api: ${BASE_API}\n`);
 
   const GREEN = "\x1b[32m";
   const RED = "\x1b[31m";
@@ -255,14 +255,14 @@ async function runAll(): Promise<void> {
 
   for (const r of results) {
     const mark = r.pass ? `${GREEN}✓${RESET}` : `${RED}✗${RESET}`;
-    console.log(`  ${mark} ${r.id}  ${r.label}`);
-    console.log(`      ${DIM}${r.detail}${RESET}`);
+    console.info(`  ${mark} ${r.id}  ${r.label}`);
+    console.info(`      ${DIM}${r.detail}${RESET}`);
   }
 
   const passing = results.filter((r) => r.pass).length;
   const total = results.length;
   const summary = passing === total ? `${GREEN}${passing}/${total} passing${RESET}` : `${RED}${passing}/${total} passing${RESET}`;
-  console.log(`\n  ${summary}\n`);
+  console.info(`\n  ${summary}\n`);
 
   process.exit(total - passing);
 }

@@ -163,7 +163,7 @@ Bun.serve({
   hostname: "127.0.0.1",
 });
 
-console.log(`[orchestrator] Deploy orchestrator running on http://${HOSTNAME}:${PORT}`);
-console.log("[orchestrator] Health monitor active (30s interval)");
+console.info(`[orchestrator] Deploy orchestrator running on http://${HOSTNAME}:${PORT}`);
+console.info("[orchestrator] Health monitor active (30s interval)");
 
 export default app;

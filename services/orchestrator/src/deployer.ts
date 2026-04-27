@@ -318,7 +318,7 @@ Bun.serve({
   },
 });
 
-console.log("Static server running on port " + PORT);
+console.info("Static server running on port " + PORT);
 `;
 }
 
@@ -398,7 +398,7 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
   const sandboxDir = resolveWorkspaceDir(req.appName);
   const now = new Date().toISOString();
 
-  console.log(`[deploy] Starting deploy for ${req.appName}...`);
+  console.info(`[deploy] Starting deploy for ${req.appName}...`);
 
   let deployment = getDeployment(req.appName);
   const isReplace = !!deployment;
@@ -439,7 +439,7 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
     ensureWorkspaceDir(req.appName);
 
     // 1. Clone repo into the SANDBOX workspace (NOT the host appDir yet).
-    console.log(`[deploy] Cloning ${req.repoUrl} (${req.branch}) into sandbox...`);
+    console.info(`[deploy] Cloning ${req.repoUrl} (${req.branch}) into sandbox...`);
     await cloneRepo(req.repoUrl, req.branch, sandboxDir);
 
     // 2. Detect framework (reads package.json only — safe on host).
@@ -447,17 +447,17 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
     deployment.updatedAt = new Date().toISOString();
     setDeployment(deployment);
 
-    console.log("[deploy] Detecting framework...");
+    console.info("[deploy] Detecting framework...");
     const framework = await detectFramework(sandboxDir);
     deployment.framework = framework;
-    console.log(`[deploy] Detected: ${framework.framework} (server: ${framework.needsServer})`);
+    console.info(`[deploy] Detected: ${framework.framework} (server: ${framework.needsServer})`);
 
     // 3. Install dependencies — SANDBOXED.
     deployment.status = "installing";
     deployment.updatedAt = new Date().toISOString();
     setDeployment(deployment);
 
-    console.log("[deploy] Installing dependencies (sandboxed)...");
+    console.info("[deploy] Installing dependencies (sandboxed)...");
     await installDeps(req.appName, sandboxDir);
 
     // 4. Build — SANDBOXED.
@@ -466,7 +466,7 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
     setDeployment(deployment);
 
     if (framework.buildCommand) {
-      console.log(`[deploy] Building (${framework.buildCommand}) sandboxed...`);
+      console.info(`[deploy] Building (${framework.buildCommand}) sandboxed...`);
       await buildApp(
         req.appName,
         sandboxDir,
@@ -490,7 +490,7 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
 
     // 6. Stop old process if replacing
     if (isReplace && isProcessRunning(req.appName)) {
-      console.log("[deploy] Stopping old process...");
+      console.info("[deploy] Stopping old process...");
       stopProcess(req.appName);
     }
 
@@ -503,14 +503,14 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
     deployment.updatedAt = new Date().toISOString();
     setDeployment(deployment);
 
-    console.log(`[deploy] Starting on port ${port}...`);
+    console.info(`[deploy] Starting on port ${port}...`);
     deployment.envVars = { ...deployment.envVars, ...req.envVars };
     startAppProcess(deployment);
 
     deployment.pid = getProcessPid(req.appName);
 
     // 9. Health check
-    console.log("[deploy] Waiting for health check...");
+    console.info("[deploy] Waiting for health check...");
     const healthResult = await waitForHealth(port);
 
     if (healthResult === "fail") {
@@ -519,7 +519,7 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
 
     // 10. Configure Caddy route via admin API (fast path) and also append
     //     a durable site block to the Caddyfile so a reboot preserves it.
-    console.log(`[deploy] Configuring route: ${req.domain} -> 127.0.0.1:${port}...`);
+    console.info(`[deploy] Configuring route: ${req.domain} -> 127.0.0.1:${port}...`);
     try {
       await addRoute(req.domain, `127.0.0.1:${port}`);
     } catch (err: unknown) {
@@ -529,7 +529,7 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
 
     if (req.subdomain) {
       const subFqdn = `${req.subdomain}.crontech.ai`;
-      console.log(`[deploy] Adding subdomain route: ${subFqdn}...`);
+      console.info(`[deploy] Adding subdomain route: ${subFqdn}...`);
       try {
         await addRoute(subFqdn, `127.0.0.1:${port}`);
       } catch (err: unknown) {
@@ -554,7 +554,7 @@ export async function deploy(req: DeployRequest): Promise<DeployResult> {
     setDeployment(deployment);
 
     const url = `https://${req.domain}`;
-    console.log(`[deploy] Deploy complete: ${url} (health: ${healthResult})`);
+    console.info(`[deploy] Deploy complete: ${url} (health: ${healthResult})`);
 
     // 12. Clean up the sandbox workspace on success. No customer code
     //     survives past the build step on the host.
@@ -591,7 +591,7 @@ export async function rollback(appName: string): Promise<void> {
     throw new Error(`No deployment found for "${appName}"`);
   }
 
-  console.log(`[rollback] Rolling back ${appName}...`);
+  console.info(`[rollback] Rolling back ${appName}...`);
 
   deployment.status = "rolling_back";
   deployment.updatedAt = new Date().toISOString();
@@ -615,7 +615,7 @@ export async function rollback(appName: string): Promise<void> {
     deployment.previousBuildDir = undefined;
     setDeployment(deployment);
 
-    console.log(`[rollback] ${appName} rolled back successfully`);
+    console.info(`[rollback] ${appName} rolled back successfully`);
   } catch (err: unknown) {
     deployment.status = "failed";
     deployment.updatedAt = new Date().toISOString();
@@ -625,7 +625,7 @@ export async function rollback(appName: string): Promise<void> {
 }
 
 export async function undeploy(appName: string): Promise<void> {
-  console.log(`[undeploy] Removing ${appName}...`);
+  console.info(`[undeploy] Removing ${appName}...`);
 
   const deployment = getDeployment(appName);
 
@@ -651,7 +651,7 @@ export async function undeploy(appName: string): Promise<void> {
     removeDeployment(appName);
   }
 
-  console.log(`[undeploy] ${appName} removed.`);
+  console.info(`[undeploy] ${appName} removed.`);
 }
 
 export async function status(appName: string): Promise<AppStatus | null> {

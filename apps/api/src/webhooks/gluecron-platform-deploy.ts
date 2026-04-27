@@ -32,6 +32,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { timingSafeEqual } from "./gluecron-push";
+import { log } from "../log";
 
 const PLATFORM_REPO = "ccantynz-alt/Crontech";
 const PLATFORM_BRANCH_ALLOWLIST = new Set(["Main", "main"]);
@@ -96,7 +97,7 @@ function defaultTriggerDeploy(input: {
           if (done) break;
         }
       }
-      console.log(
+      log.info(
         `[gluecron-platform-deploy] deploy finished sha=${input.sha.slice(0, 7)} status=${res.status}`,
       );
     } catch (err) {
@@ -189,7 +190,7 @@ export function createGluecronPlatformDeployApp(
     const agentUrl = getAgentUrl();
     triggerDeploy({ agentUrl, agentSecret, sha: payload.sha });
 
-    console.log(
+    log.info(
       `[gluecron-platform-deploy] triggered branch=${payload.branch} sha=${payload.sha.slice(0, 7)}`,
     );
     return c.json({

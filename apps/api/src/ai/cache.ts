@@ -3,7 +3,7 @@
 // async fn so the caller writes:
 //
 //   const result = await cachedAICall({ model, prompt, params, tenantId },
-//     () => openai.chat.completions.create({...}));
+//     () => client.chat.completions.create({ max_tokens: 256, ...opts }));
 //
 // On a cache hit, the wrapped fn is never invoked — the caller pays
 // nothing and gets a sub-millisecond response. On a miss, we run the

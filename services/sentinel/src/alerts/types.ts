@@ -40,7 +40,7 @@ const DISCORD_EMBED_COLOR: Record<AlertPriority, number> = {
 export async function sendSlackAlert(message: AlertMessage): Promise<void> {
   const webhookUrl = process.env["SLACK_WEBHOOK_URL"];
   if (!webhookUrl) {
-    console.log(`[sentinel:slack] No webhook configured. Alert: ${message.title}`);
+    console.info(`[sentinel:slack] No webhook configured. Alert: ${message.title}`);
     return;
   }
 
@@ -71,7 +71,7 @@ export async function sendSlackAlert(message: AlertMessage): Promise<void> {
 export async function sendDiscordAlert(message: AlertMessage): Promise<void> {
   const webhookUrl = process.env["DISCORD_WEBHOOK_URL"];
   if (!webhookUrl) {
-    console.log(`[sentinel:discord] No webhook configured. Alert: ${message.title}`);
+    console.info(`[sentinel:discord] No webhook configured. Alert: ${message.title}`);
     return;
   }
 

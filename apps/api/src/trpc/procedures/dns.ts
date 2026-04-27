@@ -49,7 +49,7 @@ const SUPPORTED_TYPES = [
 // ── Helpers ────────────────────────────────────────────────────────
 
 function newId(prefix: string): string {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
 /** RFC-952/1123 hostname validation. Labels may not be IP addresses. */

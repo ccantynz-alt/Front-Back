@@ -333,5 +333,5 @@ export async function sendSms(
 }
 
 function newMessageId(): string {
-  return `sms_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `sms_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }

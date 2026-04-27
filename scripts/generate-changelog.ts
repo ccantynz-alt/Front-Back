@@ -497,7 +497,7 @@ async function main(): Promise<void> {
   });
 
   for (const line of result.logLines) {
-    console.log(line);
+    console.info(line);
   }
 
   if (result.mode !== "wrote" || !result.payload || !result.markdown || !result.nextChangelog) {
@@ -513,9 +513,9 @@ async function main(): Promise<void> {
   await writeFile(datedMd, result.markdown, "utf8");
   await writeFile(datedJson, `${JSON.stringify(result.payload, null, 2)}\n`, "utf8");
 
-  console.log(`Wrote ${CHANGELOG_PATH}`);
-  console.log(`Wrote ${datedMd}`);
-  console.log(`Wrote ${datedJson}`);
+  console.info(`Wrote ${CHANGELOG_PATH}`);
+  console.info(`Wrote ${datedMd}`);
+  console.info(`Wrote ${datedJson}`);
 }
 
 // Only run when invoked directly, not when imported by tests.

@@ -82,7 +82,7 @@ export async function sendDailyDigest(): Promise<DailyDigest> {
     timestamp: digest.generatedAt,
   };
 
-  console.log(`[sentinel:digest] ${digest.summary}`);
+  console.info(`[sentinel:digest] ${digest.summary}`);
 
   await sendSlackAlert(alert);
   await sendDiscordAlert(alert);

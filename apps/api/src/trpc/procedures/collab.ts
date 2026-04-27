@@ -8,7 +8,7 @@ export const collabRouter = router({
   createRoom: protectedProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(({ input, ctx }) => {
-      const id = `room-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const id = `room-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
       const room = {
         id,
         name: input.name,

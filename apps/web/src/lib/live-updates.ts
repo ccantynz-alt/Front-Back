@@ -56,7 +56,7 @@ function scheduleReconnect(): void {
     connectLiveUpdates();
   }, reconnectDelay);
   // Exponential backoff with jitter
-  reconnectDelay = Math.min(reconnectDelay * 2 + Math.random() * 500, MAX_RECONNECT_DELAY);
+  reconnectDelay = Math.min(reconnectDelay * 2 + Math.floor(crypto.getRandomValues(new Uint32Array(1))[0]! / 0x100000000 * 500), MAX_RECONNECT_DELAY);
 }
 
 /** Connect to the live updates SSE channel. Safe to call multiple times. */

@@ -306,9 +306,9 @@ for (const file of filesToCheck) {
 const errors = violations.filter((v) => v.severity === "error");
 const warnings = violations.filter((v) => v.severity === "warning");
 
-console.log("=== Accessibility Check ===\n");
-console.log(`Scanned ${filesToCheck.length} files.`);
-console.log(`Found ${errors.length} error(s) and ${warnings.length} warning(s).\n`);
+console.info("=== Accessibility Check ===\n");
+console.info(`Scanned ${filesToCheck.length} files.`);
+console.info(`Found ${errors.length} error(s) and ${warnings.length} warning(s).\n`);
 
 if (errors.length > 0) {
   console.error("ERRORS (must fix):");
@@ -319,15 +319,15 @@ if (errors.length > 0) {
 }
 
 if (warnings.length > 0) {
-  console.log("WARNINGS (should fix):");
+  console.info("WARNINGS (should fix):");
   for (const w of warnings) {
-    console.log(`  ${w.file}:${w.line}  [${w.rule}] ${w.message}`);
+    console.info(`  ${w.file}:${w.line}  [${w.rule}] ${w.message}`);
   }
-  console.log("");
+  console.info("");
 }
 
 if (errors.length === 0 && warnings.length === 0) {
-  console.log("OK: No accessibility violations found.");
+  console.info("OK: No accessibility violations found.");
 }
 
 // --- GitHub Actions Step Summary ---

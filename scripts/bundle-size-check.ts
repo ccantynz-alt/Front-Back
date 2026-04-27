@@ -121,28 +121,28 @@ const clientTotalKB = clientJsFiles.reduce((sum, f) => sum + f.sizeKB, 0);
 const largestClientFile = clientJsFiles[0];
 
 // Report
-console.log("=== Bundle Size Report ===\n");
-console.log(
+console.info("=== Bundle Size Report ===\n");
+console.info(
   `Total JS output: ${Math.round(totalSizeKB * 100) / 100} KB across ${allJsFiles.length} files`,
 );
-console.log(
+console.info(
   `Client JS total: ${Math.round(clientTotalKB * 100) / 100} KB across ${clientJsFiles.length} files`,
 );
-console.log("");
+console.info("");
 
 if (clientJsFiles.length > 0) {
-  console.log("Top 10 largest JS files:");
+  console.info("Top 10 largest JS files:");
   for (const f of allJsFiles.slice(0, 10)) {
     const marker =
       f.sizeKB > FAIL_THRESHOLD_KB ? " [FAIL]" : f.sizeKB > WARN_THRESHOLD_KB ? " [WARN]" : "";
-    console.log(`  ${f.sizeKB.toFixed(2)} KB  ${f.path}${marker}`);
+    console.info(`  ${f.sizeKB.toFixed(2)} KB  ${f.path}${marker}`);
   }
-  console.log("");
+  console.info("");
 }
 
 // Evaluate the initial bundle (largest client-side JS file)
 if (largestClientFile) {
-  console.log(
+  console.info(
     `Largest client JS file: ${largestClientFile.sizeKB.toFixed(2)} KB (${largestClientFile.path})`,
   );
 }
@@ -167,18 +167,18 @@ const warningFiles = clientJsFiles.filter(
 );
 
 if (allowedLazyFiles.length > 0) {
-  console.log(
+  console.info(
     `\nNOTE: ${allowedLazyFiles.length} allowlisted lazy vendor chunk(s) exceed ${FAIL_THRESHOLD_KB}KB (not counted against budget — only load on their own route):`,
   );
   for (const f of allowedLazyFiles) {
-    console.log(`  ${f.sizeKB.toFixed(2)} KB  ${f.path}`);
+    console.info(`  ${f.sizeKB.toFixed(2)} KB  ${f.path}`);
   }
 }
 
 if (warningFiles.length > 0) {
-  console.log(`\nWARNING: ${warningFiles.length} file(s) exceed ${WARN_THRESHOLD_KB}KB target:`);
+  console.info(`\nWARNING: ${warningFiles.length} file(s) exceed ${WARN_THRESHOLD_KB}KB target:`);
   for (const f of warningFiles) {
-    console.log(`  ${f.sizeKB.toFixed(2)} KB  ${f.path}`);
+    console.info(`  ${f.sizeKB.toFixed(2)} KB  ${f.path}`);
   }
 }
 
@@ -193,7 +193,7 @@ if (failingFiles.length > 0) {
 }
 
 if (exitCode === 0 && warningFiles.length === 0) {
-  console.log("\nOK: All client JS files within budget.");
+  console.info("\nOK: All client JS files within budget.");
 }
 
 // --- GitHub Actions Step Summary ---

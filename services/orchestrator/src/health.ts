@@ -16,7 +16,7 @@ export function startHealthMonitor(): void {
     return;
   }
 
-  console.log("[HEALTH] Starting health monitor (30s interval)");
+  console.info("[HEALTH] Starting health monitor (30s interval)");
 
   monitorInterval = setInterval(async () => {
     try {
@@ -29,7 +29,7 @@ export function startHealthMonitor(): void {
           console.error(`[HEALTH] ${app.name} process died — attempting restart`);
           try {
             restartProcess(app.name);
-            console.log(`[HEALTH] ${app.name} restart initiated`);
+            console.info(`[HEALTH] ${app.name} restart initiated`);
           } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : "unknown error";
             console.error(`[HEALTH] ${app.name} restart failed: ${msg}`);
@@ -52,7 +52,7 @@ export function startHealthMonitor(): void {
             );
             try {
               restartProcess(app.name);
-              console.log(`[HEALTH] ${app.name} restart initiated after health failure`);
+              console.info(`[HEALTH] ${app.name} restart initiated after health failure`);
             } catch (restartErr: unknown) {
               const restartMsg =
                 restartErr instanceof Error
@@ -81,6 +81,6 @@ export function stopHealthMonitor(): void {
   if (monitorInterval) {
     clearInterval(monitorInterval);
     monitorInterval = null;
-    console.log("[HEALTH] Monitor stopped");
+    console.info("[HEALTH] Monitor stopped");
   }
 }

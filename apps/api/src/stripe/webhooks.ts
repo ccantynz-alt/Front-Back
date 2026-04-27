@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { log } from "../log";
 import { eq } from "drizzle-orm";
 import { db } from "@back-to-the-future/db";
 import {
@@ -120,7 +121,7 @@ async function upsertBillingAccount(
 async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<void> {
-  console.log(`[stripe] Checkout completed: ${session.id}`);
+  log.info(`[stripe] Checkout completed: ${session.id}`);
 
   const subscriptionId =
     typeof session.subscription === "string"
@@ -183,7 +184,7 @@ async function handleCheckoutCompleted(
 
   await upsertBillingAccount(userId, customerId);
 
-  console.log(
+  log.info(
     `[stripe] Subscription ${stripeSub.id} created for user ${userId}`,
   );
 
@@ -191,7 +192,7 @@ async function handleCheckoutCompleted(
   if (planName === "pro" || planName === "enterprise") {
     try {
       await provisionTenantDB(userId, planName);
-      console.log(
+      log.info(
         `[stripe] Tenant DB provisioned for user ${userId} (${planName})`,
       );
     } catch (err: unknown) {
@@ -206,7 +207,7 @@ async function handleCheckoutCompleted(
 async function handleSubscriptionCreated(
   sub: Stripe.Subscription,
 ): Promise<void> {
-  console.log(`[stripe] Subscription created: ${sub.id}`);
+  log.info(`[stripe] Subscription created: ${sub.id}`);
   // Upsert via same path as "updated". The checkout handler is the primary
   // source of the first write; this case is for subscriptions created outside
   // the checkout flow (e.g. dashboard, portal).
@@ -216,7 +217,7 @@ async function handleSubscriptionCreated(
 async function handleSubscriptionUpdated(
   sub: Stripe.Subscription,
 ): Promise<void> {
-  console.log(`[stripe] Subscription updated: ${sub.id} -> ${sub.status}`);
+  log.info(`[stripe] Subscription updated: ${sub.id} -> ${sub.status}`);
 
   const priceId = sub.items.data[0]?.price?.id ?? "";
   const now = new Date();
@@ -256,7 +257,7 @@ async function handleSubscriptionUpdated(
 async function handleSubscriptionDeleted(
   sub: Stripe.Subscription,
 ): Promise<void> {
-  console.log(`[stripe] Subscription deleted: ${sub.id}`);
+  log.info(`[stripe] Subscription deleted: ${sub.id}`);
 
   await db
     .update(subscriptions)
@@ -271,7 +272,7 @@ async function handleSubscriptionDeleted(
 async function handleCustomerCreated(
   customer: Stripe.Customer,
 ): Promise<void> {
-  console.log(`[stripe] Customer created: ${customer.id}`);
+  log.info(`[stripe] Customer created: ${customer.id}`);
   const userId = (customer.metadata?.["userId"] as string | undefined) ?? "";
   if (!userId) {
     console.warn(
@@ -285,7 +286,7 @@ async function handleCustomerCreated(
 async function handleInvoicePaymentSucceeded(
   invoice: Stripe.Invoice,
 ): Promise<void> {
-  console.log(`[stripe] Payment succeeded: ${invoice.id}`);
+  log.info(`[stripe] Payment succeeded: ${invoice.id}`);
 
   const paymentIntentId =
     typeof invoice.payment_intent === "string"
@@ -339,7 +340,7 @@ async function handleInvoicePaymentSucceeded(
 async function handleInvoicePaymentFailed(
   invoice: Stripe.Invoice,
 ): Promise<void> {
-  console.log(`[stripe] Payment failed: ${invoice.id}`);
+  log.info(`[stripe] Payment failed: ${invoice.id}`);
 
   const subscriptionId =
     typeof invoice.subscription === "string"
@@ -364,7 +365,7 @@ async function handlePaymentIntentEvent(
   // Plumbing only — we record the event in billing_events but don't mirror
   // the PI state into any other table yet. Craig will decide downstream logic
   // once pricing is set.
-  console.log(`[stripe] ${eventType}: ${pi.id} (${pi.status})`);
+  log.info(`[stripe] ${eventType}: ${pi.id} (${pi.status})`);
 }
 
 // ---------------------------------------------------------------------------
@@ -390,7 +391,7 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
   const maybeUserId = extractUserIdFromEvent(event);
   const fresh = await recordBillingEvent(event, maybeUserId);
   if (!fresh) {
-    console.log(`[stripe] Replay ignored for event ${event.id}`);
+    log.info(`[stripe] Replay ignored for event ${event.id}`);
     return;
   }
 
@@ -436,7 +437,7 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
       case "invoice.finalized":
       case "invoice.updated": {
         // Plumbing: logged in billing_events, no additional side-effect.
-        console.log(`[stripe] ${event.type}: ${(event.data.object as Stripe.Invoice).id}`);
+        log.info(`[stripe] ${event.type}: ${(event.data.object as Stripe.Invoice).id}`);
         break;
       }
       case "payment_intent.succeeded":
@@ -447,7 +448,7 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
         break;
       }
       default:
-        console.log(`[stripe] Unhandled event: ${event.type}`);
+        log.info(`[stripe] Unhandled event: ${event.type}`);
     }
 
     await markEventProcessed(event.id);

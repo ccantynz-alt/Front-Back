@@ -40,9 +40,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
 async function createUser(
   role: "admin" | "viewer" | "editor",
 ): Promise<string> {
-  const id = `admin-stats-${role}-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  const id = `admin-stats-${role}-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
   await db.insert(users).values({
     id,
     email: `${id}@example.com`,
@@ -165,18 +163,14 @@ describe("admin.stats — BLK-013 dashboard aggregator", () => {
     const before = await caller.admin.stats();
 
     // Seed a project + a deployment created today (this month, all-time).
-    const projectId = `proj-blk013-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 8)}`;
+    const projectId = `proj-blk013-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
     await db.insert(projects).values({
       id: projectId,
       userId: adminId,
       name: "BLK-013 Stats Test Project",
       slug: projectId,
     });
-    const deploymentId = `dep-blk013-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 8)}`;
+    const deploymentId = `dep-blk013-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
     await db.insert(deployments).values({
       id: deploymentId,
       projectId,
@@ -197,17 +191,13 @@ describe("admin.stats — BLK-013 dashboard aggregator", () => {
 
     // Seed a conversation with a message in the current month so the
     // cost aggregator has something to sum.
-    const convoId = `conv-blk013-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 8)}`;
+    const convoId = `conv-blk013-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
     await db.insert(conversations).values({
       id: convoId,
       userId: adminId,
       title: "BLK-013 Test Conversation",
     });
-    const msgId = `msg-blk013-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 8)}`;
+    const msgId = `msg-blk013-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
     await db.insert(chatMessages).values({
       id: msgId,
       conversationId: convoId,

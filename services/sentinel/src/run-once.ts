@@ -84,10 +84,10 @@ async function main(): Promise<void> {
   }
 
   if (!flags.jsonOutput) {
-    console.log(
+    console.info(
       `[sentinel:run-once] running ${collectors.length} collector(s): ${collectors.map((c) => c.name).join(", ")}`,
     );
-    console.log(
+    console.info(
       `[sentinel:run-once] store currently holds ${getItemCount()} items`,
     );
   }
@@ -98,26 +98,26 @@ async function main(): Promise<void> {
   });
 
   if (flags.jsonOutput) {
-    console.log(JSON.stringify(result, null, 2));
+    console.info(JSON.stringify(result, null, 2));
   } else {
-    console.log("[sentinel:run-once] ────────────────────────────────────");
-    console.log(`[sentinel:run-once] collectors run:   ${result.collectorsRun}`);
-    console.log(
+    console.info("[sentinel:run-once] ────────────────────────────────────");
+    console.info(`[sentinel:run-once] collectors run:   ${result.collectorsRun}`);
+    console.info(
       `[sentinel:run-once] succeeded:        ${result.collectorsSucceeded}`,
     );
-    console.log(`[sentinel:run-once] items collected:  ${result.itemsCollected}`);
-    console.log(`[sentinel:run-once] items stored new: ${result.itemsStored}`);
-    console.log(`[sentinel:run-once] threats:          ${result.threats}`);
-    console.log(`[sentinel:run-once] opportunities:    ${result.opportunities}`);
-    console.log(`[sentinel:run-once] tech signals:     ${result.techSignals}`);
-    console.log(`[sentinel:run-once] duration:         ${result.durationMs}ms`);
+    console.info(`[sentinel:run-once] items collected:  ${result.itemsCollected}`);
+    console.info(`[sentinel:run-once] items stored new: ${result.itemsStored}`);
+    console.info(`[sentinel:run-once] threats:          ${result.threats}`);
+    console.info(`[sentinel:run-once] opportunities:    ${result.opportunities}`);
+    console.info(`[sentinel:run-once] tech signals:     ${result.techSignals}`);
+    console.info(`[sentinel:run-once] duration:         ${result.durationMs}ms`);
     if (result.collectorErrors.length > 0) {
       console.warn(`[sentinel:run-once] errors:`);
       for (const err of result.collectorErrors) {
         console.warn(`  - ${err}`);
       }
     }
-    console.log(
+    console.info(
       `[sentinel:run-once] store now holds ${getItemCount()} items total`,
     );
   }

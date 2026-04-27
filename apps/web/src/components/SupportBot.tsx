@@ -203,7 +203,7 @@ export function SupportBot(): ReturnType<typeof Show> {
   ];
 
   function pushMessage(role: Role, content: string): string {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const id = `${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6)}`;
     setMessages((prev) => [...prev, { id, role, content }]);
     return id;
   }
@@ -337,6 +337,9 @@ export function SupportBot(): ReturnType<typeof Show> {
             }}
           >
             <div
+              tabindex="0"
+              aria-expanded={!minimized()}
+              aria-label={minimized() ? "Expand Help Panel" : "Minimize Help Panel"}
               style={{
                 background: "var(--color-primary)",
                 color: "var(--color-text)",
@@ -346,11 +349,8 @@ export function SupportBot(): ReturnType<typeof Show> {
                 "justify-content": "space-between",
                 cursor: "pointer",
               }}
-              role="button"
-              tabindex="0"
-              aria-label={minimized() ? "Expand help" : "Minimize help"}
               onClick={() => setMinimized(!minimized())}
-              onKeyDown={(e) => {
+              onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   setMinimized(!minimized());

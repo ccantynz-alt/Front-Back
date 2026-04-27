@@ -131,8 +131,8 @@ export function CollaborativeBuilder(props: CollaborativeBuilderProps): JSX.Elem
     let aiX = 200;
     let aiY = 200;
     const aiInterval = setInterval(() => {
-      aiX += (Math.random() - 0.5) * 40;
-      aiY += (Math.random() - 0.5) * 40;
+      aiX += (crypto.getRandomValues(new Uint32Array(1))[0]! / 0x100000000) * 40 - 20;
+      aiY += (crypto.getRandomValues(new Uint32Array(1))[0]! / 0x100000000) * 40 - 20;
       aiX = Math.max(50, Math.min(800, aiX));
       aiY = Math.max(50, Math.min(600, aiY));
       aiAgent.moveCursor(aiX, aiY);

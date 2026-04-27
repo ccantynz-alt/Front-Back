@@ -195,10 +195,17 @@ export function Terminal(props: TerminalProps): JSX.Element {
     // Mount terminal into the DOM
     terminal.open(containerRef);
 
-    // Fit to container
-    requestAnimationFrame(() => {
+    // Fit to container — use rAF unless user prefers reduced motion
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
       fitAddon?.fit();
-    });
+    } else {
+      requestAnimationFrame(() => {
+        fitAddon?.fit();
+      });
+    }
 
     // Handle user input — send to WebSocket
     terminal.onData((data: string) => {
@@ -216,9 +223,16 @@ export function Terminal(props: TerminalProps): JSX.Element {
 
     // Observe container resizes for auto-fit
     resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
+      const prefersReducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion) {
         fitAddon?.fit();
-      });
+      } else {
+        requestAnimationFrame(() => {
+          fitAddon?.fit();
+        });
+      }
     });
     resizeObserver.observe(containerRef);
 

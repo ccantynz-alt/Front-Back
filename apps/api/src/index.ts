@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { log } from "./log";
 import { cors } from "hono/cors";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./trpc/router";
@@ -515,7 +516,7 @@ app.route("/api", adminDeployApp);
 async function maybeRunMigrations(): Promise<void> {
   const enabled = process.env.AUTO_MIGRATE === "true" || process.env.NODE_ENV !== "production";
   if (!enabled) {
-    console.log("[startup] Skipping auto-migrate (set AUTO_MIGRATE=true to enable in prod)");
+    log.info("[startup] Skipping auto-migrate (set AUTO_MIGRATE=true to enable in prod)");
     return;
   }
   try {
@@ -524,7 +525,7 @@ async function maybeRunMigrations(): Promise<void> {
     );
     if (typeof runMigrations === "function") {
       await runMigrations();
-      console.log("[startup] Migrations applied.");
+      log.info("[startup] Migrations applied.");
     }
   } catch (err) {
     console.warn("[startup] Migration failed - starting in degraded mode:", err);
@@ -568,10 +569,10 @@ if (typeof Bun !== "undefined") {
     websocket,
   });
 
-  console.log(`API server running on http://localhost:${port}`);
-  console.log(`  WebSocket: ws://localhost:${port}/api/ws`);
-  console.log(`  SSE: http://localhost:${port}/api/realtime/events/:roomId`);
-  console.log(`  Terminal: ws://localhost:${port}/api/terminal/:projectId`);
+  log.info(`API server running on http://localhost:${port}`);
+  log.info(`  WebSocket: ws://localhost:${port}/api/ws`);
+  log.info(`  SSE: http://localhost:${port}/api/realtime/events/:roomId`);
+  log.info(`  Terminal: ws://localhost:${port}/api/terminal/:projectId`);
 }
 
 // ── Cloudflare Workers entry point ─────────────────────────────────
@@ -593,7 +594,7 @@ export const workerHandler = {
     ctx.waitUntil(
       runDispatcher(defaultDb)
         .then((result) => {
-          console.log(
+          log.info(
             `[webhook-dispatcher] scheduled run: delivered=${result.delivered} failed=${result.failed}`,
           );
         })

@@ -38,7 +38,7 @@ async function runAllCollectors(): Promise<void> {
   lastCollectionAt = result.finishedAt;
   totalCollections += 1;
   totalItemsCollected += result.itemsStored;
-  console.log(
+  console.info(
     `[sentinel] cycle: ${result.itemsCollected} collected, ${result.itemsStored} stored, ${result.threats} threats, ${result.opportunities} opportunities, ${result.techSignals} tech signals in ${result.durationMs}ms`,
   );
   if (result.collectorErrors.length > 0) {
@@ -99,22 +99,22 @@ function startHealthServer(): void {
     },
   });
 
-  console.log(`[sentinel] Health endpoint running on http://localhost:${port}/health`);
+  console.info(`[sentinel] Health endpoint running on http://localhost:${port}/health`);
 }
 
 // ── Scheduler ───────────────────────────────────────────────────────
 
 function startScheduler(): void {
   const now = new Date().toISOString();
-  console.log(`[sentinel] ═══════════════════════════════════════════════`);
-  console.log(`[sentinel] Sentinel Competitive Intelligence System`);
-  console.log(`[sentinel] Started at: ${now}`);
-  console.log(`[sentinel] Monitoring ${collectors.length} sources:`);
+  console.info(`[sentinel] ═══════════════════════════════════════════════`);
+  console.info(`[sentinel] Sentinel Competitive Intelligence System`);
+  console.info(`[sentinel] Started at: ${now}`);
+  console.info(`[sentinel] Monitoring ${collectors.length} sources:`);
   for (const collector of collectors) {
     const intervalMin = Math.round(collector.intervalMs / 60_000);
-    console.log(`[sentinel]   - ${collector.name} (every ${intervalMin}m, cron: ${collector.cronExpression})`);
+    console.info(`[sentinel]   - ${collector.name} (every ${intervalMin}m, cron: ${collector.cronExpression})`);
   }
-  console.log(`[sentinel] ═══════════════════════════════════════════════`);
+  console.info(`[sentinel] ═══════════════════════════════════════════════`);
 
   // Start health endpoint
   startHealthServer();
@@ -148,7 +148,7 @@ function startScheduler(): void {
     });
   }, 24 * 60 * 60 * 1000);
 
-  console.log(`[sentinel] All collectors scheduled. System is active.`);
+  console.info(`[sentinel] All collectors scheduled. System is active.`);
 }
 
 startScheduler();

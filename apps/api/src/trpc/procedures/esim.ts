@@ -83,7 +83,7 @@ function currentMarkupPercent(): number {
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function newOrderId(): string {
-  return `esim_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `esim_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
 }
 
 function translateProviderError(err: unknown, fallbackMessage: string): never {

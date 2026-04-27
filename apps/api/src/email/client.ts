@@ -22,6 +22,7 @@
  */
 
 import { z } from "zod";
+import { log } from "../log";
 
 // ── Schemas ────────────────────────────────────────────────────
 
@@ -181,10 +182,10 @@ function sendViaConsole(
   subject: string,
   html: string,
 ): SendEmailResult {
-  console.log("[EMAIL DEV] Logging email (no provider configured):");
-  console.log(`  To: ${to}`);
-  console.log(`  Subject: ${subject}`);
-  console.log(`  HTML length: ${html.length} chars`);
+  log.info("[EMAIL DEV] Logging email (no provider configured):");
+  log.info(`  To: ${to}`);
+  log.info(`  Subject: ${subject}`);
+  log.info(`  HTML length: ${html.length} chars`);
   return { success: true, id: `dev-${Date.now()}`, provider: "console" };
 }
 

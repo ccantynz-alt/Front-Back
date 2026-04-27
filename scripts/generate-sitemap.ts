@@ -140,10 +140,10 @@ async function main(): Promise<void> {
   await writeFile(join(PUBLIC_DIR, "sitemap.xml"), sitemap, "utf-8");
   await writeFile(join(PUBLIC_DIR, "robots.txt"), robots, "utf-8");
 
-  console.log(`[sitemap] Generated for ${PUBLIC_URL}`);
-  console.log(`[sitemap] ${routes.length} public routes:`);
+  console.info(`[sitemap] Generated for ${PUBLIC_URL}`);
+  console.info(`[sitemap] ${routes.length} public routes:`);
   for (const route of routes) {
-    console.log(`  - ${route.path}`);
+    console.info(`  - ${route.path}`);
   }
 }
 

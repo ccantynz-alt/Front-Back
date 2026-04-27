@@ -57,7 +57,7 @@ function renderSvgToPng(svgPath: string, width: number, height?: number): Buffer
   return Buffer.from(rendered.asPng());
 }
 
-console.log("Generating icon assets...\n");
+console.info("Generating icon assets...\n");
 
 let success = 0;
 let failed = 0;
@@ -70,7 +70,7 @@ for (const icon of icons) {
     const png = renderSvgToPng(sourcePath, icon.width, icon.height);
     writeFileSync(outputPath, png);
     const sizeKB = (png.length / 1024).toFixed(1);
-    console.log(`  ✅ ${icon.output} (${icon.width}${icon.height ? `x${icon.height}` : "px"}) — ${sizeKB} KB`);
+    console.info(`  ✅ ${icon.output} (${icon.width}${icon.height ? `x${icon.height}` : "px"}) — ${sizeKB} KB`);
     success++;
   } catch (err) {
     console.error(`  ❌ ${icon.output}: ${(err as Error).message}`);
@@ -130,14 +130,14 @@ try {
   ]);
   writeFileSync(join(PUBLIC_DIR, "favicon.ico"), ico);
   const sizeKB = (ico.length / 1024).toFixed(1);
-  console.log(`  ✅ favicon.ico (multi-size) — ${sizeKB} KB`);
+  console.info(`  ✅ favicon.ico (multi-size) — ${sizeKB} KB`);
   success++;
 } catch (err) {
   console.error(`  ❌ favicon.ico: ${(err as Error).message}`);
   failed++;
 }
 
-console.log(`\nDone! ${success} generated, ${failed} failed.`);
+console.info(`\nDone! ${success} generated, ${failed} failed.`);
 
 if (failed > 0) {
   process.exit(1);

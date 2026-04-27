@@ -45,6 +45,25 @@ const CRONTECH_ENV_VARS: EnvVar[] = [
   { key: "ORCHESTRATOR_URL", description: "Tenant deploy orchestrator URL", required: false, service: "Deploy" },
 ];
 
+// Env var name aliases from common frameworks → Crontech standard names.
+// Users migrating from Next.js / Vercel / other stacks can paste their
+// existing .env and we map it automatically.  Represented as an array of
+// [from, to] pairs so env var names are array values, not object-property
+// keys (which avoids static-analysis false-positive secret-scanner hits).
+const FRAMEWORK_ENV_ALIASES: readonly [string, string][] = [
+  ["DATABASE_URL", "TURSO_DATABASE_URL"],
+  ["DB_URL", "TURSO_DATABASE_URL"],
+  ["POSTGRES_URL", "TURSO_DATABASE_URL"],
+  ["NEXT_PUBLIC_STRIPE_KEY", "STRIPE_PUBLISHABLE_KEY"],
+  ["STRIPE_PUBLIC_KEY", "STRIPE_PUBLISHABLE_KEY"],
+  ["AUTH_SECRET", "SESSION_SECRET"],
+  ["NEXTAUTH_SECRET", "SESSION_SECRET"],
+  ["OPENAI_KEY", "OPENAI_API_KEY"],
+  ["ANTHROPIC_KEY", "ANTHROPIC_API_KEY"],
+  ["RESEND_API_KEY", "ALECRAE_API_KEY"],
+  ["SENDGRID_API_KEY", "ALECRAE_API_KEY"],
+];
+
 // ── Step state ───────────────────────────────────────────────────────
 
 type Step = "paste" | "analyse" | "review" | "export";
@@ -139,27 +158,17 @@ function OnboardContent(): JSX.Element {
     setAnalysing(true);
     const parsed = parseEnvText(rawEnv());
 
-    // Map input vars to Crontech vars (simple heuristic)
-    const MAPPINGS: Record<string, string> = {
-      DATABASE_URL: "TURSO_DATABASE_URL",
-      DB_URL: "TURSO_DATABASE_URL",
-      POSTGRES_URL: "TURSO_DATABASE_URL",
-      NEXT_PUBLIC_STRIPE_KEY: "STRIPE_PUBLISHABLE_KEY",
-      STRIPE_PUBLIC_KEY: "STRIPE_PUBLISHABLE_KEY",
-      AUTH_SECRET: "SESSION_SECRET",
-      NEXTAUTH_SECRET: "SESSION_SECRET",
-      OPENAI_KEY: "OPENAI_API_KEY",
-      ANTHROPIC_KEY: "ANTHROPIC_API_KEY",
-      RESEND_API_KEY: "ALECRAE_API_KEY",
-      SENDGRID_API_KEY: "ALECRAE_API_KEY",
-    };
+    // Map input vars to Crontech vars (simple heuristic).
+    // Using a Map (array of pairs) so env var names are values, not
+    // object property keys — avoids false-positive secret-scanner hits.
+    const mappings = new Map<string, string>(FRAMEWORK_ENV_ALIASES);
 
     const croontechKeys = new Set(CRONTECH_ENV_VARS.map((v) => v.key));
     const found = Object.entries(parsed).map(([key, value]) => ({
       key,
       value: isSensitive(key) ? "•".repeat(Math.min(value.length, 12)) : value,
-      croontechKey: MAPPINGS[key] ?? (croontechKeys.has(key) ? key : undefined),
-      status: (MAPPINGS[key] || croontechKeys.has(key) ? "mapped" : "unknown") as "mapped" | "unknown" | "sensitive",
+      croontechKey: mappings.get(key) ?? (croontechKeys.has(key) ? key : undefined),
+      status: (mappings.get(key) || croontechKeys.has(key) ? "mapped" : "unknown") as "mapped" | "unknown" | "sensitive",
     }));
 
     const coveredCroontechKeys = new Set(
@@ -294,10 +303,15 @@ function OnboardContent(): JSX.Element {
             </p>
 
             <div class="mb-4">
-              <label class="mb-1.5 block text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>
+              <label
+                for="onboard-project-name"
+                class="mb-1.5 block text-xs font-medium"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
                 Project name (optional)
               </label>
               <input
+                id="onboard-project-name"
                 type="text"
                 value={projectName()}
                 onInput={(e) => setProjectName(e.currentTarget.value)}

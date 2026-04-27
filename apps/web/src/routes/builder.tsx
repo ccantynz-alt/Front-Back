@@ -242,7 +242,7 @@ export default function BuilderPage(): JSX.Element {
   const isCollaborative = (): boolean => false;
 
   // Generate a user id/name for the session
-  const userId = `user-${Math.random().toString(36).slice(2, 9)}`;
+  const userId = `user-${crypto.randomUUID().replace(/-/g, '').slice(0, 7)}`;
   const userName = "Builder User";
 
   const [messages, setMessages] = createSignal<ChatMessage[]>([
@@ -345,7 +345,7 @@ export default function BuilderPage(): JSX.Element {
   };
 
   function handleShare(): void {
-    const newRoomId = `room-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const newRoomId = `room-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 4)}`;
     navigate(`/builder?room=${newRoomId}`);
   }
 

@@ -529,7 +529,7 @@ function randomPassword(): string {
     "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
   let out = "";
   for (let i = 0; i < 16; i++) {
-    const idx = Math.floor(Math.random() * chars.length);
+    const idx = Math.floor(crypto.getRandomValues(new Uint32Array(1))[0]! / 0x100000000 * chars.length);
     out += chars[idx];
   }
   return out;
