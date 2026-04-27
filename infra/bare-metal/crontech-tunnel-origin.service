@@ -16,12 +16,18 @@
 # Optional:
 #   TUNNEL_LOCAL_WEB_PORT    default 3000
 #   TUNNEL_LOCAL_API_PORT    default 3001
+#
+# Hardening (Wave B2, 2026-04-27): added explicit PATH, OnFailure notifier,
+# tightened restart limits, and Bun-friendly stop semantics. To enable
+# systemd watchdog later, emit sd_notify WATCHDOG pings and uncomment
+# WatchdogSec=60.
 
 [Unit]
 Description=Crontech Reverse-Tunnel Origin Daemon (BLK-019)
 Documentation=https://crontech.ai/docs/tunnel
 After=network.target crontech-api.service crontech-web.service
 Wants=crontech-api.service crontech-web.service
+OnFailure=crontech-failure-notify@%i.service
 
 [Service]
 Type=simple
@@ -32,7 +38,14 @@ WorkingDirectory=/opt/crontech
 ExecStart=/usr/local/bin/bun run --cwd services/tunnel start:origin
 Restart=always
 RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=10
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+KillMode=mixed
+# WatchdogSec=60s  # enable once the Bun runtime emits sd_notify WATCHDOG pings
 
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=-/opt/crontech/.env
 EnvironmentFile=-/opt/crontech/.env.production
 
