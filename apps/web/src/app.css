@@ -7,6 +7,29 @@
 @source "../src/**/*.{ts,tsx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
+/* ── Tailwind v4 `translate` shorthand defaults ──────────────────── */
+/* Tailwind v4 compiles `-translate-x-1/2` (etc.) to:
+ *     translate: var(--tw-translate-x) var(--tw-translate-y);
+ * The `translate` SHORTHAND requires both axes. If a page only uses
+ * an X utility (no Y utility anywhere in the page), --tw-translate-y
+ * is undefined, the whole `translate` value is invalid, and the
+ * browser silently drops it — leaving the element un-translated.
+ *
+ * Real-world failure: the /pricing "Most Popular" badge had
+ *   `class="absolute -top-3 left-1/2 -translate-x-1/2"`,
+ * but rendered anchored at its LEFT edge at 50% of the card width
+ * (pushed half off the right side) because translateX never applied.
+ *
+ * Fix: define both axis variables at :root with sane defaults so the
+ * shorthand always evaluates to a valid value. Tailwind utilities
+ * that DO set them (e.g. `translate-x-4`) override these defaults
+ * via the cascade as expected. */
+:root {
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-translate-z: 0;
+}
+
 /* ══════════════════════════════════════════════════════════════════════
    BACK TO THE FUTURE — Design System
    ══════════════════════════════════════════════════════════════════════ */
