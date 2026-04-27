@@ -1,0 +1,37 @@
+# Crontech systemd failure notifier — instanced template
+#
+# Wave B2 (2026-04-27): every hardened crontech-* unit declares
+#   OnFailure=crontech-failure-notify@%i.service
+# so when systemd flips the unit to "failed" this template fires once
+# and POSTs a structured event to the Sentinel heartbeat ingest.
+#
+# %i  — instance suffix, equals the failed unit name (no .service)
+# %H  — host short name, recorded in the event payload
+# %t  — runtime directory (used by systemd as a stable timestamp-ish slug)
+#
+# The Sentinel ingest lives at http://127.0.0.1:${SENTINEL_PORT:-3002}
+# (see services/sentinel/src/checks/systemd-heartbeat.ts). If Sentinel
+# itself is down, this notifier fails open — systemd will log the curl
+# failure to the journal but won't loop, since the unit is Type=oneshot.
+#
+# Install:
+#   cp infra/systemd/crontech-failure-notify@.service /etc/systemd/system/
+#   systemctl daemon-reload
+
+[Unit]
+Description=Crontech failure notifier for %i
+After=network-online.target
+
+[Service]
+Type=oneshot
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=SENTINEL_PORT=3002
+EnvironmentFile=-/opt/crontech/.env
+ExecStart=/usr/local/bin/curl -sS -X POST -H "Content-Type: application/json" \
+  -d '{"unit":"%i","host":"%H","ts":"%t","kind":"systemd_failure"}' \
+  http://127.0.0.1:${SENTINEL_PORT}/v1/events/heartbeat
+User=root
+Group=root
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=crontech-failure-notify
