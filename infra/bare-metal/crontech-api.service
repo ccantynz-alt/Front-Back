@@ -2,12 +2,18 @@
 #
 # Runs the built API out of /opt/crontech/apps/api on port 3001. Talks to
 # the local Postgres instance over the UNIX socket / localhost:5432.
+#
+# Hardening (Wave B2, 2026-04-27): added explicit PATH, OnFailure notifier,
+# tightened restart limits, and Bun-friendly stop semantics. Preserves
+# User=deploy. To enable systemd watchdog later, have the Bun process emit
+# sd_notify "WATCHDOG=1" pings and uncomment WatchdogSec=60.
 
 [Unit]
 Description=Crontech API (Hono on Bun)
 Documentation=https://api.crontech.ai
 After=network.target postgres.service
 Wants=postgres.service
+OnFailure=crontech-failure-notify@%i.service
 
 [Service]
 Type=simple
@@ -18,7 +24,14 @@ WorkingDirectory=/opt/crontech
 ExecStart=/usr/local/bin/bun run --cwd apps/api start
 Restart=always
 RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=10
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+KillMode=mixed
+# WatchdogSec=60s  # enable once the Bun runtime emits sd_notify WATCHDOG pings
 
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
 Environment=HOST=0.0.0.0
 Environment=API_PORT=3001
 Environment=NODE_ENV=production
