@@ -2546,14 +2546,19 @@ html.dark .hero-gradient {
 }
 
 .landing-stat-value {
-  /* Fluid sizing so long compound values ("Claude-powered", "Edge-native")
-     don't overflow narrow cells on iPad portrait (1024px viewport).
-     The previous step-function (1.75rem → 2rem at 640px → 2.375rem at
-     1024px) had a regression at the 1024px breakpoint where the font
-     jumped to 2.375rem but each cell was only ~256px wide, clipping the
-     value on both sides. Clamp scales smoothly between min and max so
-     the value always fits. */
-  font-size: clamp(1.5rem, 2.6vw, 2.375rem);
+  /* Math-driven cap so the longest hyphenated value ("Claude-powered" =
+     14 chars) fits inside a single cell at every viewport width:
+       container max-width = 1120px ÷ 4 cols = 280px / cell
+       14 chars × ~0.55em glyph width × font-size ≤ 280px
+       => font-size ≤ ~36px (2.25rem)
+     Use clamp(1.5rem, 4vw, 2rem) so:
+       - smallest screens stay legible (1.5rem floor)
+       - mid-range scales fluidly (4vw)
+       - max stays under the cell width (2rem = 32px)
+     This eliminates the overflow that was happening at every viewport
+     ≥ 1024px (iPad portrait through 1920px desktop) under the previous
+     2.375rem step-function. */
+  font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
