@@ -2546,7 +2546,14 @@ html.dark .hero-gradient {
 }
 
 .landing-stat-value {
-  font-size: 1.75rem;
+  /* Fluid sizing so long compound values ("Claude-powered", "Edge-native")
+     don't overflow narrow cells on iPad portrait (1024px viewport).
+     The previous step-function (1.75rem → 2rem at 640px → 2.375rem at
+     1024px) had a regression at the 1024px breakpoint where the font
+     jumped to 2.375rem but each cell was only ~256px wide, clipping the
+     value on both sides. Clamp scales smoothly between min and max so
+     the value always fits. */
+  font-size: clamp(1.5rem, 2.6vw, 2.375rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -2562,18 +2569,6 @@ html.dark .hero-gradient {
   overflow-wrap: normal;
   word-break: keep-all;
   hyphens: manual;
-}
-
-@media (min-width: 640px) {
-  .landing-stat-value {
-    font-size: 2rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .landing-stat-value {
-    font-size: 2.375rem;
-  }
 }
 
 .landing-stat-label {
