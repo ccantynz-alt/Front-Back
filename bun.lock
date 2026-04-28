@@ -212,6 +212,17 @@
         "typescript": "^6",
       },
     },
+    "services/build-runner": {
+      "name": "@back-to-the-future/build-runner",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/dns-server": {
       "name": "@back-to-the-future/dns-server",
       "version": "0.0.1",
@@ -415,6 +426,8 @@
     "@back-to-the-future/ai-core": ["@back-to-the-future/ai-core@workspace:packages/ai-core"],
 
     "@back-to-the-future/api": ["@back-to-the-future/api@workspace:apps/api"],
+
+    "@back-to-the-future/build-runner": ["@back-to-the-future/build-runner@workspace:services/build-runner"],
 
     "@back-to-the-future/config": ["@back-to-the-future/config@workspace:packages/config"],
 
