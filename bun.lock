@@ -343,6 +343,14 @@
         "typescript": "^6.0.2",
       },
     },
+    "services/preview-deploys": {
+      "name": "@back-to-the-future/preview-deploys",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/rum": {
       "name": "@back-to-the-future/rum",
       "version": "0.0.1",
@@ -577,6 +585,8 @@
     "@back-to-the-future/object-storage": ["@back-to-the-future/object-storage@workspace:services/object-storage"],
 
     "@back-to-the-future/orchestrator": ["@back-to-the-future/orchestrator@workspace:services/orchestrator"],
+
+    "@back-to-the-future/preview-deploys": ["@back-to-the-future/preview-deploys@workspace:services/preview-deploys"],
 
     "@back-to-the-future/queue": ["@back-to-the-future/queue@workspace:packages/queue"],
 
