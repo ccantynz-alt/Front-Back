@@ -1,0 +1,24 @@
+{
+  "name": "@back-to-the-future/analytics",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/collector/index.ts",
+    "dev": "bun run --hot src/collector/index.ts",
+    "build:beacon": "bun run scripts/build-beacon.ts",
+    "build": "bun run build:beacon && bun build src/collector/index.ts --outdir dist --target bun",
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format . --write"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^6.0.2"
+  }
+}
