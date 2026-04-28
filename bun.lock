@@ -255,6 +255,18 @@
         "typescript": "^6.0.2",
       },
     },
+    "services/rum": {
+      "name": "@back-to-the-future/rum",
+      "version": "0.0.1",
+      "dependencies": {
+        "hono": "^4.6.0",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/sentinel": {
       "name": "@back-to-the-future/sentinel",
       "version": "0.0.1",
@@ -431,6 +443,8 @@
     "@back-to-the-future/orchestrator": ["@back-to-the-future/orchestrator@workspace:services/orchestrator"],
 
     "@back-to-the-future/queue": ["@back-to-the-future/queue@workspace:packages/queue"],
+
+    "@back-to-the-future/rum": ["@back-to-the-future/rum@workspace:services/rum"],
 
     "@back-to-the-future/schemas": ["@back-to-the-future/schemas@workspace:packages/schemas"],
 
