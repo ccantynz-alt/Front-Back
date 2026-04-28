@@ -255,6 +255,18 @@
         "typescript": "^6.0.2",
       },
     },
+    "services/secrets-vault": {
+      "name": "@back-to-the-future/secrets-vault",
+      "version": "0.0.1",
+      "dependencies": {
+        "hono": "^4.7.0",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/sentinel": {
       "name": "@back-to-the-future/sentinel",
       "version": "0.0.1",
@@ -433,6 +445,8 @@
     "@back-to-the-future/queue": ["@back-to-the-future/queue@workspace:packages/queue"],
 
     "@back-to-the-future/schemas": ["@back-to-the-future/schemas@workspace:packages/schemas"],
+
+    "@back-to-the-future/secrets-vault": ["@back-to-the-future/secrets-vault@workspace:services/secrets-vault"],
 
     "@back-to-the-future/sentinel": ["@back-to-the-future/sentinel@workspace:services/sentinel"],
 
