@@ -1,9 +1,9 @@
-import { A } from "@solidjs/router";
-import { For, Show } from "solid-js";
+import { A, useNavigate } from "@solidjs/router";
+import { For, Show, createEffect } from "solid-js";
 import type { JSX } from "solid-js";
-import { useAuth } from "../stores";
-import { SEOHead } from "../components/SEOHead";
 import { Icon, type IconName } from "../components/Icon";
+import { SEOHead } from "../components/SEOHead";
+import { useAuth } from "../stores";
 
 // ── Data ────────────────────────────────────────────────────────────
 
@@ -163,7 +163,8 @@ const family: FamilyProduct[] = [
   {
     name: "Gatetest",
     role: "CI & visual QA",
-    description: "Modern testing, visual regression, and accessibility checks — runs on the platform.",
+    description:
+      "Modern testing, visual regression, and accessibility checks — runs on the platform.",
     url: "https://gatetest.io",
   },
   {
@@ -178,11 +179,7 @@ const family: FamilyProduct[] = [
 
 function VerticalTile(props: VerticalPreview): JSX.Element {
   return (
-    <A
-      href="/solutions"
-      class="landing-card block p-5"
-      style={{ "text-decoration": "none" }}
-    >
+    <A href="/solutions" class="landing-card block p-5" style={{ "text-decoration": "none" }}>
       <div class="flex items-center gap-3">
         <div
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
@@ -195,16 +192,10 @@ function VerticalTile(props: VerticalPreview): JSX.Element {
           <Icon name={props.icon} size={16} />
         </div>
         <div class="flex min-w-0 flex-col">
-          <span
-            class="truncate text-sm font-semibold"
-            style={{ color: "#111827" }}
-          >
+          <span class="truncate text-sm font-semibold" style={{ color: "#111827" }}>
             {props.label}
           </span>
-          <span
-            class="truncate text-xs"
-            style={{ color: "#6b7280" }}
-          >
+          <span class="truncate text-xs" style={{ color: "#6b7280" }}>
             {props.blurb}
           </span>
         </div>
@@ -237,16 +228,10 @@ function PillarCard(props: Pillar): JSX.Element {
         </div>
 
         <div class="flex flex-col gap-2.5">
-          <h3
-            class="text-[1.125rem] font-bold tracking-tight"
-            style={{ color: "#111827" }}
-          >
+          <h3 class="text-[1.125rem] font-bold tracking-tight" style={{ color: "#111827" }}>
             {props.title}
           </h3>
-          <p
-            class="text-[0.9rem] leading-[1.7]"
-            style={{ color: "#4b5563" }}
-          >
+          <p class="text-[0.9rem] leading-[1.7]" style={{ color: "#4b5563" }}>
             {props.description}
           </p>
         </div>
@@ -288,16 +273,10 @@ function CapabilityCard(props: Capability): JSX.Element {
           <Icon name={props.icon} size={18} />
         </div>
         <div class="flex flex-col gap-1.5">
-          <h3
-            class="text-[1rem] font-semibold tracking-tight"
-            style={{ color: "#111827" }}
-          >
+          <h3 class="text-[1rem] font-semibold tracking-tight" style={{ color: "#111827" }}>
             {props.title}
           </h3>
-          <p
-            class="text-[0.875rem] leading-[1.65]"
-            style={{ color: "#6b7280" }}
-          >
+          <p class="text-[0.875rem] leading-[1.65]" style={{ color: "#6b7280" }}>
             {props.description}
           </p>
         </div>
@@ -316,16 +295,10 @@ function FamilyCard(props: FamilyProduct): JSX.Element {
         >
           {props.role}
         </span>
-        <h3
-          class="text-[1.125rem] font-bold tracking-tight"
-          style={{ color: "#f1f5f9" }}
-        >
+        <h3 class="text-[1.125rem] font-bold tracking-tight" style={{ color: "#f1f5f9" }}>
           {props.name}
         </h3>
-        <p
-          class="text-[0.875rem] leading-[1.65]"
-          style={{ color: "rgba(241,245,249,0.6)" }}
-        >
+        <p class="text-[0.875rem] leading-[1.65]" style={{ color: "rgba(241,245,249,0.6)" }}>
           {props.description}
         </p>
       </div>
@@ -377,10 +350,7 @@ function SectionHead(props: SectionHeadProps): JSX.Element {
         {props.title}
       </h2>
       <Show when={props.body}>
-        <p
-          class="mt-5 max-w-2xl text-[1.0625rem] leading-[1.75]"
-          style={{ color: bodyColor }}
-        >
+        <p class="mt-5 max-w-2xl text-[1.0625rem] leading-[1.75]" style={{ color: bodyColor }}>
           {props.body}
         </p>
       </Show>
@@ -392,6 +362,14 @@ function SectionHead(props: SectionHeadProps): JSX.Element {
 
 export default function Home(): JSX.Element {
   const auth = useAuth();
+  const navigate = useNavigate();
+
+  // Authenticated users skip the landing page entirely → command center.
+  createEffect(() => {
+    if (auth.isAuthenticated()) {
+      navigate("/admin/gate", { replace: true });
+    }
+  });
 
   return (
     <>
@@ -405,7 +383,6 @@ export default function Home(): JSX.Element {
       <section class="landing-hero">
         <div class="relative z-10 mx-auto w-full max-w-[1120px] px-6 pb-16 pt-32 lg:px-8 lg:pb-20 lg:pt-44">
           <div class="flex flex-col items-center text-center">
-
             {/* Badge */}
             <div class="landing-hero-badge mb-10">
               <span class="landing-hero-badge-dot" aria-hidden="true" />
@@ -419,8 +396,7 @@ export default function Home(): JSX.Element {
               class="max-w-4xl text-[2.75rem] font-extrabold leading-[1.08] tracking-[-0.03em] sm:text-[3.5rem] lg:text-[4.5rem]"
               style={{ color: "#f1f5f9" }}
             >
-              The developer platform for the{" "}
-              <span class="landing-gradient-text">next decade</span>
+              The developer platform for the <span class="landing-gradient-text">next decade</span>
             </h1>
 
             {/* Subheading */}
@@ -428,10 +404,9 @@ export default function Home(): JSX.Element {
               class="mt-7 max-w-2xl text-[1.0625rem] leading-[1.8] sm:text-[1.125rem]"
               style={{ color: "rgba(241,245,249,0.65)" }}
             >
-              The AI-native platform for online stores, restaurants, creators,
-              agencies, SaaS founders, and every business that deserves a
-              better internet. Hosting, database, auth, AI, billing, email
-              &mdash; one product, zero ops.
+              The AI-native platform for online stores, restaurants, creators, agencies, SaaS
+              founders, and every business that deserves a better internet. Hosting, database, auth,
+              AI, billing, email &mdash; one product, zero ops.
             </p>
 
             {/* CTAs */}
@@ -463,9 +438,7 @@ export default function Home(): JSX.Element {
                     "Type-safe end to end",
                   ]}
                 >
-                  {(signal) => (
-                    <span class="landing-tech-strip-item">{signal}</span>
-                  )}
+                  {(signal) => <span class="landing-tech-strip-item">{signal}</span>}
                 </For>
               </div>
             </div>
@@ -501,8 +474,7 @@ export default function Home(): JSX.Element {
             eyebrow="Who it's for"
             title={
               <>
-                One platform.{" "}
-                <span class="landing-gradient-text-dark">Every business.</span>
+                One platform. <span class="landing-gradient-text-dark">Every business.</span>
               </>
             }
             body="From online stores to nonprofits, Crontech powers the internet part so you can focus on your customers."
@@ -510,9 +482,7 @@ export default function Home(): JSX.Element {
 
           <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             <For each={verticalPreviews}>
-              {(v) => (
-                <VerticalTile icon={v.icon} label={v.label} blurb={v.blurb} />
-              )}
+              {(v) => <VerticalTile icon={v.icon} label={v.label} blurb={v.blurb} />}
             </For>
           </div>
 
@@ -578,11 +548,7 @@ export default function Home(): JSX.Element {
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <For each={capabilities}>
               {(cap) => (
-                <CapabilityCard
-                  icon={cap.icon}
-                  title={cap.title}
-                  description={cap.description}
-                />
+                <CapabilityCard icon={cap.icon} title={cap.title} description={cap.description} />
               )}
             </For>
           </div>
@@ -603,12 +569,7 @@ export default function Home(): JSX.Element {
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <For each={family}>
               {(p) => (
-                <FamilyCard
-                  name={p.name}
-                  role={p.role}
-                  description={p.description}
-                  url={p.url}
-                />
+                <FamilyCard name={p.name} role={p.role} description={p.description} url={p.url} />
               )}
             </For>
           </div>
@@ -632,14 +593,10 @@ export default function Home(): JSX.Element {
             >
               The mission
             </span>
-            <p
-              class="text-[1.0625rem] leading-[1.85]"
-              style={{ color: "#374151" }}
-            >
-              We&apos;re building Crontech to make it cheap and fast for anyone
-              to start a business, employ people, and serve customers. The
-              internet should be open to everyone &mdash; not just the people
-              with engineering teams and enterprise contracts. If you&apos;re
+            <p class="text-[1.0625rem] leading-[1.85]" style={{ color: "#374151" }}>
+              We&apos;re building Crontech to make it cheap and fast for anyone to start a business,
+              employ people, and serve customers. The internet should be open to everyone &mdash;
+              not just the people with engineering teams and enterprise contracts. If you&apos;re
               here to build something, we&apos;re here to power it.
             </p>
           </div>
@@ -653,15 +610,14 @@ export default function Home(): JSX.Element {
             class="text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem] lg:text-[2.75rem]"
             style={{ color: "#f1f5f9" }}
           >
-            Start with a sentence.{" "}
-            <span class="landing-gradient-text">Ship a business.</span>
+            Start with a sentence. <span class="landing-gradient-text">Ship a business.</span>
           </h2>
           <p
             class="mt-6 text-[1.0625rem] leading-[1.7] sm:text-lg"
             style={{ color: "rgba(241,245,249,0.65)" }}
           >
-            Describe what you&apos;re building in plain English. Claude drafts
-            the app, the database, the auth, the billing. You iterate.
+            Describe what you&apos;re building in plain English. Claude drafts the app, the
+            database, the auth, the billing. You iterate.
           </p>
           <div class="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <A href="/builder" class="landing-hero-btn-primary-dark">
