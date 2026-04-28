@@ -732,14 +732,14 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
             <StatCard
               label="Total Projects"
               value={usage.loading() ? "--" : fmt(usage.data()?.totalProjects)}
-              icon="\u{1F4C1}"
+              icon={"\u{1F4C1}"}
             />
             <StatCard
               label="Active Deployments"
               value={
                 usage.loading() ? "--" : fmt(usage.data()?.activeDeployments)
               }
-              icon="\u{1F680}"
+              icon={"\u{1F680}"}
             />
             <StatCard
               label="Avg Build Time"
@@ -748,7 +748,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                   ? "--"
                   : formatDuration(usage.data()?.avgBuildTime ?? 0)
               }
-              icon="\u{23F1}"
+              icon={"\u{23F1}"}
             />
             <StatCard
               label="AI Spend (30d)"
@@ -762,7 +762,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                   ? `${fmt(usage.data()?.aiGenerations)} generations`
                   : undefined
               }
-              icon="\u{1F916}"
+              icon={"\u{1F916}"}
             />
           </div>
 
