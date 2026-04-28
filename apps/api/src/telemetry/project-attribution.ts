@@ -50,7 +50,7 @@
 //   empty state. No synthetic data is invented anywhere.
 
 import { AsyncLocalStorage } from "node:async_hooks";
-import { decrementProjectInflight, incrementProjectInflight } from "../telemetry";
+import { decrementProjectInflight, incrementProjectInflight } from "./inflight-state";
 
 // ── ALS frame shape ──────────────────────────────────────────────────
 interface ProjectAttributionFrame {

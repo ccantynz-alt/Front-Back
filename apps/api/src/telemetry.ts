@@ -7,7 +7,23 @@ import type { Span } from "@opentelemetry/api";
 // dynamic import normally.
 import type { NodeSDK } from "@opentelemetry/sdk-node";
 import { log } from "./log";
+import {
+  PROJECT_INFLIGHT_GRACE_MS,
+  _getProjectInflightSnapshot,
+  _resetProjectInflight,
+  decrementProjectInflight,
+  incrementProjectInflight,
+  projectInflightMap,
+} from "./telemetry/inflight-state";
 import { withProjectAttrs } from "./telemetry/project-attribution";
+
+export {
+  PROJECT_INFLIGHT_GRACE_MS,
+  _getProjectInflightSnapshot,
+  _resetProjectInflight,
+  decrementProjectInflight,
+  incrementProjectInflight,
+};
 
 // ── OpenTelemetry Configuration ──────────────────────────────────────
 // Observability across edge, cloud, and client -- including AI agent
@@ -196,51 +212,6 @@ export const wsConnectionCount = meter.createUpDownCounter("ws.connections.activ
 //   The gauge emits nothing when no projects are active. Mimir
 //   queries on `project_requests_inflight{project_id="..."}` return
 //   empty results, the UI shows its empty state. No fake data.
-
-/** How long a project with no in-flight requests stays in the map
- *  so the gauge can continue emitting 0 samples. */
-const PROJECT_INFLIGHT_GRACE_MS = 5 * 60 * 1000;
-
-interface InflightEntry {
-  count: number;
-  /** Last time the count was non-zero, or 0 if it's never been touched.
-   *  Populated on decrement-to-zero so we know when to prune. */
-  lastActiveMs: number;
-}
-
-const projectInflightMap = new Map<string, InflightEntry>();
-
-/** Increment the in-flight counter for a project. Safe to call many
- *  times per request — only the entry and exit pair matters. */
-export function incrementProjectInflight(projectId: string): void {
-  const entry = projectInflightMap.get(projectId);
-  if (entry) {
-    entry.count += 1;
-    entry.lastActiveMs = Date.now();
-  } else {
-    projectInflightMap.set(projectId, { count: 1, lastActiveMs: Date.now() });
-  }
-}
-
-/** Decrement the in-flight counter for a project. If the count drops
- *  to 0 the entry stays in the map for the grace window so the gauge
- *  still emits a final "0" sample before the series goes stale. */
-export function decrementProjectInflight(projectId: string): void {
-  const entry = projectInflightMap.get(projectId);
-  if (!entry) return;
-  entry.count = Math.max(0, entry.count - 1);
-  entry.lastActiveMs = Date.now();
-}
-
-/** Test-only snapshot of the internal map. Not exported for prod use. */
-export function _getProjectInflightSnapshot(): Map<string, InflightEntry> {
-  return new Map(projectInflightMap);
-}
-
-/** Test-only reset of the internal map. */
-export function _resetProjectInflight(): void {
-  projectInflightMap.clear();
-}
 
 export const projectRequestsInflight = meter.createObservableGauge("project.requests.inflight", {
   description: "Number of HTTP requests currently in flight, labelled by project_id",

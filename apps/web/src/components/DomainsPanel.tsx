@@ -14,11 +14,14 @@ import { For, type JSX, Match, Show, Switch, createSignal } from "solid-js";
 import { trpc } from "../lib/trpc";
 import { AddDomainModal } from "./AddDomainModal";
 import { showToast } from "./Toast";
+import { classifyDomain } from "./domain-utils";
+import type { DomainType } from "./domain-utils";
+
+export type { DomainType };
 
 // ── Types ──────────────────────────────────────────────────────────────
 
 export type DomainVerificationStatus = "verifying" | "verified" | "failed";
-export type DomainType = "custom" | "subdomain";
 
 export interface DomainRecord {
   id: string;
@@ -37,12 +40,6 @@ export interface DomainsPanelProps {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
-
-/** A domain is a subdomain if it has 3+ labels (e.g. app.example.com). */
-export function classifyDomain(domain: string): DomainType {
-  const labels = domain.split(".").filter((l) => l.length > 0);
-  return labels.length >= 3 ? "subdomain" : "custom";
-}
 
 function statusFromRecord(record: DomainRecord, localFailure: boolean): DomainVerificationStatus {
   if (record.dnsVerified) return "verified";

@@ -81,6 +81,10 @@ export function createRateLimiter(opts: AutoRateLimiterOptions = {}): Middleware
     const kvOpts: Parameters<typeof createKvRateLimiter>[0] = { kv };
     if (opts.windowMs !== undefined) kvOpts.windowMs = opts.windowMs;
     if (opts.max !== undefined) kvOpts.max = opts.max;
+    const fbOpts: RateLimiterOptions = {};
+    if (kvOpts.windowMs !== undefined) fbOpts.windowMs = kvOpts.windowMs;
+    if (kvOpts.max !== undefined) fbOpts.max = kvOpts.max;
+    kvOpts.fallback = createMemoryRateLimiter(fbOpts);
     return createKvRateLimiter(kvOpts);
   }
   const memOpts: RateLimiterOptions = {};

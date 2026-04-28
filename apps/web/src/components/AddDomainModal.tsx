@@ -14,9 +14,9 @@
 import { Badge, Button, Modal, Stack, Text } from "@back-to-the-future/ui";
 import { For, type JSX, Match, Show, Switch, createMemo, createSignal } from "solid-js";
 import { trpc } from "../lib/trpc";
-import { classifyDomain } from "./DomainsPanel";
-import type { DomainType } from "./DomainsPanel";
 import { showToast } from "./Toast";
+import { classifyDomain } from "./domain-utils";
+import type { DomainType } from "./domain-utils";
 
 // ── Public API ─────────────────────────────────────────────────────────
 
