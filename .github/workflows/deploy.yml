@@ -141,26 +141,40 @@ jobs:
             # counter 34000+ in journalctl). The deploy gate caught it
             # via the smoke test, but no auto-fix existed.
             #
-            # This step is idempotent: copies /root/.bun/bin/bun to
-            # /usr/local/bin/bun (chmod 755) only when missing or when
-            # the source bun is newer. Both deploy-agent (User=root, uses
-            # /root/.bun/bin/bun) AND web/api (User=deploy, uses
-            # /usr/local/bin/bun) keep working.
+            # This step is idempotent and ALWAYS overwrites: copies
+            # /root/.bun/bin/bun to /usr/local/bin/bun (chmod 755) every
+            # deploy. Earlier versions used a `-nt` "newer than" check to
+            # skip the copy when /usr/local/bin/bun was "already current",
+            # but that hid the case where the existing binary was broken
+            # / corrupted / a wrong arch — which on 2026-04-28 caused the
+            # exact 203/EXEC failure mode this step was supposed to
+            # prevent. The `cp` is ~100ms, so unconditional is cheaper
+            # than the diagnosis cycle of a hidden-stale binary.
+            #
+            # Both deploy-agent (User=root, uses /root/.bun/bin/bun) AND
+            # web/api (User=deploy, uses /usr/local/bin/bun) keep working.
             echo "[0/6] Ensuring /usr/local/bin/bun is present..."
             if [ -x /root/.bun/bin/bun ]; then
-              if [ ! -x /usr/local/bin/bun ] || [ /root/.bun/bin/bun -nt /usr/local/bin/bun ]; then
-                cp -f /root/.bun/bin/bun /usr/local/bin/bun
-                chmod 755 /usr/local/bin/bun
-                echo "  /usr/local/bin/bun → $(/usr/local/bin/bun --version)"
-              else
-                echo "  /usr/local/bin/bun already current ($(/usr/local/bin/bun --version))"
-              fi
+              cp -f /root/.bun/bin/bun /usr/local/bin/bun
+              chmod 755 /usr/local/bin/bun
             else
               echo "  WARNING: /root/.bun/bin/bun missing — installing fresh"
               curl -fsSL https://bun.sh/install | bash
               cp -f /root/.bun/bin/bun /usr/local/bin/bun
               chmod 755 /usr/local/bin/bun
             fi
+
+            # Smoke-test the binary actually runs. If /usr/local/bin/bun
+            # is corrupt / wrong arch / non-executable, exit the deploy
+            # NOW with a loud error instead of restarting services that
+            # immediately hit 203/EXEC and waste 60 seconds in the [6/6]
+            # health-check loop.
+            if ! /usr/local/bin/bun --version >/dev/null 2>&1; then
+              echo "  ERROR: /usr/local/bin/bun is not executable / not a valid binary"
+              ls -la /usr/local/bin/bun /root/.bun/bin/bun || true
+              exit 1
+            fi
+            echo "  /usr/local/bin/bun → $(/usr/local/bin/bun --version)"
 
             PREV_SHA=$(git rev-parse HEAD 2>/dev/null || echo "none")
             echo "Previous SHA: $PREV_SHA"
@@ -171,7 +185,20 @@ jobs:
             git reset --hard origin/Main
 
             # [2] Sync deps (fast — frozen lockfile, existing node_modules)
+            #
+            # Workspace-symlink refresh: on 2026-04-28 the api crashed at
+            # boot because services/object-storage/package.json gained a
+            # new `./client` export (no dep change, only an export-map
+            # change). `bun install --frozen-lockfile` saw "no lockfile
+            # delta" and skipped re-linking node_modules/@back-to-the-future/*,
+            # so apps/api couldn't resolve `@back-to-the-future/object-storage/client`
+            # and crashed with `Cannot find module ...`.
+            #
+            # Fix: always remove the workspace symlink directory before
+            # install. bun re-creates the symlinks in milliseconds during
+            # the install pass — no actual download cost.
             echo "[2/6] Syncing dependencies..."
+            rm -rf node_modules/@back-to-the-future || true
             bun install --frozen-lockfile
 
             # [3] Extract pre-built artifacts (replaces bun run build entirely)
