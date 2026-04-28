@@ -176,13 +176,7 @@ function serialiseDomain(d: ReturnType<DomainRegistry["get"]> & object) {
 	};
 }
 
-/* Allow `bun run src/server.ts` to start a real listener. */
-declare global {
-	// biome-ignore lint/suspicious/noRedeclare: ambient declaration
-	var Bun: { serve(opts: { port: number; fetch: (req: Request) => Promise<Response> }): unknown } | undefined;
-}
-
-if (typeof Bun !== "undefined" && import.meta.main) {
+if (typeof globalThis.Bun !== "undefined" && import.meta.main) {
 	const { loadMasterKek } = await import("./crypto/kek.ts");
 	const { SystemDnsResolver } = await import("./dns/resolver.ts");
 	const registry = new DomainRegistry({
