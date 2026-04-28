@@ -2,20 +2,15 @@
 // tRPC procedures for project management: CRUD, domains, env vars,
 // and deployments. All mutations verify ownership before acting.
 
-import { z } from "zod";
+import { resolve4 } from "node:dns/promises";
+import { deployments, projectDomains, projectEnvVars, projects } from "@back-to-the-future/db";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq } from "drizzle-orm";
-import { resolve4 } from "node:dns/promises";
-import { router, protectedProcedure } from "../init";
-import {
-  projects,
-  projectDomains,
-  projectEnvVars,
-  deployments,
-} from "@back-to-the-future/db";
-import { emitDataChange } from "../../realtime/live-updates";
+import { z } from "zod";
 import { orchestratorDeploy } from "../../deploy/orchestrator-client";
+import { emitDataChange } from "../../realtime/live-updates";
 import type { TRPCContext } from "../context";
+import { protectedProcedure, router } from "../init";
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -61,10 +56,7 @@ async function requireProjectOwnership(
 }
 
 /** Generate a unique slug, appending a suffix if the base slug is taken. */
-async function generateUniqueSlug(
-  db: Database,
-  baseName: string,
-): Promise<string> {
+async function generateUniqueSlug(db: Database, baseName: string): Promise<string> {
   const base = slugify(baseName);
   if (base.length === 0) {
     throw new TRPCError({
@@ -105,16 +97,24 @@ async function generateUniqueSlug(
   });
 }
 
+// ── Helpers (URL) ────────────────────────────────────────────────────
+
+/**
+ * Derive a project name from a URL hostname.
+ * e.g. "https://example.com/path" → "example-com"
+ */
+function nameFromHostname(rawUrl: string): string {
+  try {
+    const { hostname } = new URL(rawUrl);
+    return hostname.replace(/\./g, "-").replace(/^www-/, "");
+  } catch {
+    return "imported-project";
+  }
+}
+
 // ── Input Schemas ────────────────────────────────────────────────────
 
-const frameworkEnum = z.enum([
-  "solidstart",
-  "nextjs",
-  "remix",
-  "astro",
-  "hono",
-  "other",
-]);
+const frameworkEnum = z.enum(["solidstart", "nextjs", "remix", "astro", "hono", "other"]);
 
 const runtimeEnum = z.enum(["bun", "node", "deno"]);
 
@@ -170,11 +170,7 @@ export const projectsRouter = router({
   getById: protectedProcedure
     .input(z.object({ projectId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const project = await requireProjectOwnership(
-        ctx.db,
-        input.projectId,
-        ctx.userId,
-      );
+      const project = await requireProjectOwnership(ctx.db, input.projectId, ctx.userId);
 
       const domains = await ctx.db
         .select({
@@ -223,70 +219,142 @@ export const projectsRouter = router({
     }),
 
   /** Create a new project. */
-  create: protectedProcedure
-    .input(createProjectInput)
+  create: protectedProcedure.input(createProjectInput).mutation(async ({ ctx, input }) => {
+    const id = generateId();
+    const slug = await generateUniqueSlug(ctx.db, input.name);
+    const now = new Date();
+
+    const values: typeof projects.$inferInsert = {
+      id,
+      userId: ctx.userId,
+      name: input.name,
+      slug,
+      description: input.description ?? null,
+      repoUrl: input.repoUrl ?? null,
+      framework: input.framework ?? null,
+      buildCommand: input.buildCommand ?? null,
+      runtime: input.runtime ?? null,
+      port: input.port ?? null,
+      status: "pending",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await ctx.db.insert(projects).values(values);
+
+    emitDataChange("projects", "project created");
+    return {
+      id,
+      slug,
+      name: input.name,
+      status: "pending" as const,
+      createdAt: now,
+    };
+  }),
+
+  /**
+   * Create a project from an existing website URL (URL-acceleration onboarding
+   * path). Validates the URL is reachable, derives a name from the hostname if
+   * none is provided, and records the source URL in `originUrl`.
+   */
+  createFromUrl: protectedProcedure
+    .input(
+      z.object({
+        url: z.string().url("Must be a valid URL"),
+        name: z.string().min(1).max(100).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
+      // ── Step 1: Verify the URL is reachable ──────────────────────
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 5_000);
+
+      try {
+        const response = await fetch(input.url, {
+          method: "HEAD",
+          signal: controller.signal,
+          redirect: "follow",
+        });
+
+        if (!response.ok && response.status >= 500) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "URL is not reachable",
+          });
+        }
+      } catch (err: unknown) {
+        if (err instanceof TRPCError) {
+          throw err;
+        }
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "URL is not reachable",
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      // ── Step 2: Derive project name ───────────────────────────────
+      const projectName = input.name ?? nameFromHostname(input.url);
+
+      // ── Step 3: Create the project row ───────────────────────────
       const id = generateId();
-      const slug = await generateUniqueSlug(ctx.db, input.name);
+      const slug = await generateUniqueSlug(ctx.db, projectName);
       const now = new Date();
 
       const values: typeof projects.$inferInsert = {
         id,
         userId: ctx.userId,
-        name: input.name,
+        name: projectName,
         slug,
-        description: input.description ?? null,
-        repoUrl: input.repoUrl ?? null,
-        framework: input.framework ?? null,
-        buildCommand: input.buildCommand ?? null,
-        runtime: input.runtime ?? null,
-        port: input.port ?? null,
+        description: `Imported from ${input.url}`,
+        repoUrl: null,
+        framework: null,
+        buildCommand: null,
+        runtime: null,
+        port: null,
         status: "pending",
+        source: "url",
+        originUrl: input.url,
         createdAt: now,
         updatedAt: now,
       };
 
       await ctx.db.insert(projects).values(values);
 
-      emitDataChange("projects", "project created");
+      emitDataChange("projects", "project created from url");
+
       return {
         id,
+        name: projectName,
         slug,
-        name: input.name,
-        status: "pending" as const,
-        createdAt: now,
       };
     }),
 
   /** Update project settings. */
-  update: protectedProcedure
-    .input(updateProjectInput)
-    .mutation(async ({ ctx, input }) => {
-      await requireProjectOwnership(ctx.db, input.projectId, ctx.userId);
+  update: protectedProcedure.input(updateProjectInput).mutation(async ({ ctx, input }) => {
+    await requireProjectOwnership(ctx.db, input.projectId, ctx.userId);
 
-      const updates: Record<string, unknown> = {
-        updatedAt: new Date(),
-      };
+    const updates: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
 
-      if (input.name !== undefined) updates["name"] = input.name;
-      if (input.description !== undefined)
-        updates["description"] = input.description;
-      if (input.repoUrl !== undefined) updates["repoUrl"] = input.repoUrl;
-      if (input.framework !== undefined) updates["framework"] = input.framework;
-      if (input.buildCommand !== undefined)
-        updates["buildCommand"] = input.buildCommand;
-      if (input.runtime !== undefined) updates["runtime"] = input.runtime;
-      if (input.port !== undefined) updates["port"] = input.port;
-      if (input.status !== undefined) updates["status"] = input.status;
+    if (input.name !== undefined) updates.name = input.name;
+    if (input.description !== undefined) updates.description = input.description;
+    if (input.repoUrl !== undefined) updates.repoUrl = input.repoUrl;
+    if (input.framework !== undefined) updates.framework = input.framework;
+    if (input.buildCommand !== undefined) updates.buildCommand = input.buildCommand;
+    if (input.runtime !== undefined) updates.runtime = input.runtime;
+    if (input.port !== undefined) updates.port = input.port;
+    if (input.status !== undefined) updates.status = input.status;
 
-      await ctx.db
-        .update(projects)
-        .set(updates)
-        .where(eq(projects.id, input.projectId));
+    await ctx.db.update(projects).set(updates).where(eq(projects.id, input.projectId));
 
-      emitDataChange("projects", "project updated");
-      return { success: true, projectId: input.projectId };
-    }),
+    emitDataChange("projects", "project updated");
+    return { success: true, projectId: input.projectId };
+  }),
 
   /** Delete a project. */
   delete: protectedProcedure
@@ -294,9 +362,7 @@ export const projectsRouter = router({
     .mutation(async ({ ctx, input }) => {
       await requireProjectOwnership(ctx.db, input.projectId, ctx.userId);
 
-      await ctx.db
-        .delete(projects)
-        .where(eq(projects.id, input.projectId));
+      await ctx.db.delete(projects).where(eq(projects.id, input.projectId));
 
       emitDataChange("projects", "project deleted");
       return { success: true, projectId: input.projectId };
@@ -370,10 +436,7 @@ export const projectsRouter = router({
         .select({ id: projectDomains.id })
         .from(projectDomains)
         .where(
-          and(
-            eq(projectDomains.id, input.domainId),
-            eq(projectDomains.projectId, input.projectId),
-          ),
+          and(eq(projectDomains.id, input.domainId), eq(projectDomains.projectId, input.projectId)),
         )
         .limit(1);
 
@@ -384,9 +447,7 @@ export const projectsRouter = router({
         });
       }
 
-      await ctx.db
-        .delete(projectDomains)
-        .where(eq(projectDomains.id, input.domainId));
+      await ctx.db.delete(projectDomains).where(eq(projectDomains.id, input.domainId));
 
       return { success: true, domainId: input.domainId };
     }),
@@ -409,10 +470,7 @@ export const projectsRouter = router({
         })
         .from(projectDomains)
         .where(
-          and(
-            eq(projectDomains.id, input.domainId),
-            eq(projectDomains.projectId, input.projectId),
-          ),
+          and(eq(projectDomains.id, input.domainId), eq(projectDomains.projectId, input.projectId)),
         )
         .limit(1);
 
@@ -527,10 +585,7 @@ export const projectsRouter = router({
         .select({ id: projectEnvVars.id })
         .from(projectEnvVars)
         .where(
-          and(
-            eq(projectEnvVars.id, input.envVarId),
-            eq(projectEnvVars.projectId, input.projectId),
-          ),
+          and(eq(projectEnvVars.id, input.envVarId), eq(projectEnvVars.projectId, input.projectId)),
         )
         .limit(1);
 
@@ -541,9 +596,7 @@ export const projectsRouter = router({
         });
       }
 
-      await ctx.db
-        .delete(projectEnvVars)
-        .where(eq(projectEnvVars.id, input.envVarId));
+      await ctx.db.delete(projectEnvVars).where(eq(projectEnvVars.id, input.envVarId));
 
       return { success: true, envVarId: input.envVarId };
     }),
@@ -582,11 +635,7 @@ export const projectsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await requireProjectOwnership(
-        ctx.db,
-        input.projectId,
-        ctx.userId,
-      );
+      const project = await requireProjectOwnership(ctx.db, input.projectId, ctx.userId);
 
       // Allow deploying any project the user owns EXCEPT ones mid-build or
       // already-being-torn-down. "pending" and "active" are both valid entry
@@ -620,7 +669,7 @@ export const projectsRouter = router({
       emitDataChange(["projects", "deployments"], "deployment started");
 
       // ── Step 2: Synchronously call the orchestrator ──
-      const orchestratorUrl = process.env["ORCHESTRATOR_URL"];
+      const orchestratorUrl = process.env.ORCHESTRATOR_URL;
       if (!orchestratorUrl) {
         const errMsg = "ORCHESTRATOR_URL is not configured";
         await ctx.db
@@ -682,8 +731,7 @@ export const projectsRouter = router({
         };
       } catch (err: unknown) {
         // ── Step 3b: Failure — mark deployment failed, leave project pending ──
-        const errMsg =
-          err instanceof Error ? err.message : "Orchestrator unreachable";
+        const errMsg = err instanceof Error ? err.message : "Orchestrator unreachable";
         await ctx.db
           .update(deployments)
           .set({

@@ -12,6 +12,7 @@ import { billingRouter } from "./procedures/billing";
 import { chatRouter } from "./procedures/chat";
 import { collabRouter } from "./procedures/collab";
 import { commsRouter } from "./procedures/comms";
+import { creditsRouter } from "./procedures/credits";
 import { dbInspectorRouter } from "./procedures/db-inspector";
 import { deploymentsRouter } from "./procedures/deployments";
 import { dnsRouter } from "./procedures/dns";
@@ -92,6 +93,7 @@ export const appRouter = router({
   metrics: metricsRouter,
   gluecron: gluecronRouter,
   comms: commsRouter,
+  credits: creditsRouter,
 });
 
 export type AppRouter = typeof appRouter;

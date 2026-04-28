@@ -939,6 +939,28 @@ export const smsWebhookSubscriptions = sqliteTable("sms_webhook_subscriptions", 
     .$defaultFn(() => new Date()),
 });
 
+// ── Universal Credits ─────────────────────────────────────────────────────
+// One row per user. Balance is stored in integer cents (1 credit = $0.01).
+// Negative balance is allowed for grace-period overdraft.
+export const creditBalances = sqliteTable("credit_balances", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  balanceCents: integer("balance_cents").notNull().default(0),
+  lifetimeEarnedCents: integer("lifetime_earned_cents").notNull().default(0),
+  lifetimeSpentCents: integer("lifetime_spent_cents").notNull().default(0),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+// One row per transaction (earn, spend, refund, adjustment).
+export const creditTransactions = sqliteTable("credit_transactions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  amountCents: integer("amount_cents").notNull(), // positive = credit, negative = debit
+  kind: text("kind", { enum: ["earn", "spend", "refund", "adjustment", "signup_bonus"] }).notNull(),
+  description: text("description").notNull(),
+  referenceId: text("reference_id"), // deployment ID, invoice ID, etc.
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 // ── Auth Challenges ─────────────────────────────────────────────────────
 
 export const authChallenges = sqliteTable("auth_challenges", {
