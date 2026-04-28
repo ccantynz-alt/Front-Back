@@ -1,0 +1,29 @@
+{
+  "name": "@back-to-the-future/deploy-orchestrator",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas": "./src/schemas.ts",
+    "./pipeline": "./src/pipeline.ts",
+    "./queue": "./src/queue.ts",
+    "./clients/edge-runtime": "./src/clients/edge-runtime.ts",
+    "./clients/object-storage": "./src/clients/object-storage.ts",
+    "./clients/tunnel": "./src/clients/tunnel.ts",
+    "./clients/secrets-vault": "./src/clients/secrets-vault.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format . --write"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "@types/bun": "^1.2.0"
+  }
+}

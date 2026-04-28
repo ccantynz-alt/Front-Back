@@ -1,8 +1,14 @@
-// ── Crontech Edge Runtime — v0 Entrypoint ───────────────────────────
-// HTTP dispatcher for self-hosted, V8-isolate-style edge execution.
-// v0 implementation — Bun Worker threads stand in for true V8 isolates.
-// See `docs/EDGE_RUNTIME_V0.md` for the architecture, the v0/v1 split,
-// and the isolation trade-off.
+// ── Crontech Edge Runtime — v1 Entrypoint ───────────────────────────
+// HTTP dispatcher for self-hosted, V8-Realm edge execution.
+//
+// v1 ships:
+//   * Per-request V8 Realm via `node:vm` Contexts (see isolate.ts)
+//   * Web Standards `fetch` handler (`export default { fetch }` and
+//     `addEventListener("fetch", ...)`)
+//   * Per-tenant env + secret injection on `globalThis.env`
+//   * Per-request time + memory limits (default 30s / 128MB)
+//   * Per-request console capture for log streaming
+//   * Compiled-bundle cache keyed by content hash (sub-ms warm path)
 //
 // Routes (all served on 127.0.0.1:${EDGE_RUNTIME_PORT ?? 9096}):
 //
@@ -14,8 +20,8 @@
 //
 // Auth: every `/admin/*` and `/run/*` request must present
 //   `Authorization: Bearer ${EDGE_RUNTIME_SECRET}`
-// in v0. The deploy agent and the local dev tooling are the only
-// expected clients; multi-tenant auth lands in v1.
+// in v1. The deploy agent and the local dev tooling are the only
+// expected clients; multi-tenant per-bundle bearer auth lands in v2.
 
 import { z } from "zod";
 import { computeBundleHash } from "./dispatch";
@@ -24,7 +30,14 @@ import {
   defaultSpawnWorker,
   invokeBundle,
 } from "./invoke";
-import { BundleRegistry, BundleSchema, type RegisteredBundle } from "./registry";
+import { type IsolateInvokeResult } from "./isolate";
+import { DEFAULT_LIMITS } from "./limits";
+import {
+  BundleRegistry,
+  BundleSchema,
+  type RegisteredBundle,
+  withDefaultLimits,
+} from "./registry";
 
 // ── Configuration ────────────────────────────────────────────────────
 
@@ -36,15 +49,27 @@ export interface EdgeRuntimeOptions {
   port?: number;
   secret?: string;
   registry?: BundleRegistry;
-  /** Hard timeout per invocation. Defaults to 5s. */
+  /** Hard timeout per legacy-worker invocation. Defaults to 5s. */
   invokeTimeoutMs?: number;
   /**
-   * Worker spawner. The default uses real Bun Workers loading
-   * `worker-host.ts`. Tests inject a mock so suites stay fast and
-   * deterministic.
+   * Worker spawner (legacy v0 path). When set, dispatch routes through
+   * Bun Workers — kept so existing tests with mocked workers continue
+   * to pass. When omitted, the v1 V8-Realm isolate path is used.
    */
   spawnWorker?: WorkerSpawner;
+  /**
+   * Force the legacy Bun-Worker path even without a custom spawner.
+   * Defaults to `false` — production traffic goes through the isolate.
+   */
+  useLegacyWorker?: boolean;
+  /** Receives per-invocation logs (production: forward to Loki). */
+  onInvocation?: (event: InvocationEvent) => void;
   logger?: Pick<Console, "error" | "warn" | "log">;
+}
+
+export interface InvocationEvent {
+  readonly bundleId: string;
+  readonly result: IsolateInvokeResult;
 }
 
 export interface EdgeRuntimeServer {
@@ -113,7 +138,7 @@ async function handleUpsert(
       { status: 400 },
     );
   }
-  const { id, code, entrypoint } = parsed.data;
+  const { id, code, entrypoint, env, secrets, limits } = parsed.data;
   const hash = computeBundleHash({ id, entrypoint, code });
   const bundle: RegisteredBundle = {
     id,
@@ -121,6 +146,9 @@ async function handleUpsert(
     entrypoint,
     hash,
     registeredAt: Date.now(),
+    env,
+    secrets,
+    limits: withDefaultLimits(limits),
   };
   registry.set(bundle);
   return Response.json(
@@ -130,6 +158,9 @@ async function handleUpsert(
       hash: bundle.hash,
       registeredAt: bundle.registeredAt,
       codeBytes: bundle.code.length,
+      envKeys: Object.keys(bundle.env).sort(),
+      secretKeys: Object.keys(bundle.secrets).sort(),
+      limits: bundle.limits,
     },
     { status: 201 },
   );
@@ -148,8 +179,12 @@ export async function startEdgeRuntime(
   }
   const registry = options.registry ?? new BundleRegistry();
   const timeoutMs = options.invokeTimeoutMs ?? DEFAULT_INVOKE_TIMEOUT_MS;
-  const spawn = options.spawnWorker ?? defaultSpawnWorker;
+  const useLegacy = options.useLegacyWorker === true || options.spawnWorker !== undefined;
+  const spawn: WorkerSpawner | undefined = useLegacy
+    ? options.spawnWorker ?? defaultSpawnWorker
+    : undefined;
   const logger = options.logger ?? console;
+  const onInvocation = options.onInvocation;
 
   const server = Bun.serve({
     hostname,
@@ -162,7 +197,9 @@ export async function startEdgeRuntime(
         return Response.json({
           status: "ok",
           service: "edge-runtime",
+          mode: useLegacy ? "legacy-worker" : "v8-realm",
           bundles: registry.size(),
+          defaultLimits: DEFAULT_LIMITS,
           timestamp: new Date().toISOString(),
         });
       }
@@ -189,7 +226,16 @@ export async function startEdgeRuntime(
         const bundle = registry.get(route.bundleId);
         if (bundle === undefined) return new Response("bundle not found", { status: 404 });
         try {
-          return await invokeBundle({ bundle, request: req, spawn, timeoutMs });
+          const args: Parameters<typeof invokeBundle>[0] = {
+            bundle,
+            request: req,
+            timeoutMs,
+          };
+          if (spawn !== undefined) args.spawn = spawn;
+          if (onInvocation !== undefined) {
+            args.onLogs = (result): void => onInvocation({ bundleId: bundle.id, result });
+          }
+          return await invokeBundle(args);
         } catch (err) {
           const message = err instanceof Error ? err.message : "dispatch failed";
           logger.error(`[edge-runtime] dispatch error for ${bundle.id}: ${message}`);
@@ -202,7 +248,8 @@ export async function startEdgeRuntime(
   });
 
   logger.log(
-    `[edge-runtime] listening on http://${server.hostname}:${server.port} (timeout=${timeoutMs}ms)`,
+    `[edge-runtime] listening on http://${server.hostname}:${server.port} ` +
+      `mode=${useLegacy ? "legacy-worker" : "v8-realm"} timeout=${timeoutMs}ms`,
   );
 
   return {
@@ -218,10 +265,21 @@ export async function startEdgeRuntime(
 
 // ── Public re-exports ───────────────────────────────────────────────
 
-export { BundleRegistry, BundleSchema, BundleIdSchema } from "./registry";
-export type { BundleId, BundleInput, RegisteredBundle, PublicBundleSummary } from "./registry";
+export { BundleRegistry, BundleSchema, BundleIdSchema, withDefaultLimits } from "./registry";
+export type {
+  BundleId,
+  BundleInput,
+  RegisteredBundle,
+  PublicBundleSummary,
+} from "./registry";
 export { computeBundleHash } from "./dispatch";
 export type { RuntimeWorker, WorkerSpawner } from "./invoke";
+export { invokeIsolate, clearCompiledCache } from "./isolate";
+export type { IsolateInvokeArgs, IsolateInvokeResult } from "./isolate";
+export { DEFAULT_LIMITS, runWithLimits } from "./limits";
+export type { InvocationLimits, LimitOutcome } from "./limits";
+export { ConsoleCapture } from "./console-capture";
+export type { CapturedLogLine, ConsoleCaptureSnapshot } from "./console-capture";
 
 // ── Standalone runner ───────────────────────────────────────────────
 // Validate env up-front with Zod when this file is the entrypoint, so

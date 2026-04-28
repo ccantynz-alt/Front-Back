@@ -1,0 +1,9 @@
+[install]
+exact = true
+
+[install.lockfile]
+save = true
+
+[test]
+# Unit tests only. No real Bun.spawn calls during the test run — the
+# spawner is mocked so suites stay deterministic and < 1s.

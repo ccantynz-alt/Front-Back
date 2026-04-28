@@ -252,8 +252,14 @@ describe("buildHandler", () => {
     expect(res.status).toBe(401);
   });
 
-  test("rejects stream:true with 400", async () => {
-    const handler = buildHandler(buildDeps([]));
+  test("stream:true returns text/event-stream (v1 streaming pass-through)", async () => {
+    // v1 supports streaming. We use Anthropic here because the gateway's
+    // streaming path for Anthropic synthesises a single SSE chunk from
+    // the non-streaming response, which is fully testable with a fake fetch.
+    const deps = buildDeps([
+      { status: 200, body: buildAnthropicSuccessBody("streamed!") },
+    ]);
+    const handler = buildHandler(deps);
     const res = await handler(
       makeRequest(
         {
@@ -264,9 +270,11 @@ describe("buildHandler", () => {
         { auth: "test-secret" },
       ),
     );
-    expect(res.status).toBe(400);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toContain("streaming not supported");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/event-stream");
+    const text = await res.text();
+    expect(text).toContain("streamed!");
+    expect(text).toContain("data: [DONE]");
   });
 
   test("returns 503 when both provider keys are missing", async () => {
@@ -457,7 +465,7 @@ describe("buildHandler", () => {
     expect(res.status).toBe(504);
     const body = (await res.json()) as { ok: boolean; error: string };
     expect(body.ok).toBe(false);
-    expect(body.error).toContain("both providers failed");
+    expect(body.error).toContain("all providers failed");
   });
 
   test("invalid request shape (missing messages) → 400", async () => {

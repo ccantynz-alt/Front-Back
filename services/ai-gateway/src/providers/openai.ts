@@ -2,16 +2,16 @@
 // Thin wrapper around /v1/chat/completions. The gateway response is
 // already in OpenAI's wire shape, so this is mostly passthrough.
 
-import type { GatewayChatRequest, GatewayChatResponse } from "../types";
-import type { ProviderInvocationResult } from "./anthropic";
+import type {
+  GatewayChatRequest,
+  GatewayChatResponse,
+  ProviderAdapterOptions,
+  ProviderInvocationResult,
+} from "../types";
 
 export const OPENAI_DEFAULT_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 
-export interface OpenAIAdapterOptions {
-  apiKey: string;
-  endpoint?: string;
-  fetchImpl?: typeof fetch;
-}
+export type OpenAIAdapterOptions = ProviderAdapterOptions;
 
 interface OpenAIResponseBody {
   id?: string;
@@ -36,14 +36,24 @@ export async function callOpenAI(
     ...(req.temperature !== undefined && { temperature: req.temperature }),
   };
 
-  const res = await fetchImpl(endpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${opts.apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${opts.apiKey}`,
+      },
+      body: JSON.stringify(body),
+      ...(opts.signal !== undefined && { signal: opts.signal }),
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      errorBody: `network error: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
 
   if (!res.ok) {
     const errorBody = await safeReadText(res);

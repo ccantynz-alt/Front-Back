@@ -1,0 +1,29 @@
+{
+  "name": "@back-to-the-future/waf",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./middleware": "./src/middleware.ts",
+    "./rules": "./src/rules.ts",
+    "./store": "./src/store.ts",
+    "./admin": "./src/admin.ts"
+  },
+  "scripts": {
+    "start": "bun run src/server.ts",
+    "dev": "bun run --hot src/server.ts",
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format . --write"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "@types/bun": "^1.2.0"
+  }
+}
