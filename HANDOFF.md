@@ -13,7 +13,7 @@ Open the PR at:
 
 ---
 
-## What shipped this session
+## What shipped this session (3 commits)
 
 ### Branch: `claude/sovereign-ui-gluecron-ghost-mode-20260428`
 Commit: `c6ee0da` (pushed to origin, awaiting PR merge)
@@ -33,6 +33,10 @@ Commit: `c6ee0da` (pushed to origin, awaiting PR merge)
 | `apps/web` | `builder.tsx`: Ghost Mode toggle, isSpeculating badge, builder-local VoicePill |
 | `apps/web` | `/admin/pulse`: Sovereign Pulse iPad command center (Orb + 4 metrics cards) |
 | `.husky/pre-commit` | npx fallback when bunx not in PATH |
+| `apps/api` | `projects.createFromUrl` — fixes dead "Accelerate website" flow (HEAD probe + slug derive) |
+| `apps/api` | `credits` router: `getBalance`, `getTransactions`, `earn`, `spend`, `grantSignupBonus` |
+| `packages/db` | migration 0029: `credit_balances` + `credit_transactions` tables (additive, Stripe untouched) |
+| `apps/web` | `/admin/gate`: iPad command center — live clock, status banner, vitals grid, quick-action buttons |
 
 ---
 
