@@ -1,0 +1,9 @@
+[install]
+exact = true
+
+[install.lockfile]
+save = true
+
+[test]
+# Unit tests only. No real Bun Workers spawn during the test run — the
+# worker is mocked so suites stay deterministic and < 1s.
