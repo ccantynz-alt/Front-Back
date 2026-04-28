@@ -243,6 +243,18 @@
         "typescript": "^6.0.2",
       },
     },
+    "services/object-storage": {
+      "name": "@back-to-the-future/object-storage",
+      "version": "0.1.0",
+      "dependencies": {
+        "hono": "^4.7.0",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/orchestrator": {
       "name": "@back-to-the-future/orchestrator",
       "version": "0.0.1",
@@ -427,6 +439,8 @@
     "@back-to-the-future/flywheel": ["@back-to-the-future/flywheel@workspace:packages/flywheel"],
 
     "@back-to-the-future/gpu-workers": ["@back-to-the-future/gpu-workers@workspace:services/gpu-workers"],
+
+    "@back-to-the-future/object-storage": ["@back-to-the-future/object-storage@workspace:services/object-storage"],
 
     "@back-to-the-future/orchestrator": ["@back-to-the-future/orchestrator@workspace:services/orchestrator"],
 

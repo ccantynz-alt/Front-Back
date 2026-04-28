@@ -1,0 +1,35 @@
+{
+  "name": "@back-to-the-future/object-storage",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./auth": "./src/auth.ts",
+    "./signed-url": "./src/signed-url.ts",
+    "./multipart": "./src/multipart.ts",
+    "./policy": "./src/policy.ts",
+    "./drivers/fs": "./src/drivers/fs.ts",
+    "./drivers/minio": "./src/drivers/minio.ts",
+    "./drivers/types": "./src/drivers/types.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format . --write"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^6.0.2"
+  }
+}
