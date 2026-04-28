@@ -1,6 +1,5 @@
-// ── OpenAI Provider Adapter ───────────────────────────────────────────
-// Thin wrapper around /v1/chat/completions. The gateway response is
-// already in OpenAI's wire shape, so this is mostly passthrough.
+// ── Mistral Provider Adapter ──────────────────────────────────────────
+// La Plateforme exposes an OpenAI-compatible chat completions endpoint.
 
 import type {
   GatewayChatRequest,
@@ -9,11 +8,11 @@ import type {
   ProviderInvocationResult,
 } from "../types";
 
-export const OPENAI_DEFAULT_ENDPOINT = "https://api.openai.com/v1/chat/completions";
+export const MISTRAL_DEFAULT_ENDPOINT = "https://api.mistral.ai/v1/chat/completions";
 
-export type OpenAIAdapterOptions = ProviderAdapterOptions;
+export type MistralAdapterOptions = ProviderAdapterOptions;
 
-interface OpenAIResponseBody {
+interface MistralResponseBody {
   id?: string;
   object?: string;
   created?: number;
@@ -22,15 +21,20 @@ interface OpenAIResponseBody {
   usage?: GatewayChatResponse["usage"];
 }
 
-export async function callOpenAI(
+function normaliseModelId(model: string): string {
+  return model.toLowerCase().startsWith("mistral/") ? model.slice("mistral/".length) : model;
+}
+
+export async function callMistral(
   req: GatewayChatRequest,
-  opts: OpenAIAdapterOptions,
+  opts: MistralAdapterOptions,
 ): Promise<ProviderInvocationResult> {
   const fetchImpl = opts.fetchImpl ?? fetch;
-  const endpoint = opts.endpoint ?? OPENAI_DEFAULT_ENDPOINT;
+  const endpoint = opts.endpoint ?? MISTRAL_DEFAULT_ENDPOINT;
+  const modelId = normaliseModelId(req.model);
 
   const body: Record<string, unknown> = {
-    model: req.model,
+    model: modelId,
     messages: req.messages,
     ...(req.maxTokens !== undefined && { max_tokens: req.maxTokens }),
     ...(req.temperature !== undefined && { temperature: req.temperature }),
@@ -60,7 +64,7 @@ export async function callOpenAI(
     return { ok: false, status: res.status, errorBody };
   }
 
-  const parsed = (await res.json()) as OpenAIResponseBody;
+  const parsed = (await res.json()) as MistralResponseBody;
   const usage = parsed.usage ?? {
     prompt_tokens: 0,
     completion_tokens: 0,
@@ -71,7 +75,7 @@ export async function callOpenAI(
     id: parsed.id ?? `gw_${Date.now()}`,
     object: "chat.completion",
     created: parsed.created ?? Math.floor(Date.now() / 1000),
-    model: parsed.model ?? req.model,
+    model: parsed.model ?? modelId,
     choices: parsed.choices ?? [],
     usage,
   };

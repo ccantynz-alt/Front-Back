@@ -3,16 +3,21 @@
 // gateway request into Anthropic's expected payload. Returns a normalised
 // gateway response so router.ts callers don't care which vendor served.
 
-import type { ChatMessage, GatewayChatRequest, GatewayChatResponse } from "../types";
+import type {
+  ChatMessage,
+  GatewayChatRequest,
+  GatewayChatResponse,
+  ProviderAdapterOptions,
+  ProviderInvocationResult,
+} from "../types";
+
+// Re-export for backwards compat with v0 imports.
+export type { ProviderInvocationResult } from "../types";
 
 export const ANTHROPIC_DEFAULT_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_API_VERSION = "2023-06-01";
 
-export interface AnthropicAdapterOptions {
-  apiKey: string;
-  endpoint?: string;
-  fetchImpl?: typeof fetch;
-}
+export type AnthropicAdapterOptions = ProviderAdapterOptions;
 
 interface AnthropicContentBlock {
   type: string;
@@ -28,10 +33,6 @@ interface AnthropicResponseBody {
     output_tokens?: number;
   };
 }
-
-export type ProviderInvocationResult =
-  | { ok: true; status: number; response: GatewayChatResponse }
-  | { ok: false; status: number; errorBody: string };
 
 function splitSystemAndUserMessages(messages: ChatMessage[]): {
   system: string | undefined;
@@ -65,15 +66,25 @@ export async function callAnthropic(
     ...(req.temperature !== undefined && { temperature: req.temperature }),
   };
 
-  const res = await fetchImpl(endpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": opts.apiKey,
-      "anthropic-version": ANTHROPIC_API_VERSION,
-    },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": opts.apiKey,
+        "anthropic-version": ANTHROPIC_API_VERSION,
+      },
+      body: JSON.stringify(body),
+      ...(opts.signal !== undefined && { signal: opts.signal }),
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      errorBody: `network error: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
 
   if (!res.ok) {
     const errorBody = await safeReadText(res);

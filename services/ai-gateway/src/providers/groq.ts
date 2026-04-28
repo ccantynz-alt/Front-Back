@@ -1,6 +1,6 @@
-// ── OpenAI Provider Adapter ───────────────────────────────────────────
-// Thin wrapper around /v1/chat/completions. The gateway response is
-// already in OpenAI's wire shape, so this is mostly passthrough.
+// ── Groq Provider Adapter ─────────────────────────────────────────────
+// Groq's chat completions API is OpenAI-compatible, so this is mostly a
+// thin re-skin of the OpenAI adapter pointed at a different endpoint.
 
 import type {
   GatewayChatRequest,
@@ -9,11 +9,11 @@ import type {
   ProviderInvocationResult,
 } from "../types";
 
-export const OPENAI_DEFAULT_ENDPOINT = "https://api.openai.com/v1/chat/completions";
+export const GROQ_DEFAULT_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
-export type OpenAIAdapterOptions = ProviderAdapterOptions;
+export type GroqAdapterOptions = ProviderAdapterOptions;
 
-interface OpenAIResponseBody {
+interface GroqResponseBody {
   id?: string;
   object?: string;
   created?: number;
@@ -22,15 +22,20 @@ interface OpenAIResponseBody {
   usage?: GatewayChatResponse["usage"];
 }
 
-export async function callOpenAI(
+function normaliseModelId(model: string): string {
+  return model.toLowerCase().startsWith("groq/") ? model.slice("groq/".length) : model;
+}
+
+export async function callGroq(
   req: GatewayChatRequest,
-  opts: OpenAIAdapterOptions,
+  opts: GroqAdapterOptions,
 ): Promise<ProviderInvocationResult> {
   const fetchImpl = opts.fetchImpl ?? fetch;
-  const endpoint = opts.endpoint ?? OPENAI_DEFAULT_ENDPOINT;
+  const endpoint = opts.endpoint ?? GROQ_DEFAULT_ENDPOINT;
+  const modelId = normaliseModelId(req.model);
 
   const body: Record<string, unknown> = {
-    model: req.model,
+    model: modelId,
     messages: req.messages,
     ...(req.maxTokens !== undefined && { max_tokens: req.maxTokens }),
     ...(req.temperature !== undefined && { temperature: req.temperature }),
@@ -60,7 +65,7 @@ export async function callOpenAI(
     return { ok: false, status: res.status, errorBody };
   }
 
-  const parsed = (await res.json()) as OpenAIResponseBody;
+  const parsed = (await res.json()) as GroqResponseBody;
   const usage = parsed.usage ?? {
     prompt_tokens: 0,
     completion_tokens: 0,
@@ -71,7 +76,7 @@ export async function callOpenAI(
     id: parsed.id ?? `gw_${Date.now()}`,
     object: "chat.completion",
     created: parsed.created ?? Math.floor(Date.now() / 1000),
-    model: parsed.model ?? req.model,
+    model: parsed.model ?? modelId,
     choices: parsed.choices ?? [],
     usage,
   };
