@@ -24,6 +24,26 @@ else
   (cd "$GATETEST_CACHE" && git pull --ff-only --depth 1 origin HEAD >/dev/null 2>&1 || true)
 fi
 
+# GateTest's diff-detector looks for 'main' or 'master' to find the merge-base.
+# Crontech uses 'Main' (capital M) as the default branch. Bridge this gap by
+# temporarily creating a local 'main' ref pointing to 'Main' so gatetest can
+# find the correct merge-base and avoid falling back to a full-repo scan.
+_MAIN_ALIASED=false
+if ! git rev-parse --verify main >/dev/null 2>&1; then
+  if git rev-parse --verify Main >/dev/null 2>&1; then
+    git update-ref refs/heads/main refs/heads/Main
+    _MAIN_ALIASED=true
+    echo "[GateTest] Aliased Main → main for diff-base detection"
+  fi
+fi
+
+cleanup() {
+  if [ "$_MAIN_ALIASED" = "true" ]; then
+    git update-ref -d refs/heads/main 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+
 GATING_MODE="strict"
 CONFIG_FILE="$(pwd)/gatetest.config.json"
 if [ -f "$CONFIG_FILE" ]; then
