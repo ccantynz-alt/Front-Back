@@ -1,9 +1,11 @@
-// ── Edge → origin request forwarding ────────────────────────────────
+// ── Edge → origin request forwarding ───────────────────────────────
 //
-// Pure (with respect to the registry) helper that takes an inbound
-// Web `Request`, frames it, dispatches it through the matching origin
-// connection, and awaits the response frame. Lives outside `edge.ts`
-// so the runtime entrypoint stays thin and testable.
+// Pure helper: take an inbound public Web `Request`, route it to the
+// matching origin connection by `Host` header (or SNI), frame it, and
+// await the correlated `ResponseFrame`. Returns a Web `Response`.
+//
+// 502 if no origin matches the hostname.
+// 504 if the origin does not respond within `timeoutMs`.
 // ─────────────────────────────────────────────────────────────────────
 
 import {
@@ -11,36 +13,29 @@ import {
   type ResponseFrame,
   bodyFromBase64,
   bodyToBase64,
-  encodeRequest,
+  encodeFrame,
   generateRequestId,
-} from "./frame";
-import { type OriginRegistry } from "./registry";
+} from "../../shared/frame";
+import type { OriginRegistry } from "./registry";
 
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
 export interface ForwardOptions {
   readonly timeoutMs?: number;
+  /** Override hostname lookup (e.g. SNI from a TLS terminator). */
+  readonly hostnameOverride?: string;
 }
 
-/**
- * Forward an inbound HTTP request through the matching origin
- * connection and await the response frame. Returns a Web Response.
- *
- * - Looks up the origin by `Host` header (falls back to URL host).
- * - 502 if no origin is registered for that hostname.
- * - 504 if the origin does not respond within `timeoutMs`.
- * - Otherwise streams the framed response back as a Web Response.
- */
 export async function forwardThroughOrigin(
   request: Request,
   registry: OriginRegistry,
   options: ForwardOptions = {},
 ): Promise<Response> {
   const url = new URL(request.url);
-  const host = request.headers.get("host") ?? url.host;
-  const conn = registry.get(host);
+  const hostname = options.hostnameOverride ?? request.headers.get("host") ?? url.host;
+  const conn = registry.get(hostname);
   if (!conn) {
-    return new Response(`no origin registered for ${host}`, {
+    return new Response(`no origin registered for ${hostname}`, {
       status: 502,
       headers: { "content-type": "text/plain; charset=utf-8" },
     });
@@ -55,6 +50,7 @@ export async function forwardThroughOrigin(
   const frame: RequestFrame = {
     type: "request",
     id,
+    hostname,
     method: request.method,
     url: `${url.pathname}${url.search}`,
     headers,
@@ -63,7 +59,7 @@ export async function forwardThroughOrigin(
 
   const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   const responsePromise = new Promise<ResponseFrame>((resolve, reject) => {
-    registry.trackPending(id, { resolve, reject });
+    registry.trackPending(id, { resolve, reject, connectionId: conn.id });
     const timer = setTimeout(() => {
       registry.rejectPending(id, new Error("origin response timeout"));
     }, timeoutMs);
@@ -75,7 +71,7 @@ export async function forwardThroughOrigin(
     }
   });
 
-  conn.send(encodeRequest(frame));
+  conn.send(encodeFrame(frame));
 
   try {
     const responseFrame = await responsePromise;

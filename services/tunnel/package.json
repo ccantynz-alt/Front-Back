@@ -1,21 +1,21 @@
 {
   "name": "@back-to-the-future/tunnel",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
-  "main": "./src/origin.ts",
+  "main": "./origin/src/index.ts",
   "exports": {
-    "./origin": "./src/origin.ts",
-    "./edge": "./src/edge.ts",
-    "./frame": "./src/frame.ts",
-    "./auth": "./src/auth.ts"
+    "./origin": "./origin/src/index.ts",
+    "./edge": "./edge/src/index.ts",
+    "./shared/frame": "./shared/frame.ts",
+    "./shared/auth": "./shared/auth.ts"
   },
   "scripts": {
-    "start:origin": "bun run src/origin.ts",
-    "start:edge": "bun run src/edge.ts",
-    "dev:origin": "bun run --hot src/origin.ts",
-    "dev:edge": "bun run --hot src/edge.ts",
-    "build": "bun build src/origin.ts --outdir dist/origin --target bun && bun build src/edge.ts --outdir dist/edge --target bun",
+    "start:origin": "bun run origin/src/index.ts",
+    "start:edge": "bun run edge/src/index.ts",
+    "dev:origin": "bun run --hot origin/src/index.ts",
+    "dev:edge": "bun run --hot edge/src/index.ts",
+    "build": "bun build origin/src/index.ts --outdir dist/origin --target bun && bun build edge/src/index.ts --outdir dist/edge --target bun",
     "test": "bun test",
     "check": "tsc --noEmit",
     "lint": "biome check .",
