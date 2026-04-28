@@ -981,7 +981,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
               <span>
                 Member since{" "}
                 {auth.currentUser()?.createdAt
-                  ? new Date(auth.currentUser()?.createdAt).toLocaleDateString()
+                  ? new Date(auth.currentUser()?.createdAt as string).toLocaleDateString()
                   : "--"}
               </span>
               <A

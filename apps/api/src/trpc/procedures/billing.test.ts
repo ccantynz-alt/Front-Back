@@ -1,4 +1,4 @@
-// Pre-launch Stripe disable — verifies the billing procedures that
+﻿// Pre-launch Stripe disable — verifies the billing procedures that
 // CREATE payments return a SERVICE_UNAVAILABLE error whenever the
 // STRIPE_ENABLED env flag is not "true". Authorised by Craig on
 // 16 Apr 2026. Webhook handlers intentionally NOT tested here — they
@@ -26,6 +26,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }
@@ -214,6 +215,7 @@ describe("BLK-010: billing.getCurrentUsage", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     };
     const caller = appRouter.createCaller(anonCtx);

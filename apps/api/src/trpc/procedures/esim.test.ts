@@ -1,4 +1,4 @@
-// ── BLK-029 — eSIM router tests ───────────────────────────────────────
+﻿// ── BLK-029 — eSIM router tests ───────────────────────────────────────
 // Exercises the tRPC `esim` router against the test sqlite DB with a
 // mocked provider client so we never hit the real upstream API. Per the
 // BLK-029 brief the coverage contract is:
@@ -40,6 +40,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }
@@ -180,6 +181,7 @@ describe("esim router", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     });
   }

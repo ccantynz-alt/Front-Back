@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+﻿import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { db, scopedDb, sessions, users } from "@back-to-the-future/db";
 import { eq } from "drizzle-orm";
 import { generateCsrfToken } from "../auth/csrf";
@@ -15,6 +15,7 @@ function createTestContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
     userId,
     sessionToken: null,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: userId ? scopedDb(db, userId) : null,
     ...overrides,
   };

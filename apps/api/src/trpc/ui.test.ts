@@ -1,4 +1,4 @@
-// ── cron.ui.* tRPC tests ────────────────────────────────────────────
+﻿// ── cron.ui.* tRPC tests ────────────────────────────────────────────
 // Receipts for the UI component catalog: every procedure gets at
 // least one happy-path and one failure-path test. Unauth is
 // verified. Idempotency, soft-delete, validation of trees, and
@@ -18,6 +18,7 @@ function createTestContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
     userId: null,
     sessionToken: null,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: null,
     ...overrides,
   };

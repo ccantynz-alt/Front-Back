@@ -1,4 +1,4 @@
-// ── BLK-030 — SMS tRPC procedure tests ────────────────────────────────
+﻿// ── BLK-030 — SMS tRPC procedure tests ────────────────────────────────
 // Exercises the tRPC `sms` router + the `send()` pipeline + the
 // inbound webhook app against the test sqlite DB with a mocked Sinch
 // client so we never hit the real carrier.
@@ -52,6 +52,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }

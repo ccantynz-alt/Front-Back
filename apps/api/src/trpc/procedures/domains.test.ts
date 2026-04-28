@@ -1,4 +1,4 @@
-// ── BLK-024 — Domain registrar procedure tests ────────────────────────
+﻿// ── BLK-024 — Domain registrar procedure tests ────────────────────────
 // Exercises the tRPC `domains` router against the test sqlite DB with a
 // mocked OpenSRS client so we never hit the real registrar. Per the
 // BLK-024 brief the coverage contract is:
@@ -41,6 +41,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }
@@ -165,6 +166,7 @@ describe("domains router", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     });
 
@@ -194,6 +196,7 @@ describe("domains router", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     });
 
@@ -219,6 +222,7 @@ describe("domains router", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     });
 
@@ -243,6 +247,7 @@ describe("domains router", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     });
 

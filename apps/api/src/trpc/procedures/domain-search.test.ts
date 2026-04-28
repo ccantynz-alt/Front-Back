@@ -1,4 +1,4 @@
-// ── BLK-025 Domain Search: tRPC Tests ───────────────────────────────
+﻿// ── BLK-025 Domain Search: tRPC Tests ───────────────────────────────
 //
 // Covers the public `domainSearch.search` procedure end-to-end via
 // appRouter.createCaller with a mocked DNS resolver + mocked Claude
@@ -26,6 +26,7 @@ function publicCtx(): TRPCContext {
     userId: null,
     sessionToken: null,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: null,
   };
 }

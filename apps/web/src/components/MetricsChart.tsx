@@ -225,7 +225,7 @@ export function MetricsChart(props: MetricsChartProps): JSX.Element {
     let closestIdx = 0;
     let closestDist = Number.POSITIVE_INFINITY;
     for (let i = 0; i < pts.length; i++) {
-      const dist = Math.abs(pts[i]?.x - mouseX);
+      const dist = Math.abs((pts[i]?.x ?? 0) - mouseX);
       if (dist < closestDist) {
         closestDist = dist;
         closestIdx = i;

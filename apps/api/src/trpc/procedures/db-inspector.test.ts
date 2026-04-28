@@ -1,4 +1,4 @@
-// ── BLK-012 — db-inspector procedure tests ──────────────────────────
+﻿// ── BLK-012 — db-inspector procedure tests ──────────────────────────
 // Contract:
 //   1. adminProcedure guard rejects non-admins (FORBIDDEN) and anons
 //      (UNAUTHORIZED).
@@ -26,6 +26,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }
@@ -132,6 +133,7 @@ describe("db-inspector — router guards", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     });
     let threw = false;

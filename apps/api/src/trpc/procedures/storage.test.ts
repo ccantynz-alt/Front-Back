@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BLK-018 — Tests for the admin-only storage.getSignedUploadUrl tRPC
  * procedure. Verifies:
  *   1. Non-admin callers are rejected by the adminProcedure middleware.
@@ -23,6 +23,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }

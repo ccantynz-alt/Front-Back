@@ -1,4 +1,4 @@
-/// <reference types="bun-types" />
+/// <reference types="@types/bun" />
 /**
  * BLK-009 Build Runner — real implementation.
  *

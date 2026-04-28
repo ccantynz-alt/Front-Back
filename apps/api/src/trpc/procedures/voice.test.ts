@@ -1,4 +1,4 @@
-// BLK-018 Voice — smoke test. Verifies the stub-fallback path works
+﻿// BLK-018 Voice — smoke test. Verifies the stub-fallback path works
 // when ANTHROPIC_API_KEY is absent so CI can pass without a live key.
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
@@ -14,6 +14,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }
@@ -86,6 +87,7 @@ describe("voice.dispatch (stub fallback path)", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     });
     try {

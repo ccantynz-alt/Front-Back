@@ -97,7 +97,8 @@ export function createKvRateLimiter(opts: KvRateLimiterOptions): MiddlewareHandl
       c.header("X-RateLimit-Limit", String(max));
       c.header("X-RateLimit-Remaining", String(Math.max(0, max - state.count)));
 
-      return next();
+      await next();
+      return undefined;
     } catch (err) {
       // KV unreachable — fall back to the in-memory limiter for this request.
       // NEVER return 500 because the rate-limit store broke.
@@ -105,7 +106,8 @@ export function createKvRateLimiter(opts: KvRateLimiterOptions): MiddlewareHandl
         "[rate-limiter-kv] KV store unreachable, falling back to memory limiter:",
         err instanceof Error ? err.message : String(err),
       );
-      return fallback(c, next);
+      await fallback(c, next);
+      return undefined;
     }
   };
 }

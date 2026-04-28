@@ -1,4 +1,4 @@
-// BLK-013 — admin.stats — the single aggregator that backs the five
+﻿// BLK-013 — admin.stats — the single aggregator that backs the five
 // tiles on the /admin dashboard. Verifies:
 //   1. Non-admin callers are rejected (FORBIDDEN).
 //   2. Admin callers receive the exact Zod-validated output shape.
@@ -33,6 +33,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }

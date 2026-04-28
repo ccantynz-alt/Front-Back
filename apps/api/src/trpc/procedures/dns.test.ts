@@ -1,4 +1,4 @@
-// ── DNS Procedure Tests (BLK-023) ───────────────────────────────────
+﻿// ── DNS Procedure Tests (BLK-023) ───────────────────────────────────
 // Validates the admin-only DNS router end-to-end against a real (but
 // isolated) SQLite database. The test preload in `apps/api/test/setup.ts`
 // wipes and re-migrates the local DB before the suite loads, so we can
@@ -26,6 +26,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }
@@ -92,6 +93,7 @@ describe("dns router", () => {
       userId: null,
       sessionToken: null,
       csrfToken: null,
+      serviceKey: null,
       scopedDb: null,
     });
     let threw = false;

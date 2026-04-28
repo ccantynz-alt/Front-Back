@@ -157,5 +157,6 @@ export function uploadMiddleware(options: UploadMiddlewareOptions = {}): Middlew
 
     c.set("uploadedFile", uploaded);
     await next();
+    return undefined;
   };
 }

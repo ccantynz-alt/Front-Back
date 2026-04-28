@@ -61,7 +61,7 @@ export function timingSafeEqual(a: string, b: string): boolean {
 function extractBearer(header: string | undefined): string | null {
   if (!header) return null;
   const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return match ? match[1]?.trim() : null;
+  return match ? (match[1]?.trim() ?? null) : null;
 }
 
 // ── Payload schema ──────────────────────────────────────────────────

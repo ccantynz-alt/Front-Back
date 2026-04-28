@@ -262,7 +262,7 @@ function GateContent(): JSX.Element {
                             {ev.category ?? ev.event}
                           </span>
                           <span style={{ color: "var(--color-text-faint)" }}>
-                            {relativeTime(ev.timestamp)}
+                            {relativeTime(ev.timestamp ? new Date(ev.timestamp) : null)}
                           </span>
                         </li>
                       )}

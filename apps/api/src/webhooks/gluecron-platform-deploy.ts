@@ -54,7 +54,7 @@ export type PlatformDeployPayload = z.infer<typeof PushPayloadSchema>;
 function extractBearer(header: string | undefined): string | null {
   if (!header) return null;
   const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return match ? match[1]?.trim() : null;
+  return match ? (match[1]?.trim() ?? null) : null;
 }
 
 export interface GluecronPlatformDeployDeps {

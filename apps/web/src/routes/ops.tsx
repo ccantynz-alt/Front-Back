@@ -141,7 +141,7 @@ export default function OpsPage(): JSX.Element {
         const data = JSON.parse((ev as MessageEvent).data) as LogLine;
         setLogs((prev) => {
           // Dedupe by seq (SSE may retransmit on reconnect).
-          if (prev.length > 0 && prev[prev.length - 1]?.seq >= data.seq) return prev;
+          if (prev.length > 0 && (prev[prev.length - 1]?.seq ?? -1) >= data.seq) return prev;
           return [...prev, data];
         });
       } catch {

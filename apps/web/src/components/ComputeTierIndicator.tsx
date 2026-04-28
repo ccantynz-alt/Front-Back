@@ -138,9 +138,9 @@ export function ComputeTierIndicator(props: ComputeTierIndicatorProps): JSX.Elem
               </Text>
             </Show>
 
-            <Show when={caps()?.supportedModels && caps()?.supportedModels.length > 0}>
+            <Show when={(caps()?.supportedModels?.length ?? 0) > 0}>
               <Text variant="caption" style={{ color: "var(--color-text-muted)" }}>
-                {caps()?.supportedModels.length} model(s) supported on this device
+                {caps()?.supportedModels?.length ?? 0} model(s) supported on this device
               </Text>
             </Show>
           </Stack>

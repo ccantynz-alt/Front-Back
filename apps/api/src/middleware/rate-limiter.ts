@@ -43,7 +43,8 @@ export function createMemoryRateLimiter(opts: RateLimiterOptions = {}): Middlewa
     c.header("X-RateLimit-Limit", String(max));
     c.header("X-RateLimit-Remaining", String(bucket.tokens));
 
-    return next();
+    await next();
+    return undefined;
   };
 }
 

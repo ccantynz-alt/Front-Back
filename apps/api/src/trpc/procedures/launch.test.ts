@@ -1,4 +1,4 @@
-// launch.status — admin-only probe for the LaunchChecklist HUD.
+﻿// launch.status — admin-only probe for the LaunchChecklist HUD.
 // Verifies:
 //   1. Non-admin calls are rejected (FORBIDDEN).
 //   2. Admin calls return the expected shape.
@@ -18,6 +18,7 @@ function ctxFor(userId: string, sessionToken: string): TRPCContext {
     userId,
     sessionToken,
     csrfToken: null,
+    serviceKey: null,
     scopedDb: scopedDb(db, userId),
   };
 }
