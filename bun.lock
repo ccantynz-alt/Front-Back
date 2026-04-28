@@ -246,6 +246,17 @@
         "typescript": "^6.0.2",
       },
     },
+    "services/comms-intelligence": {
+      "name": "@back-to-the-future/comms-intelligence",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/cron-scheduler": {
       "name": "@back-to-the-future/cron-scheduler",
       "version": "0.0.1",
@@ -313,6 +324,17 @@
       "devDependencies": {
         "@types/bun": "^1.2.0",
         "@types/node": "^22.0.0",
+        "typescript": "^6.0.2",
+      },
+    },
+    "services/email-intelligence": {
+      "name": "@back-to-the-future/email-intelligence",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
         "typescript": "^6.0.2",
       },
     },
@@ -475,6 +497,17 @@
         "typescript": "^6.0.2",
       },
     },
+    "services/sms": {
+      "name": "@back-to-the-future/sms",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
     "services/tunnel": {
       "name": "@back-to-the-future/tunnel",
       "version": "1.0.0",
@@ -488,6 +521,17 @@
       "version": "0.0.1",
       "dependencies": {
         "hono": "^4.7.0",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.0",
+        "typescript": "^6.0.2",
+      },
+    },
+    "services/voice": {
+      "name": "@back-to-the-future/voice",
+      "version": "0.0.1",
+      "dependencies": {
         "zod": "^4.3.6",
       },
       "devDependencies": {
@@ -687,6 +731,8 @@
 
     "@back-to-the-future/build-runner": ["@back-to-the-future/build-runner@workspace:services/build-runner"],
 
+    "@back-to-the-future/comms-intelligence": ["@back-to-the-future/comms-intelligence@workspace:services/comms-intelligence"],
+
     "@back-to-the-future/config": ["@back-to-the-future/config@workspace:packages/config"],
 
     "@back-to-the-future/cron-scheduler": ["@back-to-the-future/cron-scheduler@workspace:services/cron-scheduler"],
@@ -704,6 +750,8 @@
     "@back-to-the-future/edge-workers": ["@back-to-the-future/edge-workers@workspace:services/edge-workers"],
 
     "@back-to-the-future/email-domain": ["@back-to-the-future/email-domain@workspace:services/email-domain"],
+
+    "@back-to-the-future/email-intelligence": ["@back-to-the-future/email-intelligence@workspace:services/email-intelligence"],
 
     "@back-to-the-future/email-receive": ["@back-to-the-future/email-receive@workspace:services/email-receive"],
 
@@ -739,6 +787,8 @@
 
     "@back-to-the-future/sentinel": ["@back-to-the-future/sentinel@workspace:services/sentinel"],
 
+    "@back-to-the-future/sms": ["@back-to-the-future/sms@workspace:services/sms"],
+
     "@back-to-the-future/storage": ["@back-to-the-future/storage@workspace:packages/storage"],
 
     "@back-to-the-future/theatre": ["@back-to-the-future/theatre@workspace:packages/theatre"],
@@ -748,6 +798,8 @@
     "@back-to-the-future/ui": ["@back-to-the-future/ui@workspace:packages/ui"],
 
     "@back-to-the-future/video-pipeline": ["@back-to-the-future/video-pipeline@workspace:services/video-pipeline"],
+
+    "@back-to-the-future/voice": ["@back-to-the-future/voice@workspace:services/voice"],
 
     "@back-to-the-future/waf": ["@back-to-the-future/waf@workspace:services/waf"],
 
