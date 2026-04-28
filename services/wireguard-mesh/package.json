@@ -1,0 +1,22 @@
+{
+  "name": "@back-to-the-future/wireguard-mesh",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format . --write"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "@types/bun": "^1.2.0"
+  }
+}
