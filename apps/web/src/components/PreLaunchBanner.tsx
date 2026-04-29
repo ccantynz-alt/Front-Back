@@ -20,10 +20,11 @@
 // (all 28 routes, including /admin/*) renders beneath it.
 
 import type { JSX } from "solid-js";
+import { Box, Stack, Text } from "@back-to-the-future/ui";
 
 export function PreLaunchBanner(): JSX.Element {
   return (
-    <div
+    <Box
       role="status"
       aria-live="polite"
       class="sticky top-0 z-[60] w-full backdrop-blur-xl"
@@ -32,19 +33,25 @@ export function PreLaunchBanner(): JSX.Element {
         "border-bottom": "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      <div class="mx-auto flex max-w-7xl items-center justify-center gap-2 px-3 py-2 sm:gap-3 sm:px-6">
-        <div
+      <Stack
+        direction="horizontal"
+        gap="sm"
+        align="center"
+        justify="center"
+        class="mx-auto max-w-7xl px-3 py-2 sm:px-6"
+      >
+        <Box
           class="h-1.5 w-1.5 shrink-0 rounded-full"
           style={{
             background: "#f59e0b",
             "box-shadow": "0 0 6px rgba(245,158,11,0.5)",
           }}
         />
-        <p class="text-[11px] tracking-wide sm:text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
-          <span class="font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>Early access</span>
-          <span> — Crontech is in final validation before public launch.</span>
-        </p>
-      </div>
-    </div>
+        <Text variant="body" class="text-[11px] tracking-wide sm:text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+          <Text as="span" class="font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>Early access</Text>
+          <Text as="span"> — Crontech is in final validation before public launch.</Text>
+        </Text>
+      </Stack>
+    </Box>
   );
 }

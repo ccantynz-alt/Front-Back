@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A, useNavigate, useSearchParams } from "@solidjs/router";
 import { createSignal, Show, For } from "solid-js";
 import type { JSX } from "solid-js";
-import { Badge, Button, Input, Select } from "@back-to-the-future/ui";
+import { Badge, Box, Button, Container, Input, Select, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { SEOHead } from "../../components/SEOHead";
 import { trpc } from "../../lib/trpc";
@@ -353,44 +353,45 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
       />
       <Title>New Project — Crontech</Title>
 
-      <div class="min-h-screen bg-[var(--color-bg)]">
-        <div class="mx-auto max-w-2xl px-6 py-8 lg:px-8">
+      <Box class="min-h-screen bg-[var(--color-bg)]">
+        <Container size="md" padding="md" class="py-8">
           {/* ── Breadcrumb ──────────────────────────────────────── */}
-          <div class="mb-6 flex items-center gap-2 text-xs" style={{ color: "var(--color-text-faint)" }}>
+          <Stack direction="horizontal" gap="xs" align="center" class="mb-6 text-xs" style={{ color: "var(--color-text-faint)" }}>
             <A
               href="/projects"
               class="transition-colors hover:text-[var(--color-text-secondary)]"
             >
               Projects
             </A>
-            <span>/</span>
-            <span style={{ color: "var(--color-text-secondary)" }}>New</span>
-          </div>
+            <Text as="span">/</Text>
+            <Text as="span" style={{ color: "var(--color-text-secondary)" }}>New</Text>
+          </Stack>
 
           {/* ── Header ──────────────────────────────────────────── */}
-          <div class="mb-8">
-            <h1 class="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
+          <Box class="mb-8">
+            <Text variant="h1" weight="bold" class="text-2xl tracking-tight" style={{ color: "var(--color-text)" }}>
               Create a new project
-            </h1>
-            <p class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
+            </Text>
+            <Text variant="body" class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
               Configure and deploy to the Crontech edge network.
-            </p>
+            </Text>
             <Show when={template()}>
               {(t) => (
-                <div class="mt-4 flex items-center gap-2">
-                  <span
+                <Stack direction="horizontal" gap="xs" align="center" class="mt-4">
+                  <Text
+                    as="span"
                     class="text-xl"
                     aria-hidden="true"
                   >
                     {t().icon}
-                  </span>
+                  </Text>
                   <Badge variant="info" size="sm">
                     Creating from template: {t().name}
                   </Badge>
-                </div>
+                </Stack>
               )}
             </Show>
-          </div>
+          </Box>
 
           {/* ── Path picker ──────────────────────────────────────── */}
           <Show when={path() === "picker"}>
@@ -828,8 +829,8 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
             </div>
           </div>
           </Show>
-        </div>
-      </div>
+        </Container>
+      </Box>
     </ProtectedRoute>
   );
 }

@@ -1,0 +1,129 @@
+{
+  "version": "1.0.0",
+  "product": "crontech",
+  "description": "AI flywheel configuration for the Crontech infrastructure platform",
+
+  "signal_collection": {
+    "email_service": [
+      "send_timestamp",
+      "recipient_domain",
+      "delivered",
+      "bounced",
+      "bounce_type",
+      "opened",
+      "clicked",
+      "marked_spam",
+      "sending_ip",
+      "smtp_response_code",
+      "time_to_delivery_ms"
+    ],
+    "deploy_service": [
+      "deploy_id",
+      "repo",
+      "commit_sha",
+      "environment",
+      "started_at",
+      "completed_at",
+      "duration_ms",
+      "success",
+      "error_message",
+      "rollback_triggered",
+      "health_check_results",
+      "container_exit_code"
+    ],
+    "cron_service": [
+      "job_id",
+      "schedule",
+      "started_at",
+      "completed_at",
+      "duration_ms",
+      "success",
+      "exit_code",
+      "stdout_tail",
+      "stderr_tail",
+      "retry_count",
+      "queue_wait_ms"
+    ],
+    "resource_metrics": [
+      "node_id",
+      "cpu_pct",
+      "ram_pct",
+      "disk_io_mbps",
+      "network_in_mbps",
+      "network_out_mbps",
+      "load_avg_1m",
+      "load_avg_5m",
+      "timestamp"
+    ]
+  },
+
+  "learning_cycles": {
+    "on_job_complete": {
+      "action": "update_job_health_score_and_failure_pattern_index",
+      "model": "claude-haiku-4-5",
+      "latency_budget_ms": 200
+    },
+    "on_deployment": {
+      "action": "score_deployment_health_and_update_risk_model",
+      "model": "claude-sonnet-4-6",
+      "latency_budget_ms": 2000
+    },
+    "on_email_bounce": {
+      "action": "update_deliverability_model_and_ip_reputation_score",
+      "model": "claude-haiku-4-5",
+      "latency_budget_ms": 500
+    },
+    "hourly_metrics": {
+      "action": "detect_anomalies_and_generate_capacity_recommendations",
+      "model": "claude-sonnet-4-6",
+      "schedule": "0 * * * *",
+      "output": "anomaly_alert_webhook_if_threshold_exceeded"
+    },
+    "daily_capacity_report": {
+      "action": "generate_resource_utilization_report_and_scaling_recommendations",
+      "model": "claude-sonnet-4-6",
+      "schedule": "0 7 * * *",
+      "output": "ops_dashboard_and_slack_webhook"
+    }
+  },
+
+  "improvement_targets": [
+    {
+      "metric": "job_failure_prediction_accuracy",
+      "measure": "pct_of_predicted_failures_that_actually_failed",
+      "target": 0.80,
+      "prediction_window_minutes": 5
+    },
+    {
+      "metric": "email_deliverability_rate",
+      "measure": "delivered / (delivered + bounced + spam)",
+      "target": 0.98
+    },
+    {
+      "metric": "deployment_success_rate",
+      "measure": "successful_deploys / total_deploys",
+      "target": 0.995
+    },
+    {
+      "metric": "anomaly_detection_precision",
+      "measure": "true_positives / (true_positives + false_positives)",
+      "target": 0.85
+    },
+    {
+      "metric": "resource_utilization_efficiency",
+      "measure": "avg_cpu_utilization_pct_during_business_hours",
+      "target": 0.70,
+      "description": "70% avg utilization means minimal waste without headroom risk"
+    }
+  ],
+
+  "data_retention": {
+    "hot_cache_days": 30,
+    "cold_storage_days": 180,
+    "metrics_resolution": {
+      "0_to_7_days": "1_minute",
+      "7_to_30_days": "5_minute",
+      "30_to_180_days": "1_hour"
+    }
+  }
+}

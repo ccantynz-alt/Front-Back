@@ -1,6 +1,7 @@
 import { A } from "@solidjs/router";
 import { For, Show } from "solid-js";
 import type { JSX } from "solid-js";
+import { Box, Container, Stack, Text } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 import { SEOHead } from "../components/SEOHead";
 import { Icon, type IconName } from "../components/Icon";
@@ -402,17 +403,17 @@ export default function Home(): JSX.Element {
       />
 
       {/* ── Hero ───────────────────────────────────────────────────── */}
-      <section class="landing-hero">
-        <div class="relative z-10 mx-auto w-full max-w-[1120px] px-6 pb-16 pt-32 lg:px-8 lg:pb-20 lg:pt-44">
-          <div class="flex flex-col items-center text-center">
+      <Box as="section" class="landing-hero">
+        <Container size="xl" padding="md" class="relative z-10 pb-16 pt-32 lg:pb-20 lg:pt-44">
+          <Box class="flex flex-col items-center text-center">
 
             {/* Badge */}
-            <div class="landing-hero-badge mb-10">
+            <Box class="landing-hero-badge mb-10">
               <span class="landing-hero-badge-dot" aria-hidden="true" />
               <span class="landing-hero-badge-text">
                 Now in early access &mdash; Powered by Claude
               </span>
-            </div>
+            </Box>
 
             {/* Headline — locked per docs/POSITIONING.md §3 */}
             <h1
@@ -435,19 +436,19 @@ export default function Home(): JSX.Element {
             </p>
 
             {/* CTAs */}
-            <div class="mt-12 flex flex-col items-center gap-4 sm:flex-row">
+            <Box class="mt-12 flex flex-col items-center gap-4 sm:flex-row">
               <A href="/register" class="landing-hero-btn-primary-dark">
                 Start building
               </A>
               <A href="/docs" class="landing-hero-btn-outline-dark">
                 See the docs
               </A>
-            </div>
+            </Box>
 
             {/* Tech strip */}
-            <div class="landing-tech-strip-wrap mt-14">
-              <div class="landing-tech-strip-divider" aria-hidden="true" />
-              <div class="landing-tech-strip">
+            <Box class="landing-tech-strip-wrap mt-14">
+              <Box class="landing-tech-strip-divider" aria-hidden="true" />
+              <Box class="landing-tech-strip">
                 <For
                   each={[
                     "Claude-powered AI",
@@ -467,36 +468,37 @@ export default function Home(): JSX.Element {
                     <span class="landing-tech-strip-item">{signal}</span>
                   )}
                 </For>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+              </Box>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
 
       {/* ── Stats strip ─────────────────────────────────────────────── */}
-      <section class="landing-stats-section">
-        <div class="mx-auto w-full max-w-[1120px] px-6 lg:px-8">
-          <div class="landing-stats-grid">
+      <Box as="section" class="landing-stats-section">
+        <Container size="xl" padding="md">
+          <Box class="landing-stats-grid">
             <For each={signals}>
               {(signal) => (
-                <div class="landing-stat-cell">
+                <Box class="landing-stat-cell">
                   <SignalBlock value={signal.value} label={signal.label} />
-                </div>
+                </Box>
               )}
             </For>
-          </div>
-        </div>
-      </section>
+          </Box>
+        </Container>
+      </Box>
 
       {/* ── Every business preview ───────────────────────────────────── */}
-      <section
+      <Box
+        as="section"
         class="py-28 lg:py-36"
         style={{
           background: "#ffffff",
           "border-top": "1px solid #e5e7eb",
         }}
       >
-        <div class="mx-auto w-full max-w-[1120px] px-6 lg:px-8">
+        <Container size="xl" padding="md">
           <SectionHead
             eyebrow="Who it's for"
             title={
@@ -516,7 +518,7 @@ export default function Home(): JSX.Element {
             </For>
           </div>
 
-          <div class="mt-10 flex justify-center">
+          <Box class="mt-10 flex justify-center">
             <A
               href="/solutions"
               class="text-sm font-semibold transition-colors"
@@ -524,12 +526,13 @@ export default function Home(): JSX.Element {
             >
               See all 10 verticals &#8594;
             </A>
-          </div>
-        </div>
-      </section>
+          </Box>
+        </Container>
+      </Box>
 
       {/* ── Three pillars ───────────────────────────────────────────── */}
-      <section
+      <Box
+        as="section"
         class="py-28 lg:py-40"
         style={{
           background: "#f9fafb",
@@ -537,14 +540,14 @@ export default function Home(): JSX.Element {
           "border-bottom": "1px solid #e5e7eb",
         }}
       >
-        <div class="mx-auto w-full max-w-[1120px] px-6 lg:px-8">
+        <Container size="xl" padding="md">
           <SectionHead
             eyebrow="Why Crontech"
             title="Three things we've built differently."
             body="AI-native from the first commit. Open to every business, not just developers. Running on the platform we're selling you."
           />
 
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <Box class="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <For each={pillars}>
               {(pillar) => (
                 <PillarCard
@@ -556,26 +559,27 @@ export default function Home(): JSX.Element {
                 />
               )}
             </For>
-          </div>
-        </div>
-      </section>
+          </Box>
+        </Container>
+      </Box>
 
       {/* ── Capabilities grid ───────────────────────────────────────── */}
-      <section
+      <Box
+        as="section"
         class="py-28 lg:py-40"
         style={{
           background: "#ffffff",
           "border-bottom": "1px solid #e5e7eb",
         }}
       >
-        <div class="mx-auto w-full max-w-[1120px] px-6 lg:px-8">
+        <Container size="xl" padding="md">
           <SectionHead
             eyebrow="Every layer"
             title="One product replaces many."
             body="Every capability a modern application needs, unified into one platform, one dashboard, one bill. No vendor stitching."
           />
 
-          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Box class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <For each={capabilities}>
               {(cap) => (
                 <CapabilityCard
@@ -585,13 +589,13 @@ export default function Home(): JSX.Element {
                 />
               )}
             </For>
-          </div>
-        </div>
-      </section>
+          </Box>
+        </Container>
+      </Box>
 
       {/* ── The family / moat ───────────────────────────────────────── */}
-      <section class="landing-moat-section py-28 lg:py-36">
-        <div class="mx-auto w-full max-w-[1120px] px-6 lg:px-8">
+      <Box as="section" class="landing-moat-section py-28 lg:py-36">
+        <Container size="xl" padding="md">
           <SectionHead
             dark
             eyebrow="The moat"
@@ -600,7 +604,7 @@ export default function Home(): JSX.Element {
             body="Four products, one platform, all using each other. Most platforms can't say that. We can."
           />
 
-          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Box class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <For each={family}>
               {(p) => (
                 <FamilyCard
@@ -611,12 +615,13 @@ export default function Home(): JSX.Element {
                 />
               )}
             </For>
-          </div>
-        </div>
-      </section>
+          </Box>
+        </Container>
+      </Box>
 
       {/* ── Mission strip ───────────────────────────────────────────── */}
-      <section
+      <Box
+        as="section"
         class="py-24 lg:py-28"
         style={{
           background: "#ffffff",
@@ -624,8 +629,8 @@ export default function Home(): JSX.Element {
           "border-bottom": "1px solid #e5e7eb",
         }}
       >
-        <div class="mx-auto w-full max-w-[720px] px-6 lg:px-8">
-          <div class="flex flex-col gap-4">
+        <Container size="full" padding="md" class="max-w-[720px]">
+          <Box class="flex flex-col gap-4">
             <span
               class="text-[11px] font-semibold uppercase tracking-[0.18em]"
               style={{ color: "#6366f1" }}
@@ -642,13 +647,13 @@ export default function Home(): JSX.Element {
               with engineering teams and enterprise contracts. If you&apos;re
               here to build something, we&apos;re here to power it.
             </p>
-          </div>
-        </div>
-      </section>
+          </Box>
+        </Container>
+      </Box>
 
       {/* ── Bottom CTA ──────────────────────────────────────────────── */}
-      <section class="landing-cta-section">
-        <div class="relative z-10 mx-auto w-full max-w-[880px] px-6 py-32 text-center lg:px-8 lg:py-44">
+      <Box as="section" class="landing-cta-section">
+        <Container size="full" padding="md" class="relative z-10 max-w-[880px] py-32 text-center lg:py-44">
           <h2
             class="text-[1.875rem] font-bold tracking-tight sm:text-[2.25rem] lg:text-[2.75rem]"
             style={{ color: "#f1f5f9" }}
@@ -663,7 +668,7 @@ export default function Home(): JSX.Element {
             Describe what you&apos;re building in plain English. Claude drafts
             the app, the database, the auth, the billing. You iterate.
           </p>
-          <div class="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Box class="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <A href="/builder" class="landing-hero-btn-primary-dark">
               Try the AI builder &#8594;
             </A>
@@ -679,9 +684,9 @@ export default function Home(): JSX.Element {
                 Open dashboard
               </A>
             </Show>
-          </div>
-        </div>
-      </section>
+          </Box>
+        </Container>
+      </Box>
     </>
   );
 }

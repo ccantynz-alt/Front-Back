@@ -112,10 +112,31 @@ jobs:
 
       - name: Deploy via SSH (artifact swap — no rebuild on server)
         uses: appleboy/ssh-action@v1
+        env:
+          # ── Managed env vars (pulled from GitHub Actions secrets) ─────
+          # Add a new env var: paste it under repo Settings → Secrets and
+          # Variables → Actions, then add it to BOTH this `env:` block AND
+          # the `envs:` list under `with:` below, AND the inline `[4.5/6]
+          # Sync managed env vars` step. End-to-end no SSH required.
+          # Empty / unset secrets are skipped — they leave any existing
+          # value in /opt/crontech/.env untouched.
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          AI_GATEWAY_SECRET: ${{ secrets.AI_GATEWAY_SECRET }}
+          AI_GATEWAY_BEARER: ${{ secrets.AI_GATEWAY_BEARER }}
+          MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          OBJECT_STORAGE_SIGNING_SECRET: ${{ secrets.OBJECT_STORAGE_SIGNING_SECRET }}
+          SECRETS_VAULT_MASTER_KEY: ${{ secrets.SECRETS_VAULT_MASTER_KEY }}
+          SECRETS_VAULT_INTERNAL_TOKEN: ${{ secrets.SECRETS_VAULT_INTERNAL_TOKEN }}
         with:
           host: ${{ secrets.VULTR_SERVER_IP }}
           username: root
           key: ${{ secrets.VULTR_SSH_KEY }}
+          # `envs:` forwards GH-Actions env vars into the SSH session so
+          # the inline script can read them. Without this they're invisible
+          # inside the script even though `env:` is set above.
+          envs: GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,AI_GATEWAY_SECRET,AI_GATEWAY_BEARER,MINIO_ROOT_USER,MINIO_ROOT_PASSWORD,OBJECT_STORAGE_SIGNING_SECRET,SECRETS_VAULT_MASTER_KEY,SECRETS_VAULT_INTERNAL_TOKEN
           command_timeout: 8m
           script: |
             set -euo pipefail
@@ -141,26 +162,40 @@ jobs:
             # counter 34000+ in journalctl). The deploy gate caught it
             # via the smoke test, but no auto-fix existed.
             #
-            # This step is idempotent: copies /root/.bun/bin/bun to
-            # /usr/local/bin/bun (chmod 755) only when missing or when
-            # the source bun is newer. Both deploy-agent (User=root, uses
-            # /root/.bun/bin/bun) AND web/api (User=deploy, uses
-            # /usr/local/bin/bun) keep working.
+            # This step is idempotent and ALWAYS overwrites: copies
+            # /root/.bun/bin/bun to /usr/local/bin/bun (chmod 755) every
+            # deploy. Earlier versions used a `-nt` "newer than" check to
+            # skip the copy when /usr/local/bin/bun was "already current",
+            # but that hid the case where the existing binary was broken
+            # / corrupted / a wrong arch — which on 2026-04-28 caused the
+            # exact 203/EXEC failure mode this step was supposed to
+            # prevent. The `cp` is ~100ms, so unconditional is cheaper
+            # than the diagnosis cycle of a hidden-stale binary.
+            #
+            # Both deploy-agent (User=root, uses /root/.bun/bin/bun) AND
+            # web/api (User=deploy, uses /usr/local/bin/bun) keep working.
             echo "[0/6] Ensuring /usr/local/bin/bun is present..."
             if [ -x /root/.bun/bin/bun ]; then
-              if [ ! -x /usr/local/bin/bun ] || [ /root/.bun/bin/bun -nt /usr/local/bin/bun ]; then
-                cp -f /root/.bun/bin/bun /usr/local/bin/bun
-                chmod 755 /usr/local/bin/bun
-                echo "  /usr/local/bin/bun → $(/usr/local/bin/bun --version)"
-              else
-                echo "  /usr/local/bin/bun already current ($(/usr/local/bin/bun --version))"
-              fi
+              cp -f /root/.bun/bin/bun /usr/local/bin/bun
+              chmod 755 /usr/local/bin/bun
             else
               echo "  WARNING: /root/.bun/bin/bun missing — installing fresh"
               curl -fsSL https://bun.sh/install | bash
               cp -f /root/.bun/bin/bun /usr/local/bin/bun
               chmod 755 /usr/local/bin/bun
             fi
+
+            # Smoke-test the binary actually runs. If /usr/local/bin/bun
+            # is corrupt / wrong arch / non-executable, exit the deploy
+            # NOW with a loud error instead of restarting services that
+            # immediately hit 203/EXEC and waste 60 seconds in the [6/6]
+            # health-check loop.
+            if ! /usr/local/bin/bun --version >/dev/null 2>&1; then
+              echo "  ERROR: /usr/local/bin/bun is not executable / not a valid binary"
+              ls -la /usr/local/bin/bun /root/.bun/bin/bun || true
+              exit 1
+            fi
+            echo "  /usr/local/bin/bun → $(/usr/local/bin/bun --version)"
 
             PREV_SHA=$(git rev-parse HEAD 2>/dev/null || echo "none")
             echo "Previous SHA: $PREV_SHA"
@@ -171,7 +206,20 @@ jobs:
             git reset --hard origin/Main
 
             # [2] Sync deps (fast — frozen lockfile, existing node_modules)
+            #
+            # Workspace-symlink refresh: on 2026-04-28 the api crashed at
+            # boot because services/object-storage/package.json gained a
+            # new `./client` export (no dep change, only an export-map
+            # change). `bun install --frozen-lockfile` saw "no lockfile
+            # delta" and skipped re-linking node_modules/@back-to-the-future/*,
+            # so apps/api couldn't resolve `@back-to-the-future/object-storage/client`
+            # and crashed with `Cannot find module ...`.
+            #
+            # Fix: always remove the workspace symlink directory before
+            # install. bun re-creates the symlinks in milliseconds during
+            # the install pass — no actual download cost.
             echo "[2/6] Syncing dependencies..."
+            rm -rf node_modules/@back-to-the-future || true
             bun install --frozen-lockfile
 
             # [3] Extract pre-built artifacts (replaces bun run build entirely)
@@ -206,6 +254,49 @@ jobs:
                 echo "  .env clean"
               fi
             fi
+
+            # [4.5] Sync managed env vars from GitHub Actions secrets.
+            #
+            # No more SSH-into-Vultr-and-edit-.env. Managed secrets live
+            # in repo Settings → Secrets and Variables → Actions; this
+            # step writes any that are SET to /opt/crontech/.env. Empty
+            # / unset secrets are skipped (so this step is safe to add
+            # for vars before they're populated upstream).
+            #
+            # Idempotent: existing key= lines are removed first, then the
+            # fresh value is appended. Values are passed via the `envs:`
+            # bridge above so they never appear in the workflow log.
+            #
+            # To add a new managed env var (one-time setup, then never
+            # again):
+            #   1. Add the secret in repo Settings UI.
+            #   2. Add it to the `env:` block under `Deploy via SSH`.
+            #   3. Add the name to the `envs:` comma list there too.
+            #   4. Add a `set_env <NAME>` line below.
+            echo "[4.5/6] Syncing managed env vars..."
+            set_env() {
+              local key="$1"
+              local value="${!1:-}"
+              if [ -z "$value" ]; then
+                echo "  $key — unset, leaving existing /opt/crontech/.env value"
+                return 0
+              fi
+              # Atomic-ish update: remove any prior line for this key, append fresh.
+              sed -i "/^${key}=/d" /opt/crontech/.env
+              # Use printf %s so values with shell-meta chars don't get expanded.
+              printf '%s=%s\n' "$key" "$value" >> /opt/crontech/.env
+              echo "  $key — synced (length=${#value})"
+            }
+            touch /opt/crontech/.env
+            set_env GOOGLE_CLIENT_ID
+            set_env GOOGLE_CLIENT_SECRET
+            set_env AI_GATEWAY_SECRET
+            set_env AI_GATEWAY_BEARER
+            set_env MINIO_ROOT_USER
+            set_env MINIO_ROOT_PASSWORD
+            set_env OBJECT_STORAGE_SIGNING_SECRET
+            set_env SECRETS_VAULT_MASTER_KEY
+            set_env SECRETS_VAULT_INTERNAL_TOKEN
 
             # [5] Run database migrations + sync service files + restart
             echo "[5/6] Migrating + restarting..."

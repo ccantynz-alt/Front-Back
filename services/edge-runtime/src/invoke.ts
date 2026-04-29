@@ -1,8 +1,17 @@
-// ── Crontech Edge Runtime — Per-invocation worker driver ────────────
-// Spawns a worker, drives the init / invoke / response handshake, and
-// rebuilds the worker's serialised response into a Web `Response` for
-// the HTTP layer. Lives in its own file so `index.ts` can stay focused
-// on routing.
+// ── Crontech Edge Runtime — Per-invocation driver ───────────────────
+// In v1 the default execution path is the V8-Realm isolate in
+// `isolate.ts`. The legacy `WorkerSpawner` interface from v0 remains
+// exported so existing tests and any out-of-tree consumers keep
+// working — the test suite drives the dispatcher through a mocked
+// spawner and we don't want to rewrite that surface.
+//
+// Routing decision per request:
+//
+//   * If `spawn` is provided in the dispatcher options, use the v0
+//     Bun-Worker path. This is what the legacy unit tests exercise via
+//     a mock spawner. Tests therefore stay deterministic and < 1s.
+//   * Otherwise (production default), use `invokeIsolate` from
+//     isolate.ts. This is the path real customer traffic takes.
 
 import {
   type WorkerMessage,
@@ -10,6 +19,7 @@ import {
   WorkerReplySchema,
   serialiseRequest,
 } from "./dispatch";
+import { type IsolateInvokeResult, invokeIsolate } from "./isolate";
 import type { RegisteredBundle } from "./registry";
 
 // ── Public types ────────────────────────────────────────────────────
@@ -26,7 +36,7 @@ export type WorkerSpawner = () => RuntimeWorker;
 
 export function defaultSpawnWorker(): RuntimeWorker {
   // Bun's Worker constructor is the only place we touch the actual
-  // runtime sandbox. Everything else stays pure / mockable.
+  // legacy worker sandbox. Everything else stays pure / mockable.
   const url = new URL("./worker-host.ts", import.meta.url);
   const worker = new Worker(url.href, { type: "module" });
   let listener: ((reply: WorkerReply) => void) | null = null;
@@ -57,11 +67,37 @@ export function defaultSpawnWorker(): RuntimeWorker {
 export interface InvokeArgs {
   bundle: RegisteredBundle;
   request: Request;
+  /** When provided, the v0 Bun-Worker path is used (legacy / tests). */
+  spawn?: WorkerSpawner;
+  timeoutMs: number;
+  /** Receives the captured logs after the bundle returns (production hook). */
+  onLogs?: (result: IsolateInvokeResult) => void;
+}
+
+export async function invokeBundle(args: InvokeArgs): Promise<Response> {
+  if (args.spawn !== undefined) {
+    return invokeViaWorker({
+      bundle: args.bundle,
+      request: args.request,
+      spawn: args.spawn,
+      timeoutMs: args.timeoutMs,
+    });
+  }
+  const result = await invokeIsolate({ bundle: args.bundle, request: args.request });
+  if (args.onLogs !== undefined) args.onLogs(result);
+  return result.response;
+}
+
+// ── Legacy Bun-Worker path (kept for v0 test compatibility) ─────────
+
+interface InvokeViaWorkerArgs {
+  bundle: RegisteredBundle;
+  request: Request;
   spawn: WorkerSpawner;
   timeoutMs: number;
 }
 
-export async function invokeBundle(args: InvokeArgs): Promise<Response> {
+async function invokeViaWorker(args: InvokeViaWorkerArgs): Promise<Response> {
   const { bundle, request, spawn, timeoutMs } = args;
   const worker = spawn();
   const queue: WorkerReply[] = [];

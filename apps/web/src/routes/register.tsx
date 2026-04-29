@@ -1,7 +1,7 @@
 import { Title } from "@solidjs/meta";
 import { A, useNavigate, useSearchParams } from "@solidjs/router";
 import { Show, createSignal, createMemo, onMount } from "solid-js";
-import { Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
+import { Alert, Box, Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 
 type Mode = "choose" | "guest" | "email-passkey" | "email-password" | "creating";
@@ -250,7 +250,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
           </Text>
 
           <Show when={selectedPlan() === "pro"}>
-            <div
+            <Box
               class="plan-callout plan-callout-pro"
               style={{
                 width: "100%",
@@ -267,11 +267,11 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
               <Text variant="caption" class="text-muted">
                 We'll take you to checkout right after you create your account.
               </Text>
-            </div>
+            </Box>
           </Show>
 
           <Show when={selectedPlan() === "enterprise"}>
-            <div
+            <Box
               class="plan-callout plan-callout-enterprise"
               style={{
                 width: "100%",
@@ -292,13 +292,13 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                 </A>{" "}
                 and we'll tailor a plan to your organisation.
               </Text>
-            </div>
+            </Box>
           </Show>
 
           <Show when={displayError()}>
-            <div class="alert alert-error">
+            <Alert variant="error">
               <Text variant="body">{displayError()}</Text>
-            </div>
+            </Alert>
           </Show>
 
           {/* Choose Mode */}
@@ -341,17 +341,10 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
               </Button>
 
               {/* Divider */}
-              <div
-                style={{
-                  display: "flex",
-                  "align-items": "center",
-                  gap: "12px",
-                  width: "100%",
-                }}
-              >
-                <div
+              <Stack direction="horizontal" gap="sm" align="center" class="w-full">
+                <Box
+                  class="flex-1"
                   style={{
-                    flex: "1",
                     height: "1px",
                     background: "var(--color-border)",
                   }}
@@ -359,14 +352,14 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                 <Text variant="caption" class="text-muted">
                   or
                 </Text>
-                <div
+                <Box
+                  class="flex-1"
                   style={{
-                    flex: "1",
                     height: "1px",
                     background: "var(--color-border)",
                   }}
                 />
-              </div>
+              </Stack>
 
               <Button variant="primary" size="lg" onClick={startGuest}>
                 Try for Free (one click)
@@ -413,7 +406,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                 disabled={auth.isLoading()}
               />
 
-              <div style={{ position: "relative" }}>
+              <Box style={{ position: "relative" }}>
                 <Input
                   label="Password"
                   type={showPassword() ? "text" : "password"}
@@ -438,22 +431,16 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                 >
                   {showPassword() ? "Hide" : "Show"}
                 </button>
-              </div>
+              </Box>
 
               {/* Password Strength Indicator */}
               <Show when={password().length > 0}>
-                <div style={{ width: "100%" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "4px",
-                      "margin-bottom": "6px",
-                    }}
-                  >
+                <Box class="w-full">
+                  <Stack direction="horizontal" gap="xs" class="mb-1.5">
                     {[0, 1, 2, 3].map((i) => (
-                      <div
+                      <Box
+                        class="flex-1"
                         style={{
-                          flex: "1",
                           height: "4px",
                           "border-radius": "2px",
                           background:
@@ -464,7 +451,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                         }}
                       />
                     ))}
-                  </div>
+                  </Stack>
                   <Text
                     variant="caption"
                     style={{ color: passwordStrength().color }}
@@ -474,7 +461,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
 
                   {/* Requirements checklist */}
                   <Show when={passwordIssues().length > 0}>
-                    <div style={{ "margin-top": "4px" }}>
+                    <Box style={{ "margin-top": "4px" }}>
                       {passwordIssues().map((issue) => (
                         <Text
                           variant="caption"
@@ -484,9 +471,9 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                           {issue}
                         </Text>
                       ))}
-                    </div>
+                    </Box>
                   </Show>
-                </div>
+                </Box>
               </Show>
 
               <Input
@@ -566,7 +553,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
           <Show when={mode() === "creating"}>
             <Stack direction="vertical" gap="md" align="center">
               <Text variant="body">Setting up your account...</Text>
-              <div
+              <Box
                 style={{
                   width: "240px",
                   height: "8px",
@@ -575,7 +562,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                   overflow: "hidden",
                 }}
               >
-                <div
+                <Box
                   style={{
                     width: `${progress()}%`,
                     height: "100%",
@@ -583,7 +570,7 @@ export default function RegisterPage(): ReturnType<typeof Stack> {
                     transition: "width 0.3s ease",
                   }}
                 />
-              </div>
+              </Box>
               <Text variant="caption" class="text-muted">
                 Loading sample projects and starting your tour...
               </Text>

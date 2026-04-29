@@ -1,7 +1,7 @@
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { A } from "@solidjs/router";
-import { Button } from "@back-to-the-future/ui";
+import { Box, Button, Container, Stack, Text } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
 import {
   DeploymentCard,
@@ -291,52 +291,56 @@ export default function DeploymentsPage(): JSX.Element {
         description="Git-push-to-deploy pipeline. Edge-native builds, streamed logs, instant rollback."
         path="/deployments"
       />
-      <div
+      <Box
         class="min-h-screen"
         style={{ background: "var(--color-bg)", color: "var(--color-text)" }}
       >
-        <div class="mx-auto max-w-6xl px-6 py-12">
+        <Container size="full" padding="md" class="max-w-6xl py-12">
           {/* Header */}
-          <div class="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div class="max-w-2xl">
-              <div
+          <Stack direction="vertical" gap="lg" class="mb-10 md:flex-row md:items-start md:justify-between">
+            <Box class="max-w-2xl">
+              <Box
                 class="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1"
                 style={{
                   border: "1px solid var(--color-border)",
                   background: "var(--color-bg-elevated)",
                 }}
               >
-                <span
+                <Box
                   class="h-1.5 w-1.5 rounded-full"
                   style={{
                     background: "var(--color-success)",
                     "box-shadow": "0 0 8px rgba(74,222,128,0.6)",
                   }}
                 />
-                <span
+                <Text
+                  as="span"
+                  variant="caption"
                   class="text-[10px] font-semibold uppercase tracking-widest"
                   style={{ color: "var(--color-text-muted)" }}
                 >
                   BLK-009 · deploy pipeline
-                </span>
-              </div>
-              <h1
+                </Text>
+              </Box>
+              <Text
+                variant="h1"
                 class="text-4xl font-bold tracking-tight"
                 style={{ color: "var(--color-text)" }}
               >
                 Deployments
-              </h1>
-              <p
+              </Text>
+              <Text
+                variant="body"
                 class="mt-3 text-base"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 Every push is built in an isolated edge container, streamed to
                 your browser as it runs, and published to the Cloudflare edge
                 the moment the build succeeds.
-              </p>
-            </div>
+              </Text>
+            </Box>
 
-            <div class="flex flex-shrink-0 gap-2">
+            <Stack direction="horizontal" gap="sm" class="flex-shrink-0">
               <Show when={!repoConnected()}>
                 <Button variant="primary" size="lg" onClick={handleConnectRepo}>
                   Connect GitHub repo
@@ -351,19 +355,19 @@ export default function DeploymentsPage(): JSX.Element {
                   Connect another repo
                 </Button>
               </Show>
-            </div>
-          </div>
+            </Stack>
+          </Stack>
 
           {/* Stats row */}
           <Show when={repoConnected() && totalDeployments() > 0}>
-            <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Box class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <StatTile
                 label="Total deployments"
                 value={totalDeployments().toString()}
               />
               <StatTile label="Live now" value={liveCount().toString()} />
               <StatTile label="In progress" value={activeCount().toString()} />
-            </div>
+            </Box>
           </Show>
 
           {/* Filter chips */}
@@ -466,8 +470,8 @@ export default function DeploymentsPage(): JSX.Element {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </Container>
+      </Box>
     </>
   );
 }

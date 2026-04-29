@@ -1,7 +1,7 @@
 import { Title } from "@solidjs/meta";
 import { createMemo, createResource, createSignal, For, Show, onCleanup, type JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { Button, Stack, Text, Badge } from "@back-to-the-future/ui";
+import { Box, Button, Container, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { AdminRoute } from "../../components/AdminRoute";
 import { useAuth } from "../../stores";
 import {
@@ -347,7 +347,7 @@ function ProgressPage(): JSX.Element {
   return (
     <>
       <Title>Progress Tracker - Crontech Admin</Title>
-      <div
+      <Box
         style={{
           "min-height": "100vh",
           background: "linear-gradient(180deg, var(--color-bg-deep) 0%, var(--color-bg-base) 100%)",
@@ -355,9 +355,9 @@ function ProgressPage(): JSX.Element {
           padding: "32px 24px",
         }}
       >
-        <div style={{ "max-width": "1100px", margin: "0 auto" }}>
+        <Container size="full" padding="none" class="max-w-[1100px]">
           <Stack direction="vertical" gap="lg">
-            <div>
+            <Box>
               <Text variant="h1" weight="bold">
                 Crontech Master Game Plan
               </Text>
@@ -365,7 +365,7 @@ function ProgressPage(): JSX.Element {
                 Live tracker. Every strategic decision, roadmap item, and blocker from the CFO
                 lock-in session. Auto-refreshes every 30 seconds.
               </Text>
-            </div>
+            </Box>
 
             <Show
               when={tracker()}
@@ -687,8 +687,8 @@ function ProgressPage(): JSX.Element {
               }}
             </Show>
           </Stack>
-        </div>
-      </div>
+        </Container>
+      </Box>
     </>
   );
 }

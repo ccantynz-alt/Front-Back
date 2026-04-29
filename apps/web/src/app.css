@@ -2546,7 +2546,19 @@ html.dark .hero-gradient {
 }
 
 .landing-stat-value {
-  font-size: 1.75rem;
+  /* Math-driven cap so the longest hyphenated value ("Claude-powered" =
+     14 chars) fits inside a single cell at every viewport width:
+       container max-width = 1120px ÷ 4 cols = 280px / cell
+       14 chars × ~0.55em glyph width × font-size ≤ 280px
+       => font-size ≤ ~36px (2.25rem)
+     Use clamp(1.5rem, 4vw, 2rem) so:
+       - smallest screens stay legible (1.5rem floor)
+       - mid-range scales fluidly (4vw)
+       - max stays under the cell width (2rem = 32px)
+     This eliminates the overflow that was happening at every viewport
+     ≥ 1024px (iPad portrait through 1920px desktop) under the previous
+     2.375rem step-function. */
+  font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -2562,18 +2574,6 @@ html.dark .hero-gradient {
   overflow-wrap: normal;
   word-break: keep-all;
   hyphens: manual;
-}
-
-@media (min-width: 640px) {
-  .landing-stat-value {
-    font-size: 2rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .landing-stat-value {
-    font-size: 2.375rem;
-  }
 }
 
 .landing-stat-label {

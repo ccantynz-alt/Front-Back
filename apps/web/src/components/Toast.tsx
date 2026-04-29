@@ -9,6 +9,7 @@
 
 import { createSignal, For, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
+import { Box, Text } from "@back-to-the-future/ui";
 import { enqueueUndo, type UndoToastDescriptor } from "./UndoToast";
 
 export type ToastVariant = "success" | "error" | "info" | "warning" | "undo";
@@ -69,7 +70,7 @@ const variantStyles: Record<Exclude<ToastVariant, "undo">, { bg: string; border:
 export function ToastContainer(): JSX.Element {
   onCleanup(() => setToasts([]));
   return (
-    <div
+    <Box
       style={{
         position: "fixed",
         top: "20px",
@@ -88,7 +89,7 @@ export function ToastContainer(): JSX.Element {
         {(toast) => {
           const style = variantStyles[toast.variant];
           return (
-            <div
+            <Box
               style={{
                 background: style.bg,
                 border: `1px solid ${style.border}`,
@@ -106,8 +107,8 @@ export function ToastContainer(): JSX.Element {
                 "font-weight": "500",
               }}
             >
-              <span style={{ "font-size": "16px", "line-height": "1.4" }}>{style.icon}</span>
-              <span style={{ flex: "1", "line-height": "1.4" }}>{toast.message}</span>
+              <Text as="span" style={{ "font-size": "16px", "line-height": "1.4" }}>{style.icon}</Text>
+              <Text as="span" style={{ flex: "1", "line-height": "1.4" }}>{toast.message}</Text>
               <button
                 type="button"
                 onClick={() => dismissToast(toast.id)}
@@ -124,7 +125,7 @@ export function ToastContainer(): JSX.Element {
               >
                 ×
               </button>
-            </div>
+            </Box>
           );
         }}
       </For>
@@ -134,6 +135,6 @@ export function ToastContainer(): JSX.Element {
           to { transform: translateX(0); opacity: 1; }
         }
       `}</style>
-    </div>
+    </Box>
   );
 }

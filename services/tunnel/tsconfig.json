@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
-    "types": ["bun"]
+    "types": ["bun"],
+    "noEmit": true
   },
-  "include": ["src"]
+  "include": ["origin/src", "origin/test", "edge/src", "edge/test", "shared"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -1,7 +1,7 @@
 import { createSignal, For, Show, createMemo } from "solid-js";
 import type { JSX } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
-import { Badge } from "@back-to-the-future/ui";
+import { Badge, Box, Container } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
 import {
   projectTemplates,
@@ -446,13 +446,13 @@ export default function TemplatesPage(): JSX.Element {
         path="/templates"
       />
 
-      <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
+      <Box class="min-h-screen" style={{ background: "var(--color-bg)" }}>
         {/* ── Hero ───────────────────────────────────────────────── */}
-        <div class="relative overflow-hidden">
-          <div class="absolute inset-0" />
+        <Box class="relative overflow-hidden">
+          <Box class="absolute inset-0" />
 
-          <div class="relative mx-auto max-w-6xl px-6 pt-20 pb-12">
-            <div class="flex flex-col items-center text-center">
+          <Container size="full" padding="md" class="relative max-w-6xl pt-20 pb-12">
+            <Box class="flex flex-col items-center text-center">
               <Badge variant="info" size="sm">
                 {TEMPLATE_ITEMS.length} templates and growing
               </Badge>
@@ -474,15 +474,15 @@ export default function TemplatesPage(): JSX.Element {
               </p>
 
               {/* Search */}
-              <div class="mt-8 w-full max-w-xl">
-                <div
+              <Box class="mt-8 w-full max-w-xl">
+                <Box
                   class="relative rounded-2xl overflow-hidden"
                   style={{
                     background: "var(--color-bg-elevated)",
                     border: "1px solid var(--color-border)",
                   }}
                 >
-                  <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                  <Box class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                     <svg
                       class="h-5 w-5"
                       style={{ color: "var(--color-text-faint)" }}
@@ -497,7 +497,7 @@ export default function TemplatesPage(): JSX.Element {
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                       />
                     </svg>
-                  </div>
+                  </Box>
                   <input
                     type="text"
                     placeholder="Search templates..."
@@ -509,15 +509,15 @@ export default function TemplatesPage(): JSX.Element {
                     class="w-full bg-transparent py-4 pl-12 pr-4 outline-none text-sm"
                     style={{ color: "var(--color-text)" }}
                   />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                </Box>
+              </Box>
+            </Box>
+          </Container>
+        </Box>
 
         {/* ── Starter Projects ───────────────────────────────────── */}
-        <div class="mx-auto max-w-6xl px-6 pb-12">
-          <div class="mb-6 flex flex-col items-center text-center">
+        <Container size="full" padding="md" class="max-w-6xl pb-12">
+          <Box class="mb-6 flex flex-col items-center text-center">
             <Badge variant="success" size="sm">
               Starter projects
             </Badge>
@@ -534,10 +534,10 @@ export default function TemplatesPage(): JSX.Element {
               Pre-configured projects with framework, runtime, and build
               command wired up. One click and you are deploying.
             </p>
-          </div>
+          </Box>
 
           {/* Tag filter chips */}
-          <div class="mb-6 flex flex-wrap justify-center gap-2">
+          <Box class="mb-6 flex flex-wrap justify-center gap-2">
             <button
               type="button"
               class="rounded-full px-4 py-2 text-sm font-medium transition-all duration-200"
@@ -584,22 +584,22 @@ export default function TemplatesPage(): JSX.Element {
                 </button>
               )}
             </For>
-          </div>
+          </Box>
 
           <Show
             when={filteredStarters().length > 0}
             fallback={
-              <div class="flex flex-col items-center justify-center py-10 text-center">
+              <Box class="flex flex-col items-center justify-center py-10 text-center">
                 <p
                   class="text-sm"
                   style={{ color: "var(--color-text-muted)" }}
                 >
                   No starter projects match that filter.
                 </p>
-              </div>
+              </Box>
             }
           >
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Box class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <For each={filteredStarters()}>
                 {(template) => (
                   <StarterProjectCard
@@ -608,13 +608,13 @@ export default function TemplatesPage(): JSX.Element {
                   />
                 )}
               </For>
-            </div>
+            </Box>
           </Show>
-        </div>
+        </Container>
 
         {/* ── Filter Bar ─────────────────────────────────────────── */}
-        <div class="mx-auto max-w-6xl px-6 pb-8">
-          <div class="flex flex-wrap gap-2 justify-center">
+        <Container size="full" padding="md" class="max-w-6xl pb-8">
+          <Box class="flex flex-wrap gap-2 justify-center">
             <For each={FILTER_CATEGORIES}>
               {(cat) => (
                 <button
@@ -640,18 +640,18 @@ export default function TemplatesPage(): JSX.Element {
                 </button>
               )}
             </For>
-          </div>
-        </div>
+          </Box>
+        </Container>
 
         {/* ── Template Grid ──────────────────────────────────────── */}
-        <div class="mx-auto max-w-6xl px-6 pb-20">
+        <Container size="full" padding="md" class="max-w-6xl pb-20">
           <Show
             when={filtered().length > 0}
             fallback={
-              <div class="flex flex-col items-center justify-center py-20 text-center">
-                <div class="text-4xl mb-4 opacity-30">
+              <Box class="flex flex-col items-center justify-center py-20 text-center">
+                <Box class="text-4xl mb-4 opacity-30">
                   {"\uD83D\uDD0D"}
-                </div>
+                </Box>
                 <p class="text-lg" style={{ color: "var(--color-text-muted)" }}>
                   No templates match your search
                 </p>
@@ -669,10 +669,10 @@ export default function TemplatesPage(): JSX.Element {
                 >
                   Clear filters
                 </button>
-              </div>
+              </Box>
             }
           >
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Box class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <For each={filtered()}>
                 {(template) => (
                   <TemplateCard
@@ -681,11 +681,11 @@ export default function TemplatesPage(): JSX.Element {
                   />
                 )}
               </For>
-            </div>
+            </Box>
           </Show>
 
           {/* ── CTA Section ───────────────────────────────────────── */}
-          <div
+          <Box
             class="mt-20 rounded-2xl p-10 text-center"
             style={{
               background: "var(--color-bg-elevated)",
@@ -712,9 +712,9 @@ export default function TemplatesPage(): JSX.Element {
                 Open Composer
               </button>
             </A>
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Container>
+      </Box>
     </>
   );
 }

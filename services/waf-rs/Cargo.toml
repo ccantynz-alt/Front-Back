@@ -1,0 +1,48 @@
+[package]
+name = "waf-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Crontech WAF — Rust port. Aho-Corasick accelerated rule evaluator. API-compatible with services/waf."
+license = "MIT"
+
+[lib]
+name = "waf_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "waf-rs"
+path = "src/main.rs"
+
+[[bench]]
+name = "eval"
+harness = false
+
+[dependencies]
+axum = { version = "0.7", default-features = false, features = ["http1", "json", "tokio", "matched-path", "query"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "net"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+aho-corasick = "1.1"
+tower = { version = "0.5", default-features = false }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+parking_lot = "0.12"
+once_cell = "1"
+thiserror = "2"
+
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false, features = ["cargo_bench_support"] }
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+
+[profile.bench]
+opt-level = 3
+lto = "thin"
+debug = false

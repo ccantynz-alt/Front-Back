@@ -1,0 +1,22 @@
+{
+  "name": "@back-to-the-future/verify",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/server.ts",
+    "dev": "bun run --hot src/server.ts",
+    "build": "bun build src/server.ts --outdir dist --target bun",
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format . --write"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "@types/bun": "^1.2.0"
+  }
+}

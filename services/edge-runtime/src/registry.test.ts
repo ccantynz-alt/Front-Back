@@ -2,6 +2,7 @@
 // Pure data tests against the in-memory bundle registry.
 
 import { describe, expect, test } from "bun:test";
+import { DEFAULT_LIMITS } from "./limits";
 import { BundleIdSchema, BundleRegistry, BundleSchema, type RegisteredBundle } from "./registry";
 
 function makeBundle(overrides: Partial<RegisteredBundle> = {}): RegisteredBundle {
@@ -11,6 +12,9 @@ function makeBundle(overrides: Partial<RegisteredBundle> = {}): RegisteredBundle
     entrypoint: "worker.js",
     hash: "0".repeat(64),
     registeredAt: 1700000000_000,
+    env: {},
+    secrets: {},
+    limits: DEFAULT_LIMITS,
     ...overrides,
   };
 }

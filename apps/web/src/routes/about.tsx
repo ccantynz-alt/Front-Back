@@ -1,7 +1,7 @@
 import { For } from "solid-js";
 import type { JSX } from "solid-js";
 import { A } from "@solidjs/router";
-import { Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
+import { Box, Button, Card, Stack, Text, Badge } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
 
 // ── Data ──────────────────────────────────────────────────────────────
@@ -113,9 +113,9 @@ function PrincipleCard(props: { principle: Principle }): JSX.Element {
   return (
     <Card padding="lg">
       <Stack direction="vertical" gap="sm">
-        <div class="stat-value" style={{ "font-size": "1.75rem" }}>
+        <Box class="stat-value" style={{ "font-size": "1.75rem" }}>
           {props.principle.icon}
-        </div>
+        </Box>
         <Text variant="h4" weight="semibold">
           {props.principle.title}
         </Text>
@@ -155,16 +155,16 @@ export default function AboutPage(): JSX.Element {
         </Stack>
 
         {/* ── Stats ── */}
-        <div class="stats-grid">
+        <Box class="stats-grid">
           <For each={stats}>
             {(s) => (
-              <div class="stat-card">
-                <div class="stat-value">{s.value}</div>
-                <div class="stat-label">{s.label}</div>
-              </div>
+              <Box class="stat-card">
+                <Box class="stat-value">{s.value}</Box>
+                <Box class="stat-label">{s.label}</Box>
+              </Box>
             )}
           </For>
-        </div>
+        </Box>
 
         {/* ── Mission ── */}
         <Card padding="lg">
@@ -202,11 +202,11 @@ export default function AboutPage(): JSX.Element {
               Six principles that shape every decision we make.
             </Text>
           </Stack>
-          <div class="grid-3">
+          <Box class="grid-3">
             <For each={principles}>
               {(p) => <PrincipleCard principle={p} />}
             </For>
-          </div>
+          </Box>
         </Stack>
 
         {/* ── 22 Services ── */}
@@ -223,7 +223,7 @@ export default function AboutPage(): JSX.Element {
               application needs in a single, type-safe, AI-native runtime.
             </Text>
           </Stack>
-          <div class="grid-4">
+          <Box class="grid-4">
             <For each={unifiedServices}>
               {(svc) => (
                 <Card padding="md">
@@ -238,7 +238,7 @@ export default function AboutPage(): JSX.Element {
                 </Card>
               )}
             </For>
-          </div>
+          </Box>
         </Stack>
 
         {/* ── Three-Tier Compute ── */}
@@ -253,7 +253,7 @@ export default function AboutPage(): JSX.Element {
               computation runs based on model size, device capability, and latency
               requirements.
             </Text>
-            <div class="grid-3">
+            <Box class="grid-3">
               <Card padding="md">
                 <Stack direction="vertical" gap="sm">
                   <Badge variant="success" size="sm">$0 / token</Badge>
@@ -287,7 +287,7 @@ export default function AboutPage(): JSX.Element {
                   </Text>
                 </Stack>
               </Card>
-            </div>
+            </Box>
           </Stack>
         </Card>
 
@@ -302,7 +302,7 @@ export default function AboutPage(): JSX.Element {
               value.
             </Text>
           </Stack>
-          <div class="grid-3">
+          <Box class="grid-3">
             <For each={techStack}>
               {(layer) => (
                 <Card padding="md">
@@ -321,7 +321,7 @@ export default function AboutPage(): JSX.Element {
                 </Card>
               )}
             </For>
-          </div>
+          </Box>
         </Stack>
 
         {/* ── CTA ── */}

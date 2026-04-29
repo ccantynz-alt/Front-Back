@@ -1,0 +1,106 @@
+{
+  "version": "1.0.0",
+  "description": "Canonical registry of all Crontech services, their capabilities, and AI flywheel hooks",
+  "services": [
+    {
+      "name": "email",
+      "description": "Transactional and bulk email delivery",
+      "replaces": ["Mailgun", "SendGrid", "Postmark"],
+      "api_prefix": "/api/v1/email",
+      "docker_service": "crontech-email",
+      "health_check": "/api/v1/email/health",
+      "flywheel_signals": [
+        "delivery_rate_by_recipient_domain",
+        "bounce_patterns",
+        "spam_complaint_rate",
+        "open_rate_by_send_time",
+        "ip_reputation_score"
+      ],
+      "ai_optimizations": [
+        "optimal_send_time_per_recipient_domain",
+        "ip_warming_schedule",
+        "bounce_suppression_list_management",
+        "subject_line_deliverability_scoring"
+      ]
+    },
+    {
+      "name": "deploy",
+      "description": "App and container deployment with zero-downtime rolling updates",
+      "replaces": ["Render", "Railway", "Fly.io", "Vercel (backend)"],
+      "api_prefix": "/api/v1/deploy",
+      "docker_service": "crontech-deploy",
+      "health_check": "/api/v1/deploy/health",
+      "flywheel_signals": [
+        "deploy_duration_by_repo",
+        "rollback_frequency",
+        "health_check_pass_rate",
+        "container_restart_frequency",
+        "deploy_failure_patterns"
+      ],
+      "ai_optimizations": [
+        "predict_deploy_failure_risk_before_trigger",
+        "recommend_optimal_deploy_window",
+        "auto_rollback_threshold_tuning",
+        "resource_allocation_per_service"
+      ]
+    },
+    {
+      "name": "cron",
+      "description": "Distributed cron job scheduling with failure prediction and auto-retry",
+      "replaces": ["cron on bare metal", "GitHub Actions scheduled workflows", "Render cron"],
+      "api_prefix": "/api/v1/cron",
+      "docker_service": "crontech-scheduler",
+      "health_check": "/api/v1/cron/health",
+      "flywheel_signals": [
+        "job_success_rate_by_schedule",
+        "execution_duration_drift",
+        "queue_wait_time",
+        "retry_frequency_by_job",
+        "resource_usage_per_job"
+      ],
+      "ai_optimizations": [
+        "predict_job_failure_5min_before_execution",
+        "optimal_schedule_distribution_to_avoid_resource_contention",
+        "auto_adjust_retry_policy_based_on_failure_patterns",
+        "flag_jobs_with_execution_duration_drift"
+      ]
+    },
+    {
+      "name": "dns",
+      "description": "Authoritative DNS with AI-assisted record management",
+      "replaces": ["Cloudflare DNS", "AWS Route53"],
+      "api_prefix": "/api/v1/dns",
+      "docker_service": "crontech-dns",
+      "health_check": "/api/v1/dns/health",
+      "flywheel_signals": [
+        "query_volume_by_record",
+        "resolution_latency_by_region",
+        "ttl_cache_hit_rate",
+        "record_change_frequency"
+      ],
+      "ai_optimizations": [
+        "recommend_ttl_values_based_on_change_frequency",
+        "detect_misconfigured_records",
+        "flag_unusual_query_patterns"
+      ]
+    },
+    {
+      "name": "storage",
+      "description": "S3-compatible object storage on bare metal NVMe",
+      "replaces": ["Cloudflare R2", "Backblaze B2", "AWS S3"],
+      "api_prefix": "/api/v1/storage",
+      "docker_service": "crontech-storage",
+      "health_check": "/api/v1/storage/health",
+      "flywheel_signals": [
+        "read_write_throughput",
+        "storage_growth_rate_by_bucket",
+        "access_patterns_by_object_prefix"
+      ],
+      "ai_optimizations": [
+        "recommend_lifecycle_policies_based_on_access_patterns",
+        "predict_storage_capacity_needs",
+        "identify_stale_objects_for_archival"
+      ]
+    }
+  ]
+}

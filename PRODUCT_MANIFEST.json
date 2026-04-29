@@ -1,0 +1,82 @@
+{
+  "product": "Crontech",
+  "tagline": "The AI-native infrastructure platform. Self-hosted. Bare metal. Smarter than the cloud.",
+  "version": "1.0.0",
+  "type": "standalone-platform",
+  "category": "infrastructure",
+  "purpose": "Full-stack infrastructure platform replacing cloud vendor lock-in with self-hosted, AI-optimized bare metal services",
+  "standalone": true,
+  "replaces": [
+    "Mailgun",
+    "SendGrid",
+    "Postmark",
+    "Render",
+    "Railway",
+    "Fly.io",
+    "Vercel",
+    "Netlify",
+    "Cloudflare",
+    "AWS Route53",
+    "Backblaze B2"
+  ],
+  "services": {
+    "email": "Transactional and bulk email delivery with AI deliverability optimization",
+    "deploy": "App and container deployment with zero-downtime rolling updates",
+    "cron": "Distributed cron job scheduling with failure prediction and auto-retry",
+    "dns": "Authoritative DNS with AI-assisted record management",
+    "cdn": "Edge caching and static asset delivery",
+    "storage": "S3-compatible object storage on bare metal NVMe",
+    "tunnel": "Secure reverse tunnel and proxy (replaces Cloudflare Tunnel)",
+    "secrets": "Encrypted secrets and environment variable management"
+  },
+  "stack": {
+    "runtime": "Bun v1.x",
+    "monorepo": "Turborepo",
+    "database": "PostgreSQL 16 on bare metal NVMe",
+    "ci_cd": "Woodpecker CI (self-hosted)",
+    "proxy": "Caddy (automatic HTTPS)",
+    "containers": "Docker + Docker Compose",
+    "infra": "Vultr bare metal",
+    "os": "Ubuntu 24.04 LTS"
+  },
+  "integrates_with_via_api_only": {
+    "gatetest": {
+      "endpoint": "POST https://gate.crontech.io/api/gate/result",
+      "purpose": "Block deploys that fail test gates"
+    },
+    "gluecron": {
+      "endpoint": "Webhook from Gluecron push events",
+      "purpose": "Trigger deployments on repo push"
+    },
+    "alecrae": {
+      "relationship": "AlecRae.com is hosted ON Crontech",
+      "deploy_trigger": "Gluecron push -> Crontech deploy webhook"
+    }
+  },
+  "ai_flywheel": {
+    "enabled": true,
+    "models": {
+      "deep_analysis": "claude-sonnet-4-6",
+      "real_time_inference": "claude-haiku-4-5"
+    },
+    "learns_from": [
+      "job_execution_results",
+      "deployment_outcomes",
+      "email_delivery_stats",
+      "dns_resolution_times",
+      "error_rates_by_service",
+      "resource_utilization_per_node",
+      "cron_schedule_efficiency"
+    ],
+    "improves": [
+      "job_failure_prediction",
+      "email_deliverability_optimization",
+      "deployment_health_scoring",
+      "resource_capacity_planning",
+      "anomaly_detection",
+      "smart_cron_scheduling"
+    ],
+    "feedback_loop": "on_job_complete + on_deployment + hourly_metrics"
+  },
+  "competitive_position": "Bare metal + AI beats cloud: no per-seat pricing, no vendor lock-in, no black-box infrastructure. Every job Crontech runs makes the next one smarter. The AI learns your traffic patterns, predicts failures before they happen, and optimizes resource allocation continuously. Cloud vendors charge you to run dumb infrastructure. Crontech runs smart infrastructure you own."
+}

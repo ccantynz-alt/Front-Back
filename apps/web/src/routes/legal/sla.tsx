@@ -1,5 +1,5 @@
 import type { JSX } from "solid-js";
-import { Stack, Text, Card } from "@back-to-the-future/ui";
+import { Box, Stack, Text, Card } from "@back-to-the-future/ui";
 import { SEOHead } from "../../components/SEOHead";
 
 export default function SLAPage(): JSX.Element {
@@ -68,7 +68,7 @@ export default function SLAPage(): JSX.Element {
             <Text variant="body">
               Crontech commits to the following monthly uptime percentages for the Service:
             </Text>
-            <div class="overflow-x-auto">
+            <Box class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
                   <tr class="border-b border-[var(--color-border)]">
@@ -95,7 +95,7 @@ export default function SLAPage(): JSX.Element {
                   </tr>
                 </tbody>
               </table>
-            </div>
+            </Box>
             <Text variant="body">
               "Uptime" means the Service is accessible and materially functional for its intended
               purpose. Uptime is measured on a calendar month basis, beginning at 00:00:00 UTC on the
@@ -111,11 +111,11 @@ export default function SLAPage(): JSX.Element {
             <Text variant="body">
               Monthly Uptime Percentage is calculated using the following formula:
             </Text>
-            <div class="bg-[var(--color-bg-subtle)] rounded-lg p-4 font-mono text-sm text-[var(--color-text-secondary)]">
+            <Box class="bg-[var(--color-bg-subtle)] rounded-lg p-4 font-mono text-sm text-[var(--color-text-secondary)]">
               <Text variant="body" class="font-mono">
                 Monthly Uptime % = ((Total Minutes in Month - Downtime Minutes) / Total Minutes in Month) x 100
               </Text>
-            </div>
+            </Box>
             <Text variant="body">
               <Text weight="semibold" as="span">"Downtime"</Text> is defined as any period of five
               (5) or more consecutive minutes during which the Service is materially unavailable, as
@@ -192,7 +192,7 @@ export default function SLAPage(): JSX.Element {
               customers are eligible for service credits as described below. Service credits are the
               sole and exclusive remedy for any failure to meet the uptime commitment.
             </Text>
-            <div class="overflow-x-auto">
+            <Box class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
                   <tr class="border-b border-[var(--color-border)]">
@@ -215,7 +215,7 @@ export default function SLAPage(): JSX.Element {
                   </tr>
                 </tbody>
               </table>
-            </div>
+            </Box>
             <Text variant="body" weight="semibold">Service credit terms:</Text>
             <Stack direction="vertical" gap="xs" class="pl-4">
               <Text variant="body">
@@ -309,7 +309,7 @@ export default function SLAPage(): JSX.Element {
               acknowledgments do not count). Response times apply during business hours (Monday through
               Friday, 09:00-18:00 UTC) unless otherwise noted.
             </Text>
-            <div class="overflow-x-auto">
+            <Box class="overflow-x-auto">
               <table class="w-full text-sm text-left border-collapse">
                 <thead>
                   <tr class="border-b border-[var(--color-border)]">
@@ -340,7 +340,7 @@ export default function SLAPage(): JSX.Element {
                   </tr>
                 </tbody>
               </table>
-            </div>
+            </Box>
             <Text variant="body" weight="semibold">Severity definitions:</Text>
             <Stack direction="vertical" gap="xs" class="pl-4">
               <Text variant="body">
@@ -376,11 +376,11 @@ export default function SLAPage(): JSX.Element {
             <Text variant="body">
               Scheduled maintenance is performed during our preferred maintenance window:
             </Text>
-            <div class="bg-[var(--color-bg-subtle)] rounded-lg p-4">
+            <Box class="bg-[var(--color-bg-subtle)] rounded-lg p-4">
               <Text variant="body" weight="semibold" class="text-[var(--color-text)]">
                 Preferred Window: Sundays, 02:00 - 06:00 UTC
               </Text>
-            </div>
+            </Box>
             <Stack direction="vertical" gap="xs" class="pl-4">
               <Text variant="body">
                 <Text weight="semibold" as="span">Advance Notice:</Text> We will provide at least 48
