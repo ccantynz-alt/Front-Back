@@ -399,8 +399,10 @@ export function LaunchChecklist(): JSX.Element {
   });
 
   const visible = createMemo<boolean>(() => {
-    const user = auth.currentUser();
-    if (user?.role === "admin") return true;
+    // Opt-in only — even admins don't see this floating HUD by default.
+    // Add `?launch=1` to any URL or set localStorage to enable. Admin-
+    // auto-show was occluding ~25% of the dashboard chrome for admins
+    // who just wanted to use the product.
     return forced();
   });
 

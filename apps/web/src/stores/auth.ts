@@ -70,8 +70,21 @@ function removeStorageItem(key: string): void {
 const AuthContext = createContext<AuthState>();
 
 export function AuthProvider(props: { children: JSX.Element }): JSX.Element {
+  // Only trust the cached user if a session token ALSO exists. Without
+  // this guard, an orphaned `btf_user_cache` entry (left over from a
+  // previous logged-in session whose token has since been purged or
+  // expired) makes `isAuthenticated()` return true, which renders the
+  // authenticated sidebar / dashboard nav on the public homepage even
+  // though the user is actually logged out. The Sign-In button vs.
+  // Sidebar inconsistency is the visible symptom of this drift.
   const cachedUser = getStorageItem(USER_CACHE_KEY);
-  const initialUser: User | null = cachedUser ? JSON.parse(cachedUser) : null;
+  const cachedToken = getStorageItem(SESSION_TOKEN_KEY);
+  const initialUser: User | null =
+    cachedUser && cachedToken ? JSON.parse(cachedUser) : null;
+  if (cachedUser && !cachedToken) {
+    // Clean up the orphaned cache so future loads converge cleanly.
+    removeStorageItem(USER_CACHE_KEY);
+  }
 
   const [currentUser, setCurrentUser] = createSignal<User | null>(initialUser);
   const [isLoading, setIsLoading] = createSignal<boolean>(false);
