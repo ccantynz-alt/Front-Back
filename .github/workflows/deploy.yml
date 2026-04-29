@@ -26,9 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6  # v2
         with:
           bun-version: latest
 
@@ -78,7 +78,7 @@ jobs:
           echo "Artifact: $(du -sh crontech-dist.tar.gz | cut -f1)"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: dist-${{ github.sha }}
           path: crontech-dist.tar.gz
@@ -93,16 +93,16 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: dist-${{ github.sha }}
           path: .
 
       - name: Ship artifact to server
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634  # v0.1.7
         with:
           host: ${{ secrets.VULTR_SERVER_IP }}
           username: root
@@ -111,7 +111,7 @@ jobs:
           target: "/tmp/"
 
       - name: Deploy via SSH (artifact swap — no rebuild on server)
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
         env:
           # ── Managed env vars (pulled from GitHub Actions secrets) ─────
           # Add a new env var: paste it under repo Settings → Secrets and
