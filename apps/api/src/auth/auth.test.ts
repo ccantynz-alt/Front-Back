@@ -45,19 +45,26 @@ describe("Session Management", () => {
   });
 
   test("createSession creates a session in the database", async () => {
-    const token = await createSession(testUserId, db);
+    const fixedNow = 1_700_000_000_000;
+    const realDateNow = Date.now;
+    Date.now = () => fixedNow;
 
-    const result = await db.select().from(sessions).where(eq(sessions.token, token)).limit(1);
+    try {
+      const token = await createSession(testUserId, db);
 
-    expect(result.length).toBe(1);
-    const session = result.at(0);
-    expect(session).toBeDefined();
-    if (!session) return;
-    expect(session.userId).toBe(testUserId);
-    expect(session.token).toBe(token);
-    expect(session.expiresAt).toBeInstanceOf(Date);
-    const now = session.expiresAt.getTime();
-    expect(now).toBeGreaterThan(Date.now());
+      const result = await db.select().from(sessions).where(eq(sessions.token, token)).limit(1);
+
+      expect(result.length).toBe(1);
+      const session = result.at(0);
+      expect(session).toBeDefined();
+      if (!session) return;
+      expect(session.userId).toBe(testUserId);
+      expect(session.token).toBe(token);
+      expect(session.expiresAt).toBeInstanceOf(Date);
+      expect(session.expiresAt.getTime()).toBeGreaterThan(fixedNow);
+    } finally {
+      Date.now = realDateNow;
+    }
   });
 
   test("validateSession returns userId for valid session", async () => {
@@ -72,14 +79,22 @@ describe("Session Management", () => {
   });
 
   test("validateSession returns null for expired session", async () => {
-    const token = await createSession(testUserId, db);
+    const fixedNow = 1_700_000_000_000;
+    const realDateNow = Date.now;
+    Date.now = () => fixedNow;
 
-    // Manually expire the session by setting expiresAt to the past
-    const pastDate = new Date(Date.now() - 1000);
-    await db.update(sessions).set({ expiresAt: pastDate }).where(eq(sessions.token, token));
+    try {
+      const token = await createSession(testUserId, db);
 
-    const userId = await validateSession(token, db);
-    expect(userId).toBeNull();
+      // Manually expire the session by setting expiresAt to the past
+      const pastDate = new Date(fixedNow - 1000);
+      await db.update(sessions).set({ expiresAt: pastDate }).where(eq(sessions.token, token));
+
+      const userId = await validateSession(token, db);
+      expect(userId).toBeNull();
+    } finally {
+      Date.now = realDateNow;
+    }
   });
 
   test("deleteSession removes the session from DB", async () => {
@@ -190,14 +205,22 @@ describe("Protected Procedure Access", () => {
   });
 
   test("expired session denies access", async () => {
-    const token = await createSession(testUserId, db);
+    const fixedNow = 1_700_000_000_000;
+    const realDateNow = Date.now;
+    Date.now = () => fixedNow;
 
-    // Expire the session
-    const pastDate = new Date(Date.now() - 1000);
-    await db.update(sessions).set({ expiresAt: pastDate }).where(eq(sessions.token, token));
+    try {
+      const token = await createSession(testUserId, db);
 
-    const userId = await validateSession(token, db);
-    expect(userId).toBeNull();
+      // Expire the session
+      const pastDate = new Date(fixedNow - 1000);
+      await db.update(sessions).set({ expiresAt: pastDate }).where(eq(sessions.token, token));
+
+      const userId = await validateSession(token, db);
+      expect(userId).toBeNull();
+    } finally {
+      Date.now = realDateNow;
+    }
   });
 
   test("revoked session (logout) denies access", async () => {
