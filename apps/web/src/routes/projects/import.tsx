@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { createSignal, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { Button, Input, Badge, Spinner } from "@back-to-the-future/ui";
+import { Badge, Box, Button, Container, Input, Spinner, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { trpc } from "../../lib/trpc";
 
@@ -387,17 +387,17 @@ export default function ImportProject(): JSX.Element {
     <ProtectedRoute>
       <Title>Import Project | Crontech</Title>
 
-      <div class="min-h-screen bg-[var(--color-bg)] px-4 py-12">
-        <div class="mx-auto max-w-3xl">
+      <Box class="min-h-screen bg-[var(--color-bg)] px-4 py-12">
+        <Container size="lg" padding="none">
           {/* Header */}
-          <div class="mb-10 text-center">
-            <h1 class="text-4xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
+          <Box class="mb-10 text-center">
+            <Text variant="h1" weight="bold" class="text-4xl tracking-tight" style={{ color: "var(--color-text)" }}>
               Import Project
-            </h1>
-            <p class="mt-3 text-base" style={{ color: "var(--color-text-muted)" }}>
+            </Text>
+            <Text variant="body" class="mt-3 text-base" style={{ color: "var(--color-text-muted)" }}>
               Migrate your project to Crontech in one click. We handle everything.
-            </p>
-          </div>
+            </Text>
+          </Box>
 
           {/* Step Indicator */}
           <div class="mb-10 flex items-center justify-center gap-2">
@@ -475,9 +475,9 @@ export default function ImportProject(): JSX.Element {
                   "linear-gradient(135deg, var(--color-bg-subtle) 0%, var(--color-bg) 100%)",
               }}
             >
-              <h2 class="mb-2 text-xl font-semibold" style={{ color: "var(--color-text)" }}>
+              <Text variant="h2" weight="semibold" class="mb-2 text-xl" style={{ color: "var(--color-text)" }}>
                 Where is your project hosted?
-              </h2>
+              </Text>
               <p class="mb-8 text-sm" style={{ color: "var(--color-text-muted)" }}>
                 Select the platform you want to import from.
               </p>
@@ -505,9 +505,9 @@ export default function ImportProject(): JSX.Element {
                   "linear-gradient(135deg, var(--color-bg-subtle) 0%, var(--color-bg) 100%)",
               }}
             >
-              <h2 class="mb-2 text-xl font-semibold" style={{ color: "var(--color-text)" }}>
+              <Text variant="h2" weight="semibold" class="mb-2 text-xl" style={{ color: "var(--color-text)" }}>
                 Connect to {getPlatformMeta()?.name}
-              </h2>
+              </Text>
               <p class="mb-6 text-sm" style={{ color: "var(--color-text-muted)" }}>
                 Enter your API token. We use it only for this import and never store it.
               </p>
@@ -572,9 +572,9 @@ export default function ImportProject(): JSX.Element {
                   "linear-gradient(135deg, var(--color-bg-subtle) 0%, var(--color-bg) 100%)",
               }}
             >
-              <h2 class="mb-2 text-xl font-semibold" style={{ color: "var(--color-text)" }}>
+              <Text variant="h2" weight="semibold" class="mb-2 text-xl" style={{ color: "var(--color-text)" }}>
                 Select a project to import
-              </h2>
+              </Text>
               <p class="mb-6 text-sm" style={{ color: "var(--color-text-muted)" }}>
                 Found {externalProjects().length} project
                 {externalProjects().length !== 1 ? "s" : ""} on{" "}
@@ -645,9 +645,9 @@ export default function ImportProject(): JSX.Element {
                   "linear-gradient(135deg, var(--color-bg-subtle) 0%, var(--color-bg) 100%)",
               }}
             >
-              <h2 class="mb-2 text-xl font-semibold" style={{ color: "var(--color-text)" }}>
+              <Text variant="h2" weight="semibold" class="mb-2 text-xl" style={{ color: "var(--color-text)" }}>
                 Review import
-              </h2>
+              </Text>
               <p class="mb-6 text-sm" style={{ color: "var(--color-text-muted)" }}>
                 Confirm the details below before importing.
               </p>
@@ -710,9 +710,9 @@ export default function ImportProject(): JSX.Element {
                   "linear-gradient(135deg, var(--color-bg-subtle) 0%, var(--color-bg) 100%)",
               }}
             >
-              <h2 class="mb-2 text-xl font-semibold" style={{ color: "var(--color-text)" }}>
+              <Text variant="h2" weight="semibold" class="mb-2 text-xl" style={{ color: "var(--color-text)" }}>
                 Importing {selectedProject()?.name}...
-              </h2>
+              </Text>
               <p class="mb-6 text-sm" style={{ color: "var(--color-text-muted)" }}>
                 Sit back. We are migrating everything for you.
               </p>
@@ -763,9 +763,9 @@ export default function ImportProject(): JSX.Element {
                 {"✓"}
               </div>
 
-              <h2 class="mb-2 text-2xl font-bold" style={{ color: "var(--color-text)" }}>
+              <Text variant="h2" weight="bold" class="mb-2 text-2xl" style={{ color: "var(--color-text)" }}>
                 Import Complete
-              </h2>
+              </Text>
               <p class="mb-8 text-base" style={{ color: "var(--color-text-muted)" }}>
                 <strong style={{ color: "var(--color-text)" }}>{importResult()?.name}</strong> has
                 been imported to Crontech.
@@ -801,8 +801,8 @@ export default function ImportProject(): JSX.Element {
               </div>
             </div>
           </Show>
-        </div>
-      </div>
+        </Container>
+      </Box>
     </ProtectedRoute>
   );
 }

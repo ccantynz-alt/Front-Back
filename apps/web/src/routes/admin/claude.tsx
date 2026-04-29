@@ -28,6 +28,7 @@ import {
   type JSX,
 } from "solid-js";
 import { A } from "@solidjs/router";
+import { Box, Stack, Text } from "@back-to-the-future/ui";
 import { AdminRoute } from "../../components/AdminRoute";
 import { trpc } from "../../lib/trpc";
 
@@ -509,18 +510,19 @@ function AdminClaudeConsole(): JSX.Element {
     formatMonthlySpend(usage()?.monthCostDollars);
 
   return (
-    <div class="flex h-screen flex-col" style={{ background: "var(--color-bg)" }}>
+    <Box class="flex h-screen flex-col" style={{ background: "var(--color-bg)" }}>
       <Title>Claude Console - Crontech Admin</Title>
 
       {/* ── Header row ─────────────────────────────────────────── */}
-      <div
+      <Box
         class="flex items-center justify-between px-6 py-4"
         style={{
           background: "var(--color-bg-subtle)",
           "border-bottom": "1px solid var(--color-border)",
         }}
       >
-        <nav
+        <Box
+          as="nav"
           aria-label="Breadcrumb"
           class="flex items-center gap-2 text-xs"
           style={{ color: "var(--color-text-faint)" }}
@@ -532,14 +534,16 @@ function AdminClaudeConsole(): JSX.Element {
           >
             Admin
           </A>
-          <span aria-hidden="true">›</span>
-          <span class="font-semibold" style={{ color: "var(--color-text)" }}>
+          <Text as="span" variant="caption" aria-hidden="true">›</Text>
+          <Text as="span" variant="caption" class="font-semibold" style={{ color: "var(--color-text)" }}>
             Claude Console
-          </span>
-        </nav>
+          </Text>
+        </Box>
 
-        <div class="flex items-center gap-3">
-          <span
+        <Stack direction="horizontal" gap="sm" align="center">
+          <Text
+            as="span"
+            variant="caption"
             aria-label="Monthly Claude spend"
             class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
             style={{
@@ -548,16 +552,18 @@ function AdminClaudeConsole(): JSX.Element {
               color: "var(--color-text-secondary)",
             }}
           >
-            <span
+            <Text
+              as="span"
+              variant="caption"
               class="text-[10px] font-semibold uppercase tracking-widest"
               style={{ color: "var(--color-text-faint)" }}
             >
               Month
-            </span>
-            <span style={{ color: "var(--color-primary-light)" }}>
+            </Text>
+            <Text as="span" variant="caption" style={{ color: "var(--color-primary-light)" }}>
               {monthSpendLabel()}
-            </span>
-          </span>
+            </Text>
+          </Text>
           <A
             href="/admin/claude/settings"
             class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all"
@@ -569,11 +575,11 @@ function AdminClaudeConsole(): JSX.Element {
           >
             Settings
           </A>
-        </div>
-      </div>
+        </Stack>
+      </Box>
 
       {/* ── Two-column body ─────────────────────────────────────── */}
-      <div class="flex flex-1 overflow-hidden">
+      <Box class="flex flex-1 overflow-hidden">
         {/* Left sidebar */}
         <aside
           class="flex w-72 shrink-0 flex-col"
@@ -813,7 +819,7 @@ function AdminClaudeConsole(): JSX.Element {
             </div>
           </div>
         </section>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

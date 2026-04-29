@@ -1,7 +1,7 @@
 import type { JSX } from "solid-js";
 import { Show, For, Suspense, createSignal, createEffect, lazy, onCleanup } from "solid-js";
 import { A, useLocation } from "@solidjs/router";
-import { Button } from "@back-to-the-future/ui";
+import { Box, Button, Stack, Text } from "@back-to-the-future/ui";
 import { useAuth, useTheme } from "../stores";
 import { UndoToastContainer } from "./UndoToast";
 
@@ -23,15 +23,15 @@ interface SidebarNavItem {
 }
 
 const sidebarNavItems: readonly SidebarNavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "\u25A0" },
-  { href: "/builder", label: "Composer", icon: "\u26A1" },
+  { href: "/dashboard", label: "Dashboard", icon: "■" },
+  { href: "/builder", label: "Composer", icon: "⚡" },
   { href: "/chat", label: "Chat", icon: "\u{1F4AC}" },
   { href: "/projects", label: "Projects", icon: "\u{1F4C1}" },
   { href: "/templates", label: "Templates", icon: "\u{1F4CB}" },
   { href: "/repos", label: "Repos", icon: "\u{1F5C2}" },
-  { href: "/ops", label: "Ops Theatre", icon: "\u25B6" },
-  { href: "/flywheel", label: "Flywheel", icon: "\u27F3" },
-  { href: "/settings", label: "Settings", icon: "\u2699" },
+  { href: "/ops", label: "Ops Theatre", icon: "▶" },
+  { href: "/flywheel", label: "Flywheel", icon: "⟳" },
+  { href: "/settings", label: "Settings", icon: "⚙" },
   { href: "/admin", label: "Admin", icon: "\u{1F512}" },
 ] as const;
 
@@ -108,7 +108,7 @@ function UserMenu(): JSX.Element {
   };
 
   return (
-    <div class="relative" ref={menuRef}>
+    <Box class="relative" ref={menuRef}>
       <button
         class="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer transition-opacity duration-150 hover:opacity-80 active:scale-95 text-sm font-semibold"
         style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
@@ -120,7 +120,7 @@ function UserMenu(): JSX.Element {
       </button>
 
       <Show when={menuOpen()}>
-        <div
+        <Box
           class="absolute right-0 top-full mt-2 w-64 rounded-lg overflow-hidden z-50"
           style={{
             border: "1px solid var(--color-border)",
@@ -129,32 +129,36 @@ function UserMenu(): JSX.Element {
             animation: "dropdown-enter 0.15s ease",
           }}
         >
-          <div
+          <Box
             class="px-4 py-3"
             style={{ "border-bottom": "1px solid var(--color-border)" }}
           >
-            <div class="flex items-center gap-3">
-              <span
+            <Stack direction="horizontal" gap="sm" align="center">
+              <Text
+                as="span"
                 class="flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold shrink-0"
                 style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
               >
                 {userInitial()}
-              </span>
-              <div class="min-w-0 flex-1">
-                <p
+              </Text>
+              <Box class="min-w-0 flex-1">
+                <Text
+                  variant="body"
                   class="text-sm font-semibold truncate"
                   style={{ color: "var(--color-text)" }}
                 >
                   {auth.currentUser()?.displayName}
-                </p>
-                <p
+                </Text>
+                <Text
+                  variant="body"
                   class="text-xs truncate mt-0.5"
                   style={{ color: "var(--color-text-muted)" }}
                 >
                   {auth.currentUser()?.email}
-                </p>
+                </Text>
                 <Show when={auth.currentUser()?.role}>
-                  <span
+                  <Text
+                    as="span"
                     class="inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full"
                     style={{
                       background: roleBadge().bg,
@@ -162,13 +166,13 @@ function UserMenu(): JSX.Element {
                     }}
                   >
                     {auth.currentUser()?.role}
-                  </span>
+                  </Text>
                 </Show>
-              </div>
-            </div>
-          </div>
+              </Box>
+            </Stack>
+          </Box>
 
-          <div class="py-1 px-1">
+          <Box class="py-1 px-1">
             <A
               href="/dashboard"
               class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-colors duration-150 cursor-pointer"
@@ -183,8 +187,8 @@ function UserMenu(): JSX.Element {
               }}
               onClick={() => setMenuOpen(false)}
             >
-              <span class="text-sm">{"\u25A0"}</span>
-              <span class="font-medium">Dashboard</span>
+              <Text as="span" class="text-sm">{"■"}</Text>
+              <Text as="span" class="font-medium">Dashboard</Text>
             </A>
             <A
               href="/settings"
@@ -200,12 +204,12 @@ function UserMenu(): JSX.Element {
               }}
               onClick={() => setMenuOpen(false)}
             >
-              <span class="text-sm">{"\u2699"}</span>
-              <span class="font-medium">Settings</span>
+              <Text as="span" class="text-sm">{"⚙"}</Text>
+              <Text as="span" class="font-medium">Settings</Text>
             </A>
-          </div>
+          </Box>
 
-          <div class="px-1 py-1" style={{ "border-top": "1px solid var(--color-border)" }}>
+          <Box class="px-1 py-1" style={{ "border-top": "1px solid var(--color-border)" }}>
             <button
               class="flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-md transition-colors duration-150 cursor-pointer"
               style={{ color: "var(--color-danger)" }}
@@ -221,13 +225,13 @@ function UserMenu(): JSX.Element {
               }}
               type="button"
             >
-              <span class="text-sm">{"\u{279C}"}</span>
-              <span class="font-medium">Sign Out</span>
+              <Text as="span" class="text-sm">{"\u{279C}"}</Text>
+              <Text as="span" class="font-medium">Sign Out</Text>
             </button>
-          </div>
-        </div>
+          </Box>
+        </Box>
       </Show>
-    </div>
+    </Box>
   );
 }
 
@@ -243,11 +247,11 @@ function ThemeToggle(): JSX.Element {
       aria-label={isDark() ? "Switch to light mode" : "Switch to dark mode"}
       type="button"
     >
-      <span class="theme-icon">
-        <Show when={isDark()} fallback={<span>{"\u263E"}</span>}>
-          <span>{"\u2600"}</span>
+      <Text as="span" class="theme-icon">
+        <Show when={isDark()} fallback={<Text as="span">{"☾"}</Text>}>
+          <Text as="span">{"☀"}</Text>
         </Show>
-      </span>
+      </Text>
     </button>
   );
 }
@@ -264,7 +268,8 @@ function Sidebar(props: SidebarProps): JSX.Element {
   const isActive = (href: string): boolean => location.pathname === href;
 
   return (
-    <aside
+    <Box
+      as="aside"
       class="flex flex-col shrink-0 transition-all duration-200 ease-out overflow-y-auto overflow-x-hidden"
       style={{
         width: props.collapsed ? "52px" : "220px",
@@ -272,7 +277,7 @@ function Sidebar(props: SidebarProps): JSX.Element {
         background: "var(--color-bg-subtle)",
       }}
     >
-      <div
+      <Box
         class="flex items-center h-11"
         style={{
           "justify-content": props.collapsed ? "center" : "flex-end",
@@ -298,11 +303,11 @@ function Sidebar(props: SidebarProps): JSX.Element {
           type="button"
           aria-label={props.collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {props.collapsed ? "\u25B6" : "\u25C0"}
+          {props.collapsed ? "▶" : "◀"}
         </button>
-      </div>
+      </Box>
 
-      <nav class="flex-1 py-2 px-1.5">
+      <Box as="nav" class="flex-1 py-2 px-1.5">
         <For each={sidebarNavItems}>
           {(item) => (
             <A
@@ -329,13 +334,15 @@ function Sidebar(props: SidebarProps): JSX.Element {
               title={props.collapsed ? item.label : undefined}
             >
               <Show when={isActive(item.href)}>
-                <span
+                <Text
+                  as="span"
                   class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full"
                   style={{ background: "var(--color-primary)" }}
                 />
               </Show>
 
-              <span
+              <Text
+                as="span"
                 class="text-sm shrink-0"
                 style={{
                   width: props.collapsed ? "auto" : "1.25rem",
@@ -343,32 +350,33 @@ function Sidebar(props: SidebarProps): JSX.Element {
                 }}
               >
                 {item.icon}
-              </span>
+              </Text>
 
               <Show when={!props.collapsed}>
-                <span class="text-sm font-medium truncate">
+                <Text as="span" class="text-sm font-medium truncate">
                   {item.label}
-                </span>
+                </Text>
               </Show>
             </A>
           )}
         </For>
-      </nav>
+      </Box>
 
       <Show when={!props.collapsed}>
-        <div
+        <Box
           class="px-3 py-2.5"
           style={{ "border-top": "1px solid var(--color-border)" }}
         >
-          <p
+          <Text
+            variant="body"
             class="text-[10px] uppercase tracking-[0.15em] font-medium"
             style={{ color: "var(--color-text-faint)" }}
           >
             Crontech
-          </p>
-        </div>
+          </Text>
+        </Box>
       </Show>
-    </aside>
+    </Box>
   );
 }
 
@@ -383,7 +391,7 @@ export function Layout(props: LayoutProps): JSX.Element {
   const [sidebarCollapsed, setSidebarCollapsed] = createSignal(false);
 
   return (
-    <div
+    <Box
       class="flex flex-col min-h-screen"
       style={{
         background: "var(--color-bg)",
@@ -391,29 +399,31 @@ export function Layout(props: LayoutProps): JSX.Element {
       }}
     >
       {/* ── Navbar ──────────────────────────────────────────────── */}
-      <header
+      <Box
+        as="header"
         class="sticky top-0 z-50"
         style={{
           background: "var(--color-bg-elevated)",
           "border-bottom": "1px solid var(--color-border)",
         }}
       >
-        <div class="flex items-center justify-between h-14 px-4 md:px-6">
-          <div class="flex items-center gap-8">
+        <Stack direction="horizontal" gap="md" align="center" justify="between" class="h-14 px-4 md:px-6">
+          <Stack direction="horizontal" gap="lg" align="center">
             <A
               href="/"
               class="flex items-center gap-2 cursor-pointer"
             >
-              <span class="text-lg">{"\u26A1"}</span>
-              <span
+              <Text as="span" class="text-lg">{"⚡"}</Text>
+              <Text
+                as="span"
                 class="text-lg font-bold tracking-tight"
                 style={{ color: "var(--color-text)" }}
               >
                 Crontech
-              </span>
+              </Text>
             </A>
 
-            <nav class="hidden md:flex items-center gap-0.5">
+            <Box as="nav" class="hidden md:flex items-center gap-0.5">
               <NavLink href="/" label="Home" />
               <Show when={auth.isAuthenticated()}>
                 <NavLink href="/dashboard" label="Dashboard" />
@@ -422,10 +432,10 @@ export function Layout(props: LayoutProps): JSX.Element {
                 <NavLink href="/projects" label="Projects" />
               </Show>
               <NavLink href="/pricing" label="Pricing" />
-            </nav>
-          </div>
+            </Box>
+          </Stack>
 
-          <div class="flex items-center gap-2">
+          <Stack direction="horizontal" gap="sm" align="center">
             <ThemeToggle />
             <Show when={auth.isAuthenticated()}>
               <Suspense>
@@ -444,50 +454,53 @@ export function Layout(props: LayoutProps): JSX.Element {
             >
               <UserMenu />
             </Show>
-          </div>
-        </div>
-      </header>
+          </Stack>
+        </Stack>
+      </Box>
 
       {/* ── Body (sidebar + content) ──────────────────────────── */}
-      <div class="flex flex-1 min-w-0">
+      <Box class="flex flex-1 min-w-0">
         <Show when={auth.isAuthenticated()}>
           <Sidebar
             collapsed={sidebarCollapsed()}
             onToggle={() => setSidebarCollapsed(!sidebarCollapsed())}
           />
         </Show>
-        <main class="flex-1 min-w-0 w-full">
+        <Box as="main" class="flex-1 min-w-0 w-full">
           {props.children}
-        </main>
-      </div>
+        </Box>
+      </Box>
 
       {/* ── Footer ────────────────────────────────────────────── */}
-      <footer
+      <Box
+        as="footer"
         style={{
           "border-top": "1px solid var(--color-border)",
           background: "var(--color-bg-elevated)",
         }}
       >
-        <div class="flex flex-col md:flex-row items-center justify-between gap-3 px-6 py-4">
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-1.5">
-              <span class="text-sm">{"\u26A1"}</span>
-              <span
+        <Box class="flex flex-col md:flex-row items-center justify-between gap-3 px-6 py-4">
+          <Stack direction="horizontal" gap="md" align="center">
+            <Stack direction="horizontal" gap="xs" align="center">
+              <Text as="span" class="text-sm">{"⚡"}</Text>
+              <Text
+                as="span"
                 class="text-sm font-bold tracking-tight"
                 style={{ color: "var(--color-text)" }}
               >
                 Crontech
-              </span>
-            </div>
-            <span
+              </Text>
+            </Stack>
+            <Text
+              as="span"
               class="hidden md:inline-block text-xs"
               style={{ color: "var(--color-text-faint)" }}
             >
-              {"\u00A9"} {new Date().getFullYear()} Crontech. All rights reserved.
-            </span>
-          </div>
+              {"©"} {new Date().getFullYear()} Crontech. All rights reserved.
+            </Text>
+          </Stack>
 
-          <nav class="flex items-center gap-1">
+          <Box as="nav" class="flex items-center gap-1">
             <For each={[
               { href: "/legal/terms", label: "Terms" },
               { href: "/legal/privacy", label: "Privacy" },
@@ -513,12 +526,12 @@ export function Layout(props: LayoutProps): JSX.Element {
                 </A>
               )}
             </For>
-          </nav>
-        </div>
-      </footer>
+          </Box>
+        </Box>
+      </Box>
 
       {/* Global undo toast stack — driven by useOptimisticMutation. */}
       <UndoToastContainer />
-    </div>
+    </Box>
   );
 }

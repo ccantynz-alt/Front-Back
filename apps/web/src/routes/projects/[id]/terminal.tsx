@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A, useParams, useNavigate } from "@solidjs/router";
 import { Show, createSignal, onMount } from "solid-js";
 import type { JSX } from "solid-js";
-import { Button, Badge } from "@back-to-the-future/ui";
+import { Badge, Box, Button, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../../components/ProtectedRoute";
 import { Terminal } from "../../../components/Terminal";
 import { SEOHead } from "../../../components/SEOHead";
@@ -86,39 +86,40 @@ function TerminalPage(): JSX.Element {
       />
       <Title>{`Terminal - ${project().name} | Crontech`}</Title>
 
-      <div class="flex flex-col h-screen" style={{ background: "var(--color-bg)" }}>
+      <Stack direction="vertical" gap="none" class="h-screen" style={{ background: "var(--color-bg)" }}>
         {/* Header */}
-        <header
+        <Box
+          as="header"
           class="flex items-center justify-between px-4 py-2.5 border-b border-[var(--color-border)] shrink-0"
           style={{ background: "var(--color-bg-subtle)" }}
         >
           {/* Left section */}
-          <div class="flex items-center gap-3">
+          <Stack direction="horizontal" gap="sm" align="center">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate(-1)}
               aria-label="Go back"
             >
-              <span class="mr-1">&larr;</span>
+              <Text as="span" class="mr-1">&larr;</Text>
               Back
             </Button>
 
-            <div class="h-5 w-px bg-[var(--color-border)]" />
+            <Box class="h-5 w-px bg-[var(--color-border)]" />
 
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{project().name}</span>
+            <Stack direction="horizontal" gap="xs" align="center">
+              <Text as="span" weight="semibold" class="text-sm" style={{ color: "var(--color-text)" }}>{project().name}</Text>
               <Show when={project().framework}>
                 <Badge variant="default">{project().framework}</Badge>
               </Show>
               <Show when={project().runtime}>
                 <Badge variant="default">{project().runtime}</Badge>
               </Show>
-            </div>
-          </div>
+            </Stack>
+          </Stack>
 
           {/* Right section */}
-          <div class="flex items-center gap-2">
+          <Stack direction="horizontal" gap="xs" align="center">
             <Button
               variant="ghost"
               size="sm"
@@ -141,14 +142,14 @@ function TerminalPage(): JSX.Element {
                 Dashboard
               </Button>
             </A>
-          </div>
-        </header>
+          </Stack>
+        </Box>
 
         {/* Terminal fills remaining space */}
-        <div class="flex-1 min-h-0">
+        <Box class="flex-1 min-h-0">
           <Terminal projectId={projectId()} />
-        </div>
-      </div>
+        </Box>
+      </Stack>
     </ProtectedRoute>
   );
 }

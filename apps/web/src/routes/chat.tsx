@@ -1,6 +1,7 @@
 import { Title } from "@solidjs/meta";
 import { createSignal, For, Show, onMount } from "solid-js";
 import type { JSX } from "solid-js";
+import { Box, Stack, Text } from "@back-to-the-future/ui";
 import { trpc } from "../lib/trpc";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -417,31 +418,31 @@ export default function ChatPage(): JSX.Element {
   };
 
   return (
-    <div class="flex h-screen" style={{ background: "var(--color-bg)" }}>
+    <Box class="flex h-screen" style={{ background: "var(--color-bg)" }}>
       <Title>Chat - Crontech</Title>
 
       {/* ── Left Sidebar: Conversations ─────────────────────────── */}
-      <div
+      <Box
         class="flex w-72 shrink-0 flex-col"
         style={{ background: "var(--color-bg-subtle)", "border-right": "1px solid var(--color-border)" }}
       >
         {/* Header */}
-        <div class="px-5 py-4" style={{ "border-bottom": "1px solid var(--color-border)" }}>
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div
+        <Box class="px-5 py-4" style={{ "border-bottom": "1px solid var(--color-border)" }}>
+          <Stack direction="horizontal" justify="between" align="center">
+            <Stack direction="horizontal" gap="sm" align="center">
+              <Box
                 class="flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ background: "var(--color-bg-elevated)" }}
               >
-                <span class="text-lg" style={{ color: "var(--color-primary-light)" }}>&#9889;</span>
-              </div>
-              <div>
-                <h1 class="text-base font-bold" style={{ color: "var(--color-text)" }}>Claude Chat</h1>
-                <p class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>Anthropic API Direct</p>
-              </div>
-            </div>
-          </div>
-        </div>
+                <Text as="span" variant="caption" class="text-lg" style={{ color: "var(--color-primary-light)" }}>&#9889;</Text>
+              </Box>
+              <Box>
+                <Text variant="h1" class="text-base font-bold" style={{ color: "var(--color-text)" }}>Claude Chat</Text>
+                <Text variant="body" class="text-[10px]" style={{ color: "var(--color-text-faint)" }}>Anthropic API Direct</Text>
+              </Box>
+            </Stack>
+          </Stack>
+        </Box>
 
         {/* New Chat Button */}
         <div class="px-4 py-3" style={{ "border-bottom": "1px solid var(--color-border)" }}>
@@ -499,7 +500,7 @@ export default function ChatPage(): JSX.Element {
             </div>
           </div>
         </div>
-      </div>
+      </Box>
 
       {/* ── Center: Chat Interface ────────────────────────────── */}
       <div class="flex flex-1 flex-col overflow-hidden">
@@ -715,6 +716,6 @@ export default function ChatPage(): JSX.Element {
           </div>
         </div>
       </div>
-    </div>
+    </Box>
   );
 }

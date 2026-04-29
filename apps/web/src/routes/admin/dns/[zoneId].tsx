@@ -21,6 +21,7 @@ import {
   type JSX,
 } from "solid-js";
 import { A, useParams, useNavigate } from "@solidjs/router";
+import { Box, Container, Text } from "@back-to-the-future/ui";
 import { AdminRoute } from "../../../components/AdminRoute";
 import { showToast } from "../../../components/Toast";
 import { trpc } from "../../../lib/trpc";
@@ -182,41 +183,43 @@ export default function AdminZoneDetailPage(): JSX.Element {
   return (
     <AdminRoute>
       <Title>DNS Zone · Admin · Crontech</Title>
-      <div
+      <Container
+        size="full"
+        padding="none"
         style={{
           padding: "2rem",
           "max-width": "1200px",
-          margin: "0 auto",
         }}
       >
         {/* ── Breadcrumb ─────────────────────────────────────────────── */}
-        <nav
+        <Box
+          as="nav"
           aria-label="Breadcrumb"
           style={{ "margin-bottom": "1rem", "font-size": "0.875rem" }}
         >
           <A href="/admin" style={{ color: "var(--color-text-secondary)" }}>
             Admin
           </A>
-          <span style={{ margin: "0 0.5rem", color: "var(--color-text-faint)" }}>
+          <Text as="span" variant="caption" style={{ margin: "0 0.5rem", color: "var(--color-text-faint)" }}>
             ›
-          </span>
+          </Text>
           <A href="/admin/dns" style={{ color: "var(--color-text-secondary)" }}>
             DNS
           </A>
-          <span style={{ margin: "0 0.5rem", color: "var(--color-text-faint)" }}>
+          <Text as="span" variant="caption" style={{ margin: "0 0.5rem", color: "var(--color-text-faint)" }}>
             ›
-          </span>
-          <span style={{ color: "var(--color-text)" }}>
+          </Text>
+          <Text as="span" variant="caption" style={{ color: "var(--color-text)" }}>
             {data()?.zone.name ?? "—"}
-          </span>
-        </nav>
+          </Text>
+        </Box>
 
         <Show
           when={!data.loading && data()}
           fallback={
-            <p style={{ color: "var(--color-text-secondary)" }}>
+            <Text variant="body" style={{ color: "var(--color-text-secondary)" }}>
               Loading zone…
-            </p>
+            </Text>
           }
         >
           {(loaded) => (
@@ -795,7 +798,7 @@ export default function AdminZoneDetailPage(): JSX.Element {
             </>
           )}
         </Show>
-      </div>
+      </Container>
     </AdminRoute>
   );
 }

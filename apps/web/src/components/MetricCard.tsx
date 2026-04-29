@@ -1,5 +1,6 @@
 import { createMemo } from "solid-js";
 import type { JSX } from "solid-js";
+import { Box, Stack, Text } from "@back-to-the-future/ui";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -94,19 +95,20 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
   );
 
   return (
-    <div
+    <Box
       class="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] p-5 transition-all duration-300 hover:border-[var(--color-border-hover)]"
       style={{
         background: "var(--color-bg-elevated)",
       }}
     >
 
-      <div class="relative z-10">
+      <Box class="relative z-10">
         {/* Header row: label + sparkline */}
-        <div class="flex items-start justify-between">
-          <div class="flex flex-col gap-1">
-            <div class="flex items-center gap-2">
-              <span
+        <Stack direction="horizontal" align="start" justify="between">
+          <Stack direction="vertical" gap="xs">
+            <Stack direction="horizontal" gap="xs" align="center">
+              <Text
+                as="span"
                 class="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs"
                 style={{
                   background: `${accentColor()}18`,
@@ -114,35 +116,37 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
                 }}
               >
                 {props.icon ?? "\u{1F4CA}"}
-              </span>
-              <span class="text-xs font-medium uppercase tracking-widest text-[var(--color-text-muted)]">
+              </Text>
+              <Text as="span" weight="medium" class="text-xs uppercase tracking-widest text-[var(--color-text-muted)]">
                 {props.name}
-              </span>
-            </div>
+              </Text>
+            </Stack>
 
             {/* Value row */}
-            <div class="mt-2 flex items-baseline gap-2">
-              <span class="text-3xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
+            <Stack direction="horizontal" gap="xs" align="end" class="mt-2">
+              <Text as="span" weight="bold" class="text-3xl tracking-tight" style={{ color: "var(--color-text)" }}>
                 {props.value}
-              </span>
-              <span class="text-sm text-[var(--color-text-muted)]">{props.unit ?? ""}</span>
-            </div>
+              </Text>
+              <Text as="span" class="text-sm text-[var(--color-text-muted)]">{props.unit ?? ""}</Text>
+            </Stack>
 
             {/* Trend row */}
-            <div class="mt-1 flex items-center gap-1.5">
+            <Stack direction="horizontal" gap="xs" align="center" class="mt-1">
               {/* Trend arrow */}
-              <span
-                class="text-xs font-semibold"
+              <Text
+                as="span"
+                weight="semibold"
+                class="text-xs"
                 style={{ color: changeColor() }}
               >
                 {trendUp() ? "\u2191" : "\u2193"} {changeText()}
-              </span>
-              <span class="text-[10px] text-[var(--color-text-faint)]">vs prev period</span>
-            </div>
-          </div>
+              </Text>
+              <Text as="span" class="text-[10px] text-[var(--color-text-faint)]">vs prev period</Text>
+            </Stack>
+          </Stack>
 
           {/* Sparkline */}
-          <div class="mt-1 shrink-0">
+          <Box class="mt-1 shrink-0">
             <svg
               width={sparkWidth}
               height={sparkHeight}
@@ -169,20 +173,20 @@ export function MetricCard(props: MetricCardProps): JSX.Element {
                 stroke-linecap="round"
               />
             </svg>
-          </div>
-        </div>
+          </Box>
+        </Stack>
 
         {/* Status indicator dot */}
-        <div class="mt-3 flex items-center gap-2">
-          <div
+        <Stack direction="horizontal" gap="xs" align="center" class="mt-3">
+          <Box
             class="h-1.5 w-1.5 rounded-full"
             style={{ background: accentColor() }}
           />
-          <span class="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-faint)]">
+          <Text as="span" weight="medium" class="text-[10px] uppercase tracking-wider text-[var(--color-text-faint)]">
             {props.status}
-          </span>
-        </div>
-      </div>
-    </div>
+          </Text>
+        </Stack>
+      </Box>
+    </Box>
   );
 }

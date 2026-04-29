@@ -13,6 +13,7 @@ import {
   Show,
 } from "solid-js";
 import type { JSX } from "solid-js";
+import { Box, Text } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
 import { trpc } from "../lib/trpc";
 
@@ -109,21 +110,21 @@ export default function FlywheelPage(): JSX.Element {
   });
 
   return (
-    <div style={{ "min-height": "100vh", background: "var(--color-bg)", color: "var(--color-text)" }}>
+    <Box style={{ "min-height": "100vh", background: "var(--color-bg)", color: "var(--color-text)" }}>
       <SEOHead
         title="Flywheel Memory"
         description="Searchable memory across every Claude Code session on Crontech. Turn transcripts into institutional knowledge."
         path="/flywheel"
       />
 
-      <div style={{ padding: "2rem", "max-width": "1400px", margin: "0 auto" }}>
-        <h1 style={{ "font-size": "2rem", "font-weight": "700", margin: "0 0 0.25rem" }}>
+      <Box style={{ padding: "2rem", "max-width": "1400px", margin: "0 auto" }}>
+        <Text variant="h1" weight="bold" style={{ "font-size": "2rem", margin: "0 0 0.25rem" }}>
           Flywheel Memory
-        </h1>
-        <p style={{ color: "var(--color-text-muted)", margin: "0 0 2rem", "font-size": "0.9rem" }}>
+        </Text>
+        <Text variant="body" style={{ color: "var(--color-text-muted)", margin: "0 0 2rem", "font-size": "0.9rem" }}>
           Full-text search over every Claude Code session ingested from this repo.
           Every transcript becomes institutional memory the next agent can act on.
-        </p>
+        </Text>
 
         <div
           style={{
@@ -464,7 +465,7 @@ export default function FlywheelPage(): JSX.Element {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

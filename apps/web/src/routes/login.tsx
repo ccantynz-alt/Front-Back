@@ -1,7 +1,7 @@
 import { Title } from "@solidjs/meta";
 import { A, useNavigate } from "@solidjs/router";
 import { Show, createSignal, onMount } from "solid-js";
-import { Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
+import { Alert, Box, Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 
 type AuthMethod = "choose" | "passkey" | "password";
@@ -79,9 +79,9 @@ export default function LoginPage(): ReturnType<typeof Stack> {
           </Text>
 
           <Show when={displayError()}>
-            <div class="alert alert-error">
+            <Alert variant="error">
               <Text variant="body">{displayError()}</Text>
-            </div>
+            </Alert>
           </Show>
 
           {/* Google OAuth Button -- always visible at top */}
@@ -123,17 +123,10 @@ export default function LoginPage(): ReturnType<typeof Stack> {
             </Button>
 
             {/* Divider */}
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                gap: "12px",
-                width: "100%",
-              }}
-            >
-              <div
+            <Stack direction="horizontal" gap="sm" align="center" class="w-full">
+              <Box
+                class="flex-1"
                 style={{
-                  flex: "1",
                   height: "1px",
                   background: "var(--color-border)",
                 }}
@@ -141,14 +134,14 @@ export default function LoginPage(): ReturnType<typeof Stack> {
               <Text variant="caption" class="text-muted">
                 or
               </Text>
-              <div
+              <Box
+                class="flex-1"
                 style={{
-                  flex: "1",
                   height: "1px",
                   background: "var(--color-border)",
                 }}
               />
-            </div>
+            </Stack>
           </Stack>
 
           {/* Method Selector */}
@@ -194,7 +187,7 @@ export default function LoginPage(): ReturnType<typeof Stack> {
                 disabled={auth.isLoading()}
               />
 
-              <div style={{ position: "relative" }}>
+              <Box style={{ position: "relative" }}>
                 <Input
                   label="Password"
                   type={showPassword() ? "text" : "password"}
@@ -219,7 +212,7 @@ export default function LoginPage(): ReturnType<typeof Stack> {
                 >
                   {showPassword() ? "Hide" : "Show"}
                 </button>
-              </div>
+              </Box>
 
               <Button
                 variant="primary"

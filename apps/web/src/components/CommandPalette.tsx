@@ -9,6 +9,7 @@ import {
 } from "solid-js";
 import type { JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { Box, Text } from "@back-to-the-future/ui";
 import { useAuth, useTheme } from "../stores";
 import {
   GROUP_LABELS,
@@ -199,7 +200,7 @@ export function CommandPalette(): JSX.Element {
 
   return (
     <Show when={open()}>
-      <div
+      <Box
         onClick={() => setOpen(false)}
         style={{
           position: "fixed",
@@ -212,7 +213,7 @@ export function CommandPalette(): JSX.Element {
           "padding-top": "10vh",
         }}
       >
-        <div
+        <Box
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -248,9 +249,9 @@ export function CommandPalette(): JSX.Element {
             }}
           />
 
-          <div style={{ display: "flex", "max-height": "60vh" }}>
+          <Box style={{ display: "flex", "max-height": "60vh" }}>
             {/* List ─────────────────────────────────────────────── */}
-            <div
+            <Box
               style={{
                 flex: "1 1 auto",
                 "overflow-y": "auto",
@@ -261,7 +262,7 @@ export function CommandPalette(): JSX.Element {
               <Show
                 when={rows().length > 0}
                 fallback={
-                  <div
+                  <Box
                     style={{
                       padding: "24px",
                       "text-align": "center",
@@ -269,14 +270,14 @@ export function CommandPalette(): JSX.Element {
                     }}
                   >
                     No matches. Try a different search.
-                  </div>
+                  </Box>
                 }
               >
                 <For each={rows()}>
                   {(row, i) => (
                     <>
                       <Show when={row.isFirstInSection && row.groupLabel}>
-                        <div
+                        <Box
                           style={{
                             padding: "8px 20px 4px",
                             "font-size": "11px",
@@ -288,7 +289,7 @@ export function CommandPalette(): JSX.Element {
                           }}
                         >
                           {row.groupLabel}
-                        </div>
+                        </Box>
                       </Show>
                       <button
                         type="button"
@@ -316,7 +317,8 @@ export function CommandPalette(): JSX.Element {
                           color: "var(--color-text)",
                         }}
                       >
-                        <span
+                        <Text
+                          as="span"
                           style={{
                             "font-weight": "500",
                             "white-space": "nowrap",
@@ -325,9 +327,10 @@ export function CommandPalette(): JSX.Element {
                           }}
                         >
                           {row.command.label}
-                        </span>
+                        </Text>
                         <Show when={row.command.shortcut}>
-                          <span
+                          <Text
+                            as="span"
                             style={{
                               "font-size": "11px",
                               "font-family": "ui-monospace, SFMono-Regular, monospace",
@@ -339,17 +342,17 @@ export function CommandPalette(): JSX.Element {
                             }}
                           >
                             {row.command.shortcut}
-                          </span>
+                          </Text>
                         </Show>
                       </button>
                     </>
                   )}
                 </For>
               </Show>
-            </div>
+            </Box>
 
             {/* Preview pane ─────────────────────────────────────── */}
-            <div
+            <Box
               style={{
                 flex: "0 0 240px",
                 padding: "16px",
@@ -362,14 +365,14 @@ export function CommandPalette(): JSX.Element {
               <Show
                 when={selectedRow()}
                 fallback={
-                  <div style={{ "font-style": "italic" }}>
+                  <Box style={{ "font-style": "italic" }}>
                     Select a command to see what it does.
-                  </div>
+                  </Box>
                 }
               >
                 {(row) => (
-                  <div style={{ display: "flex", "flex-direction": "column", gap: "10px" }}>
-                    <div
+                  <Box style={{ display: "flex", "flex-direction": "column", gap: "10px" }}>
+                    <Box
                       style={{
                         "font-size": "14px",
                         "font-weight": "600",
@@ -377,13 +380,13 @@ export function CommandPalette(): JSX.Element {
                       }}
                     >
                       {row().command.label}
-                    </div>
+                    </Box>
                     <Show when={row().command.description}>
-                      <div>{row().command.description}</div>
+                      <Box>{row().command.description}</Box>
                     </Show>
                     <Show when={row().command.destination}>
-                      <div>
-                        <div
+                      <Box>
+                        <Box
                           style={{
                             "font-size": "11px",
                             "text-transform": "uppercase",
@@ -393,8 +396,9 @@ export function CommandPalette(): JSX.Element {
                           }}
                         >
                           Lands on
-                        </div>
-                        <code
+                        </Box>
+                        <Text
+                          as="code"
                           style={{
                             "font-family": "ui-monospace, SFMono-Regular, monospace",
                             "font-size": "12px",
@@ -402,11 +406,11 @@ export function CommandPalette(): JSX.Element {
                           }}
                         >
                           {row().command.destination}
-                        </code>
-                      </div>
+                        </Text>
+                      </Box>
                     </Show>
                     <Show when={row().command.destructive}>
-                      <div
+                      <Box
                         style={{
                           padding: "6px 8px",
                           "border-radius": "6px",
@@ -417,15 +421,15 @@ export function CommandPalette(): JSX.Element {
                         }}
                       >
                         Destructive — review before confirming.
-                      </div>
+                      </Box>
                     </Show>
-                  </div>
+                  </Box>
                 )}
               </Show>
-            </div>
-          </div>
+            </Box>
+          </Box>
 
-          <div
+          <Box
             style={{
               padding: "8px 20px",
               "border-top": "1px solid var(--color-border)",
@@ -435,12 +439,12 @@ export function CommandPalette(): JSX.Element {
               "justify-content": "space-between",
             }}
           >
-            <span>Up/Down to navigate</span>
-            <span>Enter to select</span>
-            <span>Esc to close</span>
-          </div>
-        </div>
-      </div>
+            <Text as="span">Up/Down to navigate</Text>
+            <Text as="span">Enter to select</Text>
+            <Text as="span">Esc to close</Text>
+          </Box>
+        </Box>
+      </Box>
     </Show>
   );
 }

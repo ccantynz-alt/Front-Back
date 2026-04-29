@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import { A } from "@solidjs/router";
-import { Badge } from "@back-to-the-future/ui";
+import { Badge, Box, Container } from "@back-to-the-future/ui";
 import { SEOHead } from "../components/SEOHead";
 import { trpc } from "../lib/trpc";
 
@@ -220,10 +220,10 @@ export default function SupportPage(): JSX.Element {
         path="/support"
       />
 
-      <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
+      <Box class="min-h-screen" style={{ background: "var(--color-bg)" }}>
         {/* ── Hero ───────────────────────────────────────────────── */}
-        <div class="relative overflow-hidden">
-          <div
+        <Box class="relative overflow-hidden">
+          <Box
             class="absolute inset-0 opacity-25"
             style={{
               background:
@@ -231,8 +231,8 @@ export default function SupportPage(): JSX.Element {
             }}
           />
 
-          <div class="relative mx-auto max-w-5xl px-6 pt-20 pb-12">
-            <div class="flex flex-col items-center text-center">
+          <Container size="full" padding="md" class="relative max-w-5xl pt-20 pb-12">
+            <Box class="flex flex-col items-center text-center">
               <h1
                 class="text-5xl font-bold tracking-tight sm:text-6xl"
                 style={{
@@ -252,15 +252,15 @@ export default function SupportPage(): JSX.Element {
               </p>
 
               {/* Search bar */}
-              <div class="mt-8 w-full max-w-xl">
-                <div
+              <Box class="mt-8 w-full max-w-xl">
+                <Box
                   class="relative rounded-2xl border border-[var(--color-border)] overflow-hidden"
                   style={{
                     background: "var(--color-bg-subtle)",
                     "backdrop-filter": "blur(12px)",
                   }}
                 >
-                  <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                  <Box class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                     <svg
                       class="h-5 w-5"
                       style={{ color: "var(--color-text-faint)" }}
@@ -275,7 +275,7 @@ export default function SupportPage(): JSX.Element {
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                       />
                     </svg>
-                  </div>
+                  </Box>
                   <input
                     type="text"
                     placeholder="Search for answers..."
@@ -283,15 +283,15 @@ export default function SupportPage(): JSX.Element {
                     class="w-full bg-transparent py-4 pl-12 pr-4 outline-none text-sm"
                     style={{ color: "var(--color-text)", "--tw-placeholder-color": "var(--color-text-faint)" } as JSX.CSSProperties}
                   />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                </Box>
+              </Box>
+            </Box>
+          </Container>
+        </Box>
 
         {/* ── Quick Link Cards ────────────────────────────────────── */}
-        <div class="mx-auto max-w-5xl px-6 pb-16">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Container size="full" padding="md" class="max-w-5xl pb-16">
+          <Box class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <For each={QUICK_LINKS}>
               {(link) => (
                 <A
@@ -324,12 +324,12 @@ export default function SupportPage(): JSX.Element {
                 </A>
               )}
             </For>
-          </div>
-        </div>
+          </Box>
+        </Container>
 
         {/* ── FAQ Section ─────────────────────────────────────────── */}
-        <div class="mx-auto max-w-3xl px-6 pb-16">
-          <div class="text-center mb-10">
+        <Container size="full" padding="md" class="max-w-3xl pb-16">
+          <Box class="text-center mb-10">
             <Badge variant="info" size="sm">
               FAQ
             </Badge>
@@ -340,9 +340,9 @@ export default function SupportPage(): JSX.Element {
               Quick answers to the most common questions about the
               platform
             </p>
-          </div>
+          </Box>
 
-          <div
+          <Box
             class="rounded-2xl border border-[var(--color-border)] px-6"
             style={{
               background: "var(--color-bg-subtle)",
@@ -354,12 +354,12 @@ export default function SupportPage(): JSX.Element {
                 <FAQAccordion item={item} index={index()} />
               )}
             </For>
-          </div>
-        </div>
+          </Box>
+        </Container>
 
         {/* ── Contact Form ────────────────────────────────────────── */}
-        <div class="mx-auto max-w-3xl px-6 pb-16">
-          <div class="text-center mb-10">
+        <Container size="full" padding="md" class="max-w-3xl pb-16">
+          <Box class="text-center mb-10">
             <h2 class="text-2xl font-bold" style={{ color: "var(--color-text)" }}>
               Send us a message
             </h2>
@@ -367,9 +367,9 @@ export default function SupportPage(): JSX.Element {
               Cannot find what you need? Our team typically responds
               within 5 minutes during business hours
             </p>
-          </div>
+          </Box>
 
-          <div
+          <Box
             class="rounded-2xl border border-[var(--color-border)] p-8"
             style={{
               background: "var(--color-bg-subtle)",
@@ -379,8 +379,8 @@ export default function SupportPage(): JSX.Element {
             <Show
               when={!submitted()}
               fallback={
-                <div class="py-12 text-center">
-                  <div class="text-4xl mb-4">{"\u2705"}</div>
+                <Box class="py-12 text-center">
+                  <Box class="text-4xl mb-4">{"\u2705"}</Box>
                   <h3 class="text-lg font-semibold mb-2" style={{ color: "var(--color-text)" }}>
                     Message sent
                   </h3>
@@ -396,7 +396,7 @@ export default function SupportPage(): JSX.Element {
                   >
                     Send another message
                   </button>
-                </div>
+                </Box>
               }
             >
               <form
@@ -538,19 +538,19 @@ export default function SupportPage(): JSX.Element {
                 </Show>
               </form>
             </Show>
-          </div>
-        </div>
+          </Box>
+        </Container>
 
         {/* ── Community Section ───────────────────────────────────── */}
-        <div class="mx-auto max-w-5xl px-6 pb-20">
-          <div
+        <Container size="full" padding="md" class="max-w-5xl pb-20">
+          <Box
             class="rounded-2xl border border-[var(--color-border)] p-10"
             style={{
               background: "color-mix(in oklab, var(--color-primary) 5%, var(--color-bg))",
               "backdrop-filter": "blur(12px)",
             }}
           >
-            <div class="text-center mb-8">
+            <Box class="text-center mb-8">
               <h2 class="text-2xl font-bold" style={{ color: "var(--color-text)" }}>
                 Join the community
               </h2>
@@ -559,9 +559,9 @@ export default function SupportPage(): JSX.Element {
                 generation of AI-powered applications. Get help, share
                 ideas, and contribute to the platform.
               </p>
-            </div>
+            </Box>
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-lg mx-auto">
+            <Box class="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-lg mx-auto">
               {/* Discord */}
               <a
                 href="https://discord.gg/crontech"
@@ -621,10 +621,10 @@ export default function SupportPage(): JSX.Element {
                   </span>
                 </div>
               </a>
-            </div>
-          </div>
-        </div>
-      </div>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
     </>
   );
 }

@@ -17,6 +17,7 @@
 
 import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import type { JSX } from "solid-js";
+import { Box, Text } from "@back-to-the-future/ui";
 import {
   groupShortcuts,
   listShortcuts,
@@ -124,7 +125,7 @@ export function KeyboardHelp(): JSX.Element {
 
   return (
     <Show when={open()}>
-      <div
+      <Box
         onClick={close}
         role="presentation"
         style={{
@@ -138,7 +139,7 @@ export function KeyboardHelp(): JSX.Element {
           "padding-top": "8vh",
         }}
       >
-        <div
+        <Box
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -155,7 +156,7 @@ export function KeyboardHelp(): JSX.Element {
           }}
         >
           {/* ── Header ──────────────────────────────────────────── */}
-          <div
+          <Box
             style={{
               padding: "18px 22px",
               "border-bottom": "1px solid var(--color-border)",
@@ -165,6 +166,8 @@ export function KeyboardHelp(): JSX.Element {
               gap: "16px",
             }}
           >
+            {/* Keep native <h2> here so the `id` lands on a real element
+                that aria-labelledby on the parent dialog can reference. */}
             <h2
               id="keyboard-help-title"
               style={{
@@ -191,14 +194,15 @@ export function KeyboardHelp(): JSX.Element {
             >
               Esc
             </button>
-          </div>
+          </Box>
 
           {/* ── Body: grouped tables ────────────────────────────── */}
-          <div style={{ "overflow-y": "auto", padding: "12px 22px 20px" }}>
+          <Box style={{ "overflow-y": "auto", padding: "12px 22px 20px" }}>
             <Show
               when={snapshot().length > 0}
               fallback={
-                <p
+                <Text
+                  variant="body"
                   style={{
                     color: "var(--color-text-muted)",
                     "text-align": "center",
@@ -207,7 +211,7 @@ export function KeyboardHelp(): JSX.Element {
                   }}
                 >
                   No keyboard shortcuts registered yet on this page.
-                </p>
+                </Text>
               }
             >
               <For each={GROUP_ORDER}>
@@ -216,8 +220,9 @@ export function KeyboardHelp(): JSX.Element {
                   const items = grouped[group];
                   return (
                     <Show when={items.length > 0}>
-                      <section style={{ "margin-top": "14px" }}>
-                        <h3
+                      <Box as="section" style={{ "margin-top": "14px" }}>
+                        <Text
+                          variant="h3"
                           style={{
                             margin: "0 0 8px",
                             "font-size": "11px",
@@ -228,7 +233,7 @@ export function KeyboardHelp(): JSX.Element {
                           }}
                         >
                           {group}
-                        </h3>
+                        </Text>
                         <table
                           style={{
                             width: "100%",
@@ -263,7 +268,8 @@ export function KeyboardHelp(): JSX.Element {
                                       {(chord, i) => (
                                         <>
                                           <Show when={i() > 0}>
-                                            <span
+                                            <Text
+                                              as="span"
                                               style={{
                                                 margin: "0 6px",
                                                 color: "var(--color-text-muted)",
@@ -271,13 +277,14 @@ export function KeyboardHelp(): JSX.Element {
                                               }}
                                             >
                                               then
-                                            </span>
+                                            </Text>
                                           </Show>
                                           <For each={chordSegments(chord)}>
                                             {(seg, j) => (
                                               <>
                                                 <Show when={j() > 0}>
-                                                  <span
+                                                  <Text
+                                                    as="span"
                                                     style={{
                                                       margin: "0 4px",
                                                       color:
@@ -285,7 +292,7 @@ export function KeyboardHelp(): JSX.Element {
                                                     }}
                                                   >
                                                     +
-                                                  </span>
+                                                  </Text>
                                                 </Show>
                                                 <kbd
                                                   style={{
@@ -318,16 +325,16 @@ export function KeyboardHelp(): JSX.Element {
                             </For>
                           </tbody>
                         </table>
-                      </section>
+                      </Box>
                     </Show>
                   );
                 }}
               </For>
             </Show>
-          </div>
+          </Box>
 
           {/* ── Footer hint ─────────────────────────────────────── */}
-          <div
+          <Box
             style={{
               padding: "10px 22px",
               "border-top": "1px solid var(--color-border)",
@@ -337,15 +344,15 @@ export function KeyboardHelp(): JSX.Element {
               "justify-content": "space-between",
             }}
           >
-            <span>
+            <Text as="span">
               Press <kbd>?</kbd> any time to reopen this list
-            </span>
-            <span>
+            </Text>
+            <Text as="span">
               <kbd>Esc</kbd> to close
-            </span>
-          </div>
-        </div>
-      </div>
+            </Text>
+          </Box>
+        </Box>
+      </Box>
     </Show>
   );
 }

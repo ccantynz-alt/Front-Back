@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A } from "@solidjs/router";
 import { For, Show, Suspense, createMemo, lazy } from "solid-js";
 import type { JSX } from "solid-js";
-import { Badge } from "@back-to-the-future/ui";
+import { Badge, Box, Container, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { PlatformCrossSellCard } from "../components/PlatformCrossSellCard";
 import { ProgressTracker } from "../components/ProgressTracker";
@@ -654,11 +654,13 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
       </Suspense>
       <Title>Dashboard — Crontech</Title>
 
-      <div style={{ background: "var(--color-bg)" }}>
-        <div class="mx-auto max-w-[1400px] px-6 py-8 lg:px-8">
+      <Box style={{ background: "var(--color-bg)" }}>
+        <Container size="full" padding="md" class="max-w-[1400px] py-8">
           {/* ── Header ──────────────────────────────────────────────── */}
-          <div class="mb-8 flex flex-col gap-1">
-            <span
+          <Stack direction="vertical" gap="xs" class="mb-8">
+            <Text
+              as="span"
+              variant="caption"
               class="text-xs font-medium uppercase tracking-widest"
               style={{ color: "var(--color-text-faint)" }}
             >
@@ -667,57 +669,63 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                 month: "long",
                 day: "numeric",
               })}
-            </span>
-            <h1
+            </Text>
+            <Text
+              variant="h1"
               class="text-3xl font-bold tracking-tight"
               style={{ color: "var(--color-text)" }}
             >
               {greeting()},{" "}
-              <span style={{ color: "var(--color-primary)" }}>
+              <Text as="span" variant="caption" style={{ color: "var(--color-primary)" }}>
                 {firstName()}
-              </span>
-            </h1>
-            <p
+              </Text>
+            </Text>
+            <Text
+              variant="body"
               class="text-sm"
               style={{ color: "var(--color-text-muted)" }}
             >
               Your command center. Everything you need, one click away.
-            </p>
-          </div>
+            </Text>
+          </Stack>
 
           {/* ── System Status Bar ───────────────────────────────────── */}
-          <div
+          <Box
             class="mb-8 flex flex-wrap items-center gap-4 rounded-lg px-5 py-3"
             style={{
               border: "1px solid var(--color-border)",
               background: "var(--color-bg-elevated)",
             }}
           >
-            <span
+            <Text
+              as="span"
+              variant="caption"
               class="text-xs font-semibold uppercase tracking-widest"
               style={{ color: "var(--color-text-muted)" }}
             >
               System Status
-            </span>
-            <div
+            </Text>
+            <Box
               class="h-4 w-px"
               style={{ background: "var(--color-border)" }}
             />
-            <div class="flex items-center gap-2">
-              <div
+            <Stack direction="horizontal" gap="sm" align="center">
+              <Box
                 class="h-1.5 w-1.5 rounded-full"
                 style={{ background: apiIndicator().color }}
               />
-              <span
+              <Text
+                as="span"
+                variant="caption"
                 class="text-xs"
                 style={{ color: "var(--color-text-secondary)" }}
               >
                 API:{" "}
-                <span class="font-medium" style={{ color: "var(--color-text)" }}>
+                <Text as="span" variant="caption" class="font-medium" style={{ color: "var(--color-text)" }}>
                   {apiIndicator().status}
-                </span>
-              </span>
-            </div>
+                </Text>
+              </Text>
+            </Stack>
             <A
               href="/status"
               class="ml-auto text-xs transition-colors"
@@ -725,10 +733,10 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
             >
               Full service status →
             </A>
-          </div>
+          </Box>
 
           {/* ── Stats Grid ──────────────────────────────────────────── */}
-          <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Box class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="Total Projects"
               value={usage.loading() ? "--" : fmt(usage.data()?.totalProjects)}
@@ -764,19 +772,23 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
               }
               icon={"\u{1F916}"}
             />
-          </div>
+          </Box>
 
           {/* ── Your Projects ───────────────────────────────────────── */}
-          <div class="mb-8">
-            <div class="mb-4 flex items-center gap-3">
-              <span
+          <Box class="mb-8">
+            <Stack direction="horizontal" gap="sm" align="center" class="mb-4">
+              <Text
+                as="span"
+                variant="caption"
                 class="text-sm font-semibold"
                 style={{ color: "var(--color-text)" }}
               >
                 Your Projects
-              </span>
+              </Text>
               <Show when={hasProjects()}>
-                <span
+                <Text
+                  as="span"
+                  variant="caption"
                   class="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
                   style={{
                     background: "var(--color-bg-subtle)",
@@ -785,9 +797,9 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                   }}
                 >
                   {projects().length}
-                </span>
+                </Text>
               </Show>
-              <div
+              <Box
                 class="h-px flex-1"
                 style={{ background: "var(--color-border)" }}
               />
@@ -800,7 +812,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                   View all →
                 </A>
               </Show>
-            </div>
+            </Stack>
             <Show
               when={!projectList.loading()}
               fallback={
@@ -827,7 +839,7 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                 </div>
               </Show>
             </Show>
-          </div>
+          </Box>
 
           {/* ── Main Grid: Activity + Usage ─────────────────────────── */}
           <div class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -955,20 +967,22 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
           </div>
 
           {/* ── Quick Actions ───────────────────────────────────────── */}
-          <div class="mb-8">
-            <div class="mb-4 flex items-center gap-3">
-              <span
+          <Box class="mb-8">
+            <Stack direction="horizontal" gap="sm" align="center" class="mb-4">
+              <Text
+                as="span"
+                variant="caption"
                 class="text-sm font-semibold"
                 style={{ color: "var(--color-text)" }}
               >
                 Quick Actions
-              </span>
-              <div
+              </Text>
+              <Box
                 class="h-px flex-1"
                 style={{ background: "var(--color-border)" }}
               />
-            </div>
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            </Stack>
+            <Box class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <For each={quickActions}>
                 {(action) => (
                   <QuickAction
@@ -981,56 +995,63 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
                   />
                 )}
               </For>
-            </div>
-          </div>
+            </Box>
+          </Box>
 
           <ProgressTracker />
 
           {/* ── Account Card ────────────────────────────────────────── */}
-          <div
+          <Box
             class="mt-8 rounded-xl p-6"
             style={{
               background: "var(--color-bg-elevated)",
               border: "1px solid var(--color-border)",
             }}
           >
-            <div class="mb-4 flex items-center gap-3">
-              <div
+            <Stack direction="horizontal" gap="sm" align="center" class="mb-4">
+              <Box
                 class="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold"
                 style={{ background: "var(--color-primary)", color: "var(--color-text)" }}
               >
                 {firstName().charAt(0).toUpperCase()}
-              </div>
-              <div class="flex flex-col">
-                <span
+              </Box>
+              <Stack direction="vertical" gap="none">
+                <Text
+                  as="span"
+                  variant="caption"
                   class="text-sm font-semibold"
                   style={{ color: "var(--color-text)" }}
                 >
                   {auth.currentUser()?.displayName ?? "Unknown"}
-                </span>
-                <span
+                </Text>
+                <Text
+                  as="span"
+                  variant="caption"
                   class="text-xs"
                   style={{ color: "var(--color-text-muted)" }}
                 >
                   {auth.currentUser()?.email ?? "--"}
-                </span>
-              </div>
+                </Text>
+              </Stack>
               <Badge variant="info" size="sm" class="ml-auto">
                 {auth.currentUser()?.role ?? "member"}
               </Badge>
-            </div>
-            <div
-              class="flex items-center gap-6 text-xs"
+            </Stack>
+            <Stack
+              direction="horizontal"
+              gap="lg"
+              align="center"
+              class="text-xs"
               style={{ color: "var(--color-text-muted)" }}
             >
-              <span>
+              <Text as="span" variant="caption">
                 Member since{" "}
                 {auth.currentUser()?.createdAt
                   ? new Date(
                       auth.currentUser()!.createdAt,
                     ).toLocaleDateString()
                   : "--"}
-              </span>
+              </Text>
               <A
                 href="/settings"
                 class="font-medium transition-colors"
@@ -1038,10 +1059,10 @@ export default function DashboardPage(): ReturnType<typeof ProtectedRoute> {
               >
                 Manage account
               </A>
-            </div>
-          </div>
-        </div>
-      </div>
+            </Stack>
+          </Box>
+        </Container>
+      </Box>
     </ProtectedRoute>
   );
 }

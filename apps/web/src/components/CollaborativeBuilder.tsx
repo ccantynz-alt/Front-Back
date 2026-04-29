@@ -10,7 +10,7 @@ import {
   For,
 } from "solid-js";
 import type { JSX } from "solid-js";
-import { Text, Stack } from "@back-to-the-future/ui";
+import { Box, Stack, Text } from "@back-to-the-future/ui";
 import {
   CollaborativeDocument,
   type AwarenessState,
@@ -146,9 +146,9 @@ export function CollaborativeBuilder(props: CollaborativeBuilderProps): JSX.Elem
   }
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+    <Box style={{ position: "relative", width: "100%", height: "100%" }}>
       {/* Presence bar at top */}
-      <div style={{ padding: "8px 12px" }}>
+      <Box style={{ padding: "8px 12px" }}>
         <PresenceBar
           remoteUsers={remoteUsers}
           currentUserId={props.userId}
@@ -157,15 +157,15 @@ export function CollaborativeBuilder(props: CollaborativeBuilderProps): JSX.Elem
           connected={connected}
           onInviteAI={handleInviteAI}
         />
-      </div>
+      </Box>
 
       {/* Editing indicators */}
       <Show when={editingIndicators().length > 0}>
-        <div style={{ padding: "4px 12px" }}>
+        <Box style={{ padding: "4px 12px" }}>
           <Stack direction="horizontal" gap="sm">
             <For each={editingIndicators()}>
               {(indicator) => (
-                <div
+                <Box
                   style={{
                     display: "flex",
                     "align-items": "center",
@@ -177,7 +177,7 @@ export function CollaborativeBuilder(props: CollaborativeBuilderProps): JSX.Elem
                     "font-size": "11px",
                   }}
                 >
-                  <div
+                  <Box
                     style={{
                       width: "6px",
                       height: "6px",
@@ -188,11 +188,11 @@ export function CollaborativeBuilder(props: CollaborativeBuilderProps): JSX.Elem
                   <Text variant="caption">
                     {indicator.isAI ? `AI: ${indicator.userName}` : indicator.userName} is editing
                   </Text>
-                </div>
+                </Box>
               )}
             </For>
           </Stack>
-        </div>
+        </Box>
       </Show>
 
       {/* Builder content with cursor overlay */}
@@ -207,6 +207,6 @@ export function CollaborativeBuilder(props: CollaborativeBuilderProps): JSX.Elem
           currentUserId={props.userId}
         />
       </div>
-    </div>
+    </Box>
   );
 }

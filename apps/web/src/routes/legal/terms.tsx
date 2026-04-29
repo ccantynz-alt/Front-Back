@@ -1,6 +1,6 @@
 import { For } from "solid-js";
 import type { JSX } from "solid-js";
-import { Stack, Text, Card, Separator } from "@back-to-the-future/ui";
+import { Box, Container, Stack, Text, Card, Separator } from "@back-to-the-future/ui";
 import { SEOHead } from "../../components/SEOHead";
 
 interface Section {
@@ -198,8 +198,8 @@ export default function TermsPage(): JSX.Element {
         description="Terms of Service for the Crontech platform. Read about usage rights, AI-generated content, payments, and more."
         path="/legal/terms"
       />
-      <div class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-        <div class="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:py-24">
+      <Box class="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
+        <Container size="full" padding="md" class="max-w-4xl py-16 sm:px-8 lg:py-24">
           <Stack direction="vertical" gap="lg">
             <Stack direction="vertical" gap="sm">
               <Text variant="h1" weight="bold" class="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
@@ -229,8 +229,8 @@ export default function TermsPage(): JSX.Element {
               )}
             </For>
           </Stack>
-        </div>
-      </div>
+        </Container>
+      </Box>
     </>
   );
 }

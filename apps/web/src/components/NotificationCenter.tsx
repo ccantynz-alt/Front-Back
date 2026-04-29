@@ -1,6 +1,6 @@
 import { createSignal, createResource, Show, For, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
-import { Button, Text, Badge, Stack } from "@back-to-the-future/ui";
+import { Box, Button, Text, Badge, Stack } from "@back-to-the-future/ui";
 import { trpc } from "../lib/trpc";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ export function NotificationCenter(): JSX.Element {
   }
 
   return (
-    <div class="notification-center" style={{ position: "relative" }}>
+    <Box class="notification-center" style={{ position: "relative" }}>
       {/* Bell Button */}
       <button
         type="button"
@@ -118,9 +118,10 @@ export function NotificationCenter(): JSX.Element {
           color: "var(--color-text)",
         }}
       >
-        <span aria-hidden="true">&#128276;</span>
+        <Text as="span" aria-hidden="true">&#128276;</Text>
         <Show when={unreadCount() > 0}>
-          <span
+          <Text
+            as="span"
             style={{
               position: "absolute",
               top: "0",
@@ -139,13 +140,13 @@ export function NotificationCenter(): JSX.Element {
             }}
           >
             {unreadCount() > 9 ? "9+" : unreadCount()}
-          </span>
+          </Text>
         </Show>
       </button>
 
       {/* Dropdown */}
       <Show when={open()}>
-        <div
+        <Box
           class="notification-dropdown"
           style={{
             position: "absolute",
@@ -164,14 +165,13 @@ export function NotificationCenter(): JSX.Element {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div
-            style={{
-              padding: "12px 16px",
-              "border-bottom": "1px solid var(--color-border)",
-              display: "flex",
-              "align-items": "center",
-              "justify-content": "space-between",
-            }}
+          <Stack
+            direction="horizontal"
+            gap="sm"
+            align="center"
+            justify="between"
+            class="px-4 py-3"
+            style={{ "border-bottom": "1px solid var(--color-border)" }}
           >
             <Text variant="body" weight="semibold">Notifications</Text>
             <Show when={unreadCount() > 0}>
@@ -179,20 +179,23 @@ export function NotificationCenter(): JSX.Element {
                 Mark all read
               </Button>
             </Show>
-          </div>
+          </Stack>
 
           {/* Notification List */}
           <Show
             when={unreadCount() > 0}
             fallback={
-              <div style={{ padding: "24px 16px", "text-align": "center" }}>
+              <Box style={{ padding: "24px 16px", "text-align": "center" }}>
                 <Text variant="body" class="text-muted">No unread notifications.</Text>
-              </div>
+              </Box>
             }
           >
-            <div>
+            <Box>
               <For each={unread() ?? []}>
                 {(notif) => (
+                  // Keep as native <div> here so we can keep the keyboard
+                  // a11y affordances (tabIndex + onKeyDown) — Box's typed
+                  // surface doesn't expose them yet.
                   <div
                     style={{
                       padding: "12px 16px",
@@ -226,10 +229,10 @@ export function NotificationCenter(): JSX.Element {
                   </div>
                 )}
               </For>
-            </div>
+            </Box>
           </Show>
-        </div>
+        </Box>
       </Show>
-    </div>
+    </Box>
   );
 }

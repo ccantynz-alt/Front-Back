@@ -2,6 +2,7 @@ import type { JSX } from "solid-js";
 import { Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { createEffect, onMount } from "solid-js";
+import { Box, Text } from "@back-to-the-future/ui";
 import { useAuth } from "../stores";
 
 interface ProtectedRouteProps {
@@ -34,10 +35,10 @@ export function ProtectedRoute(props: ProtectedRouteProps): JSX.Element {
     <Show
       when={!auth.isLoading() && auth.isAuthenticated()}
       fallback={
-        <div class="loading-screen">
-          <div class="loading-spinner" />
-          <span class="loading-text">Verifying session...</span>
-        </div>
+        <Box class="loading-screen">
+          <Box class="loading-spinner" />
+          <Text as="span" class="loading-text">Verifying session...</Text>
+        </Box>
       }
     >
       {props.children}

@@ -24,6 +24,7 @@ import {
   type JSX,
 } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
+import { Box, Container, Stack, Text } from "@back-to-the-future/ui";
 import { AdminRoute } from "../../components/AdminRoute";
 import { showToast } from "../../components/Toast";
 import { trpc } from "../../lib/trpc";
@@ -248,13 +249,14 @@ function AdminDnsContent(): JSX.Element {
   };
 
   return (
-    <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
+    <Box class="min-h-screen" style={{ background: "var(--color-bg)" }}>
       <Title>Authoritative DNS - Crontech Admin</Title>
 
-      <div class="mx-auto max-w-7xl px-6 py-8">
+      <Container size="full" padding="md" class="max-w-7xl py-8">
         {/* ── Header ──────────────────────────────────────────── */}
-        <div class="mb-8">
-          <nav
+        <Box class="mb-8">
+          <Box
+            as="nav"
             aria-label="Breadcrumb"
             class="mb-3 flex items-center gap-2 text-xs"
             style={{ color: "var(--color-text-faint)" }}
@@ -266,27 +268,29 @@ function AdminDnsContent(): JSX.Element {
             >
               Admin
             </A>
-            <span aria-hidden="true">›</span>
-            <span class="font-semibold" style={{ color: "var(--color-text)" }}>
+            <Text as="span" variant="caption" aria-hidden="true">›</Text>
+            <Text as="span" variant="caption" class="font-semibold" style={{ color: "var(--color-text)" }}>
               DNS
-            </span>
-          </nav>
-          <div class="flex items-end justify-between">
-            <div>
-              <h1
+            </Text>
+          </Box>
+          <Stack direction="horizontal" justify="between" align="end">
+            <Box>
+              <Text
+                variant="h1"
                 class="text-3xl font-bold tracking-tight"
                 style={{ color: "var(--color-text)" }}
               >
                 Authoritative DNS
-              </h1>
-              <p
+              </Text>
+              <Text
+                variant="body"
                 class="mt-1 text-sm"
                 style={{ color: "var(--color-text-faint)" }}
               >
                 Self-hosted zones powering one-click subdomain creation across
                 the platform.
-              </p>
-            </div>
+              </Text>
+            </Box>
             <button
               type="button"
               onClick={() => {
@@ -302,8 +306,8 @@ function AdminDnsContent(): JSX.Element {
               <span aria-hidden="true">+</span>
               {showForm() ? "Close" : "Add zone"}
             </button>
-          </div>
-        </div>
+          </Stack>
+        </Box>
 
         {/* ── Inline add-zone form ────────────────────────────── */}
         <Show when={showForm()}>
@@ -630,7 +634,7 @@ function AdminDnsContent(): JSX.Element {
             )}
           </Show>
         </div>
-      </div>
-    </div>
+      </Container>
+    </Box>
   );
 }
