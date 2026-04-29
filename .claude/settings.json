@@ -10,5 +10,44 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(bun:*)",
+      "Bash(bun run:*)",
+      "Bash(bun install:*)",
+      "Bash(bunx:*)",
+      "Bash(turbo:*)",
+      "Bash(node:*)",
+      "Bash(npx:*)",
+      "Bash(npx biome:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git show:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git remote:*)",
+      "Bash(curl:*)",
+      "Bash(tar:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(echo:*)",
+      "Bash(pwd:*)",
+      "Bash(which:*)",
+      "Bash(command:*)",
+      "Bash(test:*)",
+      "Bash(timeout:*)",
+      "Read(//**)"
+    ]
   }
 }
