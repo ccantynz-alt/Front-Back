@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A, useNavigate } from "@solidjs/router";
 import { For, Show, createMemo, onCleanup, onMount } from "solid-js";
 import type { JSX } from "solid-js";
-import { Badge, Button, Spinner } from "@back-to-the-future/ui";
+import { Badge, Box, Button, Container, Spinner, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { SEOHead } from "../components/SEOHead";
 import { registerShortcut } from "../lib/keyboard";
@@ -11,8 +11,20 @@ import { useUrlState } from "../lib/url-state";
 import { useQuery } from "../lib/use-trpc";
 
 // ── Status Badge Mapping ────────────────────────────────────────────
+// "pending" and "failed" are the real-lifecycle statuses emitted by
+// projects.deploy once it talks to the orchestrator. We keep the older
+// legacy statuses (creating/stopped/error/deploying) in the union so
+// pre-orchestrator projects still render without a type error.
 
-type ProjectStatus = "creating" | "active" | "building" | "deploying" | "stopped" | "error";
+type ProjectStatus =
+  | "pending"
+  | "creating"
+  | "active"
+  | "building"
+  | "deploying"
+  | "failed"
+  | "stopped"
+  | "error";
 
 function statusVariant(
   status: ProjectStatus,
@@ -24,23 +36,30 @@ function statusVariant(
     case "building":
     case "deploying":
       return "info";
+    case "failed":
     case "error":
       return "error";
     case "stopped":
       return "warning";
+    case "pending":
+      return "default";
   }
 }
 
 function statusLabel(status: ProjectStatus): string {
   switch (status) {
+    case "pending":
+      return "Pending";
     case "creating":
       return "Creating";
     case "active":
-      return "Active";
+      return "Live";
     case "building":
-      return "Building";
+      return "Building...";
     case "deploying":
       return "Deploying";
+    case "failed":
+      return "Failed";
     case "error":
       return "Error";
     case "stopped":
@@ -48,13 +67,36 @@ function statusLabel(status: ProjectStatus): string {
   }
 }
 
+// ── Status Dot ──────────────────────────────────────────────────────
+// Fixed-colour dot rendered next to the badge so "Live", "Pending",
+// and "Failed" are instantly scannable without reading the label. The
+// building state renders a spinner in place of the dot.
+
+function statusDotColor(status: ProjectStatus): string {
+  switch (status) {
+    case "active":
+      return "#22c55e"; // green — live
+    case "failed":
+    case "error":
+      return "#ef4444"; // red — failed
+    case "pending":
+      return "#9ca3af"; // grey — pending
+    case "stopped":
+      return "#f59e0b"; // amber — stopped
+    case "creating":
+    case "building":
+    case "deploying":
+      return "#3b82f6"; // blue — in-flight
+  }
+}
+
 // ── Framework Icon ──────────────────────────────────────────────────
 
 function frameworkIcon(framework: string): string {
   const lower = framework.toLowerCase();
-  if (lower.includes("solid")) return "\u269B";
-  if (lower.includes("next")) return "\u25B2";
-  if (lower.includes("react")) return "\u269B";
+  if (lower.includes("solid")) return "⚛";
+  if (lower.includes("next")) return "▲";
+  if (lower.includes("react")) return "⚛";
   if (lower.includes("svelte")) return "\u{1F525}";
   if (lower.includes("vue")) return "\u{1F49A}";
   if (lower.includes("astro")) return "\u{1F680}";
@@ -88,12 +130,23 @@ interface ProjectCardProps {
   status: ProjectStatus;
   framework: string | null;
   updatedAt: string;
+  /** Live URL of the most recent successful deployment, if any. */
+  liveUrl?: string | null;
+  /** Error message from the most recent failed deployment, if any. */
+  errorMessage?: string | null;
 }
 
 function ProjectCard(props: ProjectCardProps): JSX.Element {
+  const isBuilding = (): boolean =>
+    props.status === "building" ||
+    props.status === "deploying" ||
+    props.status === "creating";
+  const isFailed = (): boolean =>
+    props.status === "failed" || props.status === "error";
+
   return (
     <A href={`/projects/${props.id}`} class="block group">
-      <div
+      <Box
         class="relative overflow-hidden rounded-2xl p-5 transition-all duration-300"
         style={{
           background: "var(--color-bg-elevated)",
@@ -101,46 +154,101 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
         }}
       >
 
-        <div class="relative z-10 flex flex-col gap-4">
-          {/* Header: name + status */}
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-              <span class="text-xl shrink-0">
+        <Stack direction="vertical" gap="md" class="relative z-10">
+          {/* Header: name + status (dot / spinner + badge) */}
+          <Stack direction="horizontal" gap="sm" align="start" justify="between">
+            <Stack direction="horizontal" gap="sm" align="center" class="min-w-0">
+              <Text as="span" class="text-xl shrink-0">
                 {frameworkIcon(props.framework ?? "")}
-              </span>
-              <h3 class="text-sm font-semibold truncate" style={{ color: "var(--color-text)" }}>
+              </Text>
+              <Text as="h3" weight="semibold" class="text-sm truncate" style={{ color: "var(--color-text)" }}>
                 {props.name}
-              </h3>
-            </div>
-            <Badge
-              variant={statusVariant(props.status)}
-              size="sm"
+              </Text>
+            </Stack>
+            <Stack direction="horizontal" gap="xs" align="center" class="shrink-0">
+              <Show
+                when={isBuilding()}
+                fallback={
+                  <Box
+                    aria-hidden="true"
+                    class="inline-block h-2 w-2 rounded-full"
+                    style={{ background: statusDotColor(props.status) }}
+                  />
+                }
+              >
+                <Spinner size="sm" />
+              </Show>
+              <Badge variant={statusVariant(props.status)} size="sm">
+                {statusLabel(props.status)}
+              </Badge>
+            </Stack>
+          </Stack>
+
+          {/* Failure banner: inline error copy so Craig can diagnose from the list */}
+          <Show when={isFailed() && props.errorMessage}>
+            <Box
+              role="alert"
+              class="rounded-lg border px-3 py-2 text-xs"
+              style={{
+                background: "rgba(239, 68, 68, 0.08)",
+                "border-color": "rgba(239, 68, 68, 0.3)",
+                color: "#ef4444",
+              }}
             >
-              {statusLabel(props.status)}
-            </Badge>
-          </div>
+              <Text as="span" weight="semibold">Deploy failed:</Text>{" "}
+              <Text as="span" style={{ color: "var(--color-text)" }}>
+                {props.errorMessage}
+              </Text>
+            </Box>
+          </Show>
 
           {/* Details */}
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] font-medium uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
+          <Stack direction="vertical" gap="xs">
+            <Stack direction="horizontal" gap="xs" align="center">
+              <Text as="span" weight="medium" class="text-[11px] uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
                 Framework
-              </span>
-              <span class="text-xs" style={{ color: "var(--color-text)" }}>{props.framework ?? "Unknown"}</span>
-            </div>
+              </Text>
+              <Text as="span" class="text-xs" style={{ color: "var(--color-text)" }}>{props.framework ?? "Unknown"}</Text>
+            </Stack>
 
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] font-medium uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
+            <Stack direction="horizontal" gap="xs" align="center">
+              <Text as="span" weight="medium" class="text-[11px] uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
                 Updated
-              </span>
-              <span class="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              </Text>
+              <Text as="span" class="text-xs" style={{ color: "var(--color-text-muted)" }}>
                 {relativeTime(props.updatedAt)}
-              </span>
-            </div>
-          </div>
-        </div>
+              </Text>
+            </Stack>
 
-      </div>
+            {/* Live URL — clickable anchor that does NOT navigate into the project */}
+            <Show when={props.liveUrl}>
+              {(url) => (
+                <Stack direction="horizontal" gap="xs" align="center">
+                  <Text
+                    as="span"
+                    weight="medium"
+                    class="text-[11px] uppercase tracking-wider"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    URL
+                  </Text>
+                  <a
+                    href={url()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    class="truncate text-xs underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                    style={{ color: "#22c55e" }}
+                  >
+                    {url()}
+                  </a>
+                </Stack>
+              )}
+            </Show>
+          </Stack>
+        </Stack>
+
+      </Box>
     </A>
   );
 }
@@ -149,23 +257,23 @@ function ProjectCard(props: ProjectCardProps): JSX.Element {
 
 function EmptyState(): JSX.Element {
   return (
-    <div class="flex flex-col items-center justify-center gap-6 py-24">
-      <div class="flex h-20 w-20 items-center justify-center rounded-2xl" style={{ background: "var(--color-bg-subtle)" }}>
-        <span class="text-4xl">{"\u{1F680}"}</span>
-      </div>
-      <div class="flex flex-col items-center gap-2 text-center">
-        <h2 class="text-xl font-bold" style={{ color: "var(--color-text)" }}>No projects yet</h2>
-        <p class="max-w-sm text-sm" style={{ color: "var(--color-text-secondary)" }}>
+    <Stack direction="vertical" gap="lg" align="center" justify="center" class="py-24">
+      <Box class="flex h-20 w-20 items-center justify-center rounded-2xl" style={{ background: "var(--color-bg-subtle)" }}>
+        <Text as="span" class="text-4xl">{"\u{1F680}"}</Text>
+      </Box>
+      <Stack direction="vertical" gap="xs" align="center" class="text-center">
+        <Text variant="h2" weight="bold" class="text-xl" style={{ color: "var(--color-text)" }}>No projects yet</Text>
+        <Text variant="body" class="max-w-sm text-sm" style={{ color: "var(--color-text-secondary)" }}>
           Deploy your first app on Crontech. Connect a repo or start from a
           template and have it live on the edge in under a minute.
-        </p>
-      </div>
+        </Text>
+      </Stack>
       <A href="/projects/new">
         <Button variant="primary" size="md">
           Create your first project
         </Button>
       </A>
-    </div>
+    </Stack>
   );
 }
 
@@ -237,27 +345,27 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
       />
       <Title>Projects — Crontech</Title>
 
-      <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
-        <div class="mx-auto max-w-[1400px] px-6 py-8 lg:px-8">
+      <Box class="min-h-screen" style={{ background: "var(--color-bg)" }}>
+        <Container size="2xl" padding="md" class="py-8">
           {/* ── Header ─────────────────────────────────────────────── */}
-          <div class="mb-8 flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-              <h1 class="text-3xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
+          <Stack direction="horizontal" gap="md" align="center" justify="between" class="mb-8">
+            <Stack direction="vertical" gap="xs">
+              <Text variant="h1" weight="bold" class="text-3xl tracking-tight" style={{ color: "var(--color-text)" }}>
                 Projects
-              </h1>
-              <p class="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              </Text>
+              <Text variant="body" class="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                 Your deployed apps and sites on the Crontech edge network.
-              </p>
-            </div>
+              </Text>
+            </Stack>
             <A href="/projects/new">
               <Button variant="primary" size="md">
                 New Project
               </Button>
             </A>
-          </div>
+          </Stack>
 
           {/* ── Filter bar (URL-state backed) ──────────────────────── */}
-          <div class="mb-6 flex flex-wrap items-center gap-3">
+          <Box class="mb-6 flex flex-wrap items-center gap-3">
             <input
               id="projects-filter-input"
               type="search"
@@ -291,15 +399,15 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
               <option value="stopped">Stopped</option>
               <option value="error">Error</option>
             </select>
-          </div>
+          </Box>
 
           {/* ── Content ────────────────────────────────────────────── */}
           <Show
             when={!projects.loading()}
             fallback={
-              <div class="flex items-center justify-center py-24">
+              <Stack direction="horizontal" align="center" justify="center" class="py-24">
                 <Spinner size="lg" />
-              </div>
+              </Stack>
             }
           >
             <Show
@@ -309,32 +417,43 @@ export default function ProjectsPage(): ReturnType<typeof ProtectedRoute> {
                   when={(projects.data() ?? []).length > 0}
                   fallback={<EmptyState />}
                 >
-                  <div
-                    class="py-16 text-center text-sm"
+                  <Text
+                    variant="body"
+                    align="center"
+                    class="py-16 text-sm"
                     style={{ color: "var(--color-text-muted)" }}
                   >
                     No projects match this filter.
-                  </div>
+                  </Text>
                 </Show>
               }
             >
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Box class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <For each={filtered()}>
                   {(project) => (
                     <ProjectCard
                       id={project.id}
                       name={project.name}
-                      status={project.status}
+                      status={project.status as ProjectStatus}
                       framework={project.framework}
                       updatedAt={project.updatedAt}
+                      liveUrl={
+                        (project as { liveUrl?: string | null }).liveUrl ??
+                        (project as { url?: string | null }).url ??
+                        null
+                      }
+                      errorMessage={
+                        (project as { errorMessage?: string | null })
+                          .errorMessage ?? null
+                      }
                     />
                   )}
                 </For>
-              </div>
+              </Box>
             </Show>
           </Show>
-        </div>
-      </div>
+        </Container>
+      </Box>
     </ProtectedRoute>
   );
 }

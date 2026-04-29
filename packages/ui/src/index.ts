@@ -3,6 +3,8 @@ export { Input } from "./components/Input";
 export { Card } from "./components/Card";
 export { Stack } from "./components/Stack";
 export { Text } from "./components/Text";
+export { Box } from "./components/Box";
+export { Container } from "./components/Container";
 export { Modal } from "./components/Modal";
 export { Badge } from "./components/Badge";
 export { Alert } from "./components/Alert";

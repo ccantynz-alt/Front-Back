@@ -2,7 +2,7 @@ import { For, Show, Suspense, createSignal, lazy, onMount } from "solid-js";
 import type { JSX } from "solid-js";
 import { useSearchParams, useNavigate } from "@solidjs/router";
 import { SEOHead } from "../components/SEOHead";
-import { Button, Card, Input, Stack, Text, Badge } from "@back-to-the-future/ui";
+import { Badge, Box, Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import type { ComponentNode } from "../collab/collaborative-doc";
 import type { PageLayout } from "@back-to-the-future/ai-core";
@@ -35,12 +35,12 @@ function ChatBubble(props: { message: ChatMessage }): JSX.Element {
   const isUser = (): boolean => props.message.role === "user";
 
   return (
-    <div class={`chat-bubble ${isUser() ? "chat-bubble-user" : "chat-bubble-assistant"}`}>
+    <Box class={`chat-bubble ${isUser() ? "chat-bubble-user" : "chat-bubble-assistant"}`}>
       <Text variant="caption" weight="semibold" class="chat-role">
         {isUser() ? "You" : "Composer"}
       </Text>
       <Text variant="body">{props.message.content}</Text>
-    </div>
+    </Box>
   );
 }
 
@@ -110,8 +110,8 @@ function ComputeTierPill(props: {
   const colors = (): { bg: string; border: string; dot: string } =>
     tierColor(props.tier);
   return (
-    <div
-      title={props.reason}
+    <Box
+      aria-label={props.reason}
       style={{
         display: "flex",
         "align-items": "center",
@@ -122,7 +122,7 @@ function ComputeTierPill(props: {
         border: `1px solid ${colors().border}`,
       }}
     >
-      <div
+      <Box
         style={{
           width: "8px",
           height: "8px",
@@ -137,7 +137,7 @@ function ComputeTierPill(props: {
       <Text variant="caption" weight="semibold">
         {props.cost}
       </Text>
-    </div>
+    </Box>
   );
 }
 
@@ -154,7 +154,7 @@ function PreviewPanel(props: { layout: PageLayout | null }): JSX.Element {
   return (
     <Card class="preview-panel" padding="none">
       <Stack direction="vertical" gap="none" class="preview-inner">
-        <div class="preview-toolbar">
+        <Box class="preview-toolbar">
           <Text variant="caption" weight="semibold">
             Live Preview ({device()})
           </Text>
@@ -169,8 +169,8 @@ function PreviewPanel(props: { layout: PageLayout | null }): JSX.Element {
               Mobile
             </Button>
           </Stack>
-        </div>
-        <div class={`preview-canvas preview-canvas-${device()}`}>
+        </Box>
+        <Box class={`preview-canvas preview-canvas-${device()}`}>
           <PageLayoutRenderer
             layout={props.layout}
             fallback={
@@ -190,7 +190,7 @@ function PreviewPanel(props: { layout: PageLayout | null }): JSX.Element {
               </Stack>
             }
           />
-        </div>
+        </Box>
       </Stack>
     </Card>
   );
@@ -200,7 +200,7 @@ function PreviewPanel(props: { layout: PageLayout | null }): JSX.Element {
 
 function ConnectionStatus(props: { connected: boolean }): JSX.Element {
   return (
-    <div
+    <Box
       style={{
         display: "flex",
         "align-items": "center",
@@ -213,7 +213,7 @@ function ConnectionStatus(props: { connected: boolean }): JSX.Element {
         border: `1px solid ${props.connected ? "color-mix(in oklab, var(--color-success) 30%, transparent)" : "color-mix(in oklab, var(--color-danger) 30%, transparent)"}`,
       }}
     >
-      <div
+      <Box
         style={{
           width: "8px",
           height: "8px",
@@ -224,7 +224,7 @@ function ConnectionStatus(props: { connected: boolean }): JSX.Element {
       <Text variant="caption">
         {props.connected ? "Connected" : "Disconnected"}
       </Text>
-    </div>
+    </Box>
   );
 }
 
@@ -234,10 +234,15 @@ export default function BuilderPage(): JSX.Element {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const roomId = (): string | undefined => searchParams.room as string | undefined;
-  const isCollaborative = (): boolean => !!roomId();
+  // Live CRDT collaboration is BLK-011 🔵 PLANNED — the full Yjs +
+  // Durable Object transport isn't wired up yet. Until it ships, we
+  // hide the collab UI entirely rather than surface a permanently
+  // "Disconnected" ConnectionStatus badge that would mislead anyone
+  // landing here with a `?room=X` param.
+  const isCollaborative = (): boolean => false;
 
   // Generate a user id/name for the session
-  const userId = `user-${Math.random().toString(36).slice(2, 9)}`;
+  const userId = `user-${crypto.randomUUID().replace(/-/g, '').slice(0, 7)}`;
   const userName = "Builder User";
 
   const [messages, setMessages] = createSignal<ChatMessage[]>([
@@ -340,7 +345,7 @@ export default function BuilderPage(): JSX.Element {
   };
 
   function handleShare(): void {
-    const newRoomId = `room-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const newRoomId = `room-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 4)}`;
     navigate(`/builder?room=${newRoomId}`);
   }
 
@@ -354,10 +359,10 @@ export default function BuilderPage(): JSX.Element {
   }
 
   const builderContent = (
-    <div class="builder-layout">
-      <div class="builder-chat">
+    <Box class="builder-layout">
+      <Box class="builder-chat">
         <Stack direction="vertical" gap="none" class="builder-chat-inner">
-          <div class="builder-chat-header">
+          <Box class="builder-chat-header">
             <Stack direction="horizontal" gap="sm" align="center" justify="between">
               <Text variant="h3" weight="bold">Component Composer</Text>
               <Stack direction="horizontal" gap="sm" align="center">
@@ -382,19 +387,19 @@ export default function BuilderPage(): JSX.Element {
                 </Show>
               </Stack>
             </Stack>
-          </div>
-          <div class="builder-chat-messages">
+          </Box>
+          <Box class="builder-chat-messages">
             <For each={messages()}>
               {(msg) => <ChatBubble message={msg} />}
             </For>
             <Show when={isGenerating()}>
-              <div class="chat-bubble chat-bubble-assistant">
+              <Box class="chat-bubble chat-bubble-assistant">
                 <Text variant="caption" weight="semibold" class="chat-role">Composer</Text>
                 <Text variant="body" class="text-muted">Composing validated components...</Text>
-              </div>
+              </Box>
             </Show>
-          </div>
-          <div class="builder-chat-input">
+          </Box>
+          <Box class="builder-chat-input">
             <Stack direction="horizontal" gap="sm" align="end">
               <Input
                 placeholder="Describe the UI you want to generate..."
@@ -415,13 +420,13 @@ export default function BuilderPage(): JSX.Element {
                 Send
               </Button>
             </Stack>
-          </div>
+          </Box>
         </Stack>
-      </div>
-      <div class="builder-preview">
+      </Box>
+      <Box class="builder-preview">
         <PreviewPanel layout={currentLayout()} />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 
   return (

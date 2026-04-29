@@ -1,6 +1,7 @@
 import { Title } from "@solidjs/meta";
-import { createSignal, createMemo, For, Show, Switch, Match } from "solid-js";
+import { createSignal, createMemo, createUniqueId, For, Show, Switch, Match } from "solid-js";
 import type { JSX } from "solid-js";
+import { Box, Container, Stack, Text } from "@back-to-the-future/ui";
 import { trpc } from "../lib/trpc";
 import { useQuery, useMutation, invalidateQueries, friendlyError } from "../lib/use-trpc";
 import { useOptimisticMutation } from "../lib/optimistic";
@@ -34,16 +35,16 @@ function TabButton(props: { label: string; icon: string; isActive: boolean; onCl
 
 function SettingsSection(props: { title: string; description: string; children: JSX.Element }): JSX.Element {
   return (
-    <div
+    <Box
       class="rounded-2xl p-6"
       style={{ background: "var(--color-bg-elevated)", border: "1px solid var(--color-border)" }}
     >
-      <div class="mb-5">
-        <h3 class="text-base font-semibold" style={{ color: "var(--color-text)" }}>{props.title}</h3>
-        <p class="mt-0.5 text-xs" style={{ color: "var(--color-text-muted)" }}>{props.description}</p>
-      </div>
+      <Box class="mb-5">
+        <Text variant="h3" weight="semibold" class="text-base" style={{ color: "var(--color-text)" }}>{props.title}</Text>
+        <Text variant="body" class="mt-0.5 text-xs" style={{ color: "var(--color-text-muted)" }}>{props.description}</Text>
+      </Box>
       {props.children}
-    </div>
+    </Box>
   );
 }
 
@@ -58,10 +59,12 @@ function SettingsInput(props: {
   disabled?: boolean;
   hint?: string;
 }): JSX.Element {
+  const inputId = createUniqueId();
   return (
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>{props.label}</label>
+      <label for={inputId} class="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>{props.label}</label>
       <input
+        id={inputId}
         type={props.type ?? "text"}
         value={props.value}
         onInput={(e) => props.onInput(e.currentTarget.value)}
@@ -982,18 +985,18 @@ export default function SettingsPage(): JSX.Element {
   const tabs = createMemo(() => allTabs.filter((t) => !t.adminOnly || isAdmin()));
 
   return (
-    <div class="min-h-screen" style={{ background: "var(--color-bg)" }}>
+    <Box class="min-h-screen" style={{ background: "var(--color-bg)" }}>
       <Title>Settings - Crontech</Title>
 
-      <div class="mx-auto max-w-5xl px-6 py-8">
+      <Container size="xl" padding="md" class="max-w-5xl py-8">
         {/* Header */}
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>Settings</h1>
-          <p class="mt-1 text-sm text-[var(--color-text-muted)]">Manage your account, security, and preferences</p>
-        </div>
+        <Box class="mb-8">
+          <Text variant="h1" weight="bold" class="text-3xl tracking-tight" style={{ color: "var(--color-text)" }}>Settings</Text>
+          <Text variant="body" class="mt-1 text-sm text-[var(--color-text-muted)]">Manage your account, security, and preferences</Text>
+        </Box>
 
         {/* Tab Navigation */}
-        <div class="mb-8 flex flex-wrap gap-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1.5">
+        <Stack direction="horizontal" gap="xs" class="mb-8 flex-wrap rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-subtle)] p-1.5">
           <For each={tabs()}>
             {(tab) => (
               <TabButton
@@ -1004,7 +1007,7 @@ export default function SettingsPage(): JSX.Element {
               />
             )}
           </For>
-        </div>
+        </Stack>
 
         {/* Tab Content */}
         <Switch>
@@ -1027,7 +1030,7 @@ export default function SettingsPage(): JSX.Element {
             <AppearanceTab />
           </Match>
         </Switch>
-      </div>
-    </div>
+      </Container>
+    </Box>
   );
 }

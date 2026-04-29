@@ -2,37 +2,19 @@ import { Title } from "@solidjs/meta";
 import { A, useParams, useNavigate } from "@solidjs/router";
 import { Show, createSignal, onMount } from "solid-js";
 import type { JSX } from "solid-js";
-import { Button, Badge } from "@back-to-the-future/ui";
+import { Badge, Box, Button, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../../components/ProtectedRoute";
 import { Terminal } from "../../../components/Terminal";
 import { SEOHead } from "../../../components/SEOHead";
+import { trpc } from "../../../lib/trpc";
+import { useQuery } from "../../../lib/use-trpc";
 
 // ── Types ────────────────────────────────────────────────────────────
 
 interface ProjectMeta {
   name: string;
-  framework: string;
-  region: string;
-}
-
-// ── Mock project resolver ───────────────────────────────────────────
-
-function getProjectMeta(projectId: string): ProjectMeta {
-  // In production, fetch project metadata from tRPC.
-  // For now, derive a reasonable display name from the ID.
-  const names: Record<string, ProjectMeta> = {
-    demo: { name: "Demo Project", framework: "SolidStart", region: "us-east-1" },
-    "crontech-web": { name: "Crontech Web", framework: "SolidStart", region: "global" },
-    "api-server": { name: "API Server", framework: "Hono", region: "us-east-1" },
-  };
-
-  return (
-    names[projectId] ?? {
-      name: projectId.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      framework: "Bun",
-      region: "us-east-1",
-    }
-  );
+  framework: string | null;
+  runtime: string | null;
 }
 
 // ── Terminal Page ───────────────────────────────────────────────────
@@ -43,7 +25,29 @@ function TerminalPage(): JSX.Element {
   const [isFullscreen, setIsFullscreen] = createSignal(false);
 
   const projectId = (): string => params.id;
-  const project = (): ProjectMeta => getProjectMeta(projectId());
+
+  // Fetch real project metadata from the API. Falls back gracefully if
+  // the ID is invalid or the network is unavailable — the terminal
+  // itself still works, we just show a degraded header.
+  const projectQuery = useQuery(
+    () =>
+      trpc.projects.getById
+        .query({ projectId: projectId() })
+        .catch(() => null) as Promise<ProjectMeta | null>,
+    { key: ["projects"] },
+  );
+
+  const project = (): ProjectMeta => {
+    const data = projectQuery.data();
+    if (data) return data;
+    // Derive a display name from the raw ID while loading or on error.
+    const id = projectId();
+    return {
+      name: id.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      framework: null,
+      runtime: null,
+    };
+  };
 
   // Toggle fullscreen mode
   function toggleFullscreen(): void {
@@ -82,35 +86,40 @@ function TerminalPage(): JSX.Element {
       />
       <Title>{`Terminal - ${project().name} | Crontech`}</Title>
 
-      <div class="flex flex-col h-screen" style={{ background: "var(--color-bg)" }}>
+      <Stack direction="vertical" gap="none" class="h-screen" style={{ background: "var(--color-bg)" }}>
         {/* Header */}
-        <header
+        <Box
+          as="header"
           class="flex items-center justify-between px-4 py-2.5 border-b border-[var(--color-border)] shrink-0"
           style={{ background: "var(--color-bg-subtle)" }}
         >
           {/* Left section */}
-          <div class="flex items-center gap-3">
+          <Stack direction="horizontal" gap="sm" align="center">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate(-1)}
               aria-label="Go back"
             >
-              <span class="mr-1">&larr;</span>
+              <Text as="span" class="mr-1">&larr;</Text>
               Back
             </Button>
 
-            <div class="h-5 w-px bg-[var(--color-border)]" />
+            <Box class="h-5 w-px bg-[var(--color-border)]" />
 
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{project().name}</span>
-              <Badge variant="default">{project().framework}</Badge>
-              <Badge variant="default">{project().region}</Badge>
-            </div>
-          </div>
+            <Stack direction="horizontal" gap="xs" align="center">
+              <Text as="span" weight="semibold" class="text-sm" style={{ color: "var(--color-text)" }}>{project().name}</Text>
+              <Show when={project().framework}>
+                <Badge variant="default">{project().framework}</Badge>
+              </Show>
+              <Show when={project().runtime}>
+                <Badge variant="default">{project().runtime}</Badge>
+              </Show>
+            </Stack>
+          </Stack>
 
           {/* Right section */}
-          <div class="flex items-center gap-2">
+          <Stack direction="horizontal" gap="xs" align="center">
             <Button
               variant="ghost"
               size="sm"
@@ -133,14 +142,14 @@ function TerminalPage(): JSX.Element {
                 Dashboard
               </Button>
             </A>
-          </div>
-        </header>
+          </Stack>
+        </Box>
 
         {/* Terminal fills remaining space */}
-        <div class="flex-1 min-h-0">
+        <Box class="flex-1 min-h-0">
           <Terminal projectId={projectId()} />
-        </div>
-      </div>
+        </Box>
+      </Stack>
     </ProtectedRoute>
   );
 }

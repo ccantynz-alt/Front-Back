@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { A, useNavigate, useSearchParams } from "@solidjs/router";
 import { createSignal, Show, For } from "solid-js";
 import type { JSX } from "solid-js";
-import { Badge, Button, Input, Select } from "@back-to-the-future/ui";
+import { Badge, Box, Button, Container, Input, Select, Stack, Text } from "@back-to-the-future/ui";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { SEOHead } from "../../components/SEOHead";
 import { trpc } from "../../lib/trpc";
@@ -11,6 +11,11 @@ import {
   getTemplateById,
   type ProjectTemplate,
 } from "../../lib/project-templates";
+import { useAuth } from "../../stores";
+
+// ── Path picker ─────────────────────────────────────────────────────
+
+type OnboardingPath = "picker" | "github" | "url";
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -77,7 +82,7 @@ function StepIndicator(props: StepIndicatorProps): JSX.Element {
                   }}
                 >
                   <Show when={isCompleted()} fallback={<>{stepNum + 1}</>}>
-                    {"\u2713"}
+                    {"✓"}
                   </Show>
                 </div>
                 <span
@@ -144,11 +149,53 @@ function DnsInstructions(props: { domain: string }): JSX.Element {
   );
 }
 
+// ── URL helpers ─────────────────────────────────────────────────────
+
+/**
+ * Validates a pasted URL as http/https and returns its parsed URL object,
+ * or null if it is not a valid http(s) URL.
+ */
+function parseWebUrl(raw: string): URL | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  // Accept bare domains by prefixing https:// if no scheme is present
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const parsed = new URL(withScheme);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    if (!parsed.hostname || !parsed.hostname.includes(".")) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Map a tRPC / network error into a friendly message for the URL flow.
+ * Handles common cases: unreachable site, invalid URL, rate limit.
+ */
+function urlFlowErrorMessage(err: unknown): string {
+  const base = friendlyError(err);
+  const lower = base.toLowerCase();
+  // TRPCClientError surfaces the server's error code/message verbatim.
+  if (lower.includes("too many") || lower.includes("rate limit")) {
+    return "You're going a bit fast. Please wait a moment and try again.";
+  }
+  if (lower.includes("unreachable") || lower.includes("could not reach") || lower.includes("timeout") || lower.includes("timed out") || lower.includes("fetch")) {
+    return "We couldn't reach that site. Check the URL is live and publicly accessible, then try again.";
+  }
+  if (lower.includes("invalid") && lower.includes("url")) {
+    return "That doesn't look like a valid website URL. Please check and try again.";
+  }
+  return base;
+}
+
 // ── New Project Page ────────────────────────────────────────────────
 
 export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const auth = useAuth();
 
   // ── Template (from ?template= query param) ──────────────────────
   const template = (): ProjectTemplate | undefined => {
@@ -158,6 +205,14 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
   };
 
   const initial = template();
+
+  // ── Path picker state ───────────────────────────────────────────
+  // If a template is present in the URL, skip the picker entirely and go
+  // straight into the existing GitHub-repo wizard — templates are
+  // inherently developer-flow.
+  const [path, setPath] = createSignal<OnboardingPath>(
+    initial ? "github" : "picker",
+  );
 
   // ── Step state ──────────────────────────────────────────────────
   const [step, setStep] = createSignal(0);
@@ -177,6 +232,11 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
   const [runtime, setRuntime] = createSignal(initial ? initial.runtime : "");
   const [port, setPort] = createSignal("");
   const [customDomain, setCustomDomain] = createSignal("");
+
+  // ── URL-acceleration path state ─────────────────────────────────
+  const [pastedUrl, setPastedUrl] = createSignal("");
+  const [urlError, setUrlError] = createSignal<string>("");
+  const [acceleratedDomain, setAcceleratedDomain] = createSignal<string>("");
 
   // ── Validation ──────────────────────────────────────────────────
   const [errors, setErrors] = createSignal<Record<string, string>>({});
@@ -222,6 +282,42 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
     { invalidates: ["projects"] },
   );
 
+  // ── URL-acceleration mutation ───────────────────────────────────
+  // Calls the backend `projects.createFromUrl` tRPC procedure shipped in
+  // commit 4f46f2a. We intentionally type the input loosely here — the
+  // source-of-truth types live on the router. The runtime call is
+  // validated server-side by Zod.
+  const createFromUrl = useMutation(
+    (input: { url: string }) =>
+      (trpc.projects as unknown as {
+        createFromUrl: { mutate: (i: { url: string }) => Promise<unknown> };
+      }).createFromUrl.mutate(input),
+    { invalidates: ["projects"] },
+  );
+
+  async function handleUrlSubmit(e?: Event): Promise<void> {
+    if (e) e.preventDefault();
+    setUrlError("");
+    const parsed = parseWebUrl(pastedUrl());
+    if (!parsed) {
+      setUrlError(
+        "Please enter a valid website URL (e.g. https://myshop.com).",
+      );
+      return;
+    }
+    try {
+      await createFromUrl.mutate({ url: parsed.toString() });
+      setAcceleratedDomain(parsed.hostname);
+    } catch {
+      // captured in createFromUrl.error()
+    }
+  }
+
+  function resetUrlFlow(): void {
+    createFromUrl.reset();
+    setUrlError("");
+  }
+
   async function handleCreate(): Promise<void> {
     if (!validateStep(step())) return;
 
@@ -257,45 +353,303 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
       />
       <Title>New Project — Crontech</Title>
 
-      <div class="min-h-screen bg-[var(--color-bg)]">
-        <div class="mx-auto max-w-2xl px-6 py-8 lg:px-8">
+      <Box class="min-h-screen bg-[var(--color-bg)]">
+        <Container size="md" padding="md" class="py-8">
           {/* ── Breadcrumb ──────────────────────────────────────── */}
-          <div class="mb-6 flex items-center gap-2 text-xs" style={{ color: "var(--color-text-faint)" }}>
+          <Stack direction="horizontal" gap="xs" align="center" class="mb-6 text-xs" style={{ color: "var(--color-text-faint)" }}>
             <A
               href="/projects"
               class="transition-colors hover:text-[var(--color-text-secondary)]"
             >
               Projects
             </A>
-            <span>/</span>
-            <span style={{ color: "var(--color-text-secondary)" }}>New</span>
-          </div>
+            <Text as="span">/</Text>
+            <Text as="span" style={{ color: "var(--color-text-secondary)" }}>New</Text>
+          </Stack>
 
           {/* ── Header ──────────────────────────────────────────── */}
-          <div class="mb-8">
-            <h1 class="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text)" }}>
+          <Box class="mb-8">
+            <Text variant="h1" weight="bold" class="text-2xl tracking-tight" style={{ color: "var(--color-text)" }}>
               Create a new project
-            </h1>
-            <p class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
+            </Text>
+            <Text variant="body" class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
               Configure and deploy to the Crontech edge network.
-            </p>
+            </Text>
             <Show when={template()}>
               {(t) => (
-                <div class="mt-4 flex items-center gap-2">
-                  <span
+                <Stack direction="horizontal" gap="xs" align="center" class="mt-4">
+                  <Text
+                    as="span"
                     class="text-xl"
                     aria-hidden="true"
                   >
                     {t().icon}
-                  </span>
+                  </Text>
                   <Badge variant="info" size="sm">
                     Creating from template: {t().name}
                   </Badge>
-                </div>
+                </Stack>
               )}
             </Show>
-          </div>
+          </Box>
 
+          {/* ── Path picker ──────────────────────────────────────── */}
+          <Show when={path() === "picker"}>
+            <div
+              class="rounded-2xl border border-[var(--color-border)] p-6"
+              style={{
+                background:
+                  "linear-gradient(135deg, color-mix(in srgb, var(--color-bg-elevated) 90%, transparent) 0%, color-mix(in srgb, var(--color-bg) 95%, transparent) 100%)",
+              }}
+            >
+              <h2 class="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
+                How would you like to start?
+              </h2>
+              <p class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
+                Pick the path that matches what you're bringing. You can always add more projects later.
+              </p>
+
+              <div class="mt-6 grid gap-4 md:grid-cols-2">
+                {/* Option 1 — GitHub repo */}
+                <button
+                  type="button"
+                  onClick={() => setPath("github")}
+                  class="group flex flex-col items-start gap-3 rounded-xl border border-[var(--color-border)] p-5 text-left transition-all duration-200 hover:-translate-y-0.5"
+                  style={{
+                    background: "color-mix(in srgb, var(--color-bg-elevated) 80%, transparent)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor =
+                      "color-mix(in srgb, var(--color-primary) 60%, transparent)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--color-border)";
+                  }}
+                >
+                  <div
+                    class="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-bold"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, var(--color-primary), var(--color-accent, #06b6d4))",
+                      color: "var(--color-text)",
+                    }}
+                    aria-hidden="true"
+                  >
+                    {"</>"}
+                  </div>
+                  <div>
+                    <h3 class="text-base font-semibold" style={{ color: "var(--color-text)" }}>
+                      Connect a GitHub repo
+                    </h3>
+                    <p class="mt-1 text-xs" style={{ color: "var(--color-text-faint)" }}>
+                      For developers. Point us at your repo, pick a framework, deploy to the edge.
+                    </p>
+                  </div>
+                  <span
+                    class="mt-auto text-xs font-medium"
+                    style={{ color: "var(--color-primary)" }}
+                  >
+                    Start the 3-step wizard &rarr;
+                  </span>
+                </button>
+
+                {/* Option 2 — Accelerate an existing site */}
+                <button
+                  type="button"
+                  onClick={() => setPath("url")}
+                  class="group flex flex-col items-start gap-3 rounded-xl border border-[var(--color-border)] p-5 text-left transition-all duration-200 hover:-translate-y-0.5"
+                  style={{
+                    background: "color-mix(in srgb, var(--color-bg-elevated) 80%, transparent)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor =
+                      "color-mix(in srgb, var(--color-primary) 60%, transparent)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--color-border)";
+                  }}
+                >
+                  <div
+                    class="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-bold"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, var(--color-accent, #06b6d4), var(--color-primary))",
+                      color: "var(--color-text)",
+                    }}
+                    aria-hidden="true"
+                  >
+                    {"→"}
+                  </div>
+                  <div>
+                    <h3 class="text-base font-semibold" style={{ color: "var(--color-text)" }}>
+                      Accelerate an existing website
+                    </h3>
+                    <p class="mt-1 text-xs" style={{ color: "var(--color-text-faint)" }}>
+                      For WordPress, WooCommerce, Shopify & more. Paste your URL — we take it from there.
+                    </p>
+                  </div>
+                  <span
+                    class="mt-auto text-xs font-medium"
+                    style={{ color: "var(--color-accent, #06b6d4)" }}
+                  >
+                    Paste a URL &rarr;
+                  </span>
+                </button>
+              </div>
+
+              <div class="mt-8 flex items-center justify-between">
+                <A href="/projects">
+                  <Button variant="ghost" size="md">
+                    Cancel
+                  </Button>
+                </A>
+              </div>
+            </div>
+          </Show>
+
+          {/* ── URL-acceleration flow ────────────────────────────── */}
+          <Show when={path() === "url"}>
+            <div
+              class="rounded-2xl border border-[var(--color-border)] p-6"
+              style={{
+                background:
+                  "linear-gradient(135deg, color-mix(in srgb, var(--color-bg-elevated) 90%, transparent) 0%, color-mix(in srgb, var(--color-bg) 95%, transparent) 100%)",
+              }}
+            >
+              {/* Success confirmation */}
+              <Show
+                when={acceleratedDomain()}
+                fallback={
+                  <form
+                    onSubmit={handleUrlSubmit}
+                    class="flex flex-col gap-5"
+                    noValidate
+                  >
+                    <div>
+                      <h2 class="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
+                        Paste your website URL
+                      </h2>
+                      <p class="mt-1 text-sm" style={{ color: "var(--color-text-faint)" }}>
+                        We'll fingerprint the stack, queue the acceleration, and email you at{" "}
+                        <span class="font-mono" style={{ color: "var(--color-accent, #06b6d4)" }}>
+                          {auth.currentUser()?.email ?? "your account email"}
+                        </span>{" "}
+                        the moment it's live.
+                      </p>
+                    </div>
+
+                    <Input
+                      label="Website URL"
+                      placeholder="https://myshop.com"
+                      type="url"
+                      autocomplete="url"
+                      value={pastedUrl()}
+                      onInput={(e) => {
+                        setPastedUrl(e.currentTarget.value);
+                        if (urlError()) setUrlError("");
+                      }}
+                      error={urlError()}
+                    />
+
+                    <Show when={createFromUrl.error() && !urlError()}>
+                      <div
+                        class="rounded-lg border border-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-4 py-3 text-sm"
+                        style={{ color: "var(--color-danger)" }}
+                      >
+                        {urlFlowErrorMessage(createFromUrl.error())}
+                      </div>
+                    </Show>
+
+                    <div class="mt-2 flex items-center justify-between">
+                      <Button
+                        variant="ghost"
+                        size="md"
+                        type="button"
+                        onClick={() => {
+                          resetUrlFlow();
+                          setPath("picker");
+                        }}
+                      >
+                        Back
+                      </Button>
+
+                      <Show
+                        when={createFromUrl.error()}
+                        fallback={
+                          <Button
+                            variant="primary"
+                            size="md"
+                            type="submit"
+                            loading={createFromUrl.loading()}
+                            disabled={createFromUrl.loading()}
+                          >
+                            Accelerate this site
+                          </Button>
+                        }
+                      >
+                        <Button
+                          variant="primary"
+                          size="md"
+                          type="submit"
+                          loading={createFromUrl.loading()}
+                          disabled={createFromUrl.loading()}
+                        >
+                          Try again
+                        </Button>
+                      </Show>
+                    </div>
+                  </form>
+                }
+              >
+                <div class="flex flex-col gap-5">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--color-primary), var(--color-accent, #06b6d4))",
+                        color: "var(--color-text)",
+                      }}
+                      aria-hidden="true"
+                    >
+                      {"✓"}
+                    </div>
+                    <h2 class="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
+                      You're in the queue
+                    </h2>
+                  </div>
+
+                  <p class="text-sm" style={{ color: "var(--color-text-faint)" }}>
+                    We're accelerating{" "}
+                    <span
+                      class="font-mono"
+                      style={{ color: "var(--color-accent, #06b6d4)" }}
+                    >
+                      {acceleratedDomain()}
+                    </span>
+                    . You'll get an email at{" "}
+                    <span class="font-mono" style={{ color: "var(--color-text-secondary)" }}>
+                      {auth.currentUser()?.email ?? "your account email"}
+                    </span>{" "}
+                    when it's live. In the meantime, your dashboard is ready.
+                  </p>
+
+                  <div class="mt-2 flex items-center justify-end">
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={() => navigate("/projects")}
+                    >
+                      Go to dashboard
+                    </Button>
+                  </div>
+                </div>
+              </Show>
+            </div>
+          </Show>
+
+          {/* ── GitHub repo wizard (existing 3-step flow) ─────────── */}
+          <Show when={path() === "github"}>
           {/* ── Step Indicator ───────────────────────────────────── */}
           <div class="mb-8">
             <StepIndicator currentStep={step()} />
@@ -325,8 +679,9 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
                 />
 
                 <div class="input-wrapper">
-                  <label class="input-label">Description (optional)</label>
+                  <label class="input-label" for="new-project-description">Description (optional)</label>
                   <textarea
+                    id="new-project-description"
                     class="textarea"
                     placeholder="A brief description of what this project does"
                     rows={3}
@@ -425,11 +780,27 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
               <Show
                 when={step() > 0}
                 fallback={
-                  <A href="/projects">
-                    <Button variant="ghost" size="md">
-                      Cancel
+                  <Show
+                    when={!initial}
+                    fallback={
+                      <A href="/projects">
+                        <Button variant="ghost" size="md">
+                          Cancel
+                        </Button>
+                      </A>
+                    }
+                  >
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      onClick={() => {
+                        setErrors({});
+                        setPath("picker");
+                      }}
+                    >
+                      Back
                     </Button>
-                  </A>
+                  </Show>
                 }
               >
                 <Button variant="ghost" size="md" onClick={goBack}>
@@ -457,8 +828,9 @@ export default function NewProjectPage(): ReturnType<typeof ProtectedRoute> {
               </Show>
             </div>
           </div>
-        </div>
-      </div>
+          </Show>
+        </Container>
+      </Box>
     </ProtectedRoute>
   );
 }
