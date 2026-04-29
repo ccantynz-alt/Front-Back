@@ -1,0 +1,111 @@
+# Crontech — nightly pgbackrest restore drill.
+#
+# Catches silent backup corruption. A passing archive-push does NOT
+# guarantee the resulting base backup can actually be restored, so we
+# perform a real restore + row-count probe every night.
+#
+# REQUIRED REPO SECRETS (Settings → Secrets and variables → Actions):
+#
+#   MINIO_ENDPOINT_TEST    Host:port of the MinIO instance the runner
+#                          can reach. Must be HTTPS unless you flip
+#                          repo1-s3-verify-tls=n in the workflow conf
+#                          override below.
+#   MINIO_ACCESS_KEY_TEST  Read-only access key scoped to the
+#                          crontech-backups bucket.
+#   MINIO_SECRET_KEY_TEST  Matching secret.
+#
+# If any secret is missing the workflow fails fast in restore-verify.sh
+# at the env-var validation step. That is intentional — silence is the
+# bug we are fighting.
+#
+# Audit ref: sub-track 8 risk #2.
+
+name: db-restore-test
+
+on:
+  schedule:
+    # 04:00 UTC daily. Pick a window before any human ops + after the
+    # nightly diff backup taken at ~03:00 UTC by pgbackrest cron.
+    - cron: "0 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-restore-test
+  cancel-in-progress: false
+
+jobs:
+  restore-verify:
+    name: pgbackrest restore + row-count probe
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: drill-only-not-used
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT_TEST }}
+      PGBACKREST_REPO1_S3_KEY: ${{ secrets.MINIO_ACCESS_KEY_TEST }}
+      PGBACKREST_REPO1_S3_KEY_SECRET: ${{ secrets.MINIO_SECRET_KEY_TEST }}
+      STANZA: crontech
+      RESTORE_PORT: "5499"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          : "${MINIO_ENDPOINT:?missing secret MINIO_ENDPOINT_TEST}"
+          : "${PGBACKREST_REPO1_S3_KEY:?missing secret MINIO_ACCESS_KEY_TEST}"
+          : "${PGBACKREST_REPO1_S3_KEY_SECRET:?missing secret MINIO_SECRET_KEY_TEST}"
+
+      - name: Install pgbackrest + postgresql-16 client/server bins
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            pgbackrest \
+            postgresql-16 \
+            postgresql-client-16
+          pgbackrest version
+          /usr/lib/postgresql/16/bin/postgres --version
+
+      - name: Stage pgbackrest config
+        run: |
+          sudo install -d -o postgres -g postgres -m 0750 /etc/pgbackrest
+          sudo install -d -o postgres -g postgres -m 0750 /var/log/pgbackrest
+          sudo install -o postgres -g postgres -m 0640 \
+            infra/bare-metal/pgbackrest.conf \
+            /etc/pgbackrest/pgbackrest.conf
+
+      - name: Run restore-verify drill
+        run: |
+          chmod +x infra/bare-metal/scripts/restore-verify.sh
+          # Run as the postgres user — pg_ctl + restore both expect that
+          # uid to own the data dir.
+          sudo -E -u postgres \
+            MINIO_ENDPOINT="$MINIO_ENDPOINT" \
+            PGBACKREST_REPO1_S3_KEY="$PGBACKREST_REPO1_S3_KEY" \
+            PGBACKREST_REPO1_S3_KEY_SECRET="$PGBACKREST_REPO1_S3_KEY_SECRET" \
+            STANZA="$STANZA" \
+            RESTORE_PORT="$RESTORE_PORT" \
+            bash infra/bare-metal/scripts/restore-verify.sh
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-restore-log
+          path: /tmp/restore-*/server.log
+          if-no-files-found: ignore
+          retention-days: 7
