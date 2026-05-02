@@ -64,7 +64,7 @@ jobs:
         # upstream release. Third-party action (non github/ org) — must
         # be SHA-pinned per supply-chain hardening guidance. Tracking in
         # commit msg for batch-resolution.
-        uses: anthropics/claude-code-action@0db27605795dd2ffa0be3652dab127ef491880a4  # v1
+        uses: anthropics/claude-code-action@ef50f123a3a9be95b60040d042717517407c7256  # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Re-read doctrine on every invocation so behaviour stays
