@@ -1,4 +1,4 @@
-import { Button, Card, Stack, Text } from "@back-to-the-future/ui";
+import { Box, Button, Card, Stack, Text } from "@back-to-the-future/ui";
 import { Title } from "@solidjs/meta";
 import { A } from "@solidjs/router";
 import type { JSX } from "solid-js";
@@ -44,13 +44,13 @@ export default function NotFound(): JSX.Element {
             <Text variant="caption" class="text-muted">
               Or jump to a popular destination:
             </Text>
-            <div class="not-found-links">
+            <Box class="not-found-links">
               {suggestions.map((s) => (
                 <A key={s.href} href={s.href}>
                   {s.label}
                 </A>
               ))}
-            </div>
+            </Box>
           </Stack>
         </Card>
       </Stack>

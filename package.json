@@ -21,6 +21,7 @@
     "check-links": "bun run scripts/link-checker.ts",
     "smoke": "bun run scripts/smoke-test.ts",
     "check-buttons": "bun run scripts/button-checker.ts",
+    "check-zero-html": "bun run scripts/zero-html-checker.ts",
     "check-bundle": "bun run scripts/bundle-size-check.ts",
     "check-a11y": "bun run scripts/a11y-check.ts",
     "generate-sitemap": "bun run scripts/generate-sitemap.ts",
