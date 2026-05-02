@@ -43,6 +43,9 @@ jobs:
       - name: Check buttons
         run: bun run check-buttons
 
+      - name: Check zero-HTML doctrine (Wave 9 drift guard)
+        run: bun run check-zero-html
+
       - name: Accessibility check
         run: bun run check-a11y
 

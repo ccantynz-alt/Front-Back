@@ -1,4 +1,4 @@
-import { Badge, Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
+import { Badge, Box, Button, Card, Input, Stack, Text } from "@back-to-the-future/ui";
 import { For, Show, createSignal } from "solid-js";
 import type { JSX } from "solid-js";
 import { ProtectedRoute } from "../components/ProtectedRoute";
@@ -130,7 +130,7 @@ export default function CollabPage(): JSX.Element {
             <Text variant="h3" weight="semibold">
               Collaboration Features
             </Text>
-            <div class="grid-3">
+            <Box class="grid-3">
               <Card padding="sm">
                 <Stack direction="vertical" gap="xs">
                   <Text variant="body" weight="semibold">
@@ -161,7 +161,7 @@ export default function CollabPage(): JSX.Element {
                   </Text>
                 </Stack>
               </Card>
-            </div>
+            </Box>
           </Stack>
         </Card>
       </Stack>
